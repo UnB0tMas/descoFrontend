@@ -1,0 +1,196 @@
+<div class="desco-page account-page">
+  <app-page-header
+    title="Seguridad"
+    subtitle="Administra la contraseña y el correo asociado a tu cuenta."
+    eyebrow="Mi cuenta"
+    [icon]="securityIcon"
+  />
+
+  <nav class="account-tabs" aria-label="Mi cuenta">
+    <a routerLink="/mi-cuenta/perfil" routerLinkActive="active">Perfil</a>
+    <a routerLink="/mi-cuenta/seguridad" routerLinkActive="active">Seguridad</a>
+    <a routerLink="/mi-cuenta/sesiones" routerLinkActive="active">Sesiones</a>
+    <a routerLink="/mi-cuenta/dispositivos" routerLinkActive="active">Dispositivos</a>
+  </nav>
+
+  <div class="security-grid">
+    <section class="security-card">
+      <header class="security-card-header">
+        <span class="security-card-icon"><fa-icon [icon]="passwordIcon" /></span>
+        <div>
+          <p>Contraseña</p>
+          <h2>Actualizar contraseña</h2>
+        </div>
+      </header>
+
+      @if (passwordError()) {
+        <div class="inline-error" role="alert">{{ passwordError() }}</div>
+      }
+
+      <form class="security-form" [formGroup]="passwordForm" (ngSubmit)="changePassword()">
+        <div>
+          <label for="passwordActual">Contraseña actual</label>
+          <div class="input-wrap">
+            <fa-icon [icon]="lockIcon" />
+            <input
+              id="passwordActual"
+              type="password"
+              formControlName="passwordActual"
+              autocomplete="current-password"
+            />
+          </div>
+          <app-form-error
+            [control]="passwordForm.controls.passwordActual"
+            fieldLabel="La contraseña actual"
+          />
+        </div>
+
+        <div>
+          <label for="nuevoPassword">Nueva contraseña</label>
+          <div class="input-wrap">
+            <fa-icon [icon]="passwordIcon" />
+            <input
+              id="nuevoPassword"
+              type="password"
+              formControlName="nuevoPassword"
+              autocomplete="new-password"
+              placeholder="Mínimo 12 caracteres"
+            />
+          </div>
+          <app-form-error
+            [control]="passwordForm.controls.nuevoPassword"
+            fieldLabel="La nueva contraseña"
+          />
+        </div>
+
+        <div>
+          <label for="confirmarPassword">Confirmar contraseña</label>
+          <div class="input-wrap">
+            <fa-icon [icon]="checkIcon" />
+            <input
+              id="confirmarPassword"
+              type="password"
+              formControlName="confirmarPassword"
+              autocomplete="new-password"
+            />
+          </div>
+          <app-form-error
+            [control]="passwordForm.controls.confirmarPassword"
+            fieldLabel="La confirmación"
+          />
+        </div>
+
+        <button
+          type="submit"
+          class="primary-action"
+          [disabled]="passwordLoading()"
+        >
+          @if (passwordLoading()) {
+            <span class="loading loading-spinner loading-sm"></span>
+            Guardando...
+          } @else {
+            <fa-icon [icon]="checkIcon" />
+            Cambiar contraseña
+          }
+        </button>
+      </form>
+    </section>
+
+    <section class="security-card">
+      <header class="security-card-header">
+        <span class="security-card-icon"><fa-icon [icon]="mailIcon" /></span>
+        <div>
+          <p>Correo de seguridad</p>
+          <h2>Actualizar correo</h2>
+        </div>
+      </header>
+
+      <div class="current-email">
+        <span>Correo actual</span>
+        <strong>{{ user()?.correoSeguridad || 'No disponible' }}</strong>
+        @if (user()?.correoSeguridadVerificado) {
+          <span class="email-verified">
+            <fa-icon [icon]="verifyIcon" />
+            Verificado
+          </span>
+        }
+      </div>
+
+      @if (emailError()) {
+        <div class="inline-error" role="alert">{{ emailError() }}</div>
+      }
+
+      <form class="security-form" [formGroup]="emailForm">
+        <div>
+          <label for="nuevoCorreo">Nuevo correo</label>
+          <div class="input-wrap">
+            <fa-icon [icon]="mailIcon" />
+            <input
+              id="nuevoCorreo"
+              type="email"
+              formControlName="nuevoCorreo"
+              autocomplete="email"
+              placeholder="correo@dominio.com"
+            />
+          </div>
+          <app-form-error
+            [control]="emailForm.controls.nuevoCorreo"
+            fieldLabel="El correo"
+          />
+        </div>
+
+        <button
+          type="button"
+          class="secondary-action"
+          [disabled]="emailLoading()"
+          (click)="requestEmailChange()"
+        >
+          @if (emailLoading()) {
+            <span class="loading loading-spinner loading-sm"></span>
+            Enviando...
+          } @else {
+            <fa-icon [icon]="sendIcon" />
+            Enviar código
+          }
+        </button>
+
+        @if (emailCodeSent()) {
+          <div class="email-confirm">
+            <label for="codigoCorreo">Código de confirmación</label>
+            <input
+              id="codigoCorreo"
+              class="code-control"
+              type="text"
+              formControlName="codigo"
+              inputmode="numeric"
+              autocomplete="one-time-code"
+              maxlength="8"
+              placeholder="000000"
+            />
+
+            <app-form-error
+              [control]="emailForm.controls.codigo"
+              fieldLabel="El código"
+              [messages]="{ pattern: 'Ingresa un código válido de 6 a 8 dígitos.' }"
+            />
+
+            <button
+              type="button"
+              class="primary-action mt-3"
+              [disabled]="confirmEmailLoading()"
+              (click)="confirmEmailChange()"
+            >
+              @if (confirmEmailLoading()) {
+                <span class="loading loading-spinner loading-sm"></span>
+                Confirmando...
+              } @else {
+                <fa-icon [icon]="verifyIcon" />
+                Confirmar correo
+              }
+            </button>
+          </div>
+        }
+      </form>
+    </section>
+  </div>
+</div>

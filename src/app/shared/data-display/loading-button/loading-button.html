@@ -1,0 +1,17 @@
+<button
+  [type]="type"
+  class="btn rounded-xl font-semibold shadow-sm transition"
+  [class]="buttonClass()"
+  [class.w-full]="fullWidth"
+  [disabled]="disabled || loading"
+  [attr.aria-busy]="loading"
+  (click)="onClick()"
+>
+  @if (loading) {
+    <fa-icon class="animate-spin" [icon]="spinnerIcon" />
+    <span>{{ loadingLabel }}</span>
+  } @else {
+    <fa-icon [icon]="icon" />
+    <span>{{ label }}</span>
+  }
+</button>

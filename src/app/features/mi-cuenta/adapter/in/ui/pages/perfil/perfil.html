@@ -1,0 +1,131 @@
+<div class="desco-page account-page">
+  <app-page-header
+    title="Mi cuenta"
+    subtitle="Consulta tu información personal y accesos asignados."
+    eyebrow="Perfil"
+    [icon]="userIcon"
+  >
+    <div pageActions class="flex flex-wrap gap-2">
+      <button
+        type="button"
+        class="btn rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+        [disabled]="loading()"
+        (click)="refresh()"
+      >
+        <fa-icon [class.animate-spin]="loading()" [icon]="refreshIcon" />
+        Actualizar
+      </button>
+
+      <button
+        type="button"
+        class="btn rounded-xl border border-red-200 bg-red-50 text-red-700 hover:bg-red-100"
+        [disabled]="loggingOut()"
+        (click)="logout()"
+      >
+        @if (loggingOut()) {
+          <span class="loading loading-spinner loading-sm"></span>
+        } @else {
+          <fa-icon [icon]="logoutIcon" />
+        }
+        Cerrar sesión
+      </button>
+    </div>
+  </app-page-header>
+
+  <nav class="account-tabs" aria-label="Mi cuenta">
+    <a routerLink="/mi-cuenta/perfil" routerLinkActive="active">Perfil</a>
+    <a routerLink="/mi-cuenta/seguridad" routerLinkActive="active">Seguridad</a>
+    <a routerLink="/mi-cuenta/sesiones" routerLinkActive="active">Sesiones</a>
+    <a routerLink="/mi-cuenta/dispositivos" routerLinkActive="active">Dispositivos</a>
+  </nav>
+
+  @if (loading() && !user()) {
+    <app-loading-state title="Cargando perfil" message="Estamos actualizando tu información." />
+  } @else if (errorMessage() && !user()) {
+    <app-error-state [message]="errorMessage() || 'Intenta nuevamente.'" (retry)="refresh()" />
+  } @else if (user(); as currentUser) {
+    <div class="profile-grid">
+      <section class="profile-summary">
+        <div class="profile-avatar">{{ initials() || 'DS' }}</div>
+        <h2>{{ displayName() }}</h2>
+        <p class="profile-username">{{ '@' + currentUser.nombreUsuario }}</p>
+
+        <div class="profile-status-row">
+          <span class="status-pill">
+            <span class="status-dot"></span>
+            {{ currentUser.estadoCuenta || 'Activa' }}
+          </span>
+
+          @if (currentUser.correoSeguridadVerificado) {
+            <span class="verified-pill">
+              <fa-icon [icon]="securityIcon" />
+              Correo verificado
+            </span>
+          }
+        </div>
+      </section>
+
+      <section class="profile-details">
+        <header>
+          <p>Información personal</p>
+          <h2>Datos de la cuenta</h2>
+        </header>
+
+        <div class="detail-grid">
+          <div class="detail-item">
+            <span class="detail-icon"><fa-icon [icon]="idIcon" /></span>
+            <div>
+              <span>Documento</span>
+              <strong>{{ currentUser.tipoDocumento || '—' }} {{ currentUser.numeroDocumento || '' }}</strong>
+            </div>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-icon"><fa-icon [icon]="phoneIcon" /></span>
+            <div>
+              <span>Teléfono</span>
+              <strong>{{ currentUser.telefono || '—' }}</strong>
+            </div>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-icon"><fa-icon [icon]="mailIcon" /></span>
+            <div>
+              <span>Correo de seguridad</span>
+              <strong>{{ currentUser.correoSeguridad || '—' }}</strong>
+            </div>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-icon"><fa-icon [icon]="buildingIcon" /></span>
+            <div>
+              <span>Código de empleado</span>
+              <strong>{{ currentUser.codigoEmpleado || '—' }}</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="roles-card">
+        <header>
+          <span class="roles-icon"><fa-icon [icon]="roleIcon" /></span>
+          <div>
+            <p>Acceso</p>
+            <h2>Roles asignados</h2>
+          </div>
+        </header>
+
+        <div class="role-list">
+          @for (role of roles(); track role.rolId) {
+            <article class="role-chip">
+              <strong>{{ role.nombre }}</strong>
+              <span>{{ role.codigo }}</span>
+            </article>
+          } @empty {
+            <p class="empty-copy">No hay roles activos para mostrar.</p>
+          }
+        </div>
+      </section>
+    </div>
+  }
+</div>

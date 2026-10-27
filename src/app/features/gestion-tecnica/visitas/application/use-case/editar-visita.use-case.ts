@@ -1,0 +1,1 @@
+import {inject,Injectable} from '@angular/core';import {VisitaUpdate} from '../../domain/visita-tecnica.model';import {VISITAS_GATEWAY,VisitasGateway} from '../port/out/visitas.gateway';@Injectable() export class EditarVisitaUseCase{private readonly gateway:VisitasGateway=inject(VISITAS_GATEWAY);execute(id:number,input:VisitaUpdate){return this.gateway.update(id,input);}}

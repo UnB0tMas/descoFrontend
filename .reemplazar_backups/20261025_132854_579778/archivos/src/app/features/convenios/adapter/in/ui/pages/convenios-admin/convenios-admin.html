@@ -1,0 +1,26 @@
+<section class="space-y-5 p-4 sm:p-6">
+  <header>
+    <h1 class="text-xl font-semibold">Convenios y módulos especiales</h1>
+    <p class="text-sm text-gray-500">Cada convenio pertenece solo a la UOT seleccionada. Ningún módulo se habilita automáticamente.</p>
+  </header>
+  @if (error()) { <p role="alert" class="text-red-600">{{ error() }}</p> }
+  @if (loading()) { <p>Cargando convenios...</p> }
+  @else if (convenios().length === 0) { <p>No existen convenios activos en esta UOT.</p> }
+  @else {
+    @for (convenio of convenios(); track convenio.convenioId) {
+      <article class="rounded-lg border p-4 space-y-3">
+        <div>
+          <h2 class="font-semibold">{{ convenio.organizacion }}</h2>
+          <p class="text-sm text-gray-500">{{ convenio.tipoVinculo }} · {{ convenio.numeroConvenio || 'Sin número de convenio' }}</p>
+        </div>
+        @for (modulo of convenio.modulos; track modulo.codigo) {
+          <label class="flex gap-3 items-center">
+            <input type="checkbox" [checked]="modulo.habilitado" [disabled]="!editable || saving() !== null"
+              (change)="change(convenio.convenioId!, modulo.codigo!, $any($event.target).checked)" />
+            <span>{{ modulo.nombre }}</span>
+          </label>
+        }
+      </article>
+    }
+  }
+</section>

@@ -1,0 +1,10 @@
+@if (message; as currentMessage) {
+  <p
+    class="mt-1.5 flex items-start gap-1.5 text-xs font-medium text-red-600"
+    role="alert"
+    aria-live="polite"
+  >
+    <fa-icon class="mt-0.5 shrink-0" [icon]="errorIcon" />
+    <span>{{ currentMessage }}</span>
+  </p>
+}

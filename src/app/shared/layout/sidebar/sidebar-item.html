@@ -1,0 +1,72 @@
+@if (item.children.length > 0) {
+  <button
+    type="button"
+    class="nav-group"
+    [class.nav-group-collapsed]="collapsed"
+    [attr.aria-expanded]="expanded()"
+    [title]="collapsed ? item.label : null"
+    (click)="toggleGroup()"
+  >
+    <span class="nav-icon">
+      <fa-icon [icon]="iconFor(item)" />
+    </span>
+
+    @if (!collapsed) {
+      <span class="nav-label">{{ item.label }}</span>
+
+      <fa-icon
+        class="nav-chevron"
+        [class.rotate-chevron]="expanded()"
+        [icon]="chevronIcon"
+      />
+    }
+  </button>
+
+  @if (expanded() && !collapsed) {
+    <div class="nav-children">
+      @for (child of item.children; track child.id) {
+        @if (child.children.length > 0) {
+          <details class="nav-nested-group">
+            <summary class="nav-child cursor-pointer">{{ child.label }}</summary>
+            <div class="pl-4">
+              @for (grandchild of child.children; track grandchild.id) {
+                @if (grandchild.route) {
+                  <a [routerLink]="grandchild.route" routerLinkActive="nav-child-active"
+                     class="nav-child" (click)="navigate.emit()">
+                    <span class="child-marker"><fa-icon [icon]="childIcon" /></span>
+                    <span>{{ grandchild.label }}</span>
+                  </a>
+                }
+              }
+            </div>
+          </details>
+        } @else if (child.route) {
+          <a [routerLink]="child.route" routerLinkActive="nav-child-active"
+             class="nav-child" (click)="navigate.emit()">
+            <span class="child-marker"><fa-icon [icon]="childIcon" /></span>
+            <span>{{ child.label }}</span>
+          </a>
+        }
+      }
+    </div>
+  }
+} @else if (item.route) {
+  <a
+    [routerLink]="item.route"
+    routerLinkActive="nav-link-active"
+    [routerLinkActiveOptions]="{ exact: item.code === 'INICIO' }"
+    class="nav-link"
+    [class.nav-link-collapsed]="collapsed"
+    [title]="collapsed ? item.label : null"
+    (click)="navigate.emit()"
+  >
+    <span class="nav-icon">
+      <fa-icon [icon]="iconFor(item)" />
+    </span>
+
+    @if (!collapsed) {
+      <span class="nav-label">{{ item.label }}</span>
+    }
+  </a>
+}
+

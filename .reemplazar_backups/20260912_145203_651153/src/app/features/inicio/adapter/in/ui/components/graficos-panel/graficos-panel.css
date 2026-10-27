@@ -1,0 +1,93 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.section-heading {
+  display: flex;
+  margin-bottom: 1rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.section-kicker {
+  margin: 0;
+  color: #2563eb;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.section-heading h2 {
+  margin: 0.15rem 0 0;
+  color: #0f172a;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.section-copy {
+  margin: 0.35rem 0 0;
+  color: #64748b;
+  font-size: 0.78rem;
+  line-height: 1.35rem;
+}
+
+.section-icon {
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid #dbeafe;
+  border-radius: 0.8rem;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.charts-grid {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 1rem;
+}
+
+.chart-slot {
+  min-width: 0;
+  width: 100%;
+}
+
+/*
+ * Regla de composición:
+ * - En escritorio siempre se muestran 2 gráficos por fila.
+ * - Si la cantidad es impar, únicamente el último ocupa toda la fila.
+ * - No se utiliza grafico.ancho para evitar que la configuración recibida
+ *   fuerce cada tarjeta a una fila independiente.
+ */
+.charts-grid > .chart-slot:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+
+.empty-panel {
+  grid-column: 1 / -1;
+  border: 1px dashed #cbd5e1;
+  border-radius: 1rem;
+  padding: 2rem;
+  background: #ffffff;
+  color: #64748b;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  .charts-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .charts-grid > .chart-slot:last-child:nth-child(odd) {
+    grid-column: auto;
+  }
+}

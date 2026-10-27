@@ -1,0 +1,101 @@
+{
+  "proyecto": "D:\\FrancoSystem\\desco_frontend",
+  "fecha": "2026-10-11T22:35:21",
+  "cambios": [
+    {
+      "ruta": "src/app/features/pos/domain/pos.model.ts",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/pos/application/port/out/pos.gateway.ts",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/pos/adapter/out/http/pos-http.adapter.ts",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/pos/adapter/in/ui/pages/pos-page/pos-page.ts",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/pos/adapter/in/ui/pages/pos-page/pos-page.html",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/pos/adapter/in/ui/pages/pos-page/pos-page.css",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/recursos/shared/logistics-operations-api.service.ts",
+      "accion": "escribir",
+      "existia": false
+    },
+    {
+      "ruta": "src/app/features/recursos/almacenes/adapter/in/ui/pages/almacen-operations/almacen-operations.ts",
+      "accion": "escribir",
+      "existia": false
+    },
+    {
+      "ruta": "src/app/features/recursos/almacenes/adapter/in/ui/pages/almacen-operations/almacen-operations.html",
+      "accion": "escribir",
+      "existia": false
+    },
+    {
+      "ruta": "src/app/features/recursos/almacenes/adapter/in/ui/pages/almacen-operations/almacen-operations.css",
+      "accion": "escribir",
+      "existia": false
+    },
+    {
+      "ruta": "src/app/features/recursos/programados/adapter/in/ui/pages/programacion-productos/programacion-productos.ts",
+      "accion": "escribir",
+      "existia": false
+    },
+    {
+      "ruta": "src/app/features/recursos/programados/adapter/in/ui/pages/programacion-productos/programacion-productos.html",
+      "accion": "escribir",
+      "existia": false
+    },
+    {
+      "ruta": "src/app/features/recursos/programados/adapter/in/ui/pages/programacion-productos/programacion-productos.css",
+      "accion": "escribir",
+      "existia": false
+    },
+    {
+      "ruta": "src/app/features/recursos/almacenes/almacenes.routes.ts",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/recursos/programados/programados.routes.ts",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/recursos/almacenes/adapter/in/ui/pages/almacenes-list/almacenes-list.ts",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/recursos/almacenes/adapter/in/ui/pages/almacenes-list/almacenes-list.html",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/recursos/programados/adapter/in/ui/pages/recursos-programados-list/recursos-programados-list.ts",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/recursos/programados/adapter/in/ui/pages/recursos-programados-list/recursos-programados-list.html",
+      "accion": "escribir",
+      "existia": true
+    }
+  ]
+}

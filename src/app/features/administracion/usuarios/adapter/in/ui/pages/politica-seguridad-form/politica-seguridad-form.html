@@ -1,0 +1,94 @@
+<dialog
+  #dialog
+  class="modal desco-modal"
+  (cancel)="$event.preventDefault(); close()"
+>
+  <div class="modal-box admin-modal-box policy-modal-box">
+    <header class="admin-modal-header">
+      <div class="admin-modal-title-group">
+        <span class="admin-modal-icon">
+          <fa-icon [icon]="shieldIcon" />
+        </span>
+        <div>
+          <p>Seguridad de acceso</p>
+          <h2>Dispositivos reconocidos</h2>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        class="admin-icon-button"
+        aria-label="Cerrar"
+        [disabled]="saving()"
+        (click)="close()"
+      >
+        <fa-icon [icon]="closeIcon" />
+      </button>
+    </header>
+
+    @if (errorMessage()) {
+      <div class="admin-inline-error" role="alert">
+        {{ errorMessage() }}
+      </div>
+    }
+
+    <form class="policy-form" [formGroup]="form" (ngSubmit)="save()">
+      <div class="policy-summary">
+        <span class="policy-summary-icon"><fa-icon [icon]="shieldIcon" /></span>
+        <div>
+          <strong>Vigencia del dispositivo</strong>
+          <p>Al vencer, el próximo acceso volverá a solicitar un código.</p>
+        </div>
+      </div>
+
+      <div class="admin-field">
+        <label for="trustedDeviceDays">Días de vigencia</label>
+        <div class="policy-days-control">
+          <input
+            id="trustedDeviceDays"
+            class="admin-input"
+            type="number"
+            inputmode="numeric"
+            min="1"
+            max="365"
+            step="1"
+            formControlName="diasDispositivoReconocido"
+          />
+          <span>días</span>
+        </div>
+        <app-form-error
+          [control]="form.controls.diasDispositivoReconocido"
+          fieldLabel="La vigencia"
+          [messages]="{
+            min: 'La vigencia mínima es de 1 día.',
+            max: 'La vigencia máxima es de 365 días.'
+          }"
+        />
+      </div>
+
+      <footer class="admin-modal-actions">
+        <button
+          type="button"
+          class="admin-secondary-button"
+          [disabled]="saving()"
+          (click)="close()"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          class="admin-primary-button"
+          [disabled]="saving() || form.invalid"
+        >
+          @if (saving()) {
+            <span class="loading loading-spinner loading-sm"></span>
+            Guardando...
+          } @else {
+            <fa-icon [icon]="saveIcon" />
+            Guardar
+          }
+        </button>
+      </footer>
+    </form>
+  </div>
+</dialog>

@@ -1,0 +1,38 @@
+<section class="alerts-card" aria-labelledby="alertas-title">
+  <header class="alerts-header">
+    <div>
+      <p class="alerts-kicker">Seguimiento</p>
+      <h2 id="alertas-title">Alertas</h2>
+    </div>
+
+    <div class="alerts-icon">
+      <fa-icon [icon]="bellIcon" />
+    </div>
+  </header>
+
+  <div class="alerts-list">
+    @for (alerta of alertas; track $index) {
+      <article class="alert-row">
+        <div class="alert-symbol" [class]="toneClass(alerta.tipo)">
+          <fa-icon [icon]="iconFor(alerta.tipo)" />
+        </div>
+
+        <div class="min-w-0 flex-1">
+          <p class="alert-message">{{ alerta.mensaje }}</p>
+          <p class="alert-type">{{ alerta.tipo }}</p>
+        </div>
+
+        @if (alerta.cantidad > 0) {
+          <span class="alert-count">{{ alerta.cantidad }}</span>
+        }
+      </article>
+    } @empty {
+      <div class="alerts-empty">
+        <div class="alerts-empty-icon">
+          <fa-icon [icon]="bellIcon" />
+        </div>
+        <p>Sin alertas pendientes.</p>
+      </div>
+    }
+  </div>
+</section>

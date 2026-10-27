@@ -1,0 +1,31 @@
+{
+  "proyecto": "D:\\FrancoSystem\\desco_frontend",
+  "fecha": "2026-10-25T14:13:17",
+  "cambios": [
+    {
+      "ruta": "src/app/core/access/permission.guard.ts",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/core/access/module-access.guard.ts",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/convenios/convenio-module.guard.ts",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/convenios/apappss-access.guard.ts",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/core/navigation/navigation.service.ts",
+      "accion": "escribir",
+      "existia": true
+    }
+  ]
+}

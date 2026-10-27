@@ -1,0 +1,6 @@
+@if (message; as currentMessage) {
+  <p class="desco-form-error" role="alert" aria-live="polite">
+    <fa-icon [icon]="errorIcon" />
+    <span>{{ currentMessage }}</span>
+  </p>
+}

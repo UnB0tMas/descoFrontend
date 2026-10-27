@@ -1,0 +1,112 @@
+<div class="desco-page">
+  <app-page-header
+    title="Productos"
+    [subtitle]="hasSpecificUot() ? 'Catálogo y precios vigentes para ' + uotName() : 'Selecciona una UOT para consultar productos y precios.'"
+    [icon]="pageIcon"
+  >
+    <button class="admin-secondary-button" type="button" [disabled]="loading() || !hasSpecificUot()" (click)="load()">
+      <fa-icon [icon]="refreshIcon" /> Actualizar
+    </button>
+    <button *appPermission="'PRODUCTOS_CREAR'" class="admin-primary-button" type="button" [disabled]="!hasSpecificUot()" (click)="create()">
+      <fa-icon [icon]="addIcon" /> Registrar producto
+    </button>
+  </app-page-header>
+
+  @if (!hasSpecificUot()) {
+    <section class="admin-surface mt-5">
+      <app-empty-state title="Selecciona una UOT" message="Los precios y el historial de Kardex comercial se consultan por UOT." />
+    </section>
+  } @else {
+    <section class="admin-surface product-filters">
+      <label>
+        <span>UOT</span>
+        <input class="admin-input" [value]="uotName()" readonly />
+      </label>
+      <label class="product-search">
+        <span>Buscar</span>
+        <input class="admin-input" type="search" placeholder="Código, producto, categoría..." [value]="search()" (input)="search.set($any($event.target).value)" />
+      </label>
+    </section>
+
+    @if (loading()) {
+      <app-loading-state title="Cargando productos" [message]="'Consultando precios de ' + uotName() + '.'" />
+    } @else if (errorMessage()) {
+      <app-error-state [message]="errorMessage() || 'No fue posible consultar los productos.'" (retry)="load()" />
+    } @else if (filtered().length === 0) {
+      <app-empty-state title="Sin productos" message="No existen productos para los filtros seleccionados." />
+    } @else {
+      <section class="admin-surface product-table-shell">
+        <div class="admin-table-scroll">
+          <table class="admin-table">
+            <thead><tr><th>Código</th><th>Producto</th><th>Categoría</th><th>Unidad</th><th>Precio vigente</th><th>Estado</th><th>Acciones</th></tr></thead>
+            <tbody>
+              @for (item of filtered(); track item.productoId) {
+                <tr>
+                  <td><strong>{{ item.codigo || '—' }}</strong></td>
+                  <td><strong>{{ item.nombre || '—' }}</strong><small class="product-help">{{ item.descripcion || '' }}</small></td>
+                  <td>{{ item.categoria || '—' }}</td>
+                  <td>{{ item.unidadMedida || '—' }}</td>
+                  <td>
+                    @if (item.precioVenta != null) { <strong>{{ item.moneda || 'PEN' }} {{ item.precioVenta | number:'1.2-2' }}</strong> }
+                    @else { <span class="product-help">Sin precio</span> }
+                  </td>
+                  <td>{{ item.estado === false ? 'Inactivo' : 'Activo' }}</td>
+                  <td><div class="admin-table-actions">
+                    <button *appPermission="'PRODUCTOS_PRECIO'" type="button" class="admin-icon-button" title="Versionar precio" (click)="price(item)"><fa-icon [icon]="priceIcon" /></button>
+                    <button *appPermission="'PRODUCTOS_LISTAR'" type="button" class="admin-icon-button" title="Historial de precios" (click)="toggleHistory(item)"><fa-icon [icon]="historyIcon" /></button>
+                    <button *appPermission="'PRODUCTOS_CREAR'" type="button" class="admin-icon-button" title="Imágenes" (click)="selectImages(item)"><fa-icon [icon]="imageIcon" /></button>
+                  </div></td>
+                </tr>
+
+                @if (historyProduct()?.productoId === item.productoId) {
+                  <tr class="product-images-row">
+                    <td colspan="7">
+                      <div class="p-3">
+                        <strong>Historial de precios · {{ uotName() }}</strong>
+                        @if (historyLoading()) {
+                          <app-loading-state title="Cargando historial" message="Consultando versiones de precio." />
+                        } @else if (historyError()) {
+                          <app-error-state [message]="historyError() || 'No se pudo consultar el historial.'" (retry)="loadHistory(item)" />
+                        } @else if (priceHistory().length === 0) {
+                          <app-empty-state title="Sin historial" message="Este producto todavía no tiene precios registrados en la UOT." />
+                        } @else {
+                          <div class="admin-table-scroll mt-3">
+                            <table class="admin-table">
+                              <thead><tr><th>Versión</th><th>Precio</th><th>Desde</th><th>Hasta</th><th>Registrado por</th><th>Estado</th></tr></thead>
+                              <tbody>
+                                @for (price of priceHistory(); track price.productoPrecioId) {
+                                  <tr>
+                                    <td>v{{ price.version }}</td>
+                                    <td><strong>{{ price.moneda }} {{ price.precioVenta | number:'1.2-2' }}</strong></td>
+                                    <td>{{ price.fechaDesde || '—' }}</td>
+                                    <td>{{ price.fechaHasta || 'Vigente' }}</td>
+                                    <td>{{ price.nombreUsuario || 'Sistema' }}</td>
+                                    <td><span class="admin-status" [class.admin-status--active]="price.vigente">{{ price.vigente ? 'Vigente' : 'Histórico' }}</span></td>
+                                  </tr>
+                                }
+                              </tbody>
+                            </table>
+                          </div>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                }
+
+                @if (selectedForImages()?.productoId === item.productoId) {
+                  <tr class="product-images-row">
+                    <td colspan="7">
+                      <app-local-file-panel [uotId]="selectedUnitId()" linkType="PRODUCTO" [linkId]="item.productoId || 0" [fileIds]="imageIds(item)" title="Imagen principal del producto" category="PRODUCTO_IMAGEN" accept="image/*" [forcePrincipal]="true" (changed)="load()" />
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    }
+  }
+</div>
+
+<app-producto-form />

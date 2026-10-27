@@ -1,0 +1,39 @@
+<header class="sticky top-0 z-30 border-b border-slate-200 bg-white">
+  <div class="flex h-16 items-center gap-3 px-4 sm:px-6">
+    <button type="button" class="btn btn-ghost btn-square rounded-xl text-slate-600 lg:hidden" aria-label="Abrir menú" (click)="menuToggle.emit()">
+      <fa-icon [icon]="menuIcon" />
+    </button>
+
+    <div class="hidden min-w-0 flex-1 md:block"><app-breadcrumb /></div>
+
+    <div class="ml-auto flex items-center gap-2">
+      <button
+        type="button"
+        class="btn btn-ghost btn-square rounded-xl text-slate-600"
+        [attr.aria-label]="theme.isDark() ? 'Activar modo claro' : 'Activar modo oscuro'"
+        [attr.title]="theme.isDark() ? 'Modo claro' : 'Modo oscuro'"
+        (click)="theme.toggle()"
+      >
+        <fa-icon [icon]="theme.isDark() ? lightIcon : darkIcon" />
+      </button>
+
+      <div class="dropdown dropdown-end">
+        <button type="button" tabindex="0" class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-2.5 py-1.5 text-left transition hover:border-blue-200 hover:bg-blue-50">
+          <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-xs font-bold text-white">{{ initials() || 'DS' }}</div>
+          <div class="hidden max-w-44 md:block">
+            <p class="truncate text-sm font-semibold text-slate-900">{{ displayName() }}</p>
+            <p class="truncate text-xs text-slate-500">{{ user()?.nombreUsuario || 'Sesión activa' }}</p>
+          </div>
+          <fa-icon class="hidden text-xs text-slate-400 md:block" [icon]="chevronIcon" />
+        </button>
+        <ul tabindex="0" class="menu dropdown-content z-[60] mt-2 w-64 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl shadow-slate-950/10">
+          <li class="menu-title px-3 py-2 text-xs uppercase tracking-wider text-slate-400">Mi cuenta</li>
+          <li><a routerLink="/mi-cuenta/perfil" class="rounded-xl"><fa-icon [icon]="userIcon" />Perfil</a></li>
+          <li><a routerLink="/mi-cuenta/seguridad" class="rounded-xl"><fa-icon [icon]="securityIcon" />Seguridad</a></li>
+          <li><a routerLink="/mi-cuenta/sesiones" class="rounded-xl"><fa-icon [icon]="sessionsIcon" />Sesiones</a></li>
+          <li><a routerLink="/mi-cuenta/dispositivos" class="rounded-xl"><fa-icon [icon]="devicesIcon" />Dispositivos</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</header>

@@ -1,0 +1,10 @@
+:host { display: block; }
+.warehouse-policy-panel { display: grid; gap: 1rem; padding: 1rem; margin-top: 1rem; }
+.warehouse-policy-panel header h2 { color: var(--desco-text); font-size: 1.05rem; font-weight: 800; margin: 0; }
+.warehouse-policy-panel header p { color: var(--desco-text-muted); font-size: .78rem; margin: .35rem 0 0; }
+.warehouse-policy-edit { display: grid; gap: .75rem; border: 1px solid var(--desco-border); border-radius: .7rem; padding: 1rem; }
+.warehouse-policy-edit h3 { font-weight: 800; }
+.warehouse-policy-edit label { display: flex; gap: .6rem; align-items: center; font-size: .85rem; }
+.warehouse-policy-form { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1rem; }
+.warehouse-policy-wide { grid-column: 1 / -1; }
+@media(max-width:700px) { .warehouse-policy-form { grid-template-columns: 1fr; } }

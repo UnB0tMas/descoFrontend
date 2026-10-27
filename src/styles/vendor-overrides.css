@@ -1,0 +1,31 @@
+.leaflet-container {
+  width: 100%;
+  min-height: 20rem;
+  border-radius: var(--desco-radius-md);
+  font: inherit;
+  z-index: 0;
+}
+
+.leaflet-control-container {
+  font: inherit;
+}
+
+.apexcharts-canvas,
+.apexcharts-svg {
+  font-family: inherit !important;
+}
+
+.apexcharts-tooltip {
+  border-radius: var(--desco-radius-sm) !important;
+  box-shadow: var(--desco-shadow-md) !important;
+}
+
+[data-modal-backdrop],
+[data-drawer-backdrop] {
+  backdrop-filter: blur(2px);
+}
+
+.dropdown-content,
+.modal-box {
+  box-shadow: var(--desco-shadow-md);
+}

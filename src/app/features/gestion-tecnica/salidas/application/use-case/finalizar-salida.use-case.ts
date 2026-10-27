@@ -1,0 +1,1 @@
+import {inject,Injectable} from '@angular/core';import {SALIDAS_GATEWAY,SalidasGateway} from '../port/out/salidas.gateway';@Injectable() export class FinalizarSalidaUseCase{private readonly gateway:SalidasGateway=inject(SALIDAS_GATEWAY);execute(id:number,fechaHoraRetornoReal:string,motivo?:string){return this.gateway.finish(id,fechaHoraRetornoReal,motivo);}}

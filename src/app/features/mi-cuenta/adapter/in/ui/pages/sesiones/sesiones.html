@@ -1,0 +1,121 @@
+<div class="desco-page account-page">
+  <app-page-header
+    title="Sesiones"
+    subtitle="Revisa dónde está abierta tu cuenta y finaliza accesos que ya no uses."
+    eyebrow="Mi cuenta"
+    [icon]="sessionIcon"
+  >
+    <div pageActions class="flex flex-wrap gap-2">
+      <button
+        type="button"
+        class="btn rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+        [disabled]="loading()"
+        (click)="load()"
+      >
+        <fa-icon [class.animate-spin]="loading()" [icon]="refreshIcon" />
+        Actualizar
+      </button>
+
+      <button
+        type="button"
+        class="btn rounded-xl border-0 bg-blue-600 text-white hover:bg-blue-700"
+        [disabled]="closingOthers()"
+        (click)="closeOthers()"
+      >
+        @if (closingOthers()) {
+          <span class="loading loading-spinner loading-sm"></span>
+        } @else {
+          <fa-icon [icon]="closeIcon" />
+        }
+        Cerrar otras
+      </button>
+    </div>
+  </app-page-header>
+
+  <nav class="account-tabs" aria-label="Mi cuenta">
+    <a routerLink="/mi-cuenta/perfil" routerLinkActive="active">Perfil</a>
+    <a routerLink="/mi-cuenta/seguridad" routerLinkActive="active">Seguridad</a>
+    <a routerLink="/mi-cuenta/sesiones" routerLinkActive="active">Sesiones</a>
+    <a routerLink="/mi-cuenta/dispositivos" routerLinkActive="active">Dispositivos</a>
+  </nav>
+
+  <div class="mt-5">
+    @if (loading()) {
+      <app-loading-state title="Cargando sesiones" message="Consultando tus accesos activos." />
+    } @else if (errorMessage()) {
+      <app-error-state [message]="errorMessage() || 'Intenta nuevamente.'" (retry)="load()" />
+    } @else {
+      <div class="session-grid">
+        @for (session of sessions(); track session.sesionPublicaId) {
+          <article class="session-card" [class.current]="session.sesionActual">
+            <div class="session-card-top">
+              <div class="session-device-icon">
+                <fa-icon [icon]="deviceIcon" />
+              </div>
+
+              <div class="min-w-0 flex-1">
+                <div class="session-title-row">
+                  <h2>{{ deviceName(session) }}</h2>
+
+                  @if (session.sesionActual) {
+                    <span class="current-badge">Sesión actual</span>
+                  } @else if (!session.activa) {
+                    <span class="inactive-badge">Cerrada</span>
+                  }
+                </div>
+
+                <p>
+                  {{ session.reconocido ? 'Dispositivo reconocido' : 'Dispositivo no reconocido' }}
+                </p>
+              </div>
+            </div>
+
+            <div class="session-meta">
+              <div>
+                <fa-icon [icon]="locationIcon" />
+                <span>{{ session.ipUltimaActividad || session.ipCreacion || 'IP no disponible' }}</span>
+              </div>
+              <div>
+                <fa-icon [icon]="clockIcon" />
+                <span>
+                  Última actividad:
+                  {{ session.fechaUltimaActividadUtc ? (session.fechaUltimaActividadUtc | date:'dd/MM/yyyy HH:mm') : '—' }}
+                </span>
+              </div>
+              <div>
+                <fa-icon [icon]="globeIcon" />
+                <span>
+                  Inicio:
+                  {{ session.fechaCreacionUtc ? (session.fechaCreacionUtc | date:'dd/MM/yyyy HH:mm') : '—' }}
+                </span>
+              </div>
+            </div>
+
+            @if (!session.sesionActual && session.activa) {
+              <div class="session-card-actions">
+                <button
+                  type="button"
+                  class="close-session-button"
+                  [disabled]="processingSessionId() === session.sesionPublicaId"
+                  (click)="closeSession(session)"
+                >
+                  @if (processingSessionId() === session.sesionPublicaId) {
+                    <span class="loading loading-spinner loading-xs"></span>
+                    Cerrando...
+                  } @else {
+                    <fa-icon [icon]="closeIcon" />
+                    Cerrar sesión
+                  }
+                </button>
+              </div>
+            }
+          </article>
+        } @empty {
+          <div class="session-empty">
+            No hay sesiones para mostrar.
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>

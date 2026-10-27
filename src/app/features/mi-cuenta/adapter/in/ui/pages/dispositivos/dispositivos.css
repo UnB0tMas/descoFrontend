@@ -1,0 +1,194 @@
+:host {
+  display: block;
+}
+
+.account-page {
+  padding-bottom: 2rem;
+}
+
+.account-tabs {
+  display: flex;
+  margin-top: 1.5rem;
+  gap: 0.35rem;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--desco-border);
+}
+
+.account-tabs a {
+  flex: 0 0 auto;
+  border-bottom: 2px solid transparent;
+  padding: 0.8rem 0.9rem;
+  color: var(--desco-text-muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.account-tabs a:hover,
+.account-tabs a.active {
+  color: #1d4ed8;
+}
+
+.account-tabs a.active {
+  border-bottom-color: #2563eb;
+}
+
+.device-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.device-card {
+  overflow: hidden;
+  border: 1px solid var(--desco-border);
+  border-radius: 1.25rem;
+  background: var(--desco-surface);
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+}
+
+.device-card.current {
+  border-color: #bfdbfe;
+}
+
+.device-top {
+  display: flex;
+  gap: 0.85rem;
+  padding: 1rem;
+}
+
+.device-symbol {
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 0.9rem;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.device-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.device-title-row h2 {
+  overflow: hidden;
+  margin: 0;
+  color: var(--desco-text);
+  font-size: 0.88rem;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.current-badge {
+  flex: 0 0 auto;
+  border-radius: 9999px;
+  background: #dbeafe;
+  padding: 0.3rem 0.55rem;
+  color: #1d4ed8;
+  font-size: 0.62rem;
+  font-weight: 800;
+}
+
+.recognition-row {
+  margin-top: 0.45rem;
+}
+
+.recognition-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 9999px;
+  background: var(--desco-surface-soft);
+  padding: 0.3rem 0.55rem;
+  color: var(--desco-text-muted);
+  font-size: 0.62rem;
+  font-weight: 800;
+}
+
+.recognition-badge.recognized {
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.device-meta {
+  display: grid;
+  gap: 0.6rem;
+  border-top: 1px solid #f1f5f9;
+  padding: 0.9rem 1rem;
+}
+
+.device-meta div {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: var(--desco-text-muted);
+  font-size: 0.72rem;
+}
+
+.device-meta fa-icon {
+  width: 1rem;
+  color: var(--desco-text-muted);
+  text-align: center;
+}
+
+.device-actions {
+  border-top: 1px solid #f1f5f9;
+  padding: 0.75rem 1rem;
+}
+
+.recognition-button {
+  display: inline-flex;
+  min-height: 2.4rem;
+  align-items: center;
+  gap: 0.45rem;
+  border: 1px solid #bfdbfe;
+  border-radius: 0.75rem;
+  background: #eff6ff;
+  padding: 0 0.8rem;
+  color: #1d4ed8;
+  font-size: 0.72rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.recognition-button:hover:not(:disabled) {
+  background: #dbeafe;
+}
+
+.recognition-button.remove {
+  border-color: var(--desco-border);
+  background: var(--desco-surface-soft);
+  color: var(--desco-text-muted);
+}
+
+.recognition-button.remove:hover:not(:disabled) {
+  background: var(--desco-surface-soft);
+}
+
+.recognition-button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.device-empty {
+  grid-column: 1 / -1;
+  border: 1px dashed var(--desco-border);
+  border-radius: 1rem;
+  background: var(--desco-surface);
+  padding: 3rem 1rem;
+  color: var(--desco-text-muted);
+  font-size: 0.82rem;
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  .device-grid {
+    grid-template-columns: 1fr;
+  }
+}

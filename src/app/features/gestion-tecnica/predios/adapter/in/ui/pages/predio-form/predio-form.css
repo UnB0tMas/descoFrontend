@@ -1,0 +1,100 @@
+:host {
+  display: contents;
+}
+
+.predio-modal-box {
+  width: min(56rem, calc(100vw - 2rem));
+  max-width: 56rem;
+}
+
+.predio-form-grid {
+  gap: 0.7rem;
+}
+
+.predio-form-grid .admin-field {
+  min-width: 0;
+}
+
+.optional-label {
+  margin-left: 0.2rem;
+  color: var(--desco-text-muted);
+  font-size: 0.62rem;
+  font-weight: 650;
+}
+
+
+.compact-date-field .admin-input {
+  max-width: 20rem;
+}
+
+.owner-editor {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(9rem, 1.15fr) minmax(6.5rem, 0.65fr) auto;
+  gap: 0.5rem;
+  align-items: end;
+}
+
+.owner-list {
+  display: grid;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+}
+
+.owner-list article {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border: 1px solid var(--desco-border);
+  border-radius: 0.8rem;
+  padding: 0.6rem 0.7rem;
+}
+
+.owner-list strong,
+.owner-list span {
+  display: block;
+}
+
+.owner-list strong {
+  color: var(--desco-text);
+  font-size: 0.7rem;
+}
+
+.owner-list span {
+  margin-top: 0.1rem;
+  color: var(--desco-text-muted);
+  font-size: 0.61rem;
+}
+
+.owner-list p {
+  margin: 0;
+  padding: 0.8rem;
+  text-align: center;
+  color: var(--desco-text-muted);
+  font-size: 0.68rem;
+}
+
+.owner-total {
+  margin-top: 0.5rem;
+  color: var(--desco-text-muted);
+  font-size: 0.68rem;
+  text-align: right;
+}
+
+.owner-total strong {
+  color: var(--desco-primary, #2563eb);
+}
+
+@media (max-width: 760px) {
+  .predio-modal-box {
+    width: calc(100vw - 1rem);
+  }
+
+  .owner-editor {
+    grid-template-columns: 1fr;
+  }
+
+  .compact-date-field .admin-input {
+    max-width: none;
+  }
+}

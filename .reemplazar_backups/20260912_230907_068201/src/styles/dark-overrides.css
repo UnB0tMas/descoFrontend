@@ -1,0 +1,181 @@
+html[data-theme='dark'] body,
+html[data-theme='dark'] .desco-app-shell {
+  background: #000000 !important;
+  color: var(--desco-text);
+}
+
+html[data-theme='dark'] .bg-white,
+html[data-theme='dark'] .bg-slate-50,
+html[data-theme='dark'] .bg-slate-100 {
+  background-color: var(--desco-surface) !important;
+}
+
+html[data-theme='dark'] .bg-blue-50 { background-color: var(--desco-info-soft) !important; }
+html[data-theme='dark'] .bg-emerald-50 { background-color: var(--desco-success-soft) !important; }
+html[data-theme='dark'] .bg-amber-50 { background-color: var(--desco-warning-soft) !important; }
+html[data-theme='dark'] .bg-red-50,
+html[data-theme='dark'] .bg-rose-50 { background-color: var(--desco-danger-soft) !important; }
+
+html[data-theme='dark'] .text-slate-950,
+html[data-theme='dark'] .text-slate-900,
+html[data-theme='dark'] .text-slate-800,
+html[data-theme='dark'] .text-slate-700 {
+  color: var(--desco-text) !important;
+}
+
+html[data-theme='dark'] .text-slate-600,
+html[data-theme='dark'] .text-slate-500,
+html[data-theme='dark'] .text-slate-400 {
+  color: var(--desco-text-muted) !important;
+}
+
+html[data-theme='dark'] .border-slate-50,
+html[data-theme='dark'] .border-slate-100,
+html[data-theme='dark'] .border-slate-200,
+html[data-theme='dark'] .border-slate-300 {
+  border-color: var(--desco-border) !important;
+}
+
+html[data-theme='dark'] .hover\\:bg-slate-50:hover,
+html[data-theme='dark'] .hover\\:bg-blue-50:hover {
+  background-color: var(--desco-surface-hover) !important;
+}
+
+html[data-theme='dark'] input,
+html[data-theme='dark'] select,
+html[data-theme='dark'] textarea,
+html[data-theme='dark'] .input,
+html[data-theme='dark'] .select,
+html[data-theme='dark'] .textarea,
+html[data-theme='dark'] .admin-input,
+html[data-theme='dark'] .admin-select,
+html[data-theme='dark'] .admin-textarea {
+  background-color: var(--desco-control-bg) !important;
+  border-color: var(--desco-border) !important;
+  color: var(--desco-text) !important;
+}
+
+html[data-theme='dark'] input:disabled,
+html[data-theme='dark'] select:disabled,
+html[data-theme='dark'] textarea:disabled {
+  background-color: var(--desco-control-disabled) !important;
+  color: var(--desco-text-muted) !important;
+}
+
+html[data-theme='dark'] input::placeholder,
+html[data-theme='dark'] textarea::placeholder {
+  color: var(--desco-placeholder) !important;
+  opacity: 1;
+}
+
+html[data-theme='dark'] option {
+  background: #0a0a0a;
+  color: var(--desco-text);
+}
+
+html[data-theme='dark'] .modal-box,
+html[data-theme='dark'] .dropdown-content,
+html[data-theme='dark'] .desco-card,
+html[data-theme='dark'] .card,
+html[data-theme='dark'] .menu,
+html[data-theme='dark'] .navbar,
+html[data-theme='dark'] details,
+html[data-theme='dark'] [role='dialog'] {
+  background-color: var(--desco-surface) !important;
+  border-color: var(--desco-border) !important;
+  color: var(--desco-text) !important;
+}
+
+html[data-theme='dark'] .admin-table th,
+html[data-theme='dark'] .admin-table td,
+html[data-theme='dark'] .table th,
+html[data-theme='dark'] .table td {
+  border-color: var(--desco-border) !important;
+  color: var(--desco-text) !important;
+}
+
+html[data-theme='dark'] .admin-table tbody tr:hover,
+html[data-theme='dark'] .table tbody tr:hover {
+  background: var(--desco-table-hover) !important;
+}
+
+html[data-theme='dark'] a:not(.btn):not(.auth-primary-button) {
+  text-decoration-color: currentColor;
+}
+
+html[data-theme='dark'] dialog::backdrop,
+html[data-theme='dark'] [data-modal-backdrop],
+html[data-theme='dark'] [data-drawer-backdrop] {
+  background: var(--desco-overlay) !important;
+}
+
+/* Pantallas de autenticación: conserva el diseño original y corrige contraste. */
+html[data-theme='dark'] app-auth-layout .auth-form-header h1,
+html[data-theme='dark'] app-auth-layout .auth-step-heading h1,
+html[data-theme='dark'] app-auth-layout .auth-step-card h2,
+html[data-theme='dark'] app-auth-layout .auth-label,
+html[data-theme='dark'] app-auth-layout strong {
+  color: var(--desco-text) !important;
+}
+
+html[data-theme='dark'] app-auth-layout .auth-form-header p,
+html[data-theme='dark'] app-auth-layout .auth-step-heading p,
+html[data-theme='dark'] app-auth-layout .auth-step-card p {
+  color: var(--desco-text-muted) !important;
+}
+
+html[data-theme='dark'] app-auth-layout .auth-step-card {
+  background: var(--desco-surface) !important;
+  border-color: var(--desco-border) !important;
+  box-shadow: none !important;
+}
+
+html[data-theme='dark'] app-auth-layout .auth-input,
+html[data-theme='dark'] app-auth-layout .auth-control,
+html[data-theme='dark'] app-auth-layout .auth-otp-input {
+  background: var(--desco-control-bg) !important;
+  border-color: var(--desco-border-strong) !important;
+  color: var(--desco-text) !important;
+}
+
+html[data-theme='dark'] app-auth-layout .auth-password-toggle,
+html[data-theme='dark'] app-auth-layout .auth-back-link,
+html[data-theme='dark'] app-auth-layout .auth-link-button,
+html[data-theme='dark'] app-auth-layout .auth-forgot-link {
+  color: #93c5fd !important;
+}
+
+html[data-theme='dark'] app-auth-layout .auth-password-toggle:hover:not(:disabled) {
+  background: var(--desco-surface-hover) !important;
+  color: var(--desco-text) !important;
+}
+
+html[data-theme='dark'] app-auth-layout .auth-inline-error {
+  border-color: #7f1d1d !important;
+  background: var(--desco-danger-soft) !important;
+  color: #fca5a5 !important;
+}
+
+html[data-theme='dark'] app-auth-layout .auth-security-note {
+  border-color: #713f12 !important;
+  background: var(--desco-warning-soft) !important;
+}
+
+html[data-theme='dark'] app-auth-layout .auth-security-note p {
+  color: #fde68a !important;
+}
+
+html[data-theme='dark'] .apexcharts-tooltip,
+html[data-theme='dark'] .apexcharts-tooltip-title {
+  background: #111111 !important;
+  border-color: #2b2b2b !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme='dark'] .apexcharts-text { fill: #d4d4d4 !important; }
+html[data-theme='dark'] .apexcharts-gridline { stroke: #292929 !important; }
+
+html[data-theme='dark'] .desco-scrollbar,
+html[data-theme='dark'] * {
+  scrollbar-color: var(--desco-scrollbar) transparent;
+}

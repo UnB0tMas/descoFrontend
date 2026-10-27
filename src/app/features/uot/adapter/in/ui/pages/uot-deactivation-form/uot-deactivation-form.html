@@ -1,0 +1,209 @@
+<dialog
+  #dialog
+  class="modal desco-modal"
+  (cancel)="$event.preventDefault(); close()"
+>
+  <div class="modal-box admin-modal-box admin-modal-box--wide">
+    <header class="admin-modal-header">
+      <div class="admin-modal-title-group">
+        <span class="admin-modal-icon admin-modal-icon--danger">
+          <fa-icon [icon]="deactivateIcon" />
+        </span>
+        <div>
+          <p>Administración UOT</p>
+          <h2>Deshabilitar {{ current()?.nombre || 'UOT' }}</h2>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        class="admin-icon-button"
+        aria-label="Cerrar"
+        [disabled]="loading() || transferring() || deactivating()"
+        (click)="close()"
+      >
+        <fa-icon [icon]="closeIcon" />
+      </button>
+    </header>
+
+    @if (errorMessage()) {
+      <div class="admin-inline-error" role="alert">{{ errorMessage() }}</div>
+    }
+
+    @if (loading()) {
+      <div class="uot-deactivation-loading">
+        <span class="loading loading-spinner loading-md"></span>
+        <span>Analizando dependencias y recursos de la UOT…</span>
+      </div>
+    } @else if (impact(); as data) {
+      <section class="uot-impact-grid">
+        <article><span>Usuarios activos</span><strong>{{ data.usuariosActivos }}</strong></article>
+        <article><span>Empleados activos</span><strong>{{ data.empleadosActivos }}</strong></article>
+        <article><span>Áreas activas</span><strong>{{ data.areasActivas }}</strong></article>
+        <article><span>Organizaciones</span><strong>{{ data.organizacionesActivas }}</strong></article>
+        <article><span>Bienes activos</span><strong>{{ data.bienesActivos }}</strong></article>
+        <article><span>Productos con stock</span><strong>{{ data.productosConStock }}</strong></article>
+        <article><span>Suministros con stock</span><strong>{{ data.suministrosConStock }}</strong></article>
+        <article><span>Operaciones abiertas</span><strong>{{ data.ventasAbiertas + data.campaniasAbiertas + data.operativosAbiertos + data.salidasAbiertas + data.recursosAbiertos }}</strong></article>
+      </section>
+
+      @if (data.bloqueos.length) {
+        <section class="uot-blockers">
+          <header>
+            <fa-icon [icon]="warningIcon" />
+            <div>
+              <strong>La UOT todavía no puede cerrarse</strong>
+              <span>Resuelve los siguientes puntos antes de ejecutar la baja.</span>
+            </div>
+          </header>
+          <ul>
+            @for (block of data.bloqueos; track block) {
+              <li>{{ block }}</li>
+            }
+          </ul>
+        </section>
+      }
+
+      <form class="admin-form-grid" [formGroup]="form">
+        @if (requiresResourceTransfer()) {
+          <div class="admin-field admin-field-span-2">
+            <label for="uotTransferTarget">UOT destino</label>
+            <select
+              id="uotTransferTarget"
+              class="admin-select"
+              formControlName="uotDestinoId"
+              [disabled]="transferring() || deactivating()"
+              (change)="onTargetChange($any($event.target).value)"
+            >
+              <option [value]="0">Seleccionar UOT destino</option>
+              @for (unit of targetOptions(); track unit.uotId) {
+                <option [value]="unit.uotId">
+                  {{ unit.codigo }} · {{ unit.nombre }}
+                </option>
+              }
+            </select>
+            <small>
+              Los bienes y suministros activos se transferirán a esta UOT. El Kardex histórico permanecerá en la UOT origen.
+            </small>
+          </div>
+
+          @if (data.productosConStock > 0 || data.stockReservado > 0) {
+            <label class="admin-switch-row admin-field-span-2">
+              <span>
+                <strong>Transferir stock de productos</strong>
+                <small>Generará salida en origen y entrada en destino.</small>
+              </span>
+              <input
+                type="checkbox"
+                class="admin-switch-control"
+                formControlName="transferirStock"
+              />
+            </label>
+
+            @if (form.controls.transferirStock.value) {
+              <div class="admin-field">
+                <label for="uotSourceWarehouse">Almacén origen</label>
+                <select
+                  id="uotSourceWarehouse"
+                  class="admin-select"
+                  formControlName="almacenOrigenId"
+                >
+                  <option [value]="0">Seleccionar</option>
+                  @for (warehouse of sourceWarehouses(); track warehouse.almacenId) {
+                    <option [value]="warehouse.almacenId">
+                      {{ warehouse.codigo }} · {{ warehouse.nombre }}
+                    </option>
+                  }
+                </select>
+              </div>
+
+              <div class="admin-field">
+                <label for="uotTargetWarehouse">Almacén destino</label>
+                <select
+                  id="uotTargetWarehouse"
+                  class="admin-select"
+                  formControlName="almacenDestinoId"
+                  [disabled]="targetLoading()"
+                >
+                  <option [value]="0">
+                    {{ targetLoading() ? 'Cargando…' : 'Seleccionar' }}
+                  </option>
+                  @for (warehouse of targetWarehouses(); track warehouse.almacenId) {
+                    <option [value]="warehouse.almacenId">
+                      {{ warehouse.codigo }} · {{ warehouse.nombre }}
+                    </option>
+                  }
+                </select>
+              </div>
+            }
+          }
+
+          <div class="uot-transfer-summary admin-field-span-2">
+            <span>{{ assets().length }} bien(es) detectados</span>
+            <span>{{ supplies().length }} suministro(s) detectados</span>
+            <span>{{ data.productosConStock }} producto(s) con stock</span>
+          </div>
+        }
+
+        <div class="admin-field admin-field-span-2">
+          <label for="uotDeactivateReason">Motivo</label>
+          <textarea
+            id="uotDeactivateReason"
+            class="admin-textarea"
+            rows="3"
+            maxlength="300"
+            formControlName="motivo"
+            placeholder="Indica el motivo de la transferencia o de la baja."
+          ></textarea>
+          <app-form-error
+            [control]="form.controls.motivo"
+            fieldLabel="El motivo"
+            [messages]="{ blank: 'El motivo no puede contener solo espacios.' }"
+          />
+        </div>
+
+        <footer class="admin-modal-actions admin-field-span-2">
+          <button
+            type="button"
+            class="admin-secondary-button"
+            [disabled]="loading() || transferring() || deactivating()"
+            (click)="refresh()"
+          >
+            <fa-icon [class.animate-spin]="loading()" [icon]="refreshIcon" />
+            Recalcular impacto
+          </button>
+
+          @if (requiresResourceTransfer()) {
+            <button
+              type="button"
+              class="admin-secondary-button"
+              [disabled]="transferring() || deactivating()"
+              (click)="transfer()"
+            >
+              @if (transferring()) {
+                <span class="loading loading-spinner loading-sm"></span>
+              } @else {
+                <fa-icon [icon]="transferIcon" />
+              }
+              Transferir recursos
+            </button>
+          }
+
+          <button
+            type="button"
+            class="admin-danger-button"
+            [disabled]="!data.puedeDeshabilitar || transferring() || deactivating()"
+            (click)="deactivate()"
+          >
+            @if (deactivating()) {
+              <span class="loading loading-spinner loading-sm"></span>
+            } @else {
+              <fa-icon [icon]="deactivateIcon" />
+            }
+            Deshabilitar UOT
+          </button>
+        </footer>
+      </form>
+    }
+  </div>
+</dialog>

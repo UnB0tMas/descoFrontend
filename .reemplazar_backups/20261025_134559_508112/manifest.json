@@ -1,0 +1,11 @@
+{
+  "proyecto": "D:\\FrancoSystem\\desco_frontend",
+  "fecha": "2026-10-25T13:45:59",
+  "cambios": [
+    {
+      "ruta": "src/app/features/gestion-tecnica/productores/productores.routes.ts",
+      "accion": "escribir",
+      "existia": true
+    }
+  ]
+}

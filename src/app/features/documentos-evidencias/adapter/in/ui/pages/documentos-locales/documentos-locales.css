@@ -1,0 +1,66 @@
+:host {
+  display: block;
+}
+
+.local-doc-upload {
+  display: flex;
+  margin-bottom: 1rem;
+  align-items: end;
+  gap: .7rem;
+  padding: .8rem;
+}
+
+.local-doc-upload > label:not(.local-doc-file-button) {
+  display: grid;
+  min-width: 12rem;
+  gap: .3rem;
+}
+
+.local-doc-upload label > span {
+  color: var(--desco-text-muted);
+  font-size: .6rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.local-doc-description {
+  flex: 1;
+}
+
+.local-doc-file-button {
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.local-doc-file-button input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.local-doc-table-shell {
+  overflow: hidden;
+}
+
+.local-doc-help {
+  display: block;
+  overflow: hidden;
+  max-width: 28rem;
+  margin-top: .12rem;
+  color: var(--desco-text-muted);
+  font-size: .6rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 800px) {
+  .local-doc-upload {
+    flex-wrap: wrap;
+  }
+
+  .local-doc-upload > label:not(.local-doc-file-button) {
+    width: 100%;
+  }
+}

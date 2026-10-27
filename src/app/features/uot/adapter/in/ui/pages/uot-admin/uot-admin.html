@@ -1,0 +1,155 @@
+<div class="desco-page">
+  <app-page-header
+    title="Unidades operativas territoriales"
+    subtitle="Administra la jerarquía, accesos, roles y ciclo de vida de cada UOT."
+    eyebrow="Administración"
+    [icon]="pageIcon"
+  >
+    <div pageActions class="flex flex-wrap gap-2">
+      <button
+        type="button"
+        class="admin-secondary-button"
+        [disabled]="loading()"
+        (click)="load()"
+      >
+        <fa-icon [class.animate-spin]="loading()" [icon]="refreshIcon" />
+        Actualizar
+      </button>
+      <button
+        *appPermission="'UOT_CREAR'"
+        type="button"
+        class="admin-primary-button"
+        (click)="create()"
+      >
+        <fa-icon [icon]="addIcon" />
+        Nueva UOT
+      </button>
+    </div>
+  </app-page-header>
+
+  <section class="admin-surface mt-5">
+    <div class="admin-toolbar admin-toolbar--end">
+      <label class="admin-switch-row uot-inactive-switch">
+        <span>
+          <strong>Ver inactivas</strong>
+          <small>Muestra solo unidades cerradas o deshabilitadas.</small>
+        </span>
+        <input
+          type="checkbox"
+          class="admin-switch-control"
+          [checked]="showInactive()"
+          (change)="toggleInactive($any($event.target).checked)"
+        />
+      </label>
+    </div>
+
+    @if (loading()) {
+      <app-loading-state
+        title="Cargando UOT"
+        message="Consultando la jerarquía autorizada."
+      />
+    } @else if (errorMessage()) {
+      <app-error-state
+        [message]="errorMessage() || 'No se pudo cargar la información.'"
+        (retry)="load()"
+      />
+    } @else if (units().length === 0) {
+      <app-empty-state
+        [title]="showInactive() ? 'Sin UOT inactivas' : 'Sin UOT activas'"
+        [message]="
+          showInactive()
+            ? 'No existen UOT cerradas o deshabilitadas.'
+            : 'No existen UOT activas visibles para tu contexto.'
+        "
+      />
+    } @else {
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>UOT</th>
+              <th>Superior</th>
+              <th class="text-center">Asignación</th>
+              <th class="text-center">Estado</th>
+              <th class="text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (unit of units(); track unit.uotId) {
+              <tr>
+                <td>
+                  <div class="admin-stack-copy">
+                    <strong>{{ unit.nombre }}</strong>
+                    <span>{{ unit.codigo }} · #{{ unit.uotId }}</span>
+                  </div>
+                </td>
+                <td>{{ parentName(unit) }}</td>
+                <td class="text-center">
+                  @if (unit.predeterminada) {
+                    <span class="admin-status admin-status--info">Predeterminada</span>
+                  } @else if (unit.asignada) {
+                    <span class="admin-status admin-status--active">Asignada</span>
+                  } @else {
+                    <span class="admin-status">No asignada</span>
+                  }
+                </td>
+                <td class="text-center">
+                  <span
+                    class="admin-status"
+                    [class.admin-status--active]="unit.estado"
+                    [class.admin-status--inactive]="!unit.estado"
+                  >
+                    {{ unit.estado ? 'Activa' : 'Inactiva' }}
+                  </span>
+                </td>
+                <td>
+                  <div class="admin-row-actions">
+                    @if (unit.estado) {
+                      <button
+                        *appPermission="'UOT_EDITAR'"
+                        type="button"
+                        class="admin-icon-button"
+                        title="Editar UOT"
+                        (click)="edit(unit)"
+                      >
+                        <fa-icon [icon]="editIcon" />
+                      </button>
+                      <button
+                        *appPermission="'UOT_ADMINISTRAR_ACCESOS'"
+                        type="button"
+                        class="admin-icon-button"
+                        title="Asignar acceso y rol"
+                        [disabled]="referencesLoading()"
+                        (click)="access(unit)"
+                      >
+                        @if (referencesLoading()) {
+                          <span class="loading loading-spinner loading-xs"></span>
+                        } @else {
+                          <fa-icon [icon]="accessIcon" />
+                        }
+                      </button>
+                      @if (!unit.esRaiz) {
+                        <button
+                          *appPermission="'UOT_RETIRAR'"
+                          type="button"
+                          class="admin-icon-button admin-icon-button--danger"
+                          title="Analizar y deshabilitar UOT"
+                          (click)="deactivate(unit)"
+                        >
+                          <fa-icon [icon]="deactivateIcon" />
+                        </button>
+                      }
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</div>
+
+<app-uot-form />
+<app-uot-deactivation-form />

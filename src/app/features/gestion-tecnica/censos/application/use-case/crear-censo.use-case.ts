@@ -1,0 +1,1 @@
+import {inject,Injectable} from '@angular/core';import { CensoInput } from '../../domain/censo.model';import {CENSOS_GATEWAY,CensosGateway} from '../port/out/censos.gateway';@Injectable() export class CrearCensoUseCase{private readonly gateway:CensosGateway=inject(CENSOS_GATEWAY);execute(input:CensoInput){return this.gateway.create(input);}}

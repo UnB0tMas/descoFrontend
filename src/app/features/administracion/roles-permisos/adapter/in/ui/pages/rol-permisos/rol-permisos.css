@@ -1,0 +1,244 @@
+:host {
+  display: block;
+}
+
+.role-permission-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.role-permission-summary > div {
+  border: 1px solid var(--desco-border);
+  border-radius: 1rem;
+  background: var(--desco-surface);
+  padding: 0.9rem;
+}
+
+.role-permission-summary span,
+.permission-group header span {
+  display: block;
+  color: var(--desco-text-muted);
+  font-size: 0.66rem;
+  font-weight: 700;
+}
+
+.role-permission-summary strong {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--desco-text);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.permission-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid var(--desco-border);
+  padding: 1rem;
+}
+
+.permission-count {
+  color: var(--desco-text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.permission-groups {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1rem;
+}
+
+.permission-group {
+  overflow: hidden;
+  border: 1px solid var(--desco-border);
+  border-radius: 1rem;
+}
+
+.permission-group > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: var(--desco-surface-soft);
+  padding: 0.75rem 0.9rem;
+}
+
+.permission-group h2 {
+  margin: 0;
+  color: var(--desco-text);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.permission-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.permission-option {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: 0.7rem;
+  border-top: 1px solid var(--desco-border-subtle);
+  padding: 0.8rem 0.9rem;
+  cursor: pointer;
+}
+
+.permission-option:nth-child(odd) {
+  border-right: 1px solid var(--desco-border-subtle);
+}
+
+.permission-option:has(.permission-checkbox-native:checked) {
+  background: var(--desco-surface-soft);
+}
+
+.permission-option:focus-within {
+  background: var(--desco-surface-soft);
+}
+
+.permission-checkbox-native {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.permission-option .permission-checkbox-box {
+  display: grid;
+  width: 1.25rem;
+  height: 1.25rem;
+  flex: 0 0 auto;
+  place-items: center;
+  margin-top: 0.02rem;
+  border: 2px solid var(--desco-text-muted);
+  border-radius: 0.35rem;
+  background: var(--desco-surface);
+  color: transparent;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.08);
+  font-size: 0.62rem;
+  line-height: 1;
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease,
+    box-shadow 120ms ease,
+    transform 120ms ease;
+}
+
+.permission-option .permission-checkbox-box--selected {
+  border-color: var(--desco-primary);
+  background: var(--desco-primary);
+  color: var(--desco-on-primary);
+  box-shadow: 0 1px 3px rgb(37 99 235 / 0.28);
+}
+
+.permission-option .permission-checkbox-check {
+  display: block;
+  margin: 0;
+  padding: 0;
+  color: var(--desco-on-primary);
+  font-size: 0.88rem;
+  font-weight: 900;
+  line-height: 1;
+  text-align: center;
+  transform: translateY(-0.02rem);
+  user-select: none;
+}
+
+.permission-checkbox-native:focus-visible + .permission-checkbox-box {
+  outline: 3px solid rgb(37 99 235 / 0.22);
+  outline-offset: 2px;
+}
+
+.permission-option:hover .permission-checkbox-box:not(.permission-checkbox-box--selected) {
+  border-color: var(--desco-primary);
+  background: var(--desco-primary-soft);
+}
+
+.permission-option:active .permission-checkbox-box:not(.permission-checkbox-box--readonly) {
+  transform: scale(0.94);
+}
+
+.permission-checkbox-box--readonly {
+  cursor: default;
+}
+
+.permission-option:has(.permission-checkbox-box--readonly) {
+  cursor: default;
+}
+
+.permission-option > div {
+  min-width: 0;
+  flex: 1;
+}
+
+.permission-option strong,
+.permission-option span,
+.permission-option small {
+  display: block;
+}
+
+.permission-option strong {
+  color: var(--desco-text);
+  font-size: 0.72rem;
+}
+
+.permission-option span {
+  margin-top: 0.15rem;
+  color: var(--desco-primary);
+  font-size: 0.6rem;
+  font-weight: 700;
+}
+
+.permission-option small {
+  margin-top: 0.3rem;
+  color: var(--desco-text-muted);
+  font-size: 0.64rem;
+  line-height: 1.4;
+}
+
+.permission-option em {
+  border-radius: 9999px;
+  background: var(--desco-warning-soft);
+  padding: 0.22rem 0.4rem;
+  color: var(--desco-warning-text);
+  font-size: 0.56rem;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.permission-reason {
+  border-top: 1px solid var(--desco-border);
+  padding: 1rem;
+}
+
+.permission-reason label {
+  display: block;
+  margin-bottom: 0.4rem;
+  color: var(--desco-text);
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+@media (max-width: 800px) {
+  .role-permission-summary,
+  .permission-options {
+    grid-template-columns: 1fr;
+  }
+
+  .permission-option:nth-child(odd) {
+    border-right: 0;
+  }
+
+  .permission-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

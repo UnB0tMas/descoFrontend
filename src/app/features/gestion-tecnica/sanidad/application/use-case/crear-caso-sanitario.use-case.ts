@@ -1,0 +1,1 @@
+import {inject,Injectable} from '@angular/core';import {CasoSanitarioInput} from '../../domain/caso-sanitario.model';import {SANIDAD_GATEWAY,SanidadGateway} from '../port/out/sanidad.gateway';@Injectable() export class CrearCasoSanitarioUseCase{private readonly gateway:SanidadGateway=inject(SANIDAD_GATEWAY);execute(input:CasoSanitarioInput){return this.gateway.create(input);}}

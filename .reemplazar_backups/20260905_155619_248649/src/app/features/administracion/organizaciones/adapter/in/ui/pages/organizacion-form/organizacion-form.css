@@ -1,0 +1,135 @@
+:host {
+  display: contents;
+}
+
+.organization-view {
+  display: grid;
+  gap: 1rem;
+}
+
+.organization-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.organization-summary > div {
+  min-width: 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.9rem;
+  background: #f8fafc;
+  padding: 0.8rem;
+}
+
+.organization-summary span,
+.organization-mini-list small {
+  display: block;
+  color: #94a3b8;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.organization-summary strong {
+  display: block;
+  overflow: hidden;
+  margin-top: 0.2rem;
+  color: #334155;
+  font-size: 0.8rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.organization-view-section {
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+.organization-view-section > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #f1f5f9;
+  padding: 0.75rem 0.9rem;
+}
+
+.organization-view-section h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.organization-view-section header span {
+  border-radius: 9999px;
+  background: #eff6ff;
+  padding: 0.25rem 0.5rem;
+  color: #1d4ed8;
+  font-size: 0.66rem;
+  font-weight: 800;
+}
+
+.organization-mini-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  padding: 0.75rem;
+}
+
+.organization-mini-list article {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.6rem;
+  border: 1px solid #f1f5f9;
+  border-radius: 0.85rem;
+  padding: 0.65rem;
+}
+
+.organization-mini-icon {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 0.65rem;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 0.75rem;
+}
+
+.organization-mini-list article > div {
+  min-width: 0;
+}
+
+.organization-mini-list strong {
+  display: block;
+  overflow: hidden;
+  color: #334155;
+  font-size: 0.74rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.organization-mini-list small {
+  overflow: hidden;
+  margin-top: 0.1rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.organization-empty {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 1rem;
+  color: #64748b;
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .organization-summary,
+  .organization-mini-list {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,60 @@
+:host {
+  display: contents;
+}
+
+.policy-modal-box {
+  width: min(92vw, 32rem);
+}
+
+.policy-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.policy-summary {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.8rem;
+  border: 1px solid var(--desco-border);
+  border-radius: 0.9rem;
+  background: var(--desco-surface-soft);
+  padding: 0.85rem;
+}
+
+.policy-summary-icon {
+  display: grid;
+  width: 2.2rem;
+  height: 2.2rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 0.7rem;
+  background: var(--desco-primary-soft);
+  color: var(--desco-primary-text);
+}
+
+.policy-summary strong {
+  display: block;
+  color: var(--desco-text);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.policy-summary p {
+  margin: 0.25rem 0 0;
+  color: var(--desco-text-muted);
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+.policy-days-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.policy-days-control span {
+  color: var(--desco-text-muted);
+  font-size: 0.75rem;
+  font-weight: 750;
+}

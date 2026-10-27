@@ -1,0 +1,430 @@
+:is(html[data-theme='dark'], html.dark) body,
+:is(html[data-theme='dark'], html.dark) .desco-app-shell {
+  background: #000000 !important;
+  color: var(--desco-text);
+}
+
+:is(html[data-theme='dark'], html.dark) .bg-white,
+:is(html[data-theme='dark'], html.dark) .bg-slate-50,
+:is(html[data-theme='dark'], html.dark) .bg-slate-100 {
+  background-color: var(--desco-surface) !important;
+}
+
+:is(html[data-theme='dark'], html.dark) .bg-blue-50 { background-color: var(--desco-info-soft) !important; }
+:is(html[data-theme='dark'], html.dark) .bg-emerald-50 { background-color: var(--desco-success-soft) !important; }
+:is(html[data-theme='dark'], html.dark) .bg-amber-50 { background-color: var(--desco-warning-soft) !important; }
+:is(html[data-theme='dark'], html.dark) .bg-red-50,
+:is(html[data-theme='dark'], html.dark) .bg-rose-50 { background-color: var(--desco-danger-soft) !important; }
+
+:is(html[data-theme='dark'], html.dark) .text-slate-950,
+:is(html[data-theme='dark'], html.dark) .text-slate-900,
+:is(html[data-theme='dark'], html.dark) .text-slate-800,
+:is(html[data-theme='dark'], html.dark) .text-slate-700 {
+  color: var(--desco-text) !important;
+}
+
+:is(html[data-theme='dark'], html.dark) .text-slate-600,
+:is(html[data-theme='dark'], html.dark) .text-slate-500,
+:is(html[data-theme='dark'], html.dark) .text-slate-400 {
+  color: var(--desco-text-muted) !important;
+}
+
+:is(html[data-theme='dark'], html.dark) .border-slate-50,
+:is(html[data-theme='dark'], html.dark) .border-slate-100,
+:is(html[data-theme='dark'], html.dark) .border-slate-200,
+:is(html[data-theme='dark'], html.dark) .border-slate-300 {
+  border-color: var(--desco-border) !important;
+}
+
+:is(html[data-theme='dark'], html.dark) .hover\\:bg-slate-50:hover,
+:is(html[data-theme='dark'], html.dark) .hover\\:bg-blue-50:hover {
+  background-color: var(--desco-surface-hover) !important;
+}
+
+:is(html[data-theme='dark'], html.dark) input,
+:is(html[data-theme='dark'], html.dark) select,
+:is(html[data-theme='dark'], html.dark) textarea,
+:is(html[data-theme='dark'], html.dark) .input,
+:is(html[data-theme='dark'], html.dark) .select,
+:is(html[data-theme='dark'], html.dark) .textarea,
+:is(html[data-theme='dark'], html.dark) .admin-input,
+:is(html[data-theme='dark'], html.dark) .admin-select,
+:is(html[data-theme='dark'], html.dark) .admin-textarea {
+  background-color: var(--desco-control-bg) !important;
+  border-color: var(--desco-border) !important;
+  color: var(--desco-text) !important;
+}
+
+:is(html[data-theme='dark'], html.dark) input:disabled,
+:is(html[data-theme='dark'], html.dark) select:disabled,
+:is(html[data-theme='dark'], html.dark) textarea:disabled {
+  background-color: var(--desco-control-disabled) !important;
+  color: var(--desco-text-muted) !important;
+}
+
+:is(html[data-theme='dark'], html.dark) input::placeholder,
+:is(html[data-theme='dark'], html.dark) textarea::placeholder {
+  color: var(--desco-placeholder) !important;
+  opacity: 1;
+}
+
+:is(html[data-theme='dark'], html.dark) option {
+  background: #0a0a0a;
+  color: var(--desco-text);
+}
+
+:is(html[data-theme='dark'], html.dark) .modal-box,
+:is(html[data-theme='dark'], html.dark) .dropdown-content,
+:is(html[data-theme='dark'], html.dark) .desco-card,
+:is(html[data-theme='dark'], html.dark) .card,
+:is(html[data-theme='dark'], html.dark) .menu,
+:is(html[data-theme='dark'], html.dark) .navbar,
+:is(html[data-theme='dark'], html.dark) details,
+:is(html[data-theme='dark'], html.dark) [role='dialog'] {
+  background-color: var(--desco-surface) !important;
+  border-color: var(--desco-border) !important;
+  color: var(--desco-text) !important;
+}
+
+:is(html[data-theme='dark'], html.dark) .admin-table th,
+:is(html[data-theme='dark'], html.dark) .admin-table td,
+:is(html[data-theme='dark'], html.dark) .table th,
+:is(html[data-theme='dark'], html.dark) .table td {
+  border-color: var(--desco-border) !important;
+  color: var(--desco-text) !important;
+}
+
+:is(html[data-theme='dark'], html.dark) .admin-table tbody tr:hover,
+:is(html[data-theme='dark'], html.dark) .table tbody tr:hover {
+  background: var(--desco-table-hover) !important;
+}
+
+:is(html[data-theme='dark'], html.dark) a:not(.btn):not(.auth-primary-button) {
+  text-decoration-color: currentColor;
+}
+
+:is(html[data-theme='dark'], html.dark) dialog::backdrop,
+:is(html[data-theme='dark'], html.dark) [data-modal-backdrop],
+:is(html[data-theme='dark'], html.dark) [data-drawer-backdrop] {
+  background: var(--desco-overlay) !important;
+}
+
+/* Pantallas de autenticación: conserva el diseño original y corrige contraste. */
+:is(html[data-theme='dark'], html.dark) app-auth-layout .auth-form-header h1,
+:is(html[data-theme='dark'], html.dark) app-auth-layout .auth-step-heading h1,
+:is(html[data-theme='dark'], html.dark) app-auth-layout .auth-step-card h2,
+:is(html[data-theme='dark'], html.dark) app-auth-layout .auth-label,
+:is(html[data-theme='dark'], html.dark) app-auth-layout strong {
+  color: var(--desco-text) !important;
+}
+
+:is(html[data-theme='dark'], html.dark) app-auth-layout .auth-form-header p,
+:is(html[data-theme='dark'], html.dark) app-auth-layout .auth-step-heading p,
+:is(html[data-theme='dark'], html.dark) app-auth-layout .auth-step-card p {
+  color: var(--desco-text-muted) !important;
+}
+
+:is(html[data-theme='dark'], html.dark) app-auth-layout .auth-step-card {
+  background: var(--desco-surface) !important;
+  border-color: var(--desco-border) !important;
+  box-shadow: none !important;
+}
+
+:is(html[data-theme='dark'], html.dark) app-auth-layout .auth-input,
+:is(html[data-theme='dark'], html.dark) app-auth-layout .auth-control,
+:is(html[data-theme='dark'], html.dark) app-auth-layout .auth-otp-input {
+  background: var(--desco-control-bg) !important;
+  border-color: var(--desco-border-strong) !important;
+  color: var(--desco-text) !important;
+}
+
+:is(html[data-theme='dark'], html.dark) app-auth-layout .auth-password-toggle,
+:is(html[data-theme='dark'], html.dark) app-auth-layout .auth-back-link,
+:is(html[data-theme='dark'], html.dark) app-auth-layout .auth-link-button,
+:is(html[data-theme='dark'], html.dark) app-auth-layout .auth-forgot-link {
+  color: #93c5fd !important;
+}
+
+:is(html[data-theme='dark'], html.dark) app-auth-layout .auth-password-toggle:hover:not(:disabled) {
+  background: var(--desco-surface-hover) !important;
+  color: var(--desco-text) !important;
+}
+
+:is(html[data-theme='dark'], html.dark) app-auth-layout .auth-inline-error {
+  border-color: #7f1d1d !important;
+  background: var(--desco-danger-soft) !important;
+  color: #fca5a5 !important;
+}
+
+:is(html[data-theme='dark'], html.dark) app-auth-layout .auth-security-note {
+  border-color: #713f12 !important;
+  background: var(--desco-warning-soft) !important;
+}
+
+:is(html[data-theme='dark'], html.dark) app-auth-layout .auth-security-note p {
+  color: #fde68a !important;
+}
+
+:is(html[data-theme='dark'], html.dark) .apexcharts-tooltip,
+:is(html[data-theme='dark'], html.dark) .apexcharts-tooltip-title {
+  background: #111111 !important;
+  border-color: #2b2b2b !important;
+  color: #f8fafc !important;
+}
+
+:is(html[data-theme='dark'], html.dark) .apexcharts-text { fill: #d4d4d4 !important; }
+:is(html[data-theme='dark'], html.dark) .apexcharts-gridline { stroke: #292929 !important; }
+
+:is(html[data-theme='dark'], html.dark) .desco-scrollbar,
+:is(html[data-theme='dark'], html.dark) * {
+  scrollbar-color: var(--desco-scrollbar) transparent;
+}
+
+/* ============================================================
+   ADMINISTRACIÓN — DARK MODE ESTRICTO
+   Las superficies administrativas nunca deben volver a blanco en modo oscuro.
+   ============================================================ */
+:is(html[data-theme='dark'], html.dark) .admin-surface,
+:is(html[data-theme='dark'], html.dark) .admin-toolbar,
+:is(html[data-theme='dark'], html.dark) .admin-tabs,
+:is(html[data-theme='dark'], html.dark) .admin-modal-box,
+:is(html[data-theme='dark'], html.dark) .admin-modal-header,
+:is(html[data-theme='dark'], html.dark) .admin-detail-card,
+:is(html[data-theme='dark'], html.dark) .admin-check-option,
+:is(html[data-theme='dark'], html.dark) .permission-chip,
+:is(html[data-theme='dark'], html.dark) .organization-view-section,
+:is(html[data-theme='dark'], html.dark) .device-admin-grid article {
+  background: var(--desco-surface) !important;
+  border-color: var(--desco-border) !important;
+  color: var(--desco-text) !important;
+}
+
+:is(html[data-theme='dark'], html.dark) .admin-option-grid,
+:is(html[data-theme='dark'], html.dark) .admin-switch-row,
+:is(html[data-theme='dark'], html.dark) .organization-summary > div,
+:is(html[data-theme='dark'], html.dark) .permission-group > header,
+:is(html[data-theme='dark'], html.dark) .technical-modal-context {
+  background: var(--desco-surface-soft) !important;
+  border-color: var(--desco-border) !important;
+  color: var(--desco-text) !important;
+}
+
+:is(html[data-theme='dark'], html.dark) .admin-section-header,
+:is(html[data-theme='dark'], html.dark) .admin-modal-actions,
+:is(html[data-theme='dark'], html.dark) .organization-view-section > header,
+:is(html[data-theme='dark'], html.dark) .user-role-list article,
+:is(html[data-theme='dark'], html.dark) .permission-option,
+:is(html[data-theme='dark'], html.dark) .permission-reason,
+:is(html[data-theme='dark'], html.dark) .admin-info-list > div,
+:is(html[data-theme='dark'], html.dark) .admin-table th,
+:is(html[data-theme='dark'], html.dark) .admin-table td {
+  border-color: var(--desco-border-subtle) !important;
+}
+
+:is(html[data-theme='dark'], html.dark) .admin-table {
+  background: var(--desco-surface) !important;
+  color: var(--desco-text) !important;
+}
+
+:is(html[data-theme='dark'], html.dark) .admin-table th {
+  background: var(--desco-table-head) !important;
+  color: var(--desco-text-muted) !important;
+}
+
+:is(html[data-theme='dark'], html.dark) .admin-table tbody tr {
+  background: transparent !important;
+}
+
+:is(html[data-theme='dark'], html.dark) .admin-table tbody tr:hover {
+  background: var(--desco-table-hover) !important;
+}
+
+:is(html[data-theme='dark'], html.dark) .admin-section-header h2,
+:is(html[data-theme='dark'], html.dark) .admin-field > label,
+:is(html[data-theme='dark'], html.dark) .admin-field > .admin-field-label,
+:is(html[data-theme='dark'], html.dark) .admin-entity strong,
+:is(html[data-theme='dark'], html.dark) .admin-stack-copy strong,
+:is(html[data-theme='dark'], html.dark) .admin-detail-card strong,
+:is(html[data-theme='dark'], html.dark) .admin-info-list strong,
+:is(html[data-theme='dark'], html.dark) .admin-switch-row strong,
+:is(html[data-theme='dark'], html.dark) .technical-table-copy > strong,
+:is(html[data-theme='dark'], html.dark) .technical-modal-context strong {
+  color: var(--desco-text) !important;
+}
+
+:is(html[data-theme='dark'], html.dark) .admin-entity > div > span,
+:is(html[data-theme='dark'], html.dark) .admin-stack-copy span,
+:is(html[data-theme='dark'], html.dark) .admin-detail-card span,
+:is(html[data-theme='dark'], html.dark) .admin-info-list span,
+:is(html[data-theme='dark'], html.dark) .admin-switch-row span,
+:is(html[data-theme='dark'], html.dark) .admin-field-hint,
+:is(html[data-theme='dark'], html.dark) .admin-empty-copy,
+:is(html[data-theme='dark'], html.dark) .technical-table-copy > span,
+:is(html[data-theme='dark'], html.dark) .technical-modal-context span {
+  color: var(--desco-text-muted) !important;
+}
+
+:is(html[data-theme='dark'], html.dark) .admin-secondary-button,
+:is(html[data-theme='dark'], html.dark) .admin-icon-button {
+  border-color: var(--desco-border-strong) !important;
+  background: var(--desco-surface-elevated) !important;
+  color: var(--desco-text-soft) !important;
+  box-shadow: none !important;
+}
+
+:is(html[data-theme='dark'], html.dark) .admin-secondary-button:hover:not(:disabled),
+:is(html[data-theme='dark'], html.dark) .admin-icon-button:hover:not(:disabled) {
+  border-color: var(--desco-primary-border) !important;
+  background: var(--desco-primary-soft) !important;
+  color: var(--desco-primary-text) !important;
+}
+
+:is(html[data-theme='dark'], html.dark) .admin-primary-button {
+  border-color: var(--desco-primary) !important;
+  background: var(--desco-primary) !important;
+  color: var(--desco-on-primary) !important;
+  box-shadow: none !important;
+}
+
+:is(html[data-theme='dark'], html.dark) .admin-primary-button:hover:not(:disabled) {
+  border-color: var(--desco-primary-hover) !important;
+  background: var(--desco-primary-hover) !important;
+}
+
+:is(html[data-theme='dark'], html.dark) .admin-danger-button,
+:is(html[data-theme='dark'], html.dark) .admin-icon-button--danger {
+  border-color: var(--desco-danger-border) !important;
+  background: var(--desco-danger-soft) !important;
+  color: var(--desco-danger-text) !important;
+}
+
+:is(html[data-theme='dark'], html.dark) .admin-success-button,
+:is(html[data-theme='dark'], html.dark) .admin-icon-button--success {
+  border-color: var(--desco-success-border) !important;
+  background: var(--desco-success-soft) !important;
+  color: var(--desco-success-text) !important;
+}
+
+:is(html[data-theme='dark'], html.dark) .admin-tabs button {
+  color: var(--desco-text-muted) !important;
+}
+
+:is(html[data-theme='dark'], html.dark) .admin-tabs button:hover {
+  background: var(--desco-nav-hover-bg) !important;
+  color: var(--desco-nav-hover-text) !important;
+}
+
+:is(html[data-theme='dark'], html.dark) .admin-tabs button.active {
+  border-bottom-color: var(--desco-primary) !important;
+  background: var(--desco-nav-active-bg) !important;
+  color: var(--desco-nav-active-text) !important;
+}
+
+:is(html[data-theme='dark'], html.dark) .admin-input,
+:is(html[data-theme='dark'], html.dark) .admin-select,
+:is(html[data-theme='dark'], html.dark) .admin-textarea,
+:is(html[data-theme='dark'], html.dark) .admin-search input {
+  border-color: var(--desco-border-strong) !important;
+  background: var(--desco-control-bg) !important;
+  color: var(--desco-text) !important;
+  box-shadow: none !important;
+}
+
+:is(html[data-theme='dark'], html.dark) .admin-input:hover:not(:disabled),
+:is(html[data-theme='dark'], html.dark) .admin-select:hover:not(:disabled),
+:is(html[data-theme='dark'], html.dark) .admin-textarea:hover:not(:disabled),
+:is(html[data-theme='dark'], html.dark) .admin-input:focus,
+:is(html[data-theme='dark'], html.dark) .admin-select:focus,
+:is(html[data-theme='dark'], html.dark) .admin-textarea:focus,
+:is(html[data-theme='dark'], html.dark) .admin-search input:focus {
+  background: var(--desco-control-hover) !important;
+}
+
+:is(html[data-theme='dark'], html.dark) .admin-input:disabled,
+:is(html[data-theme='dark'], html.dark) .admin-select:disabled,
+:is(html[data-theme='dark'], html.dark) .admin-textarea:disabled {
+  background: var(--desco-control-disabled) !important;
+  color: var(--desco-text-muted) !important;
+}
+
+:is(html[data-theme='dark'], html.dark) .admin-modal-icon,
+:is(html[data-theme='dark'], html.dark) .admin-entity-icon,
+:is(html[data-theme='dark'], html.dark) .organization-mini-icon,
+:is(html[data-theme='dark'], html.dark) .device-admin-icon,
+:is(html[data-theme='dark'], html.dark) .admin-code,
+:is(html[data-theme='dark'], html.dark) .admin-count-badge,
+:is(html[data-theme='dark'], html.dark) .admin-status--info {
+  border-color: var(--desco-info-border) !important;
+  background: var(--desco-info-soft) !important;
+  color: var(--desco-info-text) !important;
+}
+
+:is(html[data-theme='dark'], html.dark) .admin-muted-badge,
+:is(html[data-theme='dark'], html.dark) .admin-usage-badge,
+:is(html[data-theme='dark'], html.dark) .admin-status,
+:is(html[data-theme='dark'], html.dark) .admin-status--neutral,
+:is(html[data-theme='dark'], html.dark) .admin-managed-badge {
+  border-color: var(--desco-border) !important;
+  background: var(--desco-surface-elevated) !important;
+  color: var(--desco-text-muted) !important;
+}
+
+:is(html[data-theme='dark'], html.dark) .admin-status--active {
+  background: var(--desco-success-soft) !important;
+  color: var(--desco-success-text) !important;
+}
+
+:is(html[data-theme='dark'], html.dark) .admin-status--inactive,
+:is(html[data-theme='dark'], html.dark) .admin-inline-error {
+  border-color: var(--desco-danger-border) !important;
+  background: var(--desco-danger-soft) !important;
+  color: var(--desco-danger-text) !important;
+}
+
+:is(html[data-theme='dark'], html.dark) .admin-status--warning,
+:is(html[data-theme='dark'], html.dark) .admin-usage-badge--used,
+:is(html[data-theme='dark'], html.dark) .admin-notice--warning,
+:is(html[data-theme='dark'], html.dark) .system-role-notice,
+:is(html[data-theme='dark'], html.dark) .identity-feedback--warning {
+  border-color: var(--desco-warning-border) !important;
+  background: var(--desco-warning-soft) !important;
+  color: var(--desco-warning-text) !important;
+}
+
+:is(html[data-theme='dark'], html.dark) .admin-notice,
+:is(html[data-theme='dark'], html.dark) .identity-feedback,
+:is(html[data-theme='dark'], html.dark) .identity-search-button {
+  border-color: var(--desco-info-border) !important;
+  background: var(--desco-info-soft) !important;
+  color: var(--desco-info-text) !important;
+}
+
+:is(html[data-theme='dark'], html.dark) .identity-feedback--success {
+  border-color: var(--desco-success-border) !important;
+  background: var(--desco-success-soft) !important;
+  color: var(--desco-success-text) !important;
+}
+
+:is(html[data-theme='dark'], html.dark) .identity-feedback--error {
+  border-color: var(--desco-danger-border) !important;
+  background: var(--desco-danger-soft) !important;
+  color: var(--desco-danger-text) !important;
+}
+
+:is(html[data-theme='dark'], html.dark) .permission-option:has(.permission-checkbox-native:checked),
+:is(html[data-theme='dark'], html.dark) .permission-option:focus-within {
+  background: var(--desco-primary-soft) !important;
+}
+
+:is(html[data-theme='dark'], html.dark) .permission-option .permission-checkbox-box:not(.permission-checkbox-box--selected) {
+  border-color: var(--desco-border-strong) !important;
+  background: var(--desco-control-bg) !important;
+}
+
+:is(html[data-theme='dark'], html.dark) .admin-switch-control:not(:checked) {
+  background: var(--desco-border-strong) !important;
+}
+
+:is(html[data-theme='dark'], html.dark) .admin-switch-control::after {
+  background: #d4d4d4 !important;
+}

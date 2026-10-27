@@ -1,0 +1,1 @@
+import {inject,Injectable} from '@angular/core';import {SalidaInput} from '../../domain/salida-campo.model';import {SALIDAS_GATEWAY,SalidasGateway} from '../port/out/salidas.gateway';@Injectable() export class ProgramarSalidaUseCase{private readonly gateway:SalidasGateway=inject(SALIDAS_GATEWAY);execute(input:SalidaInput){return this.gateway.program(input);}}

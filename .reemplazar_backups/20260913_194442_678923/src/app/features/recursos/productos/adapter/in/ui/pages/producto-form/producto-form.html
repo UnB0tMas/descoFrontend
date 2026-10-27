@@ -1,0 +1,109 @@
+<dialog #dialog class="modal desco-modal" (cancel)="$event.preventDefault(); close()">
+  <div class="modal-box admin-modal-box">
+    <header class="admin-modal-header">
+      <div class="admin-modal-title-group">
+        <span class="admin-modal-icon">
+          <fa-icon [icon]="mode() === 'create' ? addIcon : priceIcon" />
+        </span>
+        <div>
+          <p>Productos</p>
+          <h2>{{ mode() === 'create' ? 'Registrar producto' : 'Versionar precio' }}</h2>
+        </div>
+      </div>
+      <button type="button" class="admin-icon-button" [disabled]="saving()" (click)="close()">
+        <fa-icon [icon]="closeIcon" />
+      </button>
+    </header>
+
+    @if (errorMessage()) {
+      <div class="admin-inline-error">{{ errorMessage() }}</div>
+    }
+
+    @if (mode() === 'create') {
+      <form class="admin-form-grid" [formGroup]="createForm" (ngSubmit)="save()">
+        <div class="admin-field admin-field-span-2">
+          <label>UOT</label>
+          <input class="admin-input" type="text" [value]="uotLabel()" readonly />
+          <app-form-error [control]="createForm.controls.uotContextoId" fieldLabel="La UOT" />
+        </div>
+
+        <div class="admin-field">
+          <label>Código</label>
+          <input class="admin-input" formControlName="codigo" maxlength="60" />
+          <app-form-error
+            [control]="createForm.controls.codigo"
+            fieldLabel="El código"
+            [messages]="{ blank: 'El código no puede contener solo espacios.' }"
+          />
+        </div>
+        <div class="admin-field">
+          <label>Unidad de medida</label>
+          <input class="admin-input" formControlName="unidadMedida" maxlength="40" placeholder="UND, KG, L..." />
+          <app-form-error
+            [control]="createForm.controls.unidadMedida"
+            fieldLabel="La unidad de medida"
+          />
+        </div>
+        <div class="admin-field admin-field-span-2">
+          <label>Nombre</label>
+          <input class="admin-input" formControlName="nombre" maxlength="180" />
+          <app-form-error
+            [control]="createForm.controls.nombre"
+            fieldLabel="El nombre"
+            [messages]="{ blank: 'El nombre no puede contener solo espacios.' }"
+          />
+        </div>
+        <div class="admin-field admin-field-span-2">
+          <label>Categoría</label>
+          <input class="admin-input" formControlName="categoria" maxlength="100" />
+        </div>
+        <div class="admin-field admin-field-span-2">
+          <label>Descripción</label>
+          <textarea class="admin-textarea" rows="3" maxlength="500" formControlName="descripcion"></textarea>
+        </div>
+        <ng-container *ngTemplateOutlet="actions"></ng-container>
+      </form>
+    } @else {
+      <form class="admin-form-grid" [formGroup]="priceForm" (ngSubmit)="save()">
+        <div class="admin-field admin-field-span-2 product-current">
+          <span>Producto</span>
+          <strong>{{ current()?.nombre }}</strong>
+          <small>{{ current()?.codigo }}</small>
+        </div>
+        <div class="admin-field">
+          <label>UOT</label>
+          <input class="admin-input" type="text" [value]="uotLabel()" readonly />
+        </div>
+
+        <div class="admin-field">
+          <label>Precio</label>
+          <input class="admin-input" type="number" min="0.01" step="0.01" formControlName="precio" />
+          <app-form-error [control]="priceForm.controls.precio" fieldLabel="El precio" />
+        </div>
+        <div class="admin-field">
+          <label>Moneda</label>
+          <select class="admin-select" formControlName="moneda">
+            <option value="PEN">PEN</option>
+            <option value="USD">USD</option>
+          </select>
+        </div>
+        <ng-container *ngTemplateOutlet="actions"></ng-container>
+      </form>
+    }
+
+    <ng-template #actions>
+      <footer class="admin-modal-actions admin-field-span-2">
+        <button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="close()">Cancelar</button>
+        <button type="submit" class="admin-primary-button" [disabled]="saving()">
+          @if (saving()) {
+            <span class="loading loading-spinner loading-sm"></span>
+            Guardando...
+          } @else {
+            <fa-icon [icon]="saveIcon" />
+            Guardar
+          }
+        </button>
+      </footer>
+    </ng-template>
+  </div>
+</dialog>

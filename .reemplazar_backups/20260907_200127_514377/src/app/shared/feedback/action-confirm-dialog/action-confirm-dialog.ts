@@ -1,0 +1,141 @@
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  ViewChild,
+  signal,
+} from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { FaIconComponent } from '@fortawesome/angular-fontawesome';
+import {
+  faCircleExclamation,
+  faShieldHalved,
+  faTriangleExclamation,
+  faXmark,
+} from '@fortawesome/free-solid-svg-icons';
+
+import {
+  ActionConfirmConfig,
+  ActionConfirmResult,
+  ActionConfirmTone,
+} from './action-confirm-dialog.model';
+
+@Component({
+  selector: 'app-action-confirm-dialog',
+  standalone: true,
+  imports: [FormsModule, FaIconComponent],
+  templateUrl: './action-confirm-dialog.html',
+  styleUrl: './action-confirm-dialog.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class ActionConfirmDialogComponent {
+  @ViewChild('dialog', { static: true })
+  private dialogRef!: ElementRef<HTMLDialogElement>;
+
+  readonly config = signal<ActionConfirmConfig | null>(null);
+  readonly reason = signal('');
+  readonly closeIcon = faXmark;
+
+  private resolver: ((result: ActionConfirmResult) => void) | null = null;
+
+  show(config: ActionConfirmConfig): Promise<ActionConfirmResult> {
+    if (this.resolver) {
+      this.resolver({ confirmed: false, reason: null });
+      this.resolver = null;
+    }
+
+    this.config.set({
+      confirmLabel: 'Confirmar',
+      cancelLabel: 'Cancelar',
+      tone: 'primary',
+      requiresReason: false,
+      reasonLabel: 'Motivo',
+      reasonPlaceholder: 'Describe el motivo de esta acción.',
+      minimumReasonLength: 5,
+      ...config,
+    });
+
+    this.reason.set('');
+    this.dialogRef.nativeElement.showModal();
+
+    return new Promise<ActionConfirmResult>((resolve) => {
+      this.resolver = resolve;
+    });
+  }
+
+  confirm(): void {
+    const current = this.config();
+
+    if (!current || !this.canConfirm()) {
+      return;
+    }
+
+    const reason = this.reason().trim();
+
+    this.finish({
+      confirmed: true,
+      reason: reason || null,
+    });
+  }
+
+  cancel(): void {
+    this.finish({
+      confirmed: false,
+      reason: null,
+    });
+  }
+
+  canConfirm(): boolean {
+    const current = this.config();
+
+    if (!current?.requiresReason) {
+      return true;
+    }
+
+    return this.reason().trim().length >= (current.minimumReasonLength ?? 5);
+  }
+
+  iconFor(tone: ActionConfirmTone | undefined) {
+    switch (tone) {
+      case 'danger':
+        return faCircleExclamation;
+      case 'warning':
+        return faTriangleExclamation;
+      default:
+        return faShieldHalved;
+    }
+  }
+
+  iconClass(tone: ActionConfirmTone | undefined): string {
+    switch (tone) {
+      case 'danger':
+        return 'bg-red-50 text-red-600';
+      case 'warning':
+        return 'bg-amber-50 text-amber-600';
+      default:
+        return 'bg-blue-50 text-blue-600';
+    }
+  }
+
+  confirmButtonClass(tone: ActionConfirmTone | undefined): string {
+    switch (tone) {
+      case 'danger':
+        return 'bg-red-600 text-white hover:bg-red-700';
+      case 'warning':
+        return 'bg-amber-500 text-slate-950 hover:bg-amber-600';
+      default:
+        return 'bg-blue-600 text-white hover:bg-blue-700';
+    }
+  }
+
+  private finish(result: ActionConfirmResult): void {
+    if (this.dialogRef.nativeElement.open) {
+      this.dialogRef.nativeElement.close();
+    }
+
+    this.resolver?.(result);
+    this.resolver = null;
+    this.config.set(null);
+    this.reason.set('');
+  }
+}

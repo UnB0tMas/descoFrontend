@@ -1,0 +1,187 @@
+<dialog #dialog class="modal desco-modal" (cancel)="$event.preventDefault(); close()">
+  <div class="modal-box admin-modal-box">
+    <header class="admin-modal-header">
+      <div class="admin-modal-title-group">
+        <span class="admin-modal-icon">
+          <fa-icon [icon]="mode() === 'create' ? addIcon : priceIcon" />
+        </span>
+        <div>
+          <p>Productos</p>
+          <h2>{{ mode() === 'create' ? 'Registrar producto' : 'Versionar precio' }}</h2>
+        </div>
+      </div>
+      <button type="button" class="admin-icon-button" [disabled]="saving()" (click)="close()">
+        <fa-icon [icon]="closeIcon" />
+      </button>
+    </header>
+
+    @if (errorMessage()) {
+      <div class="admin-inline-error">{{ errorMessage() }}</div>
+    }
+
+    @if (mode() === 'create') {
+      <form class="admin-form-grid" [formGroup]="createForm" (ngSubmit)="save()">
+        <div class="admin-field admin-field-span-2">
+          <label>UOT del producto</label>
+          <select class="admin-select" formControlName="uotContextoId" (change)="onCreateUotChange()">
+            <option [value]="0">Seleccionar UOT</option>
+            @for (unit of availableUnits(); track unit.uotId) {
+              <option [value]="unit.uotId">{{ unit.nombre }}</option>
+            }
+          </select>
+          <small>En vista general puede elegir la UOT del registro.</small>
+          <app-form-error [control]="createForm.controls.uotContextoId" fieldLabel="La UOT" />
+        </div>
+
+        <div class="admin-field">
+          <label>Código</label>
+          <input
+            class="admin-input"
+            formControlName="codigo"
+            maxlength="50"
+            placeholder="DESCO propone uno automáticamente"
+            autocomplete="off"
+          />
+          <small>
+            @if (codeLoading()) {
+              Generando código sugerido...
+            } @else {
+              Puede modificar el código sugerido.
+            }
+          </small>
+          <app-form-error [control]="createForm.controls.codigo" fieldLabel="El código" />
+        </div>
+
+        <div class="admin-field">
+          <label>Unidad de medida</label>
+          <select class="admin-select" formControlName="unidadMedida" [disabled]="referencesLoading()">
+            @for (unit of units(); track unit.code) {
+              <option [value]="unit.code">{{ unit.label }} · {{ unit.code }}</option>
+            }
+          </select>
+          <app-form-error [control]="createForm.controls.unidadMedida" fieldLabel="La unidad de medida" />
+        </div>
+
+        <div class="admin-field admin-field-span-2">
+          <label>Nombre</label>
+          <input class="admin-input" formControlName="nombre" maxlength="180" />
+          <app-form-error
+            [control]="createForm.controls.nombre"
+            fieldLabel="El nombre"
+            [messages]="{ blank: 'El nombre no puede contener solo espacios.' }"
+          />
+        </div>
+
+        <div class="admin-field admin-field-span-2">
+          <label>Categoría</label>
+          <select class="admin-select" formControlName="categoria" [disabled]="referencesLoading()">
+            <option value="">Sin categoría</option>
+            @for (category of categories(); track category.code) {
+              <option [value]="category.code">{{ category.label }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="admin-field admin-field-span-2">
+          <label>Descripción</label>
+          <textarea class="admin-textarea" rows="3" maxlength="700" formControlName="descripcion"></textarea>
+        </div>
+
+        <div class="admin-field">
+          <label>Precio inicial</label>
+          <input
+            class="admin-input"
+            type="number"
+            min="0"
+            step="0.01"
+            formControlName="precioInicial"
+          />
+          <app-form-error [control]="createForm.controls.precioInicial" fieldLabel="El precio inicial" />
+        </div>
+
+        <div class="admin-field">
+          <label>Precio de venta</label>
+          <input
+            class="admin-input"
+            type="number"
+            min="0.01"
+            step="0.01"
+            formControlName="precioVenta"
+          />
+          <app-form-error [control]="createForm.controls.precioVenta" fieldLabel="El precio de venta" />
+        </div>
+
+        <div class="admin-field admin-field-span-2">
+          <label>Moneda</label>
+          <select class="admin-select" formControlName="moneda" [disabled]="referencesLoading()">
+            @for (currency of currencies(); track currency.code) {
+              <option [value]="currency.code">{{ currency.code }} · {{ currency.label }}</option>
+            }
+          </select>
+        </div>
+
+        <ng-container *ngTemplateOutlet="actions"></ng-container>
+      </form>
+    } @else {
+      <form class="admin-form-grid" [formGroup]="priceForm" (ngSubmit)="save()">
+        <div class="admin-field admin-field-span-2 product-current">
+          <span>Producto</span>
+          <strong>{{ current()?.nombre }}</strong>
+          <small>{{ current()?.codigo }} · {{ uotLabel('price') }}</small>
+        </div>
+
+        <div class="admin-field">
+          <label>Precio inicial</label>
+          <input
+            class="admin-input"
+            type="number"
+            min="0"
+            step="0.01"
+            formControlName="precioInicial"
+          />
+          <app-form-error [control]="priceForm.controls.precioInicial" fieldLabel="El precio inicial" />
+        </div>
+
+        <div class="admin-field">
+          <label>Precio de venta</label>
+          <input
+            class="admin-input"
+            type="number"
+            min="0.01"
+            step="0.01"
+            formControlName="precioVenta"
+          />
+          <app-form-error [control]="priceForm.controls.precioVenta" fieldLabel="El precio de venta" />
+        </div>
+
+        <div class="admin-field admin-field-span-2">
+          <label>Moneda</label>
+          <select class="admin-select" formControlName="moneda" [disabled]="referencesLoading()">
+            @for (currency of currencies(); track currency.code) {
+              <option [value]="currency.code">{{ currency.code }} · {{ currency.label }}</option>
+            }
+          </select>
+        </div>
+
+        <ng-container *ngTemplateOutlet="actions"></ng-container>
+      </form>
+    }
+
+    <ng-template #actions>
+      <footer class="admin-modal-actions admin-field-span-2">
+        <button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="close()">
+          Cancelar
+        </button>
+        <button type="submit" class="admin-primary-button" [disabled]="saving() || referencesLoading()">
+          @if (saving()) {
+            <span class="loading loading-spinner loading-sm"></span>
+            Guardando...
+          } @else {
+            <fa-icon [icon]="saveIcon" />
+            Guardar
+          }
+        </button>
+      </footer>
+    </ng-template>
+  </div>
+</dialog>

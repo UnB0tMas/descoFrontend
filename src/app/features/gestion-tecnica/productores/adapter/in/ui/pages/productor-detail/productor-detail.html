@@ -1,0 +1,72 @@
+<div class="desco-page">
+  <app-page-header
+    [title]="detail() ? fullName(detail()!) : 'Detalle del productor'"
+    subtitle="Consulta afiliaciones, predios, campañas y evidencias del productor."
+    eyebrow="Gestión técnica"
+    [icon]="pageIcon"
+  >
+    <div pageActions class="flex flex-wrap gap-2">
+      <a class="admin-secondary-button" routerLink="/gestion-tecnica/productores"><fa-icon [icon]="backIcon" /> Volver</a>
+      <button type="button" class="admin-secondary-button" [disabled]="loading()" (click)="load()"><fa-icon [class.animate-spin]="loading()" [icon]="refreshIcon" /> Actualizar</button>
+      @if (detail(); as producer) {
+        <button *appPermission="'PRODUCTORES_EDITAR'" type="button" class="admin-primary-button" [disabled]="!producer.estado || referencesLoading()" (click)="edit()">
+          @if (referencesLoading()) { <span class="loading loading-spinner loading-sm"></span> } @else { <fa-icon [icon]="editIcon" /> }
+          Editar
+        </button>
+        <button *appPermission="'PRODUCTORES_RETIRAR'" type="button" class="admin-danger-button" [disabled]="!producer.estado || retiring()" (click)="retire()">
+          @if (retiring()) { <span class="loading loading-spinner loading-sm"></span> } @else { <fa-icon [icon]="retireIcon" /> }
+          Retirar
+        </button>
+      }
+    </div>
+  </app-page-header>
+
+  <div class="mt-5">
+    @if (loading()) {
+      <app-loading-state title="Cargando productor" message="Consultando el expediente completo." />
+    } @else if (errorMessage()) {
+      <app-error-state [message]="errorMessage() || 'Intenta nuevamente.'" (retry)="load()" />
+    } @else if (detail(); as producer) {
+      <section class="admin-detail-grid">
+        <article class="admin-detail-card"><span>Documento</span><strong>{{ producer.tipoDocumento }} {{ producer.numeroDocumento }}</strong></article>
+        <article class="admin-detail-card"><span>Código de socio</span><strong>{{ producer.codigoSocio || '—' }}</strong></article>
+        <article class="admin-detail-card"><span>Asociación</span><strong>{{ producer.asociacionNombre || '—' }}</strong></article>
+        <article class="admin-detail-card"><span>Situación</span><strong>{{ producer.situacionMembresia || '—' }}</strong></article>
+      </section>
+
+      <section class="admin-surface mt-4">
+        <div class="admin-section-header"><div><p>Afiliación</p><h2>Historial de membresía</h2></div><fa-icon class="text-blue-600" [icon]="affiliationIcon" /></div>
+        <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Asociación</th><th>Código</th><th>Desde</th><th>Hasta</th><th>Situación</th><th>Estado</th></tr></thead><tbody>
+          @for (membership of producer.afiliaciones; track membership.socioAsociacionId) {
+            <tr><td>{{ membership.asociacionNombre }}</td><td><span class="admin-code">{{ membership.codigoSocio }}</span></td><td>{{ membership.fechaDesde ? (membership.fechaDesde|date:'dd/MM/yyyy') : '—' }}</td><td>{{ membership.fechaHasta ? (membership.fechaHasta|date:'dd/MM/yyyy') : '—' }}</td><td>{{ membership.situacionMembresia }}</td><td><span class="admin-status" [class.admin-status--active]="membership.estado" [class.admin-status--inactive]="!membership.estado">{{ membership.estado ? 'Vigente' : 'Histórico' }}</span></td></tr>
+          } @empty { <tr><td colspan="6" class="admin-table-empty">Sin afiliaciones.</td></tr> }
+        </tbody></table></div>
+      </section>
+
+      <div class="producer-detail-columns mt-4">
+        <section class="admin-surface">
+          <div class="admin-section-header"><div><p>Territorio</p><h2>Predios</h2></div><fa-icon class="text-blue-600" [icon]="propertyIcon" /></div>
+          <div class="producer-mini-list">
+            @for (property of producer.predios; track property.predioId) {
+              <article><div><strong>{{ property.nombre }}</strong><span>{{ property.codigo }} · {{ property.tipoTitularidad || 'Titularidad' }}</span></div><em>{{ property.porcentaje ?? '—' }}%</em></article>
+            } @empty { <p class="admin-empty-copy p-4">Sin predios vinculados.</p> }
+          </div>
+        </section>
+
+        <section class="admin-surface">
+          <div class="admin-section-header"><div><p>Comercial</p><h2>Campañas</h2></div><fa-icon class="text-blue-600" [icon]="campaignIcon" /></div>
+          <div class="producer-mini-list">
+            @for (campaign of producer.campanias; track campaign.participacionCampaniaSocioId) {
+              <article><div><strong>{{ campaign.nombre }}</strong><span>{{ campaign.codigo }} · {{ campaign.estadoProceso }}</span></div><em>{{ campaign.estadoParticipacion }}</em></article>
+            } @empty { <p class="admin-empty-copy p-4">Sin campañas vinculadas.</p> }
+          </div>
+        </section>
+      </div>
+
+      <app-evidence-panel class="mt-4" [context]="{ tipo: 'SOCIO', id: producer.socioId }" title="Documentos y evidencias del productor" />
+    }
+  </div>
+</div>
+
+<app-productor-form />
+<app-action-confirm-dialog />

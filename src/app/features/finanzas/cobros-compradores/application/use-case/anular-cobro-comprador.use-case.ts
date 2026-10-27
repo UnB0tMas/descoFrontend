@@ -1,0 +1,1 @@
+import{inject,Injectable}from'@angular/core';import{COBROS_COMPRADORES_GATEWAY,CobrosCompradoresGateway}from'../port/out/cobros-compradores.gateway';@Injectable()export class AnularCobroCompradorUseCase{private readonly g:CobrosCompradoresGateway=inject(COBROS_COMPRADORES_GATEWAY);execute(id:number,motivo:string){return this.g.cancel(id,motivo);}}

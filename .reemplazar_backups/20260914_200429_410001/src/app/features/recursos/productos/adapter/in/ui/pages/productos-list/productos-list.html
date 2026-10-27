@@ -1,0 +1,132 @@
+<div class="desco-page">
+  <app-page-header
+    title="Productos"
+    [subtitle]="isGeneral() ? 'Vista general de catálogo y precios por UOT.' : 'Catálogo y precios vigentes para ' + contextUotName() + '.'"
+    [icon]="pageIcon"
+  >
+    <button class="admin-secondary-button" type="button" [disabled]="loading()" (click)="load()">
+      <fa-icon [icon]="refreshIcon" /> Actualizar
+    </button>
+    <button *appPermission="'PRODUCTOS_CREAR'" class="admin-primary-button" type="button" (click)="create()">
+      <fa-icon [icon]="addIcon" /> Registrar producto
+    </button>
+  </app-page-header>
+
+  <section class="admin-surface product-filters">
+    <label>
+      <span>UOT</span>
+      @if (isGeneral()) {
+        <select class="admin-select" [value]="unitFilter() ?? 0" (change)="onUnitChange($any($event.target).value)">
+          <option [value]="0">Todas mis UOT</option>
+          @for (unit of units(); track unit.uotId) {
+            <option [value]="unit.uotId">{{ unit.nombre }}</option>
+          }
+        </select>
+      } @else {
+        <input class="admin-input" [value]="contextUotName()" readonly />
+      }
+    </label>
+    <label class="product-search">
+      <span>Buscar</span>
+      <input class="admin-input" type="search" placeholder="Código, producto, categoría, UOT..." [value]="search()" (input)="search.set($any($event.target).value)" />
+    </label>
+  </section>
+
+  @if (loading()) {
+    <app-loading-state title="Cargando productos" message="Consultando productos y precios por UOT." />
+  } @else if (errorMessage()) {
+    <app-error-state [message]="errorMessage() || 'No fue posible consultar los productos.'" (retry)="load()" />
+  } @else if (filtered().length === 0) {
+    <app-empty-state title="Sin productos" message="No existen productos para los filtros seleccionados." />
+  } @else {
+    <section class="admin-surface product-table-shell">
+      <div class="admin-table-scroll">
+        <table class="admin-table">
+          <thead><tr><th>UOT</th><th>Código</th><th>Producto</th><th>Categoría</th><th>Unidad</th><th>Precio vigente</th><th>Estado</th><th>Acciones</th></tr></thead>
+          <tbody>
+            @for (item of filtered(); track rowKey(item)) {
+              <tr>
+                <td><div class="admin-stack-copy"><strong>{{ item.contextUotNombre }}</strong><span>{{ item.contextUotCodigo }}</span></div></td>
+                <td><strong>{{ item.codigo || '—' }}</strong></td>
+                <td><strong>{{ item.nombre || '—' }}</strong><small class="product-help">{{ item.descripcion || '' }}</small></td>
+                <td>{{ item.categoria || '—' }}</td>
+                <td>{{ item.unidadMedida || '—' }}</td>
+                <td>
+                  @if (item.precioVenta != null) { <strong>{{ item.moneda || 'PEN' }} {{ item.precioVenta | number:'1.2-2' }}</strong> }
+                  @else { <span class="product-help">Sin precio</span> }
+                </td>
+                <td>{{ item.estado === false ? 'Inactivo' : 'Activo' }}</td>
+                <td><div class="admin-table-actions">
+                  <button
+                    *appPermission="'PRODUCTOS_PRECIO'"
+                    type="button"
+                    class="admin-secondary-button admin-secondary-button--small"
+                    title="Registrar una nueva versión de precio para esta UOT"
+                    (click)="price(item)"
+                  >
+                    <fa-icon [icon]="priceIcon" /> Precio
+                  </button>
+                  <button
+                    *appPermission="'PRODUCTOS_LISTAR'"
+                    type="button"
+                    class="admin-secondary-button admin-secondary-button--small"
+                    title="Ver todas las versiones de precio de esta UOT"
+                    (click)="toggleHistory(item)"
+                  >
+                    <fa-icon [icon]="historyIcon" /> Historial
+                  </button>
+                  <button *appPermission="'PRODUCTOS_CREAR'" type="button" class="admin-icon-button" title="Imágenes de esta UOT" (click)="selectImages(item)"><fa-icon [icon]="imageIcon" /></button>
+                </div></td>
+              </tr>
+
+              @if (sameRow(historyProduct(), item)) {
+                <tr class="product-images-row">
+                  <td colspan="8">
+                    <div class="p-3">
+                      <strong>Historial de precios · {{ item.contextUotNombre }}</strong>
+                      @if (historyLoading()) {
+                        <app-loading-state title="Cargando historial" message="Consultando versiones de precio." />
+                      } @else if (historyError()) {
+                        <app-error-state [message]="historyError() || 'No se pudo consultar el historial.'" (retry)="loadHistory(item)" />
+                      } @else if (priceHistory().length === 0) {
+                        <app-empty-state title="Sin historial" message="Este producto todavía no tiene precios registrados en esta UOT." />
+                      } @else {
+                        <div class="admin-table-scroll mt-3">
+                          <table class="admin-table">
+                            <thead><tr><th>Versión</th><th>Precio</th><th>Desde</th><th>Hasta</th><th>Registrado por</th><th>Estado</th></tr></thead>
+                            <tbody>
+                              @for (price of priceHistory(); track price.productoPrecioId) {
+                                <tr>
+                                  <td>v{{ price.version }}</td>
+                                  <td><strong>{{ price.moneda }} {{ price.precioVenta | number:'1.2-2' }}</strong></td>
+                                  <td>{{ price.fechaDesde || '—' }}</td>
+                                  <td>{{ price.fechaHasta || 'Vigente' }}</td>
+                                  <td>{{ price.nombreUsuario || 'Sistema' }}</td>
+                                  <td><span class="admin-status" [class.admin-status--active]="price.vigente">{{ price.vigente ? 'Vigente' : 'Histórico' }}</span></td>
+                                </tr>
+                              }
+                            </tbody>
+                          </table>
+                        </div>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              }
+
+              @if (sameRow(selectedForImages(), item)) {
+                <tr class="product-images-row">
+                  <td colspan="8">
+                    <app-local-file-panel [uotId]="item.contextUotId" linkType="PRODUCTO" [linkId]="item.productoId || 0" [fileIds]="imageIds(item)" title="Imagen principal del producto" category="PRODUCTO_IMAGEN" accept="image/*" [forcePrincipal]="true" (changed)="load()" />
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+</div>
+
+<app-producto-form />

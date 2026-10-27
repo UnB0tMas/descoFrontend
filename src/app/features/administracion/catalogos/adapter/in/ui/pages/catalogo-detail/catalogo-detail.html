@@ -1,0 +1,140 @@
+<dialog #dialog class="modal desco-modal" (cancel)="$event.preventDefault(); close()">
+  <div class="modal-box admin-modal-box">
+    <header class="admin-modal-header">
+      <div class="admin-modal-title-group">
+        <span class="admin-modal-icon">
+          <fa-icon [icon]="current() ? editIcon : addIcon" />
+        </span>
+        <div>
+          <p>{{ catalog()?.nombre || 'Catálogo' }}</p>
+          <h2>{{ current() ? 'Editar valor' : 'Registrar valor' }}</h2>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        class="admin-icon-button"
+        aria-label="Cerrar"
+        [disabled]="saving()"
+        (click)="close()"
+      >
+        <fa-icon [icon]="closeIcon" />
+      </button>
+    </header>
+
+    @if (errorMessage()) {
+      <div class="admin-inline-error" role="alert">
+        {{ errorMessage() }}
+      </div>
+    }
+
+    <form class="admin-form-grid" [formGroup]="form" (ngSubmit)="save()">
+      @if (requiresExplicitCode()) {
+        <div class="admin-field admin-field-span-2">
+          <label for="catalogCode">{{ codeLabel() }}</label>
+          <input
+            id="catalogCode"
+            class="admin-input"
+            type="text"
+            formControlName="codigo"
+            [attr.maxlength]="catalog()?.codigoMaxLength ?? 40"
+            [placeholder]="codePlaceholder()"
+            [readOnly]="!!current()"
+            autocomplete="off"
+            autocapitalize="characters"
+            spellcheck="false"
+          />
+          <app-form-error
+            [control]="form.controls.codigo"
+            [fieldLabel]="codeLabel()"
+            [messages]="{
+              pattern:
+                catalog()?.codigo === 'MONEDA'
+                  ? 'Ingrese un código ISO de tres letras.'
+                  : 'Use letras, números, punto, guion o guion bajo.'
+            }"
+          />
+        </div>
+      }
+
+      <div class="admin-field admin-field-span-2">
+        <label for="catalogName">Nombre</label>
+        <input
+          id="catalogName"
+          class="admin-input"
+          type="text"
+          formControlName="nombre"
+          [attr.maxlength]="nameMaxLength()"
+          placeholder="Nombre visible"
+          autocomplete="off"
+        />
+        <app-form-error
+          [control]="form.controls.nombre"
+          fieldLabel="El nombre"
+          [messages]="{ blank: 'El nombre no puede contener solo espacios.' }"
+        />
+      </div>
+
+      @if (catalog()?.requiereCategoria) {
+        <div class="admin-field">
+          <label for="catalogCategory">Categoría</label>
+          <select
+            id="catalogCategory"
+            class="admin-select"
+            formControlName="categoria"
+          >
+            <option value="">Seleccionar</option>
+            <option value="PLAGA">Plaga</option>
+            <option value="ENFERMEDAD">Enfermedad</option>
+            <option value="OTRO">Otro</option>
+          </select>
+          <app-form-error
+            [control]="form.controls.categoria"
+            fieldLabel="La categoría"
+          />
+        </div>
+      } @else if (showDescription()) {
+        <div class="admin-field admin-field-span-2">
+          <label for="catalogDescription">Descripción</label>
+          <textarea
+            id="catalogDescription"
+            class="admin-textarea"
+            formControlName="descripcion"
+            maxlength="300"
+            rows="3"
+            placeholder="Descripción opcional"
+          ></textarea>
+          <app-form-error
+            [control]="form.controls.descripcion"
+            fieldLabel="La descripción"
+          />
+        </div>
+      }
+
+      <footer class="admin-modal-actions admin-field-span-2">
+        <button
+          type="button"
+          class="admin-secondary-button"
+          [disabled]="saving()"
+          (click)="close()"
+        >
+          Cancelar
+        </button>
+
+        <button
+          type="submit"
+          class="admin-primary-button"
+          [disabled]="saving()"
+        >
+          @if (saving()) {
+            <span class="loading loading-spinner loading-sm"></span>
+            Guardando...
+          } @else {
+            <fa-icon [icon]="saveIcon" />
+            Guardar
+          }
+        </button>
+      </footer>
+    </form>
+  </div>
+</dialog>

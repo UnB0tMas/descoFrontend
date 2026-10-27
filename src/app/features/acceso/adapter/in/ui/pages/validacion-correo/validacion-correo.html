@@ -1,0 +1,88 @@
+<app-auth-layout>
+  <section class="auth-step-card">
+    <div class="auth-step-icon">
+      <fa-icon [icon]="mailIcon" />
+    </div>
+
+    <header>
+      <h2>Verifica tu correo</h2>
+      <p>
+        Ingresa el código enviado a
+        <strong>{{ challenge()?.correoEnmascarado || 'tu correo de seguridad' }}</strong>.
+      </p>
+    </header>
+
+    @if (errorMessage()) {
+      <div class="auth-inline-error" role="alert">{{ errorMessage() }}</div>
+    }
+
+    <form class="mt-6 space-y-4" [formGroup]="form" (ngSubmit)="submit()">
+      <div>
+        <label class="auth-label" for="usuarioValidacion">Usuario</label>
+        <input
+          id="usuarioValidacion"
+          class="auth-control"
+          type="text"
+          formControlName="nombreUsuario"
+          autocomplete="username"
+        />
+        <app-form-error
+          [control]="form.controls.nombreUsuario"
+          fieldLabel="El usuario"
+        />
+      </div>
+
+      <div>
+        <label class="auth-label" for="codigoValidacion">Código</label>
+        <input
+          id="codigoValidacion"
+          class="auth-control auth-code"
+          type="text"
+          formControlName="codigo"
+          inputmode="numeric"
+          autocomplete="one-time-code"
+          maxlength="8"
+          placeholder="000000"
+        />
+        <app-form-error
+          [control]="form.controls.codigo"
+          fieldLabel="El código"
+          [messages]="{ pattern: 'Ingresa un código válido de 6 a 8 dígitos.' }"
+        />
+      </div>
+
+      <button
+        class="auth-primary-button"
+        type="submit"
+        [disabled]="loading()"
+      >
+        @if (loading()) {
+          <span class="loading loading-spinner loading-sm"></span>
+          Verificando...
+        } @else {
+          <fa-icon [icon]="sendIcon" />
+          Verificar correo
+        }
+      </button>
+    </form>
+
+    <div class="auth-step-actions">
+      <button
+        type="button"
+        class="auth-link-button"
+        [disabled]="resending()"
+        (click)="resend()"
+      >
+        @if (resending()) {
+          <span class="loading loading-spinner loading-xs"></span>
+        }
+        Reenviar código
+      </button>
+
+      <a routerLink="/login" class="auth-back-link">
+        <fa-icon [icon]="backIcon" />
+        Volver
+      </a>
+    </div>
+  </section>
+</app-auth-layout>

@@ -1,0 +1,19 @@
+:host { display: block; width: 100%; }
+.desco-loading-skeleton { width:100%; border:1px solid var(--desco-border); border-radius:1rem; background:var(--desco-surface); padding:1rem; overflow:hidden; }
+.desco-loading-skeleton--compact { padding:.75rem; }
+.desco-skeleton-card-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(13rem,1fr)); gap:.75rem; }
+.desco-skeleton-card { display:grid; gap:.65rem; min-height:7.5rem; border:1px solid var(--desco-border); border-radius:.85rem; padding:1rem; }
+.desco-skeleton-line,.desco-skeleton-dot { display:block; background:var(--desco-skeleton); animation:desco-skeleton-pulse 1.15s ease-in-out infinite alternate; }
+.desco-skeleton-line { width:100%; height:.72rem; border-radius:999px; }
+.desco-skeleton-line--short { width:42%; }
+.desco-skeleton-line--strong { width:68%; height:1.2rem; }
+.desco-skeleton-line--title { width:min(24rem,70%); height:1.45rem; }
+.desco-skeleton-dot { width:2rem; height:2rem; border-radius:.65rem; }
+.desco-skeleton-table,.desco-skeleton-detail { display:grid; gap:.65rem; }
+.desco-skeleton-table-head,.desco-skeleton-table-row { display:grid; grid-template-columns:2rem minmax(8rem,2fr) minmax(5rem,1fr) minmax(5rem,1fr); gap:.75rem; align-items:center; }
+.desco-skeleton-table-head { grid-template-columns:minmax(5rem,1fr) minmax(8rem,2fr) minmax(5rem,1fr); border-bottom:1px solid var(--desco-border); padding:.25rem 0 .8rem; }
+.desco-skeleton-table-row { min-height:3rem; border-bottom:1px solid var(--desco-border); padding:.35rem 0; }
+.desco-skeleton-detail-row { display:grid; grid-template-columns:minmax(6rem,.6fr) minmax(10rem,1.4fr); gap:.75rem; padding:.6rem 0; }
+@keyframes desco-skeleton-pulse { from { opacity:.45; } to { opacity:1; } }
+@media (max-width:640px) { .desco-skeleton-table-head { display:none; } .desco-skeleton-table-row { grid-template-columns:2rem 1fr; } .desco-skeleton-table-row .desco-skeleton-line:nth-child(n+3){display:none;} .desco-skeleton-detail-row{grid-template-columns:1fr;} }
+@media (prefers-reduced-motion:reduce) { .desco-skeleton-line,.desco-skeleton-dot { animation:none; } }

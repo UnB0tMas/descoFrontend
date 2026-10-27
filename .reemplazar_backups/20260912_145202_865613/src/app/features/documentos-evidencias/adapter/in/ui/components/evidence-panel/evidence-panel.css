@@ -1,0 +1,11 @@
+:host { display: block; }
+.evidence-panel-actions { display: flex; align-items: center; gap: .4rem; }
+.evidence-panel-error { margin-bottom: 1rem; }
+.evidence-panel-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: .75rem; padding: 1rem; }
+.evidence-card { display: grid; grid-template-columns: 4rem minmax(0,1fr) auto; align-items: center; gap: .65rem; border: 1px solid #e2e8f0; border-radius: .9rem; padding: .55rem; }
+.evidence-card-preview { display: grid; width: 4rem; height: 3.5rem; place-items: center; overflow: hidden; border: 0; border-radius: .7rem; background: #eff6ff; color: #2563eb; cursor: pointer; }
+.evidence-card-preview img { width: 100%; height: 100%; object-fit: cover; }
+.evidence-card-copy { min-width: 0; }
+.evidence-card-copy strong,.evidence-card-copy span,.evidence-card-copy small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.evidence-card-copy strong { color:#334155; font-size:.7rem; }.evidence-card-copy span { color:#2563eb; font-size:.61rem; font-weight:750; }.evidence-card-copy small { color:#94a3b8; font-size:.58rem; }
+@media(max-width:1100px){.evidence-panel-grid{grid-template-columns:repeat(2,minmax(0,1fr));}} @media(max-width:700px){.evidence-panel-grid{grid-template-columns:1fr;}.evidence-panel-actions{flex-wrap:wrap;justify-content:flex-end;}}

@@ -1,0 +1,76 @@
+<section class="geography-cascade" aria-label="Ubicación geográfica">
+  <div class="admin-field">
+    <label for="geoDepartment">Departamento</label>
+    <select
+      id="geoDepartment"
+      class="admin-select"
+      [disabled]="disabled || loading()"
+      [value]="selectedDepartment()"
+      (change)="changeDepartment($any($event.target).value)"
+    >
+      <option value="">Seleccionar departamento</option>
+      @for (item of departments(); track item.code) {
+        <option [value]="item.code">{{ item.label }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="admin-field">
+    <label for="geoProvince">Provincia</label>
+    <select
+      id="geoProvince"
+      class="admin-select"
+      [disabled]="disabled || loading() || !selectedDepartment()"
+      [value]="selectedProvince()"
+      (change)="changeProvince($any($event.target).value)"
+    >
+      <option value="">Seleccionar provincia</option>
+      @for (item of provinces(); track item.code) {
+        <option [value]="item.code">{{ item.label }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="admin-field">
+    <label for="geoDistrict">Distrito <span aria-hidden="true">*</span></label>
+    <select
+      id="geoDistrict"
+      class="admin-select"
+      [disabled]="disabled || loading() || !selectedProvince()"
+      [value]="selectedDistrict()"
+      (change)="changeDistrict($any($event.target).value)"
+    >
+      <option value="">Seleccionar distrito</option>
+      @for (item of districts(); track item.code) {
+        <option [value]="item.code">{{ item.label }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="admin-field">
+    <label for="geoPopulationCenter">Centro poblado <span>(opcional)</span></label>
+    <select
+      id="geoPopulationCenter"
+      class="admin-select"
+      [disabled]="disabled || loading() || !selectedDistrict()"
+      [value]="selectedPopulationCenter() ?? 0"
+      (change)="changePopulationCenter($any($event.target).value)"
+    >
+      <option [value]="0">Sin centro poblado</option>
+      @for (item of populationCenters(); track item.id) {
+        <option [value]="item.id">{{ item.label }}</option>
+      }
+    </select>
+  </div>
+
+  @if (loading()) {
+    <div class="geography-status" aria-live="polite">
+      <span class="loading loading-spinner loading-xs"></span>
+      Cargando ubicación...
+    </div>
+  } @else if (errorMessage()) {
+    <div class="geography-status geography-status--error" role="alert">
+      {{ errorMessage() }}
+    </div>
+  }
+</section>

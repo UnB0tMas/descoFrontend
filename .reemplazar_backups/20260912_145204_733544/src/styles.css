@@ -1,0 +1,31 @@
+@import "tailwindcss";
+@import "flowbite/src/themes/default";
+@import "leaflet/dist/leaflet.css";
+@import "./styles/theme.css";
+@import "./styles/vendor-overrides.css";
+@import "./styles/app-utilities.css";
+
+@plugin "daisyui" {
+  themes: light --default;
+}
+
+@plugin "flowbite/plugin";
+@source "../node_modules/flowbite";
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}

@@ -1,0 +1,11 @@
+:host { display: contents; }
+.resource-select-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .45rem; }
+.resource-helper { display: block; margin-top: .35rem; color: #64748b; font-size: .65rem; font-weight: 650; }
+.resource-modal-loading { display: grid; min-height: 16rem; place-items: center; align-content: center; gap: .45rem; padding: 2rem; color: #64748b; text-align: center; }
+.resource-modal-loading strong { color: #334155; font-size: .82rem; }
+.resource-modal-loading span:last-child { font-size: .7rem; }
+.resource-program-view { display: grid; gap: 1rem; padding: 1rem 1.15rem 1.15rem; }
+.resource-context-card { border: 1px solid #dbeafe; border-radius: .9rem; background: #eff6ff; padding: .75rem .85rem; }
+.resource-context-card strong, .resource-context-card span { display: block; }
+.resource-context-card strong { color: #1e3a8a; font-size: .78rem; }
+.resource-context-card span { margin-top: .2rem; color: #3b82f6; font-size: .66rem; font-weight: 650; }

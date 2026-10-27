@@ -1,0 +1,131 @@
+<div class="desco-page dashboard-page">
+  <app-page-header
+    [title]="greeting()"
+    [subtitle]="'Resumen priorizado para ' + primaryRole() + '.'"
+    eyebrow="Inicio"
+    [icon]="dashboardIcon"
+  />
+
+  <section class="dashboard-toolbar" aria-label="Filtros del dashboard">
+    <div class="toolbar-copy">
+      <div class="toolbar-icon">
+        <fa-icon [icon]="filterIcon" />
+      </div>
+
+      <div>
+        <p class="toolbar-kicker">Periodo de análisis</p>
+        <p class="toolbar-description">
+          Los indicadores temporales y gráficos usan el rango; los indicadores
+          de estado reflejan la situación actual.
+        </p>
+      </div>
+    </div>
+
+    <div class="toolbar-fields">
+      <label class="date-field">
+        <span>Desde</span>
+        <input
+          type="date"
+          [value]="desde()"
+          [max]="hasta()"
+          (change)="updateDesde($event)"
+        />
+      </label>
+
+      <label class="date-field">
+        <span>Hasta</span>
+        <input
+          type="date"
+          [value]="hasta()"
+          [min]="desde()"
+          [max]="today"
+          (change)="updateHasta($event)"
+        />
+      </label>
+
+      <button
+        type="button"
+        class="apply-button"
+        [disabled]="loading() || !!filterError()"
+        (click)="applyFilters()"
+      >
+        Aplicar
+      </button>
+
+      <button
+        type="button"
+        class="reset-button"
+        [disabled]="loading()"
+        aria-label="Restablecer periodo"
+        title="Restablecer periodo"
+        (click)="resetFilters()"
+      >
+        <fa-icon [icon]="resetIcon" />
+      </button>
+    </div>
+
+    @if (filterError()) {
+      <p class="toolbar-error">{{ filterError() }}</p>
+    }
+  </section>
+
+  <div class="dashboard-content">
+    @if (loading()) {
+      <app-loading-state
+        title="Cargando dashboard"
+        message="Estamos preparando los indicadores de tu perfil."
+      />
+    } @else if (errorMessage()) {
+      <app-error-state
+        title="No pudimos cargar el dashboard"
+        [message]="errorMessage() || 'Intenta nuevamente.'"
+        (retry)="load()"
+      />
+    } @else {
+      <app-indicadores-panel [indicadores]="dashboard().indicadores" />
+
+      @if (dashboard().graficos.length > 0) {
+        <div class="dashboard-section">
+          <app-graficos-panel [graficos]="dashboard().graficos" />
+        </div>
+      }
+
+      <div class="dashboard-lower-grid">
+        <app-alertas-panel [alertas]="dashboard().alertas" />
+
+        <section class="quick-card" aria-labelledby="quick-title">
+          <header class="quick-header">
+            <div>
+              <p class="quick-kicker">Navegación</p>
+              <h2 id="quick-title">Accesos relacionados</h2>
+              <p>
+                Atajos vinculados a los indicadores visibles en tu Inicio.
+              </p>
+            </div>
+
+            <div class="quick-header-icon">
+              <fa-icon [icon]="dashboardIcon" />
+            </div>
+          </header>
+
+          <div class="quick-grid">
+            @for (item of relatedAccesses(); track item.moduloId) {
+              <a [routerLink]="item.ruta" class="quick-link">
+                <span class="quick-icon">
+                  <fa-icon [icon]="iconForModule(item.codigoModulo)" />
+                </span>
+
+                <span class="quick-label">{{ item.nombreModulo }}</span>
+                <span class="quick-code">{{ item.codigoModulo }}</span>
+              </a>
+            } @empty {
+              <div class="quick-empty">
+                No hay accesos rápidos configurados para este perfil.
+              </div>
+            }
+          </div>
+        </section>
+      </div>
+    }
+  </div>
+</div>

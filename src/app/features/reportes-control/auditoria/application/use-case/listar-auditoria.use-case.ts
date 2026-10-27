@@ -1,0 +1,1 @@
+import{inject,Injectable}from'@angular/core';import{AuditoriaFiltro}from'../../domain/auditoria-filtro.model';import{AUDITORIA_GATEWAY,AuditoriaGateway}from'../port/out/auditoria.gateway';@Injectable()export class ListarAuditoriaUseCase{private readonly g:AuditoriaGateway=inject(AUDITORIA_GATEWAY);execute(f:AuditoriaFiltro){return this.g.list(f);}}

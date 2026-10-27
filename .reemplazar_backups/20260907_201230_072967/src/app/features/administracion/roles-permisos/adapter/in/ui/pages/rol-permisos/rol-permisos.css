@@ -1,0 +1,231 @@
+:host {
+  display: block;
+}
+
+.role-permission-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.role-permission-summary > div {
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  background: white;
+  padding: 0.9rem;
+}
+
+.role-permission-summary span,
+.permission-group header span {
+  display: block;
+  color: #94a3b8;
+  font-size: 0.66rem;
+  font-weight: 700;
+}
+
+.role-permission-summary strong {
+  display: block;
+  margin-top: 0.2rem;
+  color: #0f172a;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.permission-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 1rem;
+}
+
+.permission-count {
+  color: #64748b;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.permission-groups {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1rem;
+}
+
+.permission-group {
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+}
+
+.permission-group > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: #f8fafc;
+  padding: 0.75rem 0.9rem;
+}
+
+.permission-group h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.permission-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.permission-option {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: 0.7rem;
+  border-top: 1px solid #f1f5f9;
+  padding: 0.8rem 0.9rem;
+  cursor: pointer;
+}
+
+.permission-option:nth-child(odd) {
+  border-right: 1px solid #f1f5f9;
+}
+
+.permission-option:has(.permission-checkbox-native:checked) {
+  background: #f8fbff;
+}
+
+.permission-option:focus-within {
+  background: #f8fbff;
+}
+
+.permission-checkbox-native {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.permission-checkbox-box {
+  display: grid;
+  width: 1.25rem;
+  height: 1.25rem;
+  flex: 0 0 auto;
+  place-items: center;
+  margin-top: 0.02rem;
+  border: 2px solid #64748b;
+  border-radius: 0.35rem;
+  background: #ffffff;
+  color: transparent;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.08);
+  font-size: 0.62rem;
+  line-height: 1;
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease,
+    box-shadow 120ms ease,
+    transform 120ms ease;
+}
+
+.permission-checkbox-box--selected {
+  border-color: #2563eb;
+  background: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgb(37 99 235 / 0.28);
+}
+
+.permission-checkbox-native:focus-visible + .permission-checkbox-box {
+  outline: 3px solid rgb(37 99 235 / 0.22);
+  outline-offset: 2px;
+}
+
+.permission-option:hover .permission-checkbox-box:not(.permission-checkbox-box--selected) {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.permission-option:active .permission-checkbox-box:not(.permission-checkbox-box--readonly) {
+  transform: scale(0.94);
+}
+
+.permission-checkbox-box--readonly {
+  cursor: default;
+}
+
+.permission-option:has(.permission-checkbox-box--readonly) {
+  cursor: default;
+}
+
+.permission-option > div {
+  min-width: 0;
+  flex: 1;
+}
+
+.permission-option strong,
+.permission-option span,
+.permission-option small {
+  display: block;
+}
+
+.permission-option strong {
+  color: #334155;
+  font-size: 0.72rem;
+}
+
+.permission-option span {
+  margin-top: 0.15rem;
+  color: #2563eb;
+  font-size: 0.6rem;
+  font-weight: 700;
+}
+
+.permission-option small {
+  margin-top: 0.3rem;
+  color: #94a3b8;
+  font-size: 0.64rem;
+  line-height: 1.4;
+}
+
+.permission-option em {
+  border-radius: 9999px;
+  background: #fff7ed;
+  padding: 0.22rem 0.4rem;
+  color: #c2410c;
+  font-size: 0.56rem;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.permission-reason {
+  border-top: 1px solid #e2e8f0;
+  padding: 1rem;
+}
+
+.permission-reason label {
+  display: block;
+  margin-bottom: 0.4rem;
+  color: #334155;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+@media (max-width: 800px) {
+  .role-permission-summary,
+  .permission-options {
+    grid-template-columns: 1fr;
+  }
+
+  .permission-option:nth-child(odd) {
+    border-right: 0;
+  }
+
+  .permission-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

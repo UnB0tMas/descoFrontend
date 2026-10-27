@@ -1,0 +1,1 @@
+:host{display:inline-flex}.crop-status{display:inline-flex;align-items:center;gap:.35rem;border-radius:9999px;padding:.28rem .52rem;font-size:.61rem;font-weight:800}.crop-status.active{background:#f0fdf4;color:#15803d}.crop-status.finished{background:#eff6ff;color:#1d4ed8}.crop-status.neutral{background:#f1f5f9;color:#64748b}

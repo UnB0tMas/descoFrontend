@@ -1,0 +1,21 @@
+{
+  "proyecto": "D:\\FrancoSystem\\desco_frontend",
+  "fecha": "2026-10-12T22:27:07",
+  "cambios": [
+    {
+      "ruta": "src/app/features/recursos/almacenes/adapter/in/ui/pages/almacenes-list/almacenes-list.ts",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/recursos/almacenes/adapter/in/ui/pages/almacenes-list/almacenes-list.html",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/recursos/almacenes/adapter/in/ui/pages/almacenes-list/almacenes-list.css",
+      "accion": "escribir",
+      "existia": true
+    }
+  ]
+}

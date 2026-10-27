@@ -1,0 +1,415 @@
+<dialog #dialog class="modal desco-modal" (cancel)="$event.preventDefault(); close()">
+  <div
+    class="modal-box admin-modal-box"
+    [class.admin-modal-box--wide]="kind() === 'view'"
+  >
+    <header class="admin-modal-header">
+      <div class="admin-modal-title-group">
+        <span class="admin-modal-icon">
+          <fa-icon [icon]="icon()" />
+        </span>
+        <div>
+          <p>Organizaciones</p>
+          <h2>{{ title() }}</h2>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        class="admin-icon-button"
+        aria-label="Cerrar"
+        [disabled]="saving() || identityLoading()"
+        (click)="close()"
+      >
+        <fa-icon [icon]="closeIcon" />
+      </button>
+    </header>
+
+    @if (errorMessage()) {
+      <div class="admin-inline-error" role="alert">
+        {{ errorMessage() }}
+      </div>
+    }
+
+    @if (kind() === 'view' && detail(); as organizationDetail) {
+      <div class="organization-view">
+        <section class="organization-summary">
+          <div>
+            <span>Razón social</span>
+            <strong>{{ organizationDetail.organizacion.razonSocial }}</strong>
+          </div>
+          <div>
+            <span>RUC</span>
+            <strong>{{ organizationDetail.organizacion.ruc }}</strong>
+          </div>
+          <div>
+            <span>Tipo</span>
+            <strong>
+              {{ organizationDetail.organizacion.esAsociacion ? 'Asociación' : 'Empresa' }}
+            </strong>
+          </div>
+          <div>
+            <span>Correo</span>
+            <strong>{{ organizationDetail.organizacion.correo || '—' }}</strong>
+          </div>
+          <div>
+            <span>Teléfono</span>
+            <strong>{{ organizationDetail.organizacion.telefono || '—' }}</strong>
+          </div>
+          <div>
+            <span>Nombre comercial</span>
+            <strong>{{ organizationDetail.organizacion.nombreComercial || '—' }}</strong>
+          </div>
+          <div>
+            <span>Distrito</span>
+            <strong>{{ organizationDetail.distritoNombre || organizationDetail.distritoCodigo }}</strong>
+          </div>
+          <div>
+            <span>Centro poblado</span>
+            <strong>{{ organizationDetail.centroPobladoNombre || '—' }}</strong>
+          </div>
+          <div>
+            <span>Referencia</span>
+            <strong>{{ organizationDetail.referencia || '—' }}</strong>
+          </div>
+        </section>
+
+        <section class="organization-view-section">
+          <header>
+            <h3>Áreas</h3>
+            <span>{{ organizationDetail.areas.length }}</span>
+          </header>
+
+          <div class="organization-mini-list">
+            @for (area of organizationDetail.areas; track area.areaId) {
+              <article>
+                <span class="organization-mini-icon">
+                  <fa-icon [icon]="areaIcon" />
+                </span>
+                <div>
+                  <strong>{{ area.nombre }}</strong>
+                  <small>{{ area.codigo }}</small>
+                </div>
+              </article>
+            } @empty {
+              <p class="organization-empty">No hay áreas registradas.</p>
+            }
+          </div>
+        </section>
+
+        <section class="organization-view-section">
+          <header>
+            <h3>Empleados activos</h3>
+            <span>{{ organizationDetail.empleados.length }}</span>
+          </header>
+
+          <div class="organization-mini-list">
+            @for (employee of organizationDetail.empleados; track employee.empleadoId) {
+              <article>
+                <span class="organization-mini-icon">
+                  <fa-icon [icon]="associationIcon" />
+                </span>
+                <div>
+                  <strong>{{ employee.empleado }}</strong>
+                  <small>
+                    {{ employee.numeroDocumento || 'Sin documento' }}
+                    ·
+                    {{ employee.codigoEmpleado || 'Sin código' }}
+                  </small>
+                </div>
+              </article>
+            } @empty {
+              <p class="organization-empty">No hay empleados activos.</p>
+            }
+          </div>
+        </section>
+
+        <footer class="admin-modal-actions">
+          <button
+            type="button"
+            class="admin-secondary-button"
+            (click)="close()"
+          >
+            Cerrar
+          </button>
+        </footer>
+      </div>
+    } @else if (kind() === 'area') {
+      <form class="admin-form-grid" [formGroup]="areaForm" (ngSubmit)="save()">
+        <div class="admin-field">
+          <label for="areaCompany">Organización</label>
+          <select
+            id="areaCompany"
+            class="admin-select"
+            formControlName="empresaId"
+          >
+            @for (option of companyOptions(); track option.value) {
+              <option [value]="option.value">{{ option.label }}</option>
+            }
+          </select>
+          <app-form-error
+            [control]="areaForm.controls.empresaId"
+            fieldLabel="La organización"
+          />
+        </div>
+
+        <div class="admin-field">
+          <label for="areaParent">Área superior</label>
+          <select
+            id="areaParent"
+            class="admin-select"
+            formControlName="areaPadreId"
+          >
+            <option [value]="0">Sin área superior</option>
+            @for (area of areasForSelectedCompany(); track area.areaId) {
+              <option [value]="area.areaId">{{ area.nombre }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="admin-field admin-field-span-2">
+          <label for="areaName">Nombre</label>
+          <input
+            id="areaName"
+            class="admin-input"
+            type="text"
+            formControlName="nombre"
+            maxlength="120"
+            placeholder="Nombre del área"
+          />
+          <app-form-error
+            [control]="areaForm.controls.nombre"
+            fieldLabel="El nombre"
+          />
+        </div>
+
+        <footer class="admin-modal-actions admin-field-span-2">
+          <button
+            type="button"
+            class="admin-secondary-button"
+            [disabled]="saving()"
+            (click)="close()"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            class="admin-primary-button"
+            [disabled]="saving()"
+          >
+            @if (saving()) {
+              <span class="loading loading-spinner loading-sm"></span>
+              Guardando...
+            } @else {
+              <fa-icon [icon]="saveIcon" />
+              Guardar
+            }
+          </button>
+        </footer>
+      </form>
+    } @else {
+      <form class="admin-form-grid" [formGroup]="companyForm" (ngSubmit)="save()">
+        <div class="admin-field admin-field-span-2">
+          <label for="organizationRuc">RUC</label>
+          <div class="identity-document-control">
+            <input
+              id="organizationRuc"
+              class="admin-input"
+              type="text"
+              formControlName="ruc"
+              inputmode="numeric"
+              autocomplete="off"
+              maxlength="11"
+              placeholder="20XXXXXXXXX"
+              [readOnly]="identityLoading()"
+              (input)="onRucInput()"
+            />
+
+            @if (!currentCompany()) {
+              <button
+                type="button"
+                class="identity-search-button"
+                [disabled]="!canResolveRuc()"
+                [attr.aria-busy]="identityLoading()"
+                (click)="resolveRuc()"
+              >
+                @if (identityLoading()) {
+                  <span class="loading loading-spinner loading-xs"></span>
+                  Buscando...
+                } @else {
+                  <fa-icon [icon]="searchIcon" />
+                  Buscar
+                }
+              </button>
+            }
+          </div>
+          <app-form-error
+            [control]="companyForm.controls.ruc"
+            fieldLabel="El RUC"
+            [messages]="{
+              ruc: 'Ingresa un RUC válido de 11 dígitos con dígito verificador correcto.',
+              rucNature: 'Para una empresa o asociación se requiere un RUC empresarial válido.'
+            }"
+          />
+        </div>
+
+        @if (identityMessage()) {
+          <div
+            class="identity-feedback admin-field-span-2"
+            [class.identity-feedback--success]="identityTone() === 'success'"
+            [class.identity-feedback--warning]="identityTone() === 'warning'"
+            [class.identity-feedback--error]="identityTone() === 'error'"
+            role="status"
+          >
+            {{ identityMessage() }}
+          </div>
+        }
+
+        <div class="admin-field">
+          <label for="businessName">Razón social</label>
+          <input
+            id="businessName"
+            class="admin-input"
+            type="text"
+            formControlName="razonSocial"
+            maxlength="200"
+          [readOnly]="identityLocks().businessName" />
+          <app-form-error
+            [control]="companyForm.controls.razonSocial"
+            fieldLabel="La razón social"
+          />
+        </div>
+
+        <div class="admin-field">
+          <label for="tradeName">Nombre comercial</label>
+          <input
+            id="tradeName"
+            class="admin-input"
+            type="text"
+            formControlName="nombreComercial"
+            maxlength="160"
+          />
+          <app-form-error [control]="companyForm.controls.nombreComercial" fieldLabel="El nombre comercial" [messages]="{ blank: 'El nombre comercial no puede contener solo espacios.' }" />
+        </div>
+
+        <div class="admin-field">
+          <label for="organizationPhone">Teléfono</label>
+          <input
+            id="organizationPhone"
+            class="admin-input"
+            type="tel"
+            inputmode="tel"
+            formControlName="telefono"
+            maxlength="16"
+            autocomplete="tel"
+            [readOnly]="identityLocks().phone"
+            (input)="onOrganizationPhoneInput()"
+          />
+          <app-form-error
+            [control]="companyForm.controls.telefono"
+            fieldLabel="El teléfono"
+            [messages]="{ phone: 'Ingrese un teléfono válido de 7 a 15 dígitos.' }"
+          />
+        </div>
+
+        <div class="admin-field">
+          <label for="organizationEmail">Correo</label>
+          <input
+            id="organizationEmail"
+            class="admin-input"
+            type="email"
+            formControlName="correo"
+            autocomplete="email"
+            maxlength="180"
+          [readOnly]="identityLocks().email" />
+          <app-form-error
+            [control]="companyForm.controls.correo"
+            fieldLabel="El correo"
+          />
+        </div>
+
+        <app-geography-cascade
+          [districtCode]="initialDistrictCode()"
+          [populationCenterId]="initialPopulationCenterId()"
+          [disabled]="saving() || identityLoading()"
+          [locationLocked]="identityLocks().geography"
+          (selectionChange)="setGeography($event)"
+        />
+
+
+        <div class="admin-field admin-field-span-2">
+          <app-form-error
+            [control]="companyForm.controls.distritoCodigo"
+            fieldLabel="El distrito"
+          />
+        </div>
+
+        <div class="admin-field admin-field-span-2">
+          <label for="organizationReference">Referencia de ubicación</label>
+          <input
+            id="organizationReference"
+            class="admin-input"
+            type="text"
+            formControlName="referencia"
+            maxlength="300"
+            placeholder="Sector, calle o referencia"
+          [readOnly]="identityLocks().reference" />
+        </div>
+
+        @if (kind() === 'association') {
+          <div class="admin-field">
+            <label for="foundationDate">Fecha de constitución</label>
+            <input
+              id="foundationDate"
+              class="admin-input"
+              type="date"
+              formControlName="fechaConstitucion"
+              [max]="today"
+            />
+            <app-form-error
+              [control]="companyForm.controls.fechaConstitucion"
+              fieldLabel="La fecha de constitución"
+              [messages]="{ futureDate: 'La fecha de constitución no puede ser futura.', invalidDate: 'Ingrese una fecha válida.' }"
+            />
+          </div>
+
+          <div class="admin-field">
+            <label for="registryNumber">Número de partida</label>
+            <input
+              id="registryNumber"
+              class="admin-input"
+              type="text"
+              formControlName="numeroPartida"
+              maxlength="50"
+            />
+            <app-form-error [control]="companyForm.controls.numeroPartida" fieldLabel="El número de partida" [messages]="{ blank: 'El número de partida no puede contener solo espacios.' }" />
+          </div>
+        }
+
+        <footer class="admin-modal-actions admin-field-span-2">
+          <button
+            type="button"
+            class="admin-secondary-button"
+            [disabled]="saving() || identityLoading()"
+            (click)="close()"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            class="admin-primary-button"
+            [disabled]="saving() || identityLoading() || identityBlocked()"
+          >
+            @if (saving()) {
+              <span class="loading loading-spinner loading-sm"></span>
+              Guardando...
+            } @else {
+              <fa-icon [icon]="saveIcon" />
+              Guardar
+            }
+          </button>
+        </footer>
+      </form>
+    }
+  </div>
+</dialog>

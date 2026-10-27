@@ -1,0 +1,7 @@
+:host {
+  display: block;
+}
+
+.uot-inactive-switch {
+  min-width: min(100%, 20rem);
+}

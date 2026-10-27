@@ -1,0 +1,292 @@
+<div class="desco-page">
+  <app-page-header
+    title="Almacenes y stock"
+    [subtitle]="uot.isGeneral() ? 'Vista general de almacenes, stock y Kardex de tus UOT.' : 'Almacenes, stock y Kardex de ' + (uot.selected()?.nombre ?? 'la UOT activa') + '.'"
+    [icon]="pageIcon"
+  >
+    <div pageActions class="flex flex-wrap gap-2">
+      <a class="admin-secondary-button" routerLink="/recursos/operaciones-stock">Políticas y transferencias</a>
+      <button type="button" class="admin-secondary-button" [disabled]="loading()" (click)="load()">
+        <fa-icon [icon]="refreshIcon" />
+        Actualizar
+      </button>
+      <button
+        *appPermission="'ALMACENES_MOVIMIENTO'"
+        type="button"
+        class="admin-secondary-button"
+        [disabled]="warehouses().length === 0 || products().length === 0"
+        (click)="movement()"
+      >
+        <fa-icon [icon]="movementIcon" />
+        Movimiento
+      </button>
+      <button
+        *appPermission="'ALMACENES_CREAR'"
+        type="button"
+        class="admin-primary-button"
+        (click)="createWarehouse()"
+      >
+        <fa-icon [icon]="addIcon" />
+        Registrar almacén
+      </button>
+  
+    </div>
+  </app-page-header>
+
+  <section class="admin-surface warehouse-toolbar">
+    @if (uot.isGeneral()) {
+      <label>
+        <span>Filtrar por UOT</span>
+        <select class="admin-select" [value]="unitFilter() ?? 0" (change)="onUnitChange($any($event.target).value)">
+          <option [value]="0">Todas mis UOT</option>
+          @for (unit of uot.memberships(); track unit.uotId) {
+            <option [value]="unit.uotId">{{ unit.nombre }}</option>
+          }
+        </select>
+      </label>
+    }
+    <label>
+      <span>Almacén</span>
+      <select class="admin-select" [value]="warehouseFilter() ?? 0" (change)="onWarehouseChange($any($event.target).value)">
+        <option [value]="0">Todos</option>
+        @for (warehouse of warehouses(); track warehouse.almacenId) {
+          <option [value]="warehouse.almacenId">{{ warehouse.nombre }}</option>
+        }
+      </select>
+    </label>
+    <label>
+      <span>Producto</span>
+      <select class="admin-select" [value]="productFilter() ?? 0" (change)="onProductChange($any($event.target).value)">
+        <option [value]="0">Todos</option>
+        @for (product of products(); track product.productoId) {
+          <option [value]="product.productoId">{{ product.nombre }}</option>
+        }
+      </select>
+    </label>
+  </section>
+
+  @if (detailWarehouse(); as warehouse) {
+    <section class="admin-surface warehouse-detail-panel" aria-label="Detalle del almacén">
+      <header class="warehouse-detail-header">
+        <div class="warehouse-detail-title">
+          <button type="button" class="btn btn-ghost btn-square btn-sm" (click)="closeWarehouseDetail()" title="Volver a almacenes" aria-label="Volver a almacenes">
+            <fa-icon [icon]="backIcon" />
+          </button>
+          <span class="warehouse-card-icon"><fa-icon [icon]="warehouseIcon" /></span>
+          <div>
+            <small>ALMACÉN · {{ warehouse.codigo }}</small>
+            <h2>{{ warehouse.nombre }}</h2>
+            <p>{{ warehouse.uotPropietaria }} · {{ warehouse.tipoAcceso || 'PROPIO' }}</p>
+          </div>
+        </div>
+        <div class="warehouse-detail-actions">
+          <button type="button" class="admin-secondary-button admin-secondary-button--small" [disabled]="detailLoading()" (click)="reloadDetailStock()"><fa-icon [icon]="refreshIcon" /> Actualizar</button>
+          <button *appPermission="'ALMACENES_MOVIMIENTO'" type="button" class="admin-primary-button" [disabled]="warehouse.permiteEntrada === false" (click)="configureProduct(warehouse)"><fa-icon [icon]="addIcon" /> Agregar producto</button>
+        </div>
+      </header>
+      @if (warehouse.descripcion) { <p class="warehouse-detail-description">{{ warehouse.descripcion }}</p> }
+
+      <div class="warehouse-detail-metrics">
+        <article><span>Productos registrados</span><strong>{{ detailStock().length }}</strong><small>Referencias en este almacén</small></article>
+        <article><span>Alertas de reposición</span><strong [class.stock-value--warning]="detailAlerts() > 0">{{ detailAlerts() }}</strong><small>Disponible igual o menor al mínimo</small></article>
+        <article><span>Operaciones permitidas</span><strong class="warehouse-detail-permissions">{{ warehouse.permiteEntrada === false ? 'Sin entradas' : 'Entradas' }} · {{ warehouse.permiteSalida === false ? 'Sin salidas' : 'Salidas' }}</strong><small>Según permisos y acceso de UOT</small></article>
+      </div>
+
+      <div class="warehouse-detail-toolbar">
+        <div class="warehouse-detail-tabs" role="tablist" aria-label="Información del almacén">
+          <button type="button" role="tab" [attr.aria-selected]="detailTab() === 'products'" [class.active]="detailTab() === 'products'" (click)="selectDetailTab('products')"><fa-icon [icon]="stockIcon" /> Productos y existencias</button>
+          <button *appPermission="'ALMACENES_KARDEX'" type="button" role="tab" [attr.aria-selected]="detailTab() === 'kardex'" [class.active]="detailTab() === 'kardex'" (click)="selectDetailTab('kardex')"><fa-icon [icon]="kardexIcon" /> Historial Kardex</button>
+        </div>
+        @if (detailTab() === 'products') {
+          <label class="warehouse-detail-search">
+            <fa-icon [icon]="searchIcon" />
+            <input class="input input-bordered input-sm" type="search" placeholder="Buscar producto o código" [value]="detailSearch()" (input)="detailSearch.set($any($event.target).value)" />
+          </label>
+        } @else if (detailProductId()) {
+          <button type="button" class="btn btn-ghost btn-sm" (click)="reloadDetailKardex()">Ver todos los movimientos</button>
+        }
+      </div>
+
+      @if (detailError()) { <div class="admin-inline-error" role="alert">{{ detailError() }}</div> }
+      @if (detailTab() === 'products') {
+        @if (detailLoading()) {
+          <div class="warehouse-detail-empty"><span class="loading loading-spinner loading-md"></span> Consultando existencias...</div>
+        } @else if (visibleDetailStock().length === 0) {
+          <div class="warehouse-detail-empty">No hay productos para mostrar en este almacén.</div>
+        } @else {
+          <div class="admin-table-scroll warehouse-detail-table">
+            <table class="admin-table">
+              <thead><tr><th>Producto</th><th>Actual</th><th>Reservado</th><th>Disponible</th><th>Mínimo</th><th>Estado</th><th>Acciones</th></tr></thead>
+              <tbody>
+                @for (item of visibleDetailStock(); track item.productoId) {
+                  <tr>
+                    <td><div class="warehouse-product-name"><strong>{{ item.producto }}</strong><small>{{ productCode(item.productoId) || 'Sin código' }} · {{ item.unidadMedida }}</small></div></td>
+                    <td>{{ item.stockActual | number:'1.0-3' }}</td>
+                    <td>{{ item.stockReservado | number:'1.0-3' }}</td>
+                    <td><strong [class]="stockTone(item)">{{ item.stockDisponible | number:'1.0-3' }}</strong></td>
+                    <td>{{ item.stockMinimo | number:'1.0-3' }}</td>
+                    <td><span class="badge badge-sm" [class.badge-warning]="(item.stockMinimo ?? 0) > 0 && (item.stockDisponible ?? 0) <= (item.stockMinimo ?? 0)" [class.badge-success]="(item.stockDisponible ?? 0) > (item.stockMinimo ?? 0)">{{ (item.stockDisponible ?? 0) <= 0 ? 'Agotado' : (item.stockMinimo ?? 0) > 0 && (item.stockDisponible ?? 0) <= (item.stockMinimo ?? 0) ? 'Reponer' : 'Disponible' }}</span></td>
+                    <td>
+                      <div class="warehouse-row-actions">
+                        <a *appPermission="'PRODUCTOS_VER'" class="btn btn-ghost btn-xs" [routerLink]="['/recursos/productos', item.productoId]" [queryParams]="{ uotId: detailUotId() }" title="Ver ficha y editar producto, según permisos"><fa-icon [icon]="editIcon" /> Ficha</a>
+                        <button *appPermission="'ALMACENES_MOVIMIENTO'" type="button" class="btn btn-outline btn-primary btn-xs" [disabled]="warehouse.permiteEntrada === false" (click)="detailMovement(item, 'E')"><fa-icon [icon]="entryIcon" /> Entrada</button>
+                        <button *appPermission="'ALMACENES_MOVIMIENTO'" type="button" class="btn btn-ghost btn-xs" [disabled]="warehouse.permiteSalida === false || (item.stockDisponible ?? 0) <= 0" (click)="detailMovement(item, 'S')"><fa-icon [icon]="exitIcon" /> Salida</button>
+                        <button *appPermission="'ALMACENES_KARDEX'" type="button" class="btn btn-ghost btn-xs" (click)="reloadDetailKardex(item.productoId ?? null)"><fa-icon [icon]="kardexIcon" /> Kardex</button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      } @else {
+        @if (detailKardexLoading()) {
+          <div class="warehouse-detail-empty"><span class="loading loading-spinner loading-md"></span> Consultando Kardex...</div>
+        } @else if (visibleDetailKardex().length === 0) {
+          <div class="warehouse-detail-empty">No se registran movimientos para esta selección.</div>
+        } @else {
+          <div class="admin-table-scroll warehouse-detail-table">
+            <table class="admin-table">
+              <thead><tr><th>Fecha</th><th>Producto</th><th>Movimiento</th><th>Entrada / salida</th><th>Cantidad</th><th>Lote</th><th>Documento</th></tr></thead>
+              <tbody>
+                @for (item of visibleDetailKardex(); track item.movimientoInventarioId + ':' + item.productoId) {
+                  <tr>
+                    <td>{{ item.fechaHora | date:'dd/MM/yyyy HH:mm' }}</td>
+                    <td><strong>{{ item.producto }}</strong></td>
+                    <td>{{ item.tipoMovimiento }}</td>
+                    <td><span class="warehouse-nature">{{ item.naturaleza === 'E' ? 'Entrada' : 'Salida' }}</span></td>
+                    <td>{{ item.cantidad | number:'1.0-3' }}</td>
+                    <td>{{ item.lote || '—' }}</td>
+                    <td>{{ item.documentoReferencia || '—' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      }
+    </section>
+  } @else {
+  <div class="warehouse-tabs" role="tablist">
+    <button type="button" [class.active]="activeTab() === 'warehouses'" (click)="setTab('warehouses')">
+      <fa-icon [icon]="warehouseIcon" /> Almacenes
+    </button>
+    <button type="button" [class.active]="activeTab() === 'stock'" (click)="setTab('stock')">
+      <fa-icon [icon]="stockIcon" /> Stock
+    </button>
+    <button
+      *appPermission="'ALMACENES_KARDEX'"
+      type="button"
+      [class.active]="activeTab() === 'kardex'"
+      (click)="setTab('kardex')"
+    >
+      <fa-icon [icon]="kardexIcon" /> Kardex
+    </button>
+  </div>
+
+  @if (loading()) {
+    <app-loading-state title="Cargando almacenes" message="Consultando stock y movimientos." />
+  } @else if (errorMessage()) {
+    <app-error-state [message]="errorMessage() || 'No fue posible consultar los almacenes.'" (retry)="load()" />
+  } @else if (activeTab() === 'warehouses') {
+    @if (warehouses().length === 0) {
+      <app-empty-state title="Sin almacenes" message="No existen almacenes disponibles para el contexto actual." />
+    } @else {
+      <section class="warehouse-card-grid">
+        @for (warehouse of warehouses(); track warehouse.almacenId) {
+          <article class="admin-surface warehouse-card">
+            <header>
+              <span class="warehouse-card-icon"><fa-icon [icon]="warehouseIcon" /></span>
+              <div>
+                <strong>{{ warehouse.nombre || 'Almacén' }}</strong>
+                <small>{{ warehouse.codigo || '—' }}</small>
+              </div>
+              <span class="warehouse-access">{{ warehouse.tipoAcceso || 'PROPIO' }}</span>
+            </header>
+            <dl>
+              <div><dt>UOT propietaria</dt><dd>{{ warehouse.uotPropietaria || '—' }}</dd></div>
+              <div><dt>Entradas</dt><dd>{{ warehouse.permiteEntrada === false ? 'No' : 'Sí' }}</dd></div>
+              <div><dt>Salidas</dt><dd>{{ warehouse.permiteSalida === false ? 'No' : 'Sí' }}</dd></div>
+            </dl>
+            @if (warehouse.descripcion) { <p>{{ warehouse.descripcion }}</p> }
+            <footer class="warehouse-card-actions">
+              <button type="button" class="admin-secondary-button admin-secondary-button--small warehouse-detail-button" (click)="openWarehouseDetail(warehouse)">
+                <fa-icon [icon]="viewIcon" /> Ver detalle
+              </button>
+              <button
+                *appPermission="'ALMACENES_MOVIMIENTO'"
+                type="button"
+                class="admin-secondary-button admin-secondary-button--small"
+                [disabled]="warehouse.permiteEntrada === false"
+                (click)="configureProduct(warehouse)"
+              >
+                <fa-icon [icon]="configureIcon" />
+                Agregar producto
+              </button>
+            </footer>
+          </article>
+        }
+      </section>
+    }
+  } @else if (activeTab() === 'stock') {
+    @if (filteredStock().length === 0) {
+      <app-empty-state title="Sin stock" message="No existen saldos para los filtros seleccionados." />
+    } @else {
+      <section class="admin-surface warehouse-table-shell">
+        <div class="admin-table-scroll">
+          <table class="admin-table">
+            <thead>
+              <tr><th>UOT</th><th>Almacén</th><th>Producto</th><th>Unidad</th><th>Actual</th><th>Reservado</th><th>Disponible</th><th>Actualización</th></tr>
+            </thead>
+            <tbody>
+              @for (item of filteredStock(); track item.almacenId + ':' + item.productoId) {
+                <tr>
+                  <td>{{ stockUot(item) }}</td>
+                  <td>{{ item.almacen }}</td>
+                  <td><strong>{{ item.producto }}</strong></td>
+                  <td>{{ item.unidadMedida }}</td>
+                  <td>{{ item.stockActual | number:'1.0-3' }}</td>
+                  <td>{{ item.stockReservado | number:'1.0-3' }}</td>
+                  <td><strong class="stock-value" [class]="stockTone(item)">{{ item.stockDisponible | number:'1.0-3' }}</strong></td>
+                  <td>{{ item.fechaActualizacion | date:'dd/MM/yyyy HH:mm' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    }
+  } @else {
+    @if (kardex().length === 0) {
+      <app-empty-state title="Sin movimientos" message="No existen movimientos en el Kardex para los filtros seleccionados." />
+    } @else {
+      <section class="admin-surface warehouse-table-shell">
+        <div class="admin-table-scroll">
+          <table class="admin-table">
+            <thead>
+              <tr><th>Fecha</th><th>UOT</th><th>Almacén</th><th>Tipo</th><th>Producto</th><th>Naturaleza</th><th>Cantidad</th><th>Referencia</th></tr>
+            </thead>
+            <tbody>
+              @for (item of kardex(); track item.movimientoInventarioId + ':' + item.productoId) {
+                <tr>
+                  <td>{{ item.fechaHora | date:'dd/MM/yyyy HH:mm' }}</td>
+                  <td>{{ item.uotNombre || '—' }}</td>
+                  <td>{{ item.almacen || '—' }}</td>
+                  <td>{{ item.tipoMovimiento || '—' }}</td>
+                  <td>{{ item.producto || '—' }}</td>
+                  <td><span class="warehouse-nature">{{ item.naturaleza === 'E' ? 'Entrada' : 'Salida' }}</span></td>
+                  <td>{{ item.cantidad | number:'1.0-3' }}</td>
+                  <td>{{ item.documentoReferencia || '—' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    }
+  }
+  }
+</div>
+
+<app-almacen-operation-form />

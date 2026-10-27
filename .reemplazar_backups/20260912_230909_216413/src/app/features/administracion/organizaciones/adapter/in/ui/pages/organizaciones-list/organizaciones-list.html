@@ -1,0 +1,296 @@
+<div class="desco-page">
+  <app-page-header
+    title="Empresas, asociaciones y áreas"
+    subtitle="Administra la estructura organizacional utilizada por los demás procesos."
+    eyebrow="Administración"
+    [icon]="pageIcon"
+  />
+
+  <div class="admin-tabs mt-5">
+    <button
+      type="button"
+      [class.active]="activeTab() === 'organizations'"
+      (click)="setTab('organizations')"
+    >
+      <fa-icon [icon]="companyIcon" />
+      Organizaciones
+    </button>
+    <button
+      type="button"
+      [class.active]="activeTab() === 'areas'"
+      (click)="setTab('areas')"
+    >
+      <fa-icon [icon]="areaIcon" />
+      Áreas
+    </button>
+  </div>
+
+  @if (activeTab() === 'organizations') {
+    <section class="admin-surface">
+      <div class="admin-toolbar admin-toolbar--end">
+        <button
+          type="button"
+          class="admin-secondary-button"
+          [disabled]="organizationsLoading()"
+          (click)="loadOrganizations()"
+        >
+          <fa-icon
+            [class.animate-spin]="organizationsLoading()"
+            [icon]="refreshIcon"
+          />
+          Actualizar
+        </button>
+
+        <button
+          *appPermission="'ORGANIZACIONES_CREAR'"
+          type="button"
+          class="admin-secondary-button"
+          (click)="createCompany()"
+        >
+          <fa-icon [icon]="addIcon" />
+          Nueva empresa
+        </button>
+
+        <button
+          *appPermission="'ORGANIZACIONES_CREAR'"
+          type="button"
+          class="admin-primary-button"
+          (click)="createAssociation()"
+        >
+          <fa-icon [icon]="associationIcon" />
+          Nueva asociación
+        </button>
+      </div>
+
+      @if (organizationsLoading()) {
+        <app-loading-state
+          title="Cargando organizaciones"
+          message="Consultando empresas y asociaciones."
+        />
+      } @else if (organizationsError()) {
+        <app-error-state
+          [message]="organizationsError() || 'Intenta nuevamente.'"
+          (retry)="loadOrganizations()"
+        />
+      } @else if (organizations().items.length === 0) {
+        <app-empty-state
+          title="Sin organizaciones"
+          message="Todavía no hay empresas o asociaciones disponibles."
+        />
+      } @else {
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Organización</th>
+                <th>RUC</th>
+                <th>Tipo</th>
+                <th>Contacto</th>
+                <th class="text-center">Estado</th>
+                <th class="text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (company of organizations().items; track company.empresaId) {
+                <tr>
+                  <td>
+                    <div class="admin-entity">
+                      <span class="admin-entity-icon">
+                        <fa-icon
+                          [icon]="company.esAsociacion ? associationIcon : companyIcon"
+                        />
+                      </span>
+                      <div>
+                        <strong>{{ company.razonSocial }}</strong>
+                        <span>{{ company.nombreComercial || 'Sin nombre comercial' }}</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="admin-code">{{ company.ruc }}</span>
+                  </td>
+                  <td>
+                    <span class="admin-type-badge">
+                      {{ company.esAsociacion ? 'Asociación' : 'Empresa' }}
+                    </span>
+                  </td>
+                  <td>
+                    <div class="admin-stack-copy">
+                      <strong>{{ company.correo || '—' }}</strong>
+                      <span>{{ company.telefono || '—' }}</span>
+                    </div>
+                  </td>
+                  <td class="text-center">
+                    <span
+                      class="admin-status"
+                      [class.admin-status--active]="company.estado"
+                      [class.admin-status--inactive]="!company.estado"
+                    >
+                      {{ company.estado ? 'Activa' : 'Inactiva' }}
+                    </span>
+                  </td>
+                  <td>
+                    <div class="admin-row-actions">
+                      <button
+                        *appPermission="'ORGANIZACIONES_VER'"
+                        type="button"
+                        class="admin-icon-button"
+                        title="Ver detalle"
+                        [disabled]="detailLoadingId() === company.empresaId"
+                        (click)="viewOrganization(company)"
+                      >
+                        @if (detailLoadingId() === company.empresaId) {
+                          <span class="loading loading-spinner loading-xs"></span>
+                        } @else {
+                          <fa-icon [icon]="viewIcon" />
+                        }
+                      </button>
+
+                      <button
+                        *appPermission="'ORGANIZACIONES_EDITAR'"
+                        type="button"
+                        class="admin-icon-button"
+                        title="Editar"
+                        (click)="editOrganization(company)"
+                      >
+                        <fa-icon [icon]="editIcon" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <app-paginator
+          [page]="organizations().page"
+          [size]="organizations().size"
+          [totalRecords]="organizations().totalRecords"
+          [totalPages]="organizations().totalPages"
+          (pageChange)="loadOrganizations($event, organizations().size)"
+          (sizeChange)="loadOrganizations(1, $event)"
+        />
+      }
+    </section>
+  } @else {
+    <section class="admin-surface">
+      <div class="admin-toolbar">
+        <div class="admin-field admin-toolbar-field">
+          <label for="areaCompanyFilter">Organización</label>
+          <select
+            id="areaCompanyFilter"
+            class="admin-select"
+            [value]="areaCompanyFilter() ?? 0"
+            (change)="changeAreaCompany($any($event.target).value)"
+          >
+            <option [value]="0">Todas</option>
+            @for (company of organizations().items; track company.empresaId) {
+              <option [value]="company.empresaId">
+                {{ company.razonSocial }}
+              </option>
+            }
+          </select>
+        </div>
+
+        <div class="admin-toolbar-actions">
+          <button
+            type="button"
+            class="admin-secondary-button"
+            [disabled]="areasLoading()"
+            (click)="loadAreas()"
+          >
+            <fa-icon [class.animate-spin]="areasLoading()" [icon]="refreshIcon" />
+            Actualizar
+          </button>
+
+          <button
+            *appPermission="'ORGANIZACIONES_CREAR'"
+            type="button"
+            class="admin-primary-button"
+            [attr.title]="companyOptions().length === 0 ? 'Primero registra una organización' : 'Crear área'"
+            (click)="createArea()"
+          >
+            <fa-icon [icon]="addIcon" />
+            Nueva área
+          </button>
+        </div>
+      </div>
+
+      @if (areasLoading()) {
+        <app-loading-state
+          title="Cargando áreas"
+          message="Consultando la estructura de áreas."
+        />
+      } @else if (areasError()) {
+        <app-error-state
+          [message]="areasError() || 'Intenta nuevamente.'"
+          (retry)="loadAreas()"
+        />
+      } @else if (areas().items.length === 0) {
+        <app-empty-state
+          title="Sin áreas"
+          message="No hay áreas para los criterios seleccionados."
+        />
+      } @else {
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Área</th>
+                <th>Organización</th>
+                <th>Área superior</th>
+                <th class="text-center">Estado</th>
+                <th class="text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (area of areas().items; track area.areaId) {
+                <tr>
+                  <td><span class="admin-code">{{ area.codigo }}</span></td>
+                  <td class="font-semibold text-slate-800">{{ area.nombre }}</td>
+                  <td>{{ area.empresa }}</td>
+                  <td>{{ area.areaPadre || '—' }}</td>
+                  <td class="text-center">
+                    <span
+                      class="admin-status"
+                      [class.admin-status--active]="area.estado"
+                      [class.admin-status--inactive]="!area.estado"
+                    >
+                      {{ area.estado ? 'Activa' : 'Inactiva' }}
+                    </span>
+                  </td>
+                  <td>
+                    <div class="admin-row-actions">
+                      <button
+                        *appPermission="'ORGANIZACIONES_EDITAR'"
+                        type="button"
+                        class="admin-icon-button"
+                        title="Editar área"
+                        (click)="editArea(area)"
+                      >
+                        <fa-icon [icon]="editIcon" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <app-paginator
+          [page]="areas().page"
+          [size]="areas().size"
+          [totalRecords]="areas().totalRecords"
+          [totalPages]="areas().totalPages"
+          (pageChange)="loadAreas($event, areas().size)"
+          (sizeChange)="loadAreas(1, $event)"
+        />
+      }
+    </section>
+  }
+</div>
+
+<app-organizacion-form />

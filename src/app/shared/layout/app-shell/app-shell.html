@@ -1,0 +1,20 @@
+<div class="desco-app-shell min-h-screen">
+  <app-sidebar
+    [mobileOpen]="mobileSidebarOpen()"
+    [collapsed]="sidebarCollapsed()"
+    (mobileOpenChange)="mobileSidebarOpen.set($event)"
+    (collapsedChange)="sidebarCollapsed.set($event)"
+  />
+
+  <div
+    class="min-h-screen transition-[padding] duration-200"
+    [class]="sidebarCollapsed() ? 'lg:pl-20' : 'lg:pl-72'"
+  >
+    <app-topbar (menuToggle)="toggleMobileSidebar()" />
+    <main class="min-h-[calc(100vh-4rem)]"><router-outlet /></main>
+  </div>
+
+  <app-toast-center />
+  <app-alert />
+  <app-screen-loading />
+</div>

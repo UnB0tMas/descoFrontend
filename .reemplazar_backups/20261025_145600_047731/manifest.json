@@ -1,0 +1,21 @@
+{
+  "proyecto": "D:\\FrancoSystem\\desco_frontend",
+  "fecha": "2026-10-25T14:56:00",
+  "cambios": [
+    {
+      "ruta": "src/app/features/recursos/productos/adapter/in/ui/pages/productos-list/productos-list.ts",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/recursos/productos/adapter/in/ui/pages/productos-list/productos-list.html",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/recursos/productos/adapter/in/ui/pages/productos-list/productos-list.css",
+      "accion": "escribir",
+      "existia": true
+    }
+  ]
+}

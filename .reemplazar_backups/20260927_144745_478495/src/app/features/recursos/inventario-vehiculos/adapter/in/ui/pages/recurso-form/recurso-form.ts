@@ -1,0 +1,80 @@
+import { NgTemplateOutlet } from '@angular/common';
+import { ChangeDetectionStrategy, Component, ElementRef, ViewChild, inject, signal } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FaIconComponent } from '@fortawesome/angular-fontawesome';
+import { faFloppyDisk, faGaugeHigh, faPen, faPlus, faRotate, faTriangleExclamation, faTruck, faXmark } from '@fortawesome/free-solid-svg-icons';
+import { finalize, forkJoin, Observable } from 'rxjs';
+
+import { ReferenceDataService } from '../../../../../../../../core/reference-data/reference-data.service';
+import { ResourceAssetIncidentRequest, ResourceAssetIncidentRequestTipoEnum } from '../../../../../../../../infrastructure/openapi/generated/model/resourceAssetIncidentRequest';
+import { ResourceAssetListItemResponse } from '../../../../../../../../infrastructure/openapi/generated/model/resourceAssetListItemResponse';
+import { ResourceAssetResponse } from '../../../../../../../../infrastructure/openapi/generated/model/resourceAssetResponse';
+import { ResourceAssetStateChangeRequestEstadoEnum } from '../../../../../../../../infrastructure/openapi/generated/model/resourceAssetStateChangeRequest';
+import { mapOpenApiError } from '../../../../../../../../infrastructure/openapi/openapi-http-error.mapper';
+import { ToastService } from '../../../../../../../../shared/feedback/toast-center/toast.service';
+import { FormErrorComponent } from '../../../../../../../../shared/forms/form-error/form-error';
+import { localDateTimeInputNow, normalizeOptionalText, normalizeText, notBlankValidator, notFutureDateValidator, todayLocalIsoDate } from '../../../../../../../../shared/forms/validators/desco-input.validators';
+import { ListarOrganizacionesUseCase } from '../../../../../../../administracion/organizaciones/application/use-case/listar-organizaciones.use-case';
+import { AdminModalResult, AdminSelectOption } from '../../../../../../../administracion/shared/admin-modal.types';
+import { UotContextStore } from '../../../../../../../uot/state/uot-context.store';
+import { ActualizarKilometrajeUseCase } from '../../../../../application/use-case/actualizar-kilometraje.use-case';
+import { RegistrarVehiculoUseCase } from '../../../../../application/use-case/registrar-vehiculo.use-case';
+import { Vehiculo } from '../../../../../domain/vehiculo.model';
+import { ResourceApiService } from '../../../../../../shared/resource-api.service';
+
+type ResourceFormMode = 'create' | 'edit' | 'state' | 'incident' | 'vehicle' | 'mileage';
+type AssetTarget = ResourceAssetResponse | ResourceAssetListItemResponse;
+
+@Component({
+  selector: 'app-recurso-form', standalone: true,
+  imports: [ReactiveFormsModule, FaIconComponent, FormErrorComponent, NgTemplateOutlet],
+  templateUrl: './recurso-form.html', styleUrl: './recurso-form.css', changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class RecursoFormComponent {
+  @ViewChild('dialog', { static: true }) private readonly dialogRef!: ElementRef<HTMLDialogElement>;
+  private readonly fb=inject(FormBuilder); private readonly api=inject(ResourceApiService); private readonly refs=inject(ReferenceDataService); private readonly listOrganizations=inject(ListarOrganizacionesUseCase); private readonly registerVehicle=inject(RegistrarVehiculoUseCase); private readonly updateMileage=inject(ActualizarKilometrajeUseCase); private readonly toast=inject(ToastService); readonly uot=inject(UotContextStore);
+
+  readonly mode=signal<ResourceFormMode>('create'); readonly current=signal<AssetTarget|null>(null); readonly currentVehicle=signal<Vehiculo|null>(null); readonly saving=signal(false); readonly referencesLoading=signal(false); readonly codeLoading=signal(false); readonly errorMessage=signal<string|null>(null); readonly assetTypes=signal<readonly AdminSelectOption[]>([]); readonly organizations=signal<readonly AdminSelectOption[]>([]); readonly currencies=signal<readonly {code:string;label:string}[]>([]); readonly vehicleTypes=signal<readonly {code:string;label:string}[]>([]);
+  readonly addIcon=faPlus; readonly editIcon=faPen; readonly stateIcon=faRotate; readonly incidentIcon=faTriangleExclamation; readonly vehicleIcon=faTruck; readonly mileageIcon=faGaugeHigh; readonly saveIcon=faFloppyDisk; readonly closeIcon=faXmark; readonly today=todayLocalIsoDate();
+
+  readonly states=[{value:ResourceAssetStateChangeRequestEstadoEnum.Disponible,label:'Disponible'},{value:ResourceAssetStateChangeRequestEstadoEnum.Asignado,label:'Asignado'},{value:ResourceAssetStateChangeRequestEstadoEnum.Mantenimiento,label:'Mantenimiento'},{value:ResourceAssetStateChangeRequestEstadoEnum.Averiado,label:'Averiado'},{value:ResourceAssetStateChangeRequestEstadoEnum.NoDisponible,label:'No disponible'},{value:ResourceAssetStateChangeRequestEstadoEnum.Inactivo,label:'Inactivo'},{value:ResourceAssetStateChangeRequestEstadoEnum.Baja,label:'Baja'}] as const;
+  readonly incidentTypes=[{value:ResourceAssetIncidentRequestTipoEnum.Averia,label:'Avería'},{value:ResourceAssetIncidentRequestTipoEnum.Accidente,label:'Accidente'},{value:ResourceAssetIncidentRequestTipoEnum.Perdida,label:'Pérdida'},{value:ResourceAssetIncidentRequestTipoEnum.Robo,label:'Robo'},{value:ResourceAssetIncidentRequestTipoEnum.Mantenimiento,label:'Mantenimiento'},{value:ResourceAssetIncidentRequestTipoEnum.Otro,label:'Otro'}] as const;
+  private resolver:((value:AdminModalResult)=>void)|null=null;
+
+  readonly form=this.fb.nonNullable.group({uotId:[0,[Validators.required,Validators.min(1)]],tipoBienId:[0,[Validators.required,Validators.min(1)]],codigoPatrimonial:['',[Validators.maxLength(60)]],nombre:['',[Validators.required,notBlankValidator,Validators.maxLength(150)]],marca:['',[Validators.maxLength(80)]],modelo:['',[Validators.maxLength(80)]],serie:['',[Validators.maxLength(100)]],fechaAdquisicion:['',[notFutureDateValidator]],montoAdquisicion:[0,[Validators.min(0),Validators.max(999999999999)]],moneda:['PEN',[Validators.required,Validators.maxLength(3)]],proveedorEmpresaId:[0],observacion:['',[Validators.maxLength(500)]]});
+  readonly stateForm=this.fb.nonNullable.group({estado:[ResourceAssetStateChangeRequestEstadoEnum.Disponible,[Validators.required]],motivo:['',[Validators.maxLength(500)]]});
+  readonly incidentForm=this.fb.nonNullable.group({tipo:[ResourceAssetIncidentRequestTipoEnum.Averia,[Validators.required]],fechaHora:[localDateTimeInputNow(),[Validators.required]],descripcion:['',[Validators.required,notBlankValidator,Validators.maxLength(700)]],costoEstimado:[0,[Validators.min(0),Validators.max(999999999999)]]});
+  readonly vehicleForm=this.fb.nonNullable.group({placa:['',[Validators.required,notBlankValidator,Validators.maxLength(12)]],tipoVehiculo:['',[Validators.required,notBlankValidator,Validators.maxLength(30)]],kilometrajeKm:[0,[Validators.required,Validators.min(0)]]});
+
+  openCreate(preferredUotId?:number):Promise<AdminModalResult>{this.resetState();this.mode.set('create');const selected=this.resolveCreateUotId(preferredUotId);this.form.reset({uotId:selected,tipoBienId:0,codigoPatrimonial:'',nombre:'',marca:'',modelo:'',serie:'',fechaAdquisicion:'',montoAdquisicion:0,moneda:'PEN',proveedorEmpresaId:0,observacion:''});this.form.controls.uotId[this.uot.modo()==='GENERAL'?'enable':'disable']({emitEvent:false});this.loadReferences();this.loadSuggestedCode(true);return this.show();}
+  openEdit(item:AssetTarget):Promise<AdminModalResult>{this.resetState();this.mode.set('edit');this.current.set(item);this.form.reset({uotId:item.uotId??0,tipoBienId:item.tipoBienId??0,codigoPatrimonial:item.codigoPatrimonial??'',nombre:item.nombre??'',marca:item.marca??'',modelo:item.modelo??'',serie:item.serie??'',fechaAdquisicion:item.fechaAdquisicion??'',montoAdquisicion:item.montoAdquisicion??0,moneda:item.monedaAdquisicion??'PEN',proveedorEmpresaId:item.proveedorEmpresaId??0,observacion:item.observacion??''});this.form.controls.uotId.disable({emitEvent:false});this.loadReferences();return this.show();}
+  openState(item:AssetTarget):Promise<AdminModalResult>{this.resetState();this.mode.set('state');this.current.set(item);const valid=this.states.find((state)=>state.value===item.estadoBien);this.stateForm.reset({estado:valid?.value??ResourceAssetStateChangeRequestEstadoEnum.Disponible,motivo:''});return this.show();}
+  openIncident(item:AssetTarget):Promise<AdminModalResult>{this.resetState();this.mode.set('incident');this.current.set(item);this.incidentForm.reset({tipo:ResourceAssetIncidentRequestTipoEnum.Averia,fechaHora:localDateTimeInputNow(),descripcion:'',costoEstimado:0});return this.show();}
+  openVehicle(item:AssetTarget):Promise<AdminModalResult>{this.resetState();this.mode.set('vehicle');this.current.set(item);this.vehicleForm.reset({placa:'',tipoVehiculo:'',kilometrajeKm:0});this.loadVehicleTypes();return this.show();}
+  openMileage(item:AssetTarget,vehicle:Vehiculo):Promise<AdminModalResult>{this.resetState();this.mode.set('mileage');this.current.set(item);this.currentVehicle.set(vehicle);this.vehicleForm.reset({placa:vehicle.placa,tipoVehiculo:vehicle.tipoVehiculo,kilometrajeKm:vehicle.kilometrajeKm});return this.show();}
+
+  availableUnits(){return this.uot.memberships();}
+  onUotChange():void{this.form.controls.proveedorEmpresaId.setValue(0,{emitEvent:false});this.loadReferences();if(this.mode()==='create')this.loadSuggestedCode(true);}
+  close():void{if(!this.saving())this.finish({saved:false,value:null});}
+  save():void{switch(this.mode()){case'state':this.saveState();return;case'incident':this.saveIncident();return;case'vehicle':this.saveVehicle();return;case'mileage':this.saveMileage();return;default:this.saveAsset();}}
+  title():string{switch(this.mode()){case'edit':return'Editar bien';case'state':return'Cambiar estado';case'incident':return'Registrar incidencia';case'vehicle':return'Registrar vehículo';case'mileage':return'Actualizar kilometraje';default:return'Registrar bien';}}
+  icon(){switch(this.mode()){case'edit':return this.editIcon;case'state':return this.stateIcon;case'incident':return this.incidentIcon;case'vehicle':return this.vehicleIcon;case'mileage':return this.mileageIcon;default:return this.addIcon;}}
+
+  private saveAsset():void{this.form.markAllAsTouched();if(this.form.invalid||this.saving()||this.referencesLoading())return;const raw=this.form.getRawValue(),amount=Number(raw.montoAdquisicion),providerId=Number(raw.proveedorEmpresaId);const common={tipoBienId:Number(raw.tipoBienId),nombre:normalizeText(raw.nombre),marca:normalizeOptionalText(raw.marca),modelo:normalizeOptionalText(raw.modelo),serie:normalizeOptionalText(raw.serie),fechaAdquisicion:raw.fechaAdquisicion||undefined,montoAdquisicion:amount>0?amount:undefined,moneda:raw.moneda.trim().toUpperCase()||'PEN',proveedorEmpresaId:providerId>0?providerId:undefined,observacion:normalizeOptionalText(raw.observacion)};const operation=this.mode()==='edit'&&this.current()?.bienInventarioId?this.api.updateAsset(this.current()!.bienInventarioId!,common):this.api.createAsset({uotId:Number(raw.uotId),codigoPatrimonial:raw.codigoPatrimonial.trim().toUpperCase()||undefined,...common});this.run(operation,this.mode()==='edit'?'Bien actualizado':'Bien registrado');}
+  private saveState():void{const item=this.current();this.stateForm.markAllAsTouched();if(!item?.bienInventarioId||this.stateForm.invalid||this.saving())return;const raw=this.stateForm.getRawValue();this.run(this.api.changeAssetState(item.bienInventarioId,{estado:raw.estado,motivo:normalizeOptionalText(raw.motivo)}),'Estado actualizado');}
+  private saveIncident():void{const item=this.current();this.incidentForm.markAllAsTouched();if(!item?.bienInventarioId||this.incidentForm.invalid||this.saving())return;const raw=this.incidentForm.getRawValue(),cost=Number(raw.costoEstimado);const body:ResourceAssetIncidentRequest={tipo:raw.tipo,fechaHora:raw.fechaHora,descripcion:normalizeText(raw.descripcion),costoEstimado:cost>0?cost:undefined};this.run(this.api.reportAssetIncident(item.bienInventarioId,body),'Incidencia registrada');}
+  private saveVehicle():void{const item=this.current();this.vehicleForm.markAllAsTouched();if(!item?.bienInventarioId||this.vehicleForm.invalid||this.saving())return;const raw=this.vehicleForm.getRawValue();this.run(this.registerVehicle.execute(item.bienInventarioId,{placa:raw.placa.trim().toUpperCase(),tipoVehiculo:raw.tipoVehiculo.trim().toUpperCase(),kilometrajeKm:Number(raw.kilometrajeKm)}),'Vehículo registrado');}
+  private saveMileage():void{const item=this.current();this.vehicleForm.controls.kilometrajeKm.markAsTouched();if(!item?.bienInventarioId||this.vehicleForm.controls.kilometrajeKm.invalid||this.saving())return;this.run(this.updateMileage.execute(item.bienInventarioId,{kilometrajeKm:Number(this.vehicleForm.controls.kilometrajeKm.value)}),'Kilometraje actualizado');}
+  private run(operation:Observable<unknown>,success:string):void{this.saving.set(true);this.errorMessage.set(null);operation.pipe(finalize(()=>this.saving.set(false))).subscribe({next:()=>{this.toast.success(success);this.finish({saved:true,value:null});},error:(error)=>{const message=mapOpenApiError(error).message;this.errorMessage.set(message);this.toast.error('No se pudo completar la operación',message);}});}
+
+  private resolveCreateUotId(preferredUotId?:number):number{
+    if(this.uot.isSpecific())return this.uot.selectedId()??0;
+    return preferredUotId&&preferredUotId>0?preferredUotId:0;
+  }
+  private loadSuggestedCode(force=false):void{const uotId=Number(this.form.getRawValue().uotId),control=this.form.controls.codigoPatrimonial;if(uotId<=0){if(force)control.setValue('',{emitEvent:false});return;}if(!force&&control.dirty&&control.value.trim())return;this.codeLoading.set(true);this.api.suggestCode(uotId,'BIEN').pipe(finalize(()=>this.codeLoading.set(false))).subscribe({next:(code)=>{if(code){control.setValue(code,{emitEvent:false});control.markAsPristine();}},error:()=>{if(force){control.setValue('',{emitEvent:false});control.markAsPristine();}}});}
+  private loadReferences():void{this.referencesLoading.set(true);forkJoin({types:this.refs.catalog('TIPO_BIEN'),currencies:this.refs.catalog('MONEDA'),organizations:this.listOrganizations.execute(1,100,Number(this.form.getRawValue().uotId)||undefined)}).pipe(finalize(()=>this.referencesLoading.set(false))).subscribe({next:({types,currencies,organizations})=>{this.assetTypes.set(types.map((item)=>({value:Number(item.id),label:item.label,description:item.code})).filter((item)=>item.value>0));this.currencies.set(currencies.map((item)=>({code:item.code,label:item.label})));this.organizations.set(organizations.items.filter((item)=>item.estado).map((item)=>({value:item.empresaId,label:item.razonSocial,description:item.ruc})));const current=this.form.controls.moneda.value;if(!this.currencies().some((item)=>item.code===current))this.form.controls.moneda.setValue(this.currencies()[0]?.code??'PEN');},error:(error)=>this.errorMessage.set(mapOpenApiError(error).message)});}
+  private loadVehicleTypes():void{this.referencesLoading.set(true);this.refs.catalog('TIPO_VEHICULO').pipe(finalize(()=>this.referencesLoading.set(false))).subscribe({next:(items)=>{this.vehicleTypes.set(items.map((item)=>({code:item.code,label:item.label})));if(!this.vehicleForm.controls.tipoVehiculo.value)this.vehicleForm.controls.tipoVehiculo.setValue(this.vehicleTypes()[0]?.code??'');},error:(error)=>this.errorMessage.set(mapOpenApiError(error).message)});}
+  private show():Promise<AdminModalResult>{this.dialogRef.nativeElement.showModal();return new Promise((resolve)=>{this.resolver=resolve;});}
+  private finish(result:AdminModalResult):void{if(this.dialogRef.nativeElement.open)this.dialogRef.nativeElement.close();this.resolver?.(result);this.resolver=null;this.resetState();}
+  private resetState():void{this.current.set(null);this.currentVehicle.set(null);this.errorMessage.set(null);}
+}

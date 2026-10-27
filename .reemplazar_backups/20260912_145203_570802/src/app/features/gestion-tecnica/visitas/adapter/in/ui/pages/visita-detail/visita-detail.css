@@ -1,0 +1,1 @@
+:host{display:block}.visit-detail-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}.visit-copy{display:grid;gap:.8rem;padding:1rem}.visit-copy span{display:block;color:#94a3b8;font-size:.62rem;font-weight:700}.visit-copy p{margin:.2rem 0 0;color:#334155;font-size:.72rem;line-height:1.5}@media(max-width:850px){.visit-detail-two{grid-template-columns:1fr}}

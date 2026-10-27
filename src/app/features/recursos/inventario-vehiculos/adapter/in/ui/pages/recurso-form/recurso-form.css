@@ -1,0 +1,19 @@
+:host {
+  display: contents;
+}
+
+.resource-form-section {
+  border-bottom: 1px solid var(--desco-border);
+  padding-bottom: .35rem;
+  color: var(--desco-primary-text);
+  font-size: .64rem;
+  font-weight: 850;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+
+.resource-money-field {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr);
+  gap: .45rem;
+}

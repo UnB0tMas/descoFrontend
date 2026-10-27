@@ -1,0 +1,147 @@
+<dialog #dialog class="modal">
+  <div class="modal-box max-w-4xl bg-white">
+    <header class="admin-modal-header">
+      <div class="admin-modal-heading">
+        <span class="admin-modal-icon">
+          <fa-icon [icon]="pageIcon" />
+        </span>
+        <div>
+          <h3>{{ current() ? 'Editar gasto' : 'Registrar gasto' }}</h3>
+          <p>Completa los datos requeridos.</p>
+        </div>
+      </div>
+
+      <button
+        class="admin-icon-button"
+        type="button"
+        [disabled]="saving()"
+        (click)="close()"
+      >
+        <fa-icon [icon]="closeIcon" />
+      </button>
+    </header>
+
+    @if (error()) {
+      <div class="admin-inline-error">{{ error() }}</div>
+    }
+
+    <form class="admin-form-grid" [formGroup]="form" (ngSubmit)="submit()">
+      @if (!current()) {
+        <div class="admin-field">
+          <label>Campaña</label>
+          <input
+            class="admin-input"
+            type="number"
+            min="1"
+            step="1"
+            formControlName="campaniaVentaId"
+          />
+        </div>
+
+        <div class="admin-field">
+          <label>Operativo</label>
+          <input
+            class="admin-input"
+            type="number"
+            min="0"
+            step="1"
+            formControlName="operativoVentaId"
+          />
+        </div>
+      }
+
+      <div class="admin-field">
+        <label for="expenseType">Tipo de gasto</label>
+        <select
+          id="expenseType"
+          class="admin-select"
+          formControlName="tipoGastoId"
+          [disabled]="referencesLoading()"
+        >
+          <option [ngValue]="0">
+            {{ referencesLoading() ? 'Cargando...' : 'Seleccionar' }}
+          </option>
+          @for (item of expenseTypes(); track item.value) {
+            <option [ngValue]="item.value">{{ item.label }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="admin-field">
+        <label for="distributionRule">Regla de distribución</label>
+        <select
+          id="distributionRule"
+          class="admin-select"
+          formControlName="reglaProrrateoId"
+          [disabled]="referencesLoading()"
+        >
+          <option [ngValue]="0">
+            {{ referencesLoading() ? 'Cargando...' : 'Seleccionar' }}
+          </option>
+          @for (item of distributionRules(); track item.value) {
+            <option [ngValue]="item.value">{{ item.label }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="admin-field">
+        <label>Fecha</label>
+        <input class="admin-input" type="date" formControlName="fecha" />
+      </div>
+
+      <div class="admin-field">
+        <label>Importe</label>
+        <input
+          class="admin-input"
+          type="number"
+          min="0.01"
+          step="0.01"
+          formControlName="importe"
+        />
+      </div>
+
+      <div class="admin-field">
+        <label>Moneda</label>
+        <input
+          class="admin-input"
+          maxlength="3"
+          formControlName="moneda"
+        />
+      </div>
+
+      <div class="admin-field admin-field-span-2">
+        <label>Concepto</label>
+        <input
+          class="admin-input"
+          maxlength="250"
+          formControlName="concepto"
+        />
+      </div>
+
+      <footer class="admin-modal-actions admin-field-span-2">
+        <button
+          class="admin-secondary-button"
+          type="button"
+          [disabled]="saving()"
+          (click)="close()"
+        >
+          Cancelar
+        </button>
+
+        <button
+          class="admin-primary-button"
+          type="submit"
+          [disabled]="saving() || referencesLoading()"
+        >
+          @if (saving()) {
+            <span class="loading loading-spinner loading-sm"></span>
+            Guardando...
+          } @else {
+            <fa-icon [icon]="saveIcon" />
+            Guardar
+          }
+        </button>
+      </footer>
+    </form>
+  </div>
+</dialog>

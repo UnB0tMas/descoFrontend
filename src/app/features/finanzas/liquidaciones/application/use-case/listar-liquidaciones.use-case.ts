@@ -1,0 +1,1 @@
+import{inject,Injectable}from'@angular/core';import{LiquidacionFiltro}from'../../domain/liquidacion-filtro.model';import{LIQUIDACIONES_GATEWAY,LiquidacionesGateway}from'../port/out/liquidaciones.gateway';@Injectable()export class ListarLiquidacionesUseCase{private readonly g:LiquidacionesGateway=inject(LIQUIDACIONES_GATEWAY);execute(f:LiquidacionFiltro){return this.g.list(f);}}

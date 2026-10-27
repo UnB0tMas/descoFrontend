@@ -1,0 +1,201 @@
+<dialog #dialog class="modal desco-modal" (cancel)="$event.preventDefault(); close()">
+  <div
+    class="modal-box admin-modal-box"
+    [class.admin-modal-box--wide]="mode() === 'movement'"
+  >
+    <header class="admin-modal-header">
+      <div class="admin-modal-title-group">
+        <span class="admin-modal-icon"><fa-icon [icon]="icon()" /></span>
+        <div><p>Almacenes</p><h2>{{ title() }}</h2></div>
+      </div>
+      <button type="button" class="admin-icon-button" [disabled]="saving()" (click)="close()">
+        <fa-icon [icon]="closeIcon" />
+      </button>
+    </header>
+
+    @if (errorMessage()) {
+      <div class="admin-inline-error">{{ errorMessage() }}</div>
+    }
+
+    @if (mode() === 'create') {
+      <form class="admin-form-grid" [formGroup]="createForm" (ngSubmit)="save()">
+        <div class="admin-field">
+          <label>UOT propietaria</label>
+          <select class="admin-select" formControlName="uotId">
+            <option [value]="0">Seleccionar</option>
+            @for (unit of uot.memberships(); track unit.uotId) {
+              <option [value]="unit.uotId">{{ unit.nombre }}</option>
+            }
+          </select>
+          <app-form-error [control]="createForm.controls.uotId" fieldLabel="La UOT" />
+        </div>
+        <div class="admin-field">
+          <label>Ubicación registrada (opcional)</label>
+          <input class="admin-input" type="number" min="0" formControlName="ubicacionId" />
+        </div>
+        <div class="admin-field">
+          <label>Código</label>
+          <input class="admin-input" formControlName="codigo" maxlength="50" />
+          <app-form-error [control]="createForm.controls.codigo" fieldLabel="El código" />
+        </div>
+        <div class="admin-field">
+          <label>Nombre</label>
+          <input class="admin-input" formControlName="nombre" maxlength="160" />
+          <app-form-error [control]="createForm.controls.nombre" fieldLabel="El nombre" />
+        </div>
+        <div class="admin-field admin-field-span-2">
+          <label>Descripción</label>
+          <textarea class="admin-textarea" rows="3" maxlength="500" formControlName="descripcion"></textarea>
+        </div>
+        <ng-container *ngTemplateOutlet="actions"></ng-container>
+      </form>
+    } @else if (mode() === 'share') {
+      <form class="admin-form-grid" [formGroup]="shareForm" (ngSubmit)="save()">
+        <div class="admin-field admin-field-span-2 warehouse-current">
+          <span>Almacén</span>
+          <strong>{{ currentWarehouse()?.nombre }}</strong>
+          <small>Propietaria: {{ currentWarehouse()?.uotPropietaria }}</small>
+        </div>
+        <div class="admin-field admin-field-span-2">
+          <label>Compartir con UOT</label>
+          <select class="admin-select" formControlName="uotId">
+            <option [value]="0">Seleccionar</option>
+            @for (unit of uot.memberships(); track unit.uotId) {
+              @if (unit.uotId !== currentWarehouse()?.uotPropietariaId) {
+                <option [value]="unit.uotId">{{ unit.nombre }}</option>
+              }
+            }
+          </select>
+        </div>
+        <label class="warehouse-check">
+          <input type="checkbox" class="checkbox checkbox-sm" formControlName="permiteEntrada" />
+          <span>Permitir entradas</span>
+        </label>
+        <label class="warehouse-check">
+          <input type="checkbox" class="checkbox checkbox-sm" formControlName="permiteSalida" />
+          <span>Permitir salidas</span>
+        </label>
+        <ng-container *ngTemplateOutlet="actions"></ng-container>
+      </form>
+    } @else {
+      <form class="warehouse-movement-form" [formGroup]="movementForm" (ngSubmit)="save()">
+        <div class="admin-form-grid">
+          <div class="admin-field">
+            <label>UOT</label>
+            <select class="admin-select" formControlName="uotId" (change)="onMovementUnitChange()">
+              <option [value]="0">Seleccionar</option>
+              @for (unit of uot.memberships(); track unit.uotId) {
+                <option [value]="unit.uotId">{{ unit.nombre }}</option>
+              }
+            </select>
+          </div>
+          <div class="admin-field">
+            <label>Almacén</label>
+            <select class="admin-select" formControlName="almacenId">
+              <option [value]="0">Seleccionar</option>
+              @for (warehouse of warehousesForUnit(); track warehouse.almacenId) {
+                <option [value]="warehouse.almacenId">{{ warehouse.nombre }}</option>
+              }
+            </select>
+          </div>
+          <div class="admin-field">
+            <label>Tipo</label>
+            <select class="admin-select" formControlName="tipo">
+              @for (type of movementTypes; track type.value) {
+                <option [value]="type.value">{{ type.label }}</option>
+              }
+            </select>
+          </div>
+          <div class="admin-field">
+            <label>Naturaleza</label>
+            <select class="admin-select" formControlName="naturaleza">
+              <option value="E">Entrada</option>
+              <option value="S">Salida</option>
+            </select>
+          </div>
+          <div class="admin-field">
+            <label>Documento de referencia</label>
+            <input class="admin-input" maxlength="100" formControlName="documentoReferencia" />
+          </div>
+          <div class="admin-field">
+            <label>Observación</label>
+            <input class="admin-input" maxlength="500" formControlName="observacion" />
+          </div>
+        </div>
+
+        <section class="warehouse-lines" formArrayName="detalle">
+          <header>
+            <div><p>Detalle</p><h3>Productos del movimiento</h3></div>
+            <button type="button" class="admin-secondary-button admin-secondary-button--small" (click)="addLine()">
+              <fa-icon [icon]="addIcon" />
+              Agregar línea
+            </button>
+          </header>
+
+          @for (line of lines.controls; track $index; let index = $index) {
+            <div class="warehouse-line" [formGroupName]="index">
+              <div class="admin-field warehouse-line-product">
+                <label>Producto</label>
+                <select class="admin-select" formControlName="productoId">
+                  <option [value]="0">Seleccionar</option>
+                  @for (product of products(); track product.productoId) {
+                    <option [value]="product.productoId">{{ product.nombre }} · {{ product.codigo }}</option>
+                  }
+                </select>
+              </div>
+              <div class="admin-field">
+                <label>Cantidad</label>
+                <input class="admin-input" type="number" min="0.001" step="0.001" formControlName="cantidad" />
+              </div>
+              <div class="admin-field">
+                <label>Costo unitario</label>
+                <input class="admin-input" type="number" min="0" step="0.01" formControlName="costoUnitario" />
+              </div>
+              <div class="admin-field">
+                <label>Moneda</label>
+                <select class="admin-select" formControlName="moneda">
+                  <option value="PEN">PEN</option>
+                  <option value="USD">USD</option>
+                </select>
+              </div>
+              <div class="admin-field">
+                <label>Lote</label>
+                <input class="admin-input" maxlength="80" formControlName="lote" />
+              </div>
+              <div class="admin-field">
+                <label>Vencimiento</label>
+                <input class="admin-input" type="date" formControlName="fechaVencimiento" />
+              </div>
+              <button
+                type="button"
+                class="admin-icon-button warehouse-remove"
+                title="Quitar línea"
+                [disabled]="lines.length <= 1"
+                (click)="removeLine(index)"
+              >
+                <fa-icon [icon]="removeIcon" />
+              </button>
+            </div>
+          }
+        </section>
+
+        <ng-container *ngTemplateOutlet="actions"></ng-container>
+      </form>
+    }
+
+    <ng-template #actions>
+      <footer class="admin-modal-actions">
+        <button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="close()">Cancelar</button>
+        <button type="submit" class="admin-primary-button" [disabled]="saving()">
+          @if (saving()) {
+            <span class="loading loading-spinner loading-sm"></span>
+            Guardando...
+          } @else {
+            <fa-icon [icon]="saveIcon" />
+            Guardar
+          }
+        </button>
+      </footer>
+    </ng-template>
+  </div>
+</dialog>

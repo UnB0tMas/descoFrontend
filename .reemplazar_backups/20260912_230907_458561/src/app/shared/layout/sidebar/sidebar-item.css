@@ -1,0 +1,137 @@
+:host {
+  display: block;
+}
+
+.nav-group,
+.nav-link {
+  display: flex;
+  width: 100%;
+  min-height: 2.8rem;
+  align-items: center;
+  gap: 0.7rem;
+  border: 1px solid transparent;
+  border-radius: 0.78rem;
+  padding: 0.38rem 0.48rem;
+  background: transparent;
+  color: var(--desco-text);
+  font-size: 0.76rem;
+  font-weight: 730;
+  text-align: left;
+  text-decoration: none;
+  transition:
+    border-color 140ms ease,
+    background 140ms ease,
+    color 140ms ease;
+}
+
+.nav-group:hover,
+.nav-link:hover {
+  border-color: #e0e7ff;
+  background: var(--desco-surface-soft);
+  color: #1d4ed8;
+}
+
+.nav-icon {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--desco-border);
+  border-radius: 0.62rem;
+  background: var(--desco-surface-soft);
+  color: var(--desco-text-muted);
+  transition:
+    border-color 140ms ease,
+    background 140ms ease,
+    color 140ms ease;
+}
+
+.nav-group:hover .nav-icon,
+.nav-link:hover .nav-icon {
+  border-color: #dbeafe;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.nav-label {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav-chevron {
+  flex: 0 0 auto;
+  color: var(--desco-text-muted);
+  font-size: 0.62rem;
+  transition: transform 160ms ease;
+}
+
+.rotate-chevron {
+  transform: rotate(180deg);
+}
+
+.nav-children {
+  display: grid;
+  margin: 0.15rem 0 0.35rem 1.45rem;
+  gap: 0.08rem;
+  border-left: 1px solid var(--desco-border);
+  padding-left: 0.7rem;
+}
+
+.nav-child {
+  display: flex;
+  min-height: 2.2rem;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 0.62rem;
+  padding: 0.38rem 0.55rem;
+  color: var(--desco-text-muted);
+  font-size: 0.72rem;
+  font-weight: 650;
+  text-decoration: none;
+  transition:
+    background 140ms ease,
+    color 140ms ease;
+}
+
+.nav-child:hover {
+  background: var(--desco-surface-soft);
+  color: #1d4ed8;
+}
+
+.child-marker {
+  color: #cbd5e1;
+  font-size: 0.3rem;
+}
+
+.nav-child-active {
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 800;
+}
+
+.nav-child-active .child-marker {
+  color: #2563eb;
+}
+
+.nav-link-active {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 820;
+}
+
+.nav-link-active .nav-icon {
+  border-color: #bfdbfe;
+  background: var(--desco-surface);
+  color: #1d4ed8;
+}
+
+.nav-group-collapsed,
+.nav-link-collapsed {
+  justify-content: center;
+  padding-inline: 0.25rem;
+}

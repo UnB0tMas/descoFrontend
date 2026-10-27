@@ -1,0 +1,74 @@
+<header class="topbar-shell">
+  <div class="topbar-inner">
+    <button
+      type="button"
+      class="topbar-icon-button lg:hidden"
+      aria-label="Abrir menú"
+      (click)="menuToggle.emit()"
+    >
+      <fa-icon [icon]="menuIcon" />
+    </button>
+
+    <div class="hidden min-w-0 flex-1 md:block">
+      <app-breadcrumb />
+    </div>
+
+    <div class="topbar-actions">
+      <app-uot-context-switcher [compact]="true" />
+
+      <button
+        type="button"
+        class="topbar-icon-button"
+        [attr.aria-label]="theme.isDark() ? 'Activar modo claro' : 'Activar modo oscuro'"
+        [attr.title]="theme.isDark() ? 'Modo claro' : 'Modo oscuro'"
+        [disabled]="theme.switching()"
+        (click)="theme.toggle()"
+      >
+        @if (theme.switching()) {
+          <span class="loading loading-spinner loading-sm" aria-hidden="true"></span>
+        } @else {
+          <fa-icon [icon]="theme.isDark() ? lightIcon : darkIcon" />
+        }
+      </button>
+
+      <div class="dropdown dropdown-end">
+        <button type="button" tabindex="0" class="topbar-account-button">
+          <div class="topbar-avatar">{{ initials() || 'DS' }}</div>
+          <div class="topbar-account-copy">
+            <p>{{ displayName() }}</p>
+            <span>{{ user()?.nombreUsuario || 'Sesión activa' }}</span>
+          </div>
+          <fa-icon class="topbar-chevron" [icon]="chevronIcon" />
+        </button>
+
+        <ul tabindex="0" class="menu dropdown-content topbar-account-menu">
+          <li class="menu-title">Mi cuenta</li>
+          <li>
+            <a routerLink="/mi-cuenta/perfil">
+              <fa-icon [icon]="userIcon" />
+              Perfil
+            </a>
+          </li>
+          <li>
+            <a routerLink="/mi-cuenta/seguridad">
+              <fa-icon [icon]="securityIcon" />
+              Seguridad
+            </a>
+          </li>
+          <li>
+            <a routerLink="/mi-cuenta/sesiones">
+              <fa-icon [icon]="sessionsIcon" />
+              Sesiones
+            </a>
+          </li>
+          <li>
+            <a routerLink="/mi-cuenta/dispositivos">
+              <fa-icon [icon]="devicesIcon" />
+              Dispositivos
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</header>

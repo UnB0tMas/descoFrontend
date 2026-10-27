@@ -1,0 +1,21 @@
+:host { display: contents; }
+.resource-select-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .45rem; }
+.resource-helper { display: block; margin-top: .35rem; color: var(--desco-text-muted); font-size: .65rem; font-weight: 650; }
+.resource-modal-loading { display: grid; min-height: 16rem; place-items: center; align-content: center; gap: .45rem; padding: 2rem; color: var(--desco-text-muted); text-align: center; }
+.resource-modal-loading strong { color: var(--desco-text); font-size: .82rem; }
+.resource-modal-loading span:last-child { font-size: .7rem; }
+.resource-program-view { display: grid; gap: 1rem; padding: 1rem 1.15rem 1.15rem; }
+.resource-context-card { border: 1px solid var(--desco-primary-border); border-radius: .9rem; background: var(--desco-primary-soft); padding: .75rem .85rem; }
+.resource-context-card strong, .resource-context-card span { display: block; }
+.resource-context-card strong { color: var(--desco-text); font-size: .78rem; }
+.resource-context-card span { margin-top: .2rem; color: var(--desco-primary-text); font-size: .66rem; font-weight: 650; }
+
+.resource-context-card { overflow-wrap: anywhere; }
+.resource-program-view .admin-detail-card { min-width: 0; }
+.resource-program-view .admin-detail-card strong { overflow-wrap: anywhere; }
+.resource-program-view .admin-table-wrap { max-width: 100%; overflow-x: auto; }
+@media (max-width: 640px) {
+  .resource-program-view { padding: .75rem; }
+  .resource-select-row { grid-template-columns: minmax(0,1fr) 2.5rem; }
+  .resource-context-card { padding: .65rem; }
+}

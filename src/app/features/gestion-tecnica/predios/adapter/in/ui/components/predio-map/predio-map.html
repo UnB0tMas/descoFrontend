@@ -1,0 +1,5 @@
+<div class="property-map-shell">
+ <div #mapHost class="property-map" [style.height]="height" aria-label="Ubicación del predio"></div>
+ @if(editable){<button type="button" class="property-map-locate" [disabled]="locating()" (click)="useCurrentLocation()">@if(locating()){<span class="loading loading-spinner loading-xs"></span> Obteniendo...}@else{<fa-icon [icon]="locateIcon"/> Usar ubicación actual}</button>}
+ @if(latitude!==null&&longitude!==null){<div class="property-map-coordinates"><fa-icon [icon]="mapIcon"/><span>{{latitude.toFixed(6)}}, {{longitude.toFixed(6)}}</span></div>}
+</div>

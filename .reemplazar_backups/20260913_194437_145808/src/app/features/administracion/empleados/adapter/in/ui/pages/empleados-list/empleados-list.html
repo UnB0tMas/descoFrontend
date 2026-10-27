@@ -1,0 +1,91 @@
+<div class="desco-page">
+  <app-page-header
+    title="Empleados"
+    [subtitle]="hasSpecificUot() ? 'Personal adscrito a ' + uotName() : 'Selecciona una UOT para consultar su personal.'"
+    eyebrow="Administración"
+    [icon]="pageIcon"
+  >
+    <div pageActions class="flex flex-wrap gap-2">
+      <button type="button" class="admin-secondary-button" [disabled]="loading() || !hasSpecificUot()" (click)="load()">
+        <fa-icon [icon]="refreshIcon" /> Actualizar
+      </button>
+      <button *appPermission="'EMPLEADOS_CREAR'" type="button" class="admin-primary-button" [disabled]="!hasSpecificUot() || referencesLoading()" (click)="create()">
+        <fa-icon [icon]="addIcon" /> Registrar empleado
+      </button>
+    </div>
+  </app-page-header>
+
+  @if (!hasSpecificUot()) {
+    <section class="admin-surface mt-5">
+      <app-empty-state title="Selecciona una UOT" message="Los empleados y sus áreas se listan según la UOT de trabajo seleccionada." />
+    </section>
+  } @else {
+    <section class="admin-surface mt-5">
+      <div class="admin-toolbar">
+        <div class="admin-field">
+          <label>UOT</label>
+          <input class="admin-input" [value]="uotName()" readonly />
+        </div>
+        <div class="admin-field">
+          <label for="employeeAreaFilter">Área</label>
+          <select id="employeeAreaFilter" class="admin-select" [value]="areaFilter() ?? 0" [disabled]="referencesLoading()" (change)="changeArea($any($event.target).value)">
+            <option [value]="0">Todas las áreas</option>
+            @for (area of activeAreas(); track area.areaId) {
+              <option [value]="area.areaId">{{ area.nombre }}</option>
+            }
+          </select>
+        </div>
+        <div class="admin-field">
+          <label for="employeeActiveFilter">Estado</label>
+          <select id="employeeActiveFilter" class="admin-select" [value]="activeFilter() === null ? '' : activeFilter()" (change)="changeActive($any($event.target).value)">
+            <option value="">Todos</option>
+            <option value="true">Activos</option>
+            <option value="false">Retirados</option>
+          </select>
+        </div>
+      </div>
+
+      @if (referencesError()) {
+        <app-error-state [message]="referencesError() || 'No se pudieron cargar las áreas.'" (retry)="loadReferences()" />
+      } @else if (loading()) {
+        <app-loading-state title="Cargando empleados" [message]="'Consultando personal de ' + uotName() + '.'" />
+      } @else if (errorMessage()) {
+        <app-error-state [message]="errorMessage() || 'Intenta nuevamente.'" (retry)="load()" />
+      } @else if (result().items.length === 0) {
+        <app-empty-state title="Sin empleados" [message]="'No hay empleados para los filtros seleccionados en ' + uotName() + '.'" />
+      } @else {
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr><th>Empleado</th><th>Documento</th><th>UOT</th><th>Área / cargo</th><th>Cuenta</th><th class="text-center">Estado</th><th class="text-right">Acciones</th></tr>
+            </thead>
+            <tbody>
+              @for (employee of result().items; track employee.empleadoId) {
+                <tr>
+                  <td><div class="admin-entity"><span class="admin-avatar">{{ employee.nombres.charAt(0) }}{{ employee.apellidoPaterno.charAt(0) }}</span><div><strong>{{ fullName(employee) }}</strong><span>{{ employee.codigoEmpleado }}</span></div></div></td>
+                  <td><div class="admin-stack-copy"><strong>{{ employee.numeroDocumento }}</strong><span>{{ employee.tipoDocumento }}</span></div></td>
+                  <td>{{ uotName() }}</td>
+                  <td><div class="admin-stack-copy"><strong>{{ employee.area || 'Sin área' }}</strong><span>{{ employee.cargo || 'Sin cargo' }}</span></div></td>
+                  <td>
+                    @if (employee.usuarioId) { <div class="admin-stack-copy"><strong>{{ employee.nombreUsuario }}</strong><span>{{ employee.estadoCuenta || '—' }}</span></div> }
+                    @else { <span class="admin-muted-badge">Sin cuenta</span> }
+                  </td>
+                  <td class="text-center"><span class="admin-status" [class.admin-status--active]="employee.estado" [class.admin-status--inactive]="!employee.estado">{{ employee.estado ? 'Activo' : 'Retirado' }}</span></td>
+                  <td><div class="admin-row-actions">
+                    <a *appPermission="'EMPLEADOS_VER'" class="admin-icon-button" [routerLink]="['/administracion/empleados', employee.empleadoId]" title="Ver detalle"><fa-icon [icon]="viewIcon" /></a>
+                    <button *appPermission="'EMPLEADOS_EDITAR'" type="button" class="admin-icon-button" [disabled]="!employee.estado" (click)="edit(employee)"><fa-icon [icon]="editIcon" /></button>
+                    <button *appPermission="'EMPLEADOS_RETIRAR'" type="button" class="admin-icon-button admin-icon-button--danger" [disabled]="!employee.estado || retiringId() === employee.empleadoId" (click)="retire(employee)"><fa-icon [icon]="retireIcon" /></button>
+                  </div></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <app-paginator [page]="result().page" [size]="result().size" [totalRecords]="result().totalRecords" [totalPages]="result().totalPages" (pageChange)="load($event, result().size)" (sizeChange)="load(1, $event)" />
+      }
+    </section>
+  }
+</div>
+
+<app-empleado-form />
+<app-action-confirm-dialog />

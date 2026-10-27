@@ -1,0 +1,112 @@
+<dialog #dialog class="modal desco-modal" (cancel)="$event.preventDefault(); close()">
+  <div class="modal-box admin-modal-box admin-modal-box--wide">
+    <header class="admin-modal-header">
+      <div class="admin-modal-title-group">
+        <span class="admin-modal-icon"><fa-icon [icon]="icon()" /></span>
+        <div><p>Productos</p><h2>{{ title() }}</h2></div>
+      </div>
+      <button type="button" class="admin-icon-button" [disabled]="saving()" (click)="close()"><fa-icon [icon]="closeIcon" /></button>
+    </header>
+
+    @if (errorMessage()) { <div class="admin-inline-error" role="alert">{{ errorMessage() }}</div> }
+
+    @if (mode() === 'create' || mode() === 'edit') {
+      <form class="admin-form-grid" [formGroup]="productForm" (ngSubmit)="save()">
+        <div class="product-form-section admin-field-span-2"><span>Identificación</span></div>
+        <div class="admin-field">
+          <label>UOT de contexto</label>
+          <select class="admin-select" formControlName="uotContextoId" (change)="onCreateUotChange()">
+            <option [value]="0">Seleccionar UOT</option>
+            @for (unit of availableUnits(); track unit.uotId) { <option [value]="unit.uotId">{{ unit.nombre }}</option> }
+          </select>
+          <app-form-error [control]="productForm.controls.uotContextoId" fieldLabel="La UOT" />
+        </div>
+        <div class="admin-field">
+          <label>Código</label>
+          <input class="admin-input" formControlName="codigo" maxlength="50" autocomplete="off" />
+          @if (mode() === 'create') { <small>{{ codeLoading() ? 'Generando código sugerido...' : 'DESCO propone un código; puede modificarlo antes de guardar.' }}</small> }
+          <app-form-error [control]="productForm.controls.codigo" fieldLabel="El código" [messages]="{ blank: 'El código no puede contener solo espacios.' }" />
+        </div>
+        <div class="admin-field admin-field-span-2">
+          <label>Nombre</label>
+          <input class="admin-input" formControlName="nombre" maxlength="180" />
+          <app-form-error [control]="productForm.controls.nombre" fieldLabel="El nombre" [messages]="{ blank: 'El nombre no puede contener solo espacios.' }" />
+        </div>
+
+        <div class="product-form-section admin-field-span-2"><span>Clasificación</span></div>
+        <div class="admin-field">
+          <label>Unidad de medida</label>
+          <select class="admin-select" formControlName="unidadMedida" [disabled]="referencesLoading()">
+            @for (unit of units(); track unit.code) { <option [value]="unit.code">{{ unit.label }} · {{ unit.code }}</option> }
+          </select>
+          <app-form-error [control]="productForm.controls.unidadMedida" fieldLabel="La unidad de medida" />
+        </div>
+        <div class="admin-field">
+          <label>Categoría</label>
+          <select class="admin-select" formControlName="categoria" [disabled]="referencesLoading()">
+            <option value="">Sin categoría</option>
+            @for (category of categories(); track category.code) { <option [value]="category.code">{{ category.label }}</option> }
+          </select>
+        </div>
+        <div class="admin-field admin-field-span-2">
+          <label>Descripción <span class="product-optional">(opcional)</span></label>
+          <textarea class="admin-textarea" rows="3" maxlength="700" formControlName="descripcion"></textarea>
+        </div>
+
+        @if (mode() === 'edit') {
+          <div class="product-form-section admin-field-span-2"><span>Trazabilidad de inventario</span></div>
+          <label class="product-switch-card">
+            <input type="checkbox" class="toggle toggle-primary toggle-sm" formControlName="requiereLote" />
+            <span><strong>Control por lote</strong><small>Solicita el lote en entradas y movimientos para poder rastrear partidas del producto.</small></span>
+          </label>
+          <label class="product-switch-card">
+            <input type="checkbox" class="toggle toggle-primary toggle-sm" formControlName="controlaVencimiento" />
+            <span><strong>Control de vencimiento</strong><small>Solicita fecha de vencimiento y evita registrar fechas ya vencidas.</small></span>
+          </label>
+          <div class="admin-info-note admin-field-span-2">La unidad y las reglas de trazabilidad no podrán cambiarse si el producto ya mantiene stock actual o reservado en algún almacén.</div>
+        }
+
+        <div class="product-form-section admin-field-span-2"><span>Uso permitido</span></div>
+        <label class="product-switch-card admin-field-span-2">
+          <input type="checkbox" class="toggle toggle-primary toggle-sm" formControlName="permiteVenta" />
+          <span><strong>Apto para comercialización</strong><small>Si no se habilita, solo podrá utilizarse operativamente. Si se habilita, también podrá consumirse internamente; el precio de venta se fija por UOT al incorporar el producto a un almacén.</small></span>
+        </label>
+        <div class="admin-info-note admin-field-span-2">Este catálogo es compartido. Los bienes patrimoniales (muebles, gabinetes y equipos) se registran en Inventario y vehículos. El costo de entrada se registra en Kardex y el precio de salida en la UOT.</div>
+
+        <ng-container *ngTemplateOutlet="actions"></ng-container>
+      </form>
+    } @else if (mode() === 'price') {
+      <form class="admin-form-grid" [formGroup]="priceForm" (ngSubmit)="save()">
+        <div class="admin-field admin-field-span-2 product-current"><span>Producto</span><strong>{{ current()?.nombre }}</strong><small>{{ current()?.codigo }}</small></div>
+        <div class="admin-field admin-field-span-2"><label>Precio de venta de esta UOT</label><input class="admin-input" type="number" min="0.01" step="0.01" formControlName="precioVenta" /><app-form-error [control]="priceForm.controls.precioVenta" fieldLabel="El precio de venta" /></div>
+        <div class="admin-field admin-field-span-2"><label>Moneda</label><select class="admin-select" formControlName="moneda" [disabled]="referencesLoading()">@for (currency of currencies(); track currency.code) { <option [value]="currency.code">{{ currency.code }} · {{ currency.label }}</option> }</select></div>
+        <ng-container *ngTemplateOutlet="actions"></ng-container>
+      </form>
+    } @else {
+      <form class="admin-form-grid" [formGroup]="stateForm" (ngSubmit)="save()">
+        <div class="admin-field admin-field-span-2 product-state-summary">
+          <span>{{ current()?.estado === false ? 'Reactivar' : 'Desactivar' }}</span>
+          <strong>{{ current()?.nombre }}</strong>
+          <small>{{ current()?.codigo }}</small>
+        </div>
+        <div class="admin-field admin-field-span-2">
+          <label>Motivo</label>
+          <textarea class="admin-textarea" rows="4" maxlength="500" formControlName="motivo" [placeholder]="current()?.estado === false ? 'Motivo de reactivación' : 'Motivo de desactivación'"></textarea>
+          <app-form-error [control]="stateForm.controls.motivo" fieldLabel="El motivo" [messages]="{ blank: 'El motivo no puede contener solo espacios.' }" />
+        </div>
+        @if (current()?.estado !== false) { <div class="admin-info-note admin-field-span-2">DESCO no permitirá desactivar el producto mientras exista stock actual o reservado. La operación es lógica y conserva Kardex, precios e imágenes históricas.</div> }
+        <ng-container *ngTemplateOutlet="actions"></ng-container>
+      </form>
+    }
+
+    <ng-template #actions>
+      <footer class="admin-modal-actions admin-field-span-2 product-form-actions">
+        <button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="close()">Cancelar</button>
+        <button type="submit" class="admin-primary-button" [disabled]="saving() || referencesLoading()">
+          @if (saving()) { <span class="loading loading-spinner loading-sm"></span> Guardando... }
+          @else { <fa-icon [icon]="saveIcon" /> Guardar }
+        </button>
+      </footer>
+    </ng-template>
+  </div>
+</dialog>

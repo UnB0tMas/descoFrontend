@@ -1,0 +1,76 @@
+{
+  "proyecto": "D:\\FrancoSystem\\desco_frontend",
+  "fecha": "2026-10-25T12:40:26",
+  "cambios": [
+    {
+      "ruta": "src/app/features/convenios/state/convenios-modules.store.ts",
+      "accion": "escribir",
+      "existia": false
+    },
+    {
+      "ruta": "src/app/features/convenios/adapter/out/http/convenios-api.service.ts",
+      "accion": "escribir",
+      "existia": false
+    },
+    {
+      "ruta": "src/app/features/convenios/convenio-module.guard.ts",
+      "accion": "escribir",
+      "existia": false
+    },
+    {
+      "ruta": "src/app/features/uot/adapter/out/http/uot-api.service.ts",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/gestion-comercial/gestion-comercial.routes.ts",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/finanzas/finanzas.routes.ts",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/gestion-tecnica/productores/productores.routes.ts",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/core/navigation/navigation.service.ts",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/convenios/adapter/in/ui/pages/convenios-admin/convenios-admin.ts",
+      "accion": "escribir",
+      "existia": false
+    },
+    {
+      "ruta": "src/app/features/convenios/adapter/in/ui/pages/convenios-admin/convenios-admin.html",
+      "accion": "escribir",
+      "existia": false
+    },
+    {
+      "ruta": "src/app/features/convenios/convenios-admin.routes.ts",
+      "accion": "escribir",
+      "existia": false
+    },
+    {
+      "ruta": "src/app/features/administracion/administracion.routes.ts",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/acceso/application/use-case/cerrar-sesion.use-case.ts",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/shared/layout/sidebar/sidebar-item.html",
+      "accion": "escribir",
+      "existia": true
+    }
+  ]
+}

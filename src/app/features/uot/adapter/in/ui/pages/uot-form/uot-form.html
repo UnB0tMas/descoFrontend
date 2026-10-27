@@ -1,0 +1,218 @@
+<dialog
+  #dialog
+  class="modal desco-modal"
+  (cancel)="$event.preventDefault(); close()"
+>
+  <div class="modal-box admin-modal-box">
+    <header class="admin-modal-header">
+      <div class="admin-modal-title-group">
+        <span class="admin-modal-icon">
+          <fa-icon
+            [icon]="
+              mode() === 'access'
+                ? accessIcon
+                : mode() === 'edit'
+                  ? editIcon
+                  : addIcon
+            "
+          />
+        </span>
+        <div>
+          <p>Administración</p>
+          <h2>{{ title() }}</h2>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        class="admin-icon-button"
+        [disabled]="saving()"
+        aria-label="Cerrar"
+        (click)="close()"
+      >
+        <fa-icon [icon]="closeIcon" />
+      </button>
+    </header>
+
+    @if (errorMessage()) {
+      <div class="admin-inline-error" role="alert">{{ errorMessage() }}</div>
+    }
+
+    @if (mode() === 'access') {
+      <form
+        class="admin-form-grid"
+        [formGroup]="accessForm"
+        (ngSubmit)="save()"
+      >
+        <div class="admin-field admin-field-span-2">
+          <label>UOT</label>
+          <input
+            class="admin-input"
+            [value]="current()?.nombre || ''"
+            readonly
+          />
+        </div>
+
+        <div class="admin-field">
+          <label>Usuario</label>
+          <select class="admin-select" formControlName="usuarioId">
+            <option [value]="0">Seleccionar</option>
+            @for (user of users(); track user.value) {
+              <option [value]="user.value">{{ user.label }}</option>
+            }
+          </select>
+          <small>Cuenta que tendrá acceso a esta UOT.</small>
+          <app-form-error
+            [control]="accessForm.controls.usuarioId"
+            fieldLabel="El usuario"
+          />
+        </div>
+
+        <div class="admin-field">
+          <label>Rol dentro de la UOT</label>
+          <select class="admin-select" formControlName="rolId">
+            <option [value]="0">Seleccionar</option>
+            @for (role of roles(); track role.value) {
+              <option [value]="role.value">
+                {{ role.label }}{{ role.description ? ' · ' + role.description : '' }}
+              </option>
+            }
+          </select>
+          <small>Permisos efectivos del usuario únicamente en esta UOT.</small>
+          <app-form-error
+            [control]="accessForm.controls.rolId"
+            fieldLabel="El rol"
+          />
+        </div>
+
+        <label class="admin-switch-row admin-field-span-2">
+          <span>
+            <strong>UOT predeterminada</strong>
+            <small>Será la UOT inicial del usuario al ingresar.</small>
+          </span>
+          <input
+            type="checkbox"
+            class="admin-switch-control"
+            formControlName="predeterminada"
+          />
+        </label>
+
+        <footer class="admin-modal-actions admin-field-span-2">
+          <button
+            type="button"
+            class="admin-secondary-button"
+            [disabled]="saving()"
+            (click)="close()"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            class="admin-primary-button"
+            [disabled]="saving()"
+          >
+            @if (saving()) {
+              <span class="loading loading-spinner loading-sm"></span>
+              Asignando...
+            } @else {
+              <fa-icon [icon]="saveIcon" />
+              Asignar acceso
+            }
+          </button>
+        </footer>
+      </form>
+    } @else {
+      <form class="admin-form-grid" [formGroup]="unitForm" (ngSubmit)="save()">
+        <div class="admin-field">
+          <label>UOT superior</label>
+          <select class="admin-select" formControlName="uotPadreId">
+            <option [value]="0">Seleccionar</option>
+            @for (unit of parentOptions(); track unit.uotId) {
+              <option [value]="unit.uotId">
+                {{ unit.codigo }} · {{ unit.nombre }}
+              </option>
+            }
+          </select>
+          <app-form-error
+            [control]="unitForm.controls.uotPadreId"
+            fieldLabel="La UOT superior"
+          />
+        </div>
+
+        <div class="admin-field">
+          <label>Ubicación ID</label>
+          <input
+            class="admin-input"
+            type="number"
+            min="0"
+            formControlName="ubicacionId"
+            placeholder="Opcional"
+          />
+        </div>
+
+        <div class="admin-field">
+          <label>Código</label>
+          <input
+            class="admin-input"
+            formControlName="codigo"
+            maxlength="40"
+            autocomplete="off"
+          />
+          <app-form-error
+            [control]="unitForm.controls.codigo"
+            fieldLabel="El código"
+            [messages]="{ blank: 'El código no puede contener solo espacios.' }"
+          />
+        </div>
+
+        <div class="admin-field">
+          <label>Nombre</label>
+          <input
+            class="admin-input"
+            formControlName="nombre"
+            maxlength="180"
+          />
+          <app-form-error
+            [control]="unitForm.controls.nombre"
+            fieldLabel="El nombre"
+            [messages]="{ blank: 'El nombre no puede contener solo espacios.' }"
+          />
+        </div>
+
+        <div class="admin-field admin-field-span-2">
+          <label>Descripción</label>
+          <textarea
+            class="admin-textarea"
+            rows="3"
+            maxlength="500"
+            formControlName="descripcion"
+          ></textarea>
+        </div>
+
+        <footer class="admin-modal-actions admin-field-span-2">
+          <button
+            type="button"
+            class="admin-secondary-button"
+            [disabled]="saving()"
+            (click)="close()"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            class="admin-primary-button"
+            [disabled]="saving()"
+          >
+            @if (saving()) {
+              <span class="loading loading-spinner loading-sm"></span>
+              Guardando...
+            } @else {
+              <fa-icon [icon]="saveIcon" />
+              Guardar
+            }
+          </button>
+        </footer>
+      </form>
+    }
+  </div>
+</dialog>

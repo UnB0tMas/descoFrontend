@@ -1,0 +1,257 @@
+<dialog #dialog class="modal desco-modal" (cancel)="$event.preventDefault(); close()">
+  <div class="modal-box admin-modal-box admin-modal-box--wide">
+    <header class="admin-modal-header">
+      <div class="admin-modal-title-group">
+        <span class="admin-modal-icon">
+          <fa-icon [icon]="current() ? editIcon : addIcon" />
+        </span>
+        <div>
+          <p>Empleados</p>
+          <h2>{{ current() ? 'Editar empleado' : 'Registrar empleado' }}</h2>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        class="admin-icon-button"
+        aria-label="Cerrar"
+        [disabled]="saving()"
+        (click)="close()"
+      >
+        <fa-icon [icon]="closeIcon" />
+      </button>
+    </header>
+
+    @if (errorMessage()) {
+      <div class="admin-inline-error" role="alert">{{ errorMessage() }}</div>
+    }
+
+    <form class="admin-form-grid" [formGroup]="form" (ngSubmit)="save()">
+      <div class="admin-field">
+        <label for="employeeDocumentType">Tipo de documento</label>
+        <select
+          id="employeeDocumentType"
+          class="admin-select"
+          formControlName="tipoDocumento"
+        >
+          @for (item of documentTypes; track item.value) {
+            <option [value]="item.value">{{ item.label }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="admin-field">
+        <label for="employeeDocument">Número de documento</label>
+        <input
+          id="employeeDocument"
+          class="admin-input"
+          type="text"
+          formControlName="numeroDocumento"
+          maxlength="30"
+        />
+        <app-form-error
+          [control]="form.controls.numeroDocumento"
+          fieldLabel="El número de documento"
+        />
+      </div>
+
+      <div class="admin-field">
+        <label for="employeeNames">Nombres</label>
+        <input
+          id="employeeNames"
+          class="admin-input"
+          type="text"
+          formControlName="nombres"
+          maxlength="120"
+        />
+        <app-form-error
+          [control]="form.controls.nombres"
+          fieldLabel="Los nombres"
+        />
+      </div>
+
+      <div class="admin-field">
+        <label for="employeeLastName">Apellido paterno</label>
+        <input
+          id="employeeLastName"
+          class="admin-input"
+          type="text"
+          formControlName="apellidoPaterno"
+          maxlength="80"
+        />
+        <app-form-error
+          [control]="form.controls.apellidoPaterno"
+          fieldLabel="El apellido paterno"
+        />
+      </div>
+
+      <div class="admin-field">
+        <label for="employeeSecondLastName">Apellido materno</label>
+        <input
+          id="employeeSecondLastName"
+          class="admin-input"
+          type="text"
+          formControlName="apellidoMaterno"
+          maxlength="80"
+        />
+      </div>
+
+      <div class="admin-field">
+        <label for="employeeBirthDate">Fecha de nacimiento</label>
+        <input
+          id="employeeBirthDate"
+          class="admin-input"
+          type="date"
+          formControlName="fechaNacimiento"
+        />
+      </div>
+
+      <div class="admin-field">
+        <label for="employeePhone">Teléfono</label>
+        <input
+          id="employeePhone"
+          class="admin-input"
+          type="text"
+          formControlName="telefono"
+          maxlength="30"
+        />
+      </div>
+
+      <div class="admin-field">
+        <label for="employeeEmail">Correo</label>
+        <input
+          id="employeeEmail"
+          class="admin-input"
+          type="email"
+          formControlName="correo"
+          maxlength="180"
+        />
+        <app-form-error
+          [control]="form.controls.correo"
+          fieldLabel="El correo"
+        />
+      </div>
+
+      <app-geography-cascade
+        [districtCode]="initialDistrictCode()"
+        [populationCenterId]="initialPopulationCenterId()"
+        [disabled]="saving()"
+        (selectionChange)="setGeography($event)"
+      />
+
+      <div class="admin-field admin-field-span-2">
+        <app-form-error
+          [control]="form.controls.distritoCodigo"
+          fieldLabel="El distrito"
+        />
+      </div>
+
+      <div class="admin-field admin-field-span-2">
+        <label for="employeeReference">Referencia de ubicación</label>
+        <input
+          id="employeeReference"
+          class="admin-input"
+          type="text"
+          formControlName="referencia"
+          maxlength="300"
+          placeholder="Sector, calle o referencia"
+        />
+      </div>
+
+      <div class="admin-field">
+        <label for="employeeCompany">Organización</label>
+        <select
+          id="employeeCompany"
+          class="admin-select"
+          formControlName="empresaId"
+        >
+          <option [value]="0">Seleccionar</option>
+          @for (company of companies(); track company.value) {
+            <option [value]="company.value">{{ company.label }}</option>
+          }
+        </select>
+        <app-form-error
+          [control]="form.controls.empresaId"
+          fieldLabel="La organización"
+        />
+      </div>
+
+      <div class="admin-field">
+        <label for="employeeEntryDate">Fecha de ingreso</label>
+        <input
+          id="employeeEntryDate"
+          class="admin-input"
+          type="date"
+          formControlName="fechaIngreso"
+        />
+        <app-form-error
+          [control]="form.controls.fechaIngreso"
+          fieldLabel="La fecha de ingreso"
+        />
+      </div>
+
+      <div class="admin-field">
+        <label for="employeeArea">Área</label>
+        <select
+          id="employeeArea"
+          class="admin-select"
+          formControlName="areaId"
+        >
+          <option [value]="0">Sin área asignada</option>
+          @for (area of availableAreas(); track area.areaId) {
+            <option [value]="area.areaId">{{ area.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="admin-field">
+        <label for="employeeRoleName">Cargo</label>
+        <input
+          id="employeeRoleName"
+          class="admin-input"
+          type="text"
+          formControlName="cargo"
+          maxlength="120"
+          placeholder="Cargo o función"
+        />
+      </div>
+
+      @if (current()) {
+        <div class="admin-field">
+          <label for="employeeAreaDate">Fecha de asignación de área</label>
+          <input
+            id="employeeAreaDate"
+            class="admin-input"
+            type="date"
+            formControlName="fechaAsignacionArea"
+          />
+        </div>
+      }
+
+      <footer class="admin-modal-actions admin-field-span-2">
+        <button
+          type="button"
+          class="admin-secondary-button"
+          [disabled]="saving()"
+          (click)="close()"
+        >
+          Cancelar
+        </button>
+
+        <button
+          type="submit"
+          class="admin-primary-button"
+          [disabled]="saving()"
+        >
+          @if (saving()) {
+            <span class="loading loading-spinner loading-sm"></span>
+            Guardando...
+          } @else {
+            <fa-icon [icon]="saveIcon" />
+            Guardar
+          }
+        </button>
+      </footer>
+    </form>
+  </div>
+</dialog>

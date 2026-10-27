@@ -1,0 +1,138 @@
+<app-auth-layout>
+  <section class="auth-step-card">
+    <header class="auth-step-header">
+      <div class="auth-step-icon">
+        <fa-icon [icon]="shieldIcon" />
+      </div>
+
+      <div class="auth-step-heading">
+        <span class="auth-step-kicker">
+          Verificación de seguridad
+        </span>
+        <h1>Confirma tu acceso</h1>
+        <p>
+          Ingresa el código de 6 dígitos enviado a
+          <strong>
+            {{
+              challenge()?.correoEnmascarado ||
+              'tu correo de seguridad'
+            }}
+          </strong>.
+        </p>
+      </div>
+    </header>
+
+    @if (errorMessage()) {
+      <div
+        class="auth-inline-error"
+        role="alert"
+      >
+        {{ errorMessage() }}
+      </div>
+    }
+
+    <form
+      class="auth-step-form"
+      [formGroup]="form"
+      (ngSubmit)="submit()"
+    >
+      <fieldset
+        class="auth-otp-fieldset"
+        [disabled]="loading() || resending()"
+      >
+        <legend>Código de seguridad</legend>
+
+        <div
+          class="auth-otp-group"
+          role="group"
+          aria-label="Código de seguridad de 6 dígitos"
+          (paste)="onPaste($event)"
+        >
+          @for (
+            index of otpIndexes;
+            track index
+          ) {
+            <input
+              #otpInput
+              class="auth-otp-input"
+              type="text"
+              inputmode="numeric"
+              [attr.autocomplete]="index === 0 ? 'one-time-code' : 'off'"
+              maxlength="1"
+              [value]="digitAt(index)"
+              [attr.aria-label]="'Dígito ' + (index + 1)"
+              (input)="onDigitInput($event, index)"
+              (keydown)="onDigitKeydown($event, index)"
+            />
+          }
+        </div>
+
+        <app-form-error
+          [control]="form.controls.codigo"
+          fieldLabel="El código"
+          [messages]="{
+            pattern: 'Ingresa los 6 dígitos del código de seguridad.'
+          }"
+        />
+      </fieldset>
+
+      <div class="auth-security-note">
+        <span
+          class="auth-security-note-icon"
+          aria-hidden="true"
+        >
+          <fa-icon [icon]="mailIcon" />
+        </span>
+        <p>
+          Usa siempre el último código recibido.
+          Los códigos anteriores dejan de ser válidos.
+        </p>
+      </div>
+
+      <button
+        class="auth-primary-button"
+        type="submit"
+        [disabled]="loading() || resending()"
+        [attr.aria-busy]="loading()"
+      >
+        @if (loading()) {
+          <span
+            class="loading loading-spinner loading-sm"
+          ></span>
+          <span>Verificando...</span>
+        } @else {
+          <fa-icon [icon]="shieldIcon" />
+          <span>Verificar y continuar</span>
+        }
+      </button>
+    </form>
+
+    <div class="auth-step-actions">
+      <button
+        type="button"
+        class="auth-link-button"
+        [disabled]="resending() || loading()"
+        [attr.aria-busy]="resending()"
+        (click)="resend()"
+      >
+        @if (resending()) {
+          <span
+            class="loading loading-spinner loading-xs"
+          ></span>
+          <span>Enviando...</span>
+        } @else {
+          <fa-icon [icon]="resendIcon" />
+          <span>Reenviar código</span>
+        }
+      </button>
+
+      <a
+        routerLink="/login"
+        class="auth-back-link"
+      >
+        <fa-icon [icon]="backIcon" />
+        <span>Volver</span>
+      </a>
+    </div>
+  </section>
+</app-auth-layout>

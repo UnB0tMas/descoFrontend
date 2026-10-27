@@ -1,0 +1,1 @@
+import{inject,Injectable}from'@angular/core';import{AJUSTES_PRECIO_GATEWAY,AjustesPrecioGateway}from'../port/out/ajustes-precio.gateway';@Injectable()export class AnularAjustePrecioUseCase{private readonly g:AjustesPrecioGateway=inject(AJUSTES_PRECIO_GATEWAY);execute(id:number,motivo:string){return this.g.cancel(id,motivo);}}

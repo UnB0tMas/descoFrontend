@@ -1,0 +1,1 @@
+import{inject,Injectable}from'@angular/core';import{ProduccionFiltro}from'../../domain/produccion-filtro.model';import{PRODUCCION_GATEWAY,ProduccionGateway}from'../port/out/produccion.gateway';@Injectable()export class ListarProduccionUseCase{private readonly g:ProduccionGateway=inject(PRODUCCION_GATEWAY);execute(f:ProduccionFiltro){return this.g.list(f);}}

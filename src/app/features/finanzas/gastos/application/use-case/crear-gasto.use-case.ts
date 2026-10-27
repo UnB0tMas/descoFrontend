@@ -1,0 +1,1 @@
+import{inject,Injectable}from'@angular/core';import{GastoCreate}from'../../domain/gasto.model';import{GASTOS_GATEWAY,GastosGateway}from'../port/out/gastos.gateway';@Injectable()export class CrearGastoUseCase{private readonly g:GastosGateway=inject(GASTOS_GATEWAY);execute(i:GastoCreate){return this.g.create(i);}}

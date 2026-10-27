@@ -1,0 +1,118 @@
+<dialog #dialog class="modal desco-modal" (cancel)="$event.preventDefault(); close()">
+  <div class="modal-box admin-modal-box">
+    <header class="admin-modal-header">
+      <div class="admin-modal-title-group">
+        <span class="admin-modal-icon"><fa-icon [icon]="icon()" /></span>
+        <div><p>Ventas</p><h2>{{ title() }}</h2></div>
+      </div>
+      <button type="button" class="admin-icon-button" [disabled]="saving()" (click)="close()">
+        <fa-icon [icon]="closeIcon" />
+      </button>
+    </header>
+
+    @if (errorMessage()) {
+      <div class="admin-inline-error">{{ errorMessage() }}</div>
+    }
+
+    @if (mode() === 'payment') {
+      <form class="admin-form-grid" [formGroup]="paymentForm" (ngSubmit)="save()">
+        <div class="admin-field admin-field-span-2">
+          <label>Método de pago</label>
+          <select
+            class="admin-select"
+            formControlName="metodoPagoId"
+            [disabled]="loadingMethods()"
+            (change)="onPaymentMethodChange()"
+          >
+            <option [value]="0">Seleccionar</option>
+            @for (method of methods(); track method.metodoPagoId) {
+              <option [value]="method.metodoPagoId">{{ method.nombre }}</option>
+            }
+          </select>
+          <app-form-error [control]="paymentForm.controls.metodoPagoId" fieldLabel="El método de pago" />
+        </div>
+        <div class="admin-field">
+          <label>Importe</label>
+          <input class="admin-input" type="number" min="0.01" step="0.01" formControlName="importe" />
+          <app-form-error [control]="paymentForm.controls.importe" fieldLabel="El importe" />
+        </div>
+        <div class="admin-field">
+          <label>
+            Número de operación
+            @if (paymentMethodRequiresOperation()) { * }
+          </label>
+          <input class="admin-input" maxlength="120" formControlName="numeroOperacion" />
+          <app-form-error
+            [control]="paymentForm.controls.numeroOperacion"
+            fieldLabel="El número de operación"
+            [messages]="{ blank: 'El número de operación no puede contener solo espacios.' }"
+          />
+        </div>
+        <ng-container *ngTemplateOutlet="actions"></ng-container>
+      </form>
+    } @else if (mode() === 'receipt') {
+      <form class="admin-form-grid" [formGroup]="receiptForm" (ngSubmit)="save()">
+        <div class="admin-field">
+          <label>Tipo</label>
+          <select class="admin-select" formControlName="tipo">
+            <option value="BOLETA">Boleta</option>
+            <option value="FACTURA">Factura</option>
+          </select>
+        </div>
+        <div class="admin-field">
+          <label>Serie</label>
+          <input class="admin-input" maxlength="20" formControlName="serie" />
+          <app-form-error [control]="receiptForm.controls.serie" fieldLabel="La serie" />
+        </div>
+        <div class="admin-field">
+          <label>Número</label>
+          <input class="admin-input" type="number" min="1" formControlName="numero" />
+        </div>
+        <div class="admin-field">
+          <label>Documento del cliente</label>
+          <input class="admin-input" maxlength="30" formControlName="documentoCliente" />
+        </div>
+        <div class="admin-field admin-field-span-2">
+          <label>Nombre del cliente</label>
+          <input class="admin-input" maxlength="200" formControlName="nombreCliente" />
+        </div>
+        <ng-container *ngTemplateOutlet="actions"></ng-container>
+      </form>
+    } @else {
+      <form class="admin-form-grid" [formGroup]="reasonForm" (ngSubmit)="save()">
+        @if (mode() === 'cancel-payment') {
+          <div class="admin-field admin-field-span-2 sale-action-current">
+            <span>Pago</span>
+            <strong>{{ payment()?.metodoPago || 'Pago' }}</strong>
+            <small>{{ payment()?.moneda || 'PEN' }} {{ payment()?.importe }}</small>
+          </div>
+        }
+        <div class="admin-field admin-field-span-2">
+          <label>Motivo</label>
+          <textarea class="admin-textarea" rows="4" maxlength="500" formControlName="motivo"></textarea>
+          <app-form-error
+            [control]="reasonForm.controls.motivo"
+            fieldLabel="El motivo"
+            [messages]="{ blank: 'El motivo no puede contener solo espacios.' }"
+          />
+        </div>
+        <ng-container *ngTemplateOutlet="actions"></ng-container>
+      </form>
+    }
+
+    <ng-template #actions>
+      <footer class="admin-modal-actions admin-field-span-2">
+        <button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="close()">Cancelar</button>
+        <button type="submit" class="admin-primary-button" [disabled]="saving() || loadingMethods()">
+          @if (saving()) {
+            <span class="loading loading-spinner loading-sm"></span>
+            Guardando...
+          } @else {
+            <fa-icon [icon]="saveIcon" />
+            Confirmar
+          }
+        </button>
+      </footer>
+    </ng-template>
+  </div>
+</dialog>

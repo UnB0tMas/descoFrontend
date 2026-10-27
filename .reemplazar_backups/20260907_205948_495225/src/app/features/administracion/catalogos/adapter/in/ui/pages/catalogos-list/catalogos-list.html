@@ -1,0 +1,167 @@
+<div class="desco-page">
+  <app-page-header
+    title="Catálogos"
+    subtitle="Administra los valores maestros utilizados por los procesos del sistema."
+    eyebrow="Administración"
+    [icon]="pageIcon"
+  >
+    <div pageActions class="flex flex-wrap gap-2">
+      <button
+        type="button"
+        class="admin-secondary-button"
+        [disabled]="loading()"
+        (click)="load()"
+      >
+        <fa-icon [class.animate-spin]="loading()" [icon]="refreshIcon" />
+        Actualizar
+      </button>
+
+      <button
+        *appPermission="'CATALOGOS_CREAR'"
+        type="button"
+        class="admin-primary-button"
+        (click)="create()"
+      >
+        <fa-icon [icon]="addIcon" />
+        Nuevo valor
+      </button>
+    </div>
+  </app-page-header>
+
+  <section class="admin-surface mt-5">
+    <div class="admin-toolbar">
+      <div class="admin-field admin-toolbar-field">
+        <label for="catalogSelector">Catálogo</label>
+        <select
+          id="catalogSelector"
+          class="admin-select"
+          [value]="catalogCode()"
+          (change)="changeCatalog($any($event.target).value)"
+        >
+          @for (catalog of catalogs; track catalog.codigo) {
+            <option [value]="catalog.codigo">{{ catalog.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="catalog-description">
+        <strong>{{ selectedCatalog().nombre }}</strong>
+        <span>{{ selectedCatalog().descripcion }}</span>
+      </div>
+    </div>
+
+    @if (loading()) {
+      <app-loading-state
+        title="Cargando catálogo"
+        message="Consultando los valores disponibles."
+      />
+    } @else if (errorMessage()) {
+      <app-error-state
+        title="No se pudo cargar el catálogo"
+        [message]="errorMessage() || 'Intenta nuevamente.'"
+        (retry)="load()"
+      />
+    } @else if (result().items.length === 0) {
+      <app-empty-state
+        title="Sin valores registrados"
+        message="Este catálogo todavía no tiene valores disponibles."
+      />
+    } @else {
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Nombre</th>
+              <th>Descripción</th>
+              <th class="text-center">Uso</th>
+              <th class="text-center">Estado</th>
+              <th class="text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of result().items; track item.id) {
+              <tr>
+                <td>
+                  <div class="admin-entity">
+                    <span class="admin-entity-icon">
+                      <fa-icon [icon]="pageIcon" />
+                    </span>
+
+                    <div>
+                      <strong>{{ item.codigo }}</strong>
+                      <span>Valor de catálogo</span>
+                    </div>
+                  </div>
+                </td>
+                <td class="font-semibold text-slate-800">
+                  {{ item.nombre }}
+                </td>
+                <td class="max-w-md text-slate-500">
+                  {{ item.descripcion || '—' }}
+                </td>
+                <td class="text-center">
+                  <span
+                    class="admin-usage-badge"
+                    [class.admin-usage-badge--used]="item.enUso"
+                  >
+                    {{ item.cantidadUso }}
+                  </span>
+                </td>
+                <td class="text-center">
+                  <span
+                    class="admin-status"
+                    [class.admin-status--active]="item.estado"
+                    [class.admin-status--inactive]="!item.estado"
+                  >
+                    {{ item.estado ? 'Activo' : 'Inactivo' }}
+                  </span>
+                </td>
+                <td>
+                  <div class="admin-row-actions">
+                    <button
+                      *appPermission="'CATALOGOS_EDITAR'"
+                      type="button"
+                      class="admin-icon-button"
+                      title="Editar"
+                      (click)="edit(item)"
+                    >
+                      <fa-icon [icon]="editIcon" />
+                    </button>
+
+                    <button
+                      *appPermission="'CATALOGOS_RETIRAR'"
+                      type="button"
+                      class="admin-icon-button admin-icon-button--danger"
+                      [attr.title]="item.enUso ? 'No se puede deshabilitar porque está en uso' : 'Deshabilitar'"
+                      [disabled]="item.enUso || disablingId() === item.id"
+                      (click)="disable(item)"
+                    >
+                      @if (disablingId() === item.id) {
+                        <span class="loading loading-spinner loading-xs"></span>
+                      } @else {
+                        <fa-icon [icon]="disableIcon" />
+                      }
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <app-paginator
+        [page]="result().page"
+        [size]="result().size"
+        [totalRecords]="result().totalRecords"
+        [totalPages]="result().totalPages"
+        (pageChange)="load($event, result().size)"
+        (sizeChange)="load(1, $event)"
+      />
+    }
+  </section>
+</div>
+
+<app-catalogo-detail />
+<app-action-confirm-dialog />

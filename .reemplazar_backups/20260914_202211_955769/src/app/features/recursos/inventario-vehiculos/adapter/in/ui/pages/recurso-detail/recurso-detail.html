@@ -1,0 +1,28 @@
+<div class="desco-page">
+  <app-page-header title="Detalle del bien" subtitle="Información patrimonial, vehículo, imágenes, historial e incidencias." [icon]="pageIcon">
+    <a class="admin-secondary-button" routerLink="/recursos/inventario-vehiculos"><fa-icon [icon]="backIcon" /> Volver</a>
+    <button type="button" class="admin-secondary-button" [disabled]="loading()" (click)="load()"><fa-icon [icon]="refreshIcon" /> Actualizar</button>
+    <button *appPermission="'INVENTARIO_EDITAR'" type="button" class="admin-secondary-button" [disabled]="!detail()?.bien" (click)="edit()"><fa-icon [icon]="editIcon" /> Editar</button>
+    @if (detail()?.bien && !vehicle() && detail()?.bien?.estadoBien !== 'BAJA') { <button *appPermission="'INVENTARIO_CREAR'" type="button" class="admin-secondary-button" (click)="registerVehicle()"><fa-icon [icon]="vehicleIcon" /> Registrar vehículo</button> }
+    @if (vehicle() && detail()?.bien?.estadoBien !== 'BAJA') { <button *appPermission="'INVENTARIO_EDITAR'" type="button" class="admin-secondary-button" (click)="updateMileage()"><fa-icon [icon]="mileageIcon" /> Kilometraje</button> }
+    <button *appPermission="'INVENTARIO_EDITAR'" type="button" class="admin-secondary-button" [disabled]="!detail()?.bien" (click)="changeState()"><fa-icon [icon]="stateIcon" /> Estado</button>
+    <button *appPermission="'INVENTARIO_EDITAR'" type="button" class="admin-primary-button" [disabled]="!detail()?.bien" (click)="reportIncident()"><fa-icon [icon]="incidentIcon" /> Incidencia</button>
+  </app-page-header>
+
+  @if (loading()) { <app-loading-state title="Cargando bien" message="Consultando información patrimonial." /> }
+  @else if (errorMessage()) { <app-error-state [message]="errorMessage() || 'No fue posible cargar el bien.'" (retry)="load()" /> }
+  @else if (detail()?.bien; as item) {
+    <section class="resource-hero-grid"><article class="admin-surface resource-hero-image"><app-resource-image variant="hero" [fileId]="mainFileId()" [imageUrl]="mainImageUrl()" [alt]="item.nombre || 'Bien'" /></article><article class="admin-surface resource-summary-card"><header><div><p>Identificación</p><h2>{{ item.nombre || 'Bien sin nombre' }}</h2></div><span class="resource-state">{{ item.estadoBien || '—' }}</span></header><dl class="resource-data-grid"><div><dt>UOT</dt><dd>{{ item.uotNombre || '—' }}</dd></div><div><dt>Código patrimonial</dt><dd>{{ item.codigoPatrimonial || '—' }}</dd></div><div><dt>Tipo</dt><dd>{{ item.tipoBien || '—' }}</dd></div><div><dt>Proveedor</dt><dd>{{ providerName() }}</dd></div><div><dt>Marca</dt><dd>{{ item.marca || '—' }}</dd></div><div><dt>Modelo</dt><dd>{{ item.modelo || '—' }}</dd></div><div><dt>Serie</dt><dd>{{ item.serie || '—' }}</dd></div><div><dt>Fecha de adquisición</dt><dd>{{ item.fechaAdquisicion || '—' }}</dd></div><div><dt>Monto de adquisición</dt><dd>@if (item.montoAdquisicion != null) { {{ item.monedaAdquisicion || 'PEN' }} {{ item.montoAdquisicion | number:'1.2-2' }} } @else { — }</dd></div><div><dt>Incidencias abiertas</dt><dd>{{ item.incidentesAbiertos ?? 0 }}</dd></div><div class="resource-data-wide"><dt>Observación</dt><dd>{{ item.observacion || '—' }}</dd></div></dl></article></section>
+
+    <section class="resource-detail-columns">
+      <article class="admin-surface resource-list-card"><header><p>Vehículo</p><h2>Datos asociados</h2></header>@if (vehicle(); as v) { <div class="resource-vehicle-grid"><div><span>Placa</span><strong>{{ v.placa }}</strong></div><div><span>Tipo</span><strong>{{ v.tipoVehiculo }}</strong></div><div><span>Kilometraje</span><strong>{{ v.kilometrajeKm | number:'1.0-1' }} km</strong></div></div> } @else { <p class="resource-empty-copy">Este bien todavía no está registrado como vehículo.</p> }</article>
+      <article class="admin-surface resource-list-card"><header><p>Imágenes</p><h2>Evidencia visual</h2></header><app-local-file-panel [uotId]="item.uotId || 0" linkType="BIEN" [linkId]="item.bienInventarioId || 0" [fileIds]="fileIds()" title="Imágenes del bien" category="BIEN_IMAGEN" accept="image/*" [canUpload]="canUploadImages()" (changed)="load()" /></article>
+    </section>
+
+    <section class="resource-detail-columns">
+      <article class="admin-surface resource-list-card"><header><p>Historial</p><h2>Estados del bien</h2></header><div class="resource-timeline">@for (history of detail()?.historial || []; track history.bienEstadoHistorialId) { <div class="resource-timeline-item"><span></span><div><strong>{{ history.estadoBien || '—' }}</strong><small>{{ history.fechaDesde | date:'dd/MM/yyyy HH:mm' }} @if (history.fechaHasta) { · hasta {{ history.fechaHasta | date:'dd/MM/yyyy HH:mm' }} }</small>@if (history.motivo) { <p>{{ history.motivo }}</p> }</div></div> } @empty { <p class="resource-empty-copy">Sin historial registrado.</p> }</div></article>
+      <article class="admin-surface resource-list-card"><header><p>Incidencias</p><h2>Eventos reportados</h2></header><div class="resource-incident-list">@for (incident of detail()?.incidentes || []; track incident.bienIncidenteId) { <div><header><strong>{{ incident.tipoIncidente || 'Incidencia' }}</strong><span>{{ incident.estadoIncidente || '—' }}</span></header><small>{{ incident.fechaHora | date:'dd/MM/yyyy HH:mm' }}</small><p>{{ incident.descripcion || '—' }}</p>@if (incident.costoEstimado != null) { <small>Costo estimado: {{ incident.costoEstimado | number:'1.2-2' }}</small> }</div> } @empty { <p class="resource-empty-copy">Sin incidencias registradas.</p> }</div></article>
+    </section>
+  }
+</div>
+<app-recurso-form />

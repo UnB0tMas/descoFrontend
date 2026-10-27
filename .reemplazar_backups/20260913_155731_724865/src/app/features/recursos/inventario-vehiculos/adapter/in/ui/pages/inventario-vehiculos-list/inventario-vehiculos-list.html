@@ -1,0 +1,57 @@
+<div class="desco-page">
+  <app-page-header title="Inventario y vehículos" subtitle="Gestiona bienes, vehículos, suministros y movimientos." eyebrow="Recursos" [icon]="pageIcon" />
+
+  <div class="admin-tabs mt-5">
+    <button type="button" [class.active]="tab()==='assets'" (click)="setTab('assets')"><fa-icon [icon]="assetIcon" /> Bienes y vehículos</button>
+    <button type="button" [class.active]="tab()==='supplies'" (click)="setTab('supplies')"><fa-icon [icon]="supplyIcon" /> Suministros</button>
+  </div>
+
+  @if (tab()==='assets') {
+    <section class="admin-surface">
+      <div class="admin-toolbar">
+        <div class="admin-field admin-toolbar-field"><label>Organización</label><select class="admin-select" [value]="companyFilter()??0" (change)="companyFilter.set(+$any($event.target).value||null); loadAssets(1)"><option [value]="0">Todas</option>@for (company of companies(); track company.value) { <option [value]="company.value">{{ company.label }}</option> }</select></div>
+        <div class="admin-field admin-toolbar-field"><label>Tipo de bien</label><select class="admin-select" [value]="typeFilter()??0" (change)="typeFilter.set(+$any($event.target).value||null); loadAssets(1)"><option [value]="0">Todos</option>@for (type of types(); track type.value) { <option [value]="type.value">{{ type.label }}</option> }</select></div>
+        <div class="admin-field admin-toolbar-field"><label>Estado</label><select class="admin-select" [value]="stateFilter()" (change)="stateFilter.set($any($event.target).value); loadAssets(1)"><option value="">Todos</option><option value="DISPONIBLE">Disponible</option><option value="MANTENIMIENTO">Mantenimiento</option><option value="NO_DISPONIBLE">No disponible</option><option value="BAJA">Baja</option></select></div>
+        <div class="admin-toolbar-actions"><button type="button" class="admin-secondary-button" [disabled]="loading()" (click)="loadAssets()"><fa-icon [class.animate-spin]="loading()" [icon]="refreshIcon" /> Actualizar</button><button *appPermission="'INVENTARIO_CREAR'" type="button" class="admin-primary-button" [disabled]="referencesLoading()" (click)="createAsset()">@if(referencesLoading()){<span class="loading loading-spinner loading-sm"></span>}@else{<fa-icon [icon]="addIcon"/>} Nuevo bien</button></div>
+      </div>
+      @if (loading()) { <app-loading-state title="Cargando inventario" message="Consultando bienes y vehículos." /> }
+      @else if (errorMessage()) { <app-error-state [message]="errorMessage()||'Intenta nuevamente.'" (retry)="loadAssets()" /> }
+      @else if (assets().items.length===0) { <app-empty-state title="Sin bienes" message="No hay bienes para los filtros seleccionados." /> }
+      @else {
+        <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Bien</th><th>Código</th><th>Tipo</th><th>Organización</th><th>Vehículo</th><th class="text-center">Estado</th><th class="text-right">Acciones</th></tr></thead><tbody>
+          @for (asset of assets().items; track asset.bienInventarioId) {
+            <tr><td><div class="admin-stack-copy"><strong>{{asset.nombre}}</strong><span>{{asset.marca||'—'}} {{asset.modelo||''}}</span></div></td><td><span class="admin-code">{{asset.codigoPatrimonial}}</span></td><td>{{asset.tipoBien}}</td><td>{{asset.empresa}}</td><td>@if(asset.vehiculo){<span class="admin-type-badge"><fa-icon [icon]="truckIcon"/> {{asset.placa}}</span>}@else{—}</td><td class="text-center"><span class="admin-status" [class.admin-status--active]="asset.estadoBien==='DISPONIBLE'" [class.admin-status--warning]="asset.estadoBien==='MANTENIMIENTO'" [class.admin-status--inactive]="asset.estadoBien==='BAJA'">{{asset.estadoBien}}</span></td><td><div class="admin-row-actions"><a *appPermission="'INVENTARIO_VER'" class="admin-icon-button" [routerLink]="['/recursos/inventario-vehiculos',asset.bienInventarioId]" title="Ver detalle"><fa-icon [icon]="viewIcon"/></a><button *appPermission="'INVENTARIO_EDITAR'" type="button" class="admin-icon-button" [disabled]="asset.estadoBien==='BAJA'" title="Editar" (click)="editAsset(asset)"><fa-icon [icon]="editIcon"/></button><button *appPermission="'INVENTARIO_RETIRAR'" type="button" class="admin-icon-button admin-icon-button--danger" [disabled]="asset.estadoBien==='BAJA'||retiringId()===asset.bienInventarioId" title="Dar de baja" (click)="retire(asset)">@if(retiringId()===asset.bienInventarioId){<span class="loading loading-spinner loading-xs"></span>}@else{<fa-icon [icon]="retireIcon"/>}</button></div></td></tr>
+          }
+        </tbody></table></div>
+        <app-paginator [page]="assets().page" [size]="assets().size" [totalRecords]="assets().totalRecords" [totalPages]="assets().totalPages" (pageChange)="loadAssets($event,assets().size)" (sizeChange)="loadAssets(1,$event)" />
+      }
+    </section>
+  } @else {
+    <section class="admin-surface">
+      <div class="admin-toolbar admin-toolbar--end"><button type="button" class="admin-secondary-button" [disabled]="suppliesLoading()" (click)="loadSupplies()"><fa-icon [class.animate-spin]="suppliesLoading()" [icon]="refreshIcon"/> Actualizar</button><button *appPermission="'INVENTARIO_CREAR'" type="button" class="admin-primary-button" (click)="createSupply()"><fa-icon [icon]="addIcon"/> Nuevo suministro</button></div>
+      @if(suppliesLoading()){<app-loading-state title="Cargando suministros" message="Consultando stock disponible."/>}
+      @else if(suppliesError()){<app-error-state [message]="suppliesError()||'Intenta nuevamente.'" (retry)="loadSupplies()"/>}
+      @else if(supplies().items.length===0){<app-empty-state title="Sin suministros" message="No hay suministros registrados."/>}
+      @else {
+        <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Código</th><th>Suministro</th><th>Unidad</th><th class="text-right">Stock</th><th class="text-center">Estado</th><th class="text-right">Acciones</th></tr></thead><tbody>
+          @for(supply of supplies().items;track supply.suministroId){
+            <tr><td><span class="admin-code">{{supply.codigo}}</span></td><td class="font-semibold text-slate-800">{{supply.nombre}}</td><td>{{supply.unidadMedida}}</td><td class="text-right font-semibold">{{supply.stock}}</td><td class="text-center"><span class="admin-status" [class.admin-status--active]="supply.estado" [class.admin-status--inactive]="!supply.estado">{{supply.estado?'Activo':'Inactivo'}}</span></td><td><div class="admin-row-actions"><button *appPermission="'INVENTARIO_VER'" type="button" class="admin-icon-button" title="Ver kardex" [disabled]="kardexLoading()&&kardexSupply()?.suministroId===supply.suministroId" (click)="openKardex(supply)">@if(kardexLoading()&&kardexSupply()?.suministroId===supply.suministroId){<span class="loading loading-spinner loading-xs"></span>}@else{<fa-icon [icon]="kardexIcon"/>}</button><button *appPermission="'INVENTARIO_EDITAR'" type="button" class="admin-icon-button" title="Editar" (click)="editSupply(supply)"><fa-icon [icon]="editIcon"/></button><button *appPermission="'INVENTARIO_EDITAR'" type="button" class="admin-primary-button admin-primary-button--small" (click)="movement(supply)">Movimiento</button></div></td></tr>
+          }
+        </tbody></table></div>
+        <app-paginator [page]="supplies().page" [size]="supplies().size" [totalRecords]="supplies().totalRecords" [totalPages]="supplies().totalPages" (pageChange)="loadSupplies($event,supplies().size)" (sizeChange)="loadSupplies(1,$event)"/>
+      }
+    </section>
+
+    @if(kardexSupply(); as selectedSupply){
+      <section class="admin-surface mt-4 inventory-kardex">
+        <div class="admin-section-header"><div><p>Kardex</p><h2>{{selectedSupply.nombre}}</h2></div><button type="button" class="admin-icon-button" title="Cerrar kardex" (click)="closeKardex()"><fa-icon [icon]="closeIcon"/></button></div>
+        @if(kardexLoading()){<app-loading-state title="Cargando kardex" message="Consultando movimientos del suministro."/>}
+        @else if(kardexError()){<app-error-state [message]="kardexError()||'No se pudo cargar el kardex.'" (retry)="openKardex(selectedSupply)"/>}
+        @else{<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Tipo</th><th>Cantidad</th><th>Fecha</th><th>Documento</th><th>Usuario</th><th>Observación</th><th class="text-right">Acciones</th></tr></thead><tbody>@for(item of kardexItems();track item.suministroMovimientoId){<tr><td><span class="admin-type-badge">{{item.tipoMovimiento}}</span></td><td>{{item.cantidad}} {{item.unidadMedida}}</td><td>{{item.fechaHora?(item.fechaHora|date:'dd/MM/yyyy HH:mm'):'—'}}</td><td>{{item.documentoReferencia||'—'}}</td><td>{{item.usuario||'—'}}</td><td>{{item.observacion||'—'}}</td><td><div class="admin-row-actions">@if(canAnnulMovement(item)){<button *appPermission="'INVENTARIO_EDITAR'" type="button" class="admin-icon-button admin-icon-button--danger" [disabled]="annulMovementId()!==null" (click)="annulMovement(item)">@if(annulMovementId()===item.suministroMovimientoId){<span class="loading loading-spinner loading-xs"></span>}@else{Anular}</button>}</div></td></tr>}@empty{<tr><td colspan="7" class="admin-table-empty">No hay movimientos para este suministro.</td></tr>}</tbody></table></div>}
+      </section>
+    }
+  }
+</div>
+
+<app-recurso-form />
+<app-action-confirm-dialog />

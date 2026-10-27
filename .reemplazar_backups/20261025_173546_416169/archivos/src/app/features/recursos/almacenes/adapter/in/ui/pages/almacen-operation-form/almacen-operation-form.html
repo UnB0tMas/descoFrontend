@@ -1,0 +1,510 @@
+<dialog #dialog class="modal desco-modal" (cancel)="$event.preventDefault(); close()">
+  <div
+    class="modal-box admin-modal-box warehouse-modal-box"
+    [class.warehouse-modal-box--incoming]="mode() === 'movement' && movementNature() === 'E'"
+    [class.warehouse-modal-box--outgoing]="mode() === 'movement' && movementNature() === 'S'"
+    [class.admin-modal-box--wide]="mode() === 'movement' || mode() === 'configure'"
+  >
+    <header class="admin-modal-header">
+      <div class="admin-modal-title-group">
+        <span class="admin-modal-icon"><fa-icon [icon]="icon()" /></span>
+        <div><p>Almacenes</p><h2>{{ title() }}</h2></div>
+      </div>
+      <button type="button" class="admin-icon-button" [disabled]="saving()" (click)="close()" aria-label="Cerrar formulario">
+        <fa-icon [icon]="closeIcon" />
+      </button>
+    </header>
+
+    @if (errorMessage()) {
+      <div class="admin-inline-error">{{ errorMessage() }}</div>
+    }
+
+    @if (mode() === 'create') {
+      <form class="admin-form-grid" [formGroup]="createForm" (ngSubmit)="save()">
+        <div class="admin-field">
+          <label>UOT propietaria</label>
+          <select class="admin-select" formControlName="uotId" (change)="onCreateUnitChange()">
+            <option [value]="0">Seleccionar</option>
+            @for (unit of uot.memberships(); track unit.uotId) {
+              <option [value]="unit.uotId">{{ unit.nombre }}</option>
+            }
+          </select>
+          <app-form-error [control]="createForm.controls.uotId" fieldLabel="La UOT" />
+        </div>
+
+        <div class="admin-field">
+          <label>Código</label>
+          <input
+            class="admin-input"
+            formControlName="codigo"
+            maxlength="40"
+            autocomplete="off"
+            placeholder="DESCO propone uno automáticamente"
+          />
+          <small>
+            @if (codeLoading()) {
+              Generando código sugerido...
+            } @else {
+              Puede modificarlo o dejarlo vacío para que DESCO genere uno al guardar.
+            }
+          </small>
+          <app-form-error [control]="createForm.controls.codigo" fieldLabel="El código" />
+        </div>
+
+        <div class="admin-field admin-field-span-2">
+          <label>Nombre</label>
+          <input class="admin-input" formControlName="nombre" maxlength="160" />
+          <app-form-error [control]="createForm.controls.nombre" fieldLabel="El nombre" />
+        </div>
+
+        <div class="warehouse-form-section admin-field-span-2">
+          <span>Ubicación del almacén</span>
+        </div>
+
+        <app-geography-cascade
+          [districtCode]="initialDistrictCode()"
+          [populationCenterId]="initialPopulationCenterId()"
+          [disabled]="saving()"
+          (selectionChange)="setGeography($event)"
+        />
+
+        <div class="admin-field admin-field-span-2">
+          <app-form-error
+            [control]="createForm.controls.distritoCodigo"
+            fieldLabel="El distrito"
+          />
+        </div>
+
+        <div class="admin-field admin-field-span-2">
+          <label>Referencia de ubicación</label>
+          <input
+            class="admin-input"
+            formControlName="referencia"
+            maxlength="300"
+            placeholder="Sector, calle o referencia"
+          />
+        </div>
+
+        <div class="admin-field admin-field-span-2">
+          <label>Descripción</label>
+          <textarea class="admin-textarea" rows="3" maxlength="400" formControlName="descripcion"></textarea>
+        </div>
+
+        <ng-container *ngTemplateOutlet="actions"></ng-container>
+      </form>
+    } @else if (mode() === 'share') {
+      <form class="admin-form-grid" [formGroup]="shareForm" (ngSubmit)="save()">
+        <div class="admin-field admin-field-span-2 warehouse-current">
+          <span>Almacén</span>
+          <strong>{{ currentWarehouse()?.nombre }}</strong>
+          <small>Propietaria: {{ currentWarehouse()?.uotPropietaria }}</small>
+        </div>
+
+        <div class="admin-field admin-field-span-2">
+          <label>Compartir con UOT</label>
+          <select class="admin-select" formControlName="uotId">
+            <option [value]="0">Seleccionar</option>
+            @for (unit of uot.memberships(); track unit.uotId) {
+              @if (unit.uotId !== currentWarehouse()?.uotPropietariaId) {
+                <option [value]="unit.uotId">{{ unit.nombre }}</option>
+              }
+            }
+          </select>
+          <app-form-error [control]="shareForm.controls.uotId" fieldLabel="La UOT" />
+        </div>
+
+        <label class="warehouse-check">
+          <input type="checkbox" class="checkbox checkbox-sm" formControlName="permiteEntrada" />
+          <span>Permitir entradas</span>
+        </label>
+
+        <label class="warehouse-check">
+          <input type="checkbox" class="checkbox checkbox-sm" formControlName="permiteSalida" />
+          <span>Permitir salidas</span>
+        </label>
+
+        <ng-container *ngTemplateOutlet="actions"></ng-container>
+      </form>
+    } @else if (mode() === 'configure') {
+      <form
+        class="admin-form-grid warehouse-configure-form"
+        [formGroup]="configureForm"
+        (ngSubmit)="save()"
+      >
+        <div class="admin-field admin-field-span-2 warehouse-current">
+          <span>Almacén</span>
+          <strong>{{ currentWarehouse()?.nombre }}</strong>
+          <small>
+            {{ currentWarehouse()?.codigo || 'Sin código' }}
+            · Propietaria: {{ currentWarehouse()?.uotPropietaria || '—' }}
+          </small>
+        </div>
+
+        <div class="warehouse-form-section admin-field-span-2">
+          <span>Producto y contexto</span>
+        </div>
+
+        <div class="admin-field">
+          <label>UOT que registra la entrada</label>
+          <select class="admin-select" formControlName="uotId" (change)="onConfigureUnitChange()">
+            <option [value]="0">Seleccionar</option>
+            @for (unit of uot.memberships(); track unit.uotId) {
+              <option [value]="unit.uotId">{{ unit.nombre }}</option>
+            }
+          </select>
+          <app-form-error [control]="configureForm.controls.uotId" fieldLabel="La UOT" />
+        </div>
+
+        <div class="admin-field">
+          <label>Producto</label>
+          <select
+            class="admin-select"
+            formControlName="productoId"
+            [disabled]="loadingProducts()"
+            (change)="onConfigureProductChange()"
+          >
+            <option [value]="0">
+              {{ loadingProducts() ? 'Cargando productos...' : 'Seleccionar' }}
+            </option>
+            @for (product of configurableProducts(); track product.productoId) {
+              <option [value]="product.productoId">
+                {{ product.nombre }} · {{ product.codigo || 'sin código' }}
+              </option>
+            }
+          </select>
+          <app-form-error
+            [control]="configureForm.controls.productoId"
+            fieldLabel="El producto"
+          />
+          @if (!loadingProducts() && configurableProducts().length === 0) {
+            <small>No hay productos pendientes de configurar en este almacén para la UOT seleccionada.</small>
+          }
+        </div>
+
+        <div class="warehouse-form-section admin-field-span-2">
+          <span>Existencias</span>
+        </div>
+
+        <div class="admin-field">
+          <label>Stock inicial</label>
+          <input
+            class="admin-input"
+            type="number"
+            min="0"
+            step="0.001"
+            formControlName="stockInicial"
+          />
+          <small>Si es mayor que cero, DESCO registra una entrada real en el Kardex.</small>
+          <app-form-error
+            [control]="configureForm.controls.stockInicial"
+            fieldLabel="El stock inicial"
+          />
+        </div>
+
+        <div class="admin-field">
+          <label>Stock mínimo</label>
+          <input
+            class="admin-input"
+            type="number"
+            min="0"
+            step="0.001"
+            formControlName="stockMinimo"
+          />
+          <small>Se utiliza como umbral operativo para alertar reposición.</small>
+          <app-form-error
+            [control]="configureForm.controls.stockMinimo"
+            fieldLabel="El stock mínimo"
+          />
+        </div>
+
+        <div class="warehouse-form-section admin-field-span-2">
+          <span>Valorización de la entrada</span>
+        </div>
+
+        <div class="admin-field">
+          <label>Costo unitario <span class="warehouse-optional">(opcional)</span></label>
+          <input
+            class="admin-input"
+            type="number"
+            min="0"
+            step="0.0001"
+            formControlName="costoUnitario"
+          />
+        </div>
+
+        <div class="admin-field">
+          <label>Moneda</label>
+          <select class="admin-select" formControlName="moneda">
+            @for (currency of currencies(); track currency.code) {
+              <option [value]="currency.code">{{ currency.code }} · {{ currency.label }}</option>
+            }
+          </select>
+          <small>Solo se utiliza cuando se informa un costo unitario.</small>
+        </div>
+
+        <div class="warehouse-form-section admin-field-span-2">
+          <span>Trazabilidad</span>
+        </div>
+
+        <div class="admin-field">
+          <label>
+            Lote
+            @if (selectedConfigureProduct()?.requiereLote) {
+              <span aria-hidden="true">*</span>
+            } @else {
+              <span class="warehouse-optional">(opcional)</span>
+            }
+          </label>
+          <input
+            class="admin-input"
+            maxlength="80"
+            formControlName="lote"
+            placeholder="Ej. LOTE-2026-001"
+          />
+          <small>
+            Identifica la partida o batch del producto para trazabilidad. Es obligatorio solo si el producto trabaja por lotes.
+          </small>
+          <app-form-error [control]="configureForm.controls.lote" fieldLabel="El lote" />
+        </div>
+
+        <div class="admin-field">
+          <label>
+            Fecha de vencimiento
+            @if (selectedConfigureProduct()?.controlaVencimiento) {
+              <span aria-hidden="true">*</span>
+            } @else {
+              <span class="warehouse-optional">(opcional)</span>
+            }
+          </label>
+          <input
+            class="admin-input"
+            type="date"
+            [min]="today"
+            formControlName="fechaVencimiento"
+          />
+          <small>Se admite la fecha de hoy o una fecha futura.</small>
+          <app-form-error
+            [control]="configureForm.controls.fechaVencimiento"
+            fieldLabel="La fecha de vencimiento"
+            [messages]="{ pastDate: 'La fecha de vencimiento no puede ser anterior a hoy.' }"
+          />
+        </div>
+
+        <div class="admin-field admin-field-span-2 warehouse-file-field">
+          <label for="warehouseSupportFile">Documento de sustento <span class="warehouse-optional">(opcional)</span></label>
+          <input
+            #supportFileInput
+            id="warehouseSupportFile"
+            class="warehouse-file-input-sr"
+            type="file"
+            accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.jpg,.jpeg,.png,.webp"
+            [disabled]="!canSelectSupportFile()"
+            (change)="onConfigureSupportFile($event)"
+          />
+          <div
+            class="warehouse-upload-zone"
+            [class.warehouse-upload-zone--active]="supportDragActive()"
+            [class.warehouse-upload-zone--disabled]="!canSelectSupportFile()"
+            [class.warehouse-upload-zone--selected]="configureSupportFile()"
+            (dragover)="onSupportDragOver($event)"
+            (dragleave)="onSupportDragLeave($event)"
+            (drop)="onSupportDrop($event)"
+          >
+            @if (supportPhase() === 'upload' || supportPhase() === 'register') {
+              <span class="loading loading-spinner loading-md text-primary" role="status" aria-label="Procesando documento"></span>
+              <div class="warehouse-upload-content">
+                <strong>{{ supportPhase() === 'upload' ? 'Cargando documento...' : 'Registrando entrada...' }}</strong>
+                <small>No cierres esta ventana hasta finalizar.</small>
+              </div>
+            } @else if (configureSupportFile(); as file) {
+              <div class="warehouse-upload-icon warehouse-upload-icon--success">
+                <fa-icon [icon]="supportSelectedIcon" />
+              </div>
+              <div class="warehouse-upload-content">
+                <strong [title]="file.name">{{ file.name }}</strong>
+                <small>{{ supportFileSize(file.size) }} · Documento listo para adjuntar</small>
+              </div>
+              <button
+                type="button"
+                class="btn btn-ghost btn-circle btn-sm warehouse-upload-remove"
+                aria-label="Quitar documento"
+                title="Quitar documento"
+                [disabled]="saving()"
+                (click)="clearConfigureSupportFile(supportFileInput)"
+              ><fa-icon [icon]="supportRemoveIcon" /></button>
+            } @else {
+              <div class="warehouse-upload-icon"><fa-icon [icon]="supportFileIcon" /></div>
+              <div class="warehouse-upload-content">
+                <strong>Arrastra tu documento aquí</strong>
+                <small>Factura, guía, acta u otro sustento de la entrada inicial.</small>
+                <span>PDF, Word, Excel, CSV o imágenes · Máximo 10 MB</span>
+              </div>
+              <button
+                type="button"
+                class="btn btn-outline btn-primary btn-sm warehouse-upload-browse"
+                [disabled]="!canSelectSupportFile()"
+                (click)="supportFileInput.click()"
+              >Seleccionar archivo</button>
+            }
+          </div>
+          @if (!canSelectSupportFile() && !saving()) {
+            <small class="warehouse-upload-hint">Disponible cuando el stock inicial sea mayor que cero.</small>
+          }
+          @if (supportFileError()) {
+            <p class="warehouse-file-error" role="alert">{{ supportFileError() }}</p>
+          }
+        </div>
+
+        <div class="admin-field admin-field-span-2">
+          <label>Observaciones <span class="warehouse-optional">(opcional)</span></label>
+          <textarea
+            class="admin-textarea"
+            rows="3"
+            maxlength="500"
+            formControlName="observacion"
+            placeholder="Detalle adicional de la configuración o de la entrada inicial"
+          ></textarea>
+          <app-form-error
+            [control]="configureForm.controls.observacion"
+            fieldLabel="Las observaciones"
+          />
+        </div>
+
+        <ng-container *ngTemplateOutlet="actions"></ng-container>
+      </form>
+    } @else {
+      <form class="warehouse-movement-form" [formGroup]="movementForm" (ngSubmit)="save()">
+        <section class="warehouse-movement-context" [class.warehouse-movement-context--outgoing]="movementNature() === 'S'">
+          <span class="warehouse-movement-context-icon"><fa-icon [icon]="movementIcon" /></span>
+          <div>
+            <strong>{{ movementNature() === 'E' ? 'Entrada al inventario' : 'Salida del inventario' }}</strong>
+            <p>{{ movementNature() === 'E'
+              ? 'Registra productos que ingresan al almacén. Las cantidades aumentarán el stock.'
+              : 'Registra productos que salen del almacén. Las cantidades se descontarán del stock disponible.' }}</p>
+          </div>
+          <span class="admin-status" [class.admin-status--active]="movementNature() === 'E'" [class.admin-status--warning]="movementNature() === 'S'">
+            {{ movementNature() === 'E' ? 'Entrada' : 'Salida' }}
+          </span>
+        </section>
+
+        <div class="admin-form-grid warehouse-movement-fields">
+          <div class="warehouse-form-section admin-field-span-2"><span>Origen y motivo</span></div>
+          <div class="admin-field">
+            <label for="warehouse-movement-uot">UOT del movimiento</label>
+            <select id="warehouse-movement-uot" class="admin-select" formControlName="uotId" (change)="onMovementUnitChange()">
+              <option [value]="0">Seleccionar UOT</option>
+              @for (unit of uot.memberships(); track unit.uotId) {
+                <option [value]="unit.uotId">{{ unit.nombre }}</option>
+              }
+            </select>
+            <app-form-error [control]="movementForm.controls.uotId" fieldLabel="La UOT" />
+          </div>
+          <div class="admin-field">
+            <label for="warehouse-movement-store">Almacén</label>
+            <select id="warehouse-movement-store" class="admin-select" formControlName="almacenId">
+              <option [value]="0">Seleccionar almacén</option>
+              @for (warehouse of warehousesForUnit(); track warehouse.almacenId) {
+                <option [value]="warehouse.almacenId">{{ warehouse.nombre }}</option>
+              }
+            </select>
+            <app-form-error [control]="movementForm.controls.almacenId" fieldLabel="El almacén" />
+          </div>
+          <div class="admin-field">
+            <label for="warehouse-movement-type">Motivo de {{ movementNature() === 'E' ? 'entrada' : 'salida' }}</label>
+            <select id="warehouse-movement-type" class="admin-select" formControlName="tipo">
+              @for (type of allowedMovementTypes(); track type.value) {
+                <option [value]="type.value">{{ type.label }}</option>
+              }
+            </select>
+            <app-form-error [control]="movementForm.controls.tipo" fieldLabel="El motivo" />
+          </div>
+          <div class="admin-field">
+            <label for="warehouse-movement-doc">Documento de referencia <span class="warehouse-optional">(opcional)</span></label>
+            <input id="warehouse-movement-doc" class="admin-input" maxlength="120" formControlName="documentoReferencia" placeholder="Factura, guía, acta o referencia" />
+          </div>
+          <div class="admin-field admin-field-span-2">
+            <label for="warehouse-movement-notes">Observaciones <span class="warehouse-optional">(opcional)</span></label>
+            <textarea id="warehouse-movement-notes" class="admin-textarea" rows="2" maxlength="500" formControlName="observacion" placeholder="Información adicional de la operación"></textarea>
+          </div>
+        </div>
+
+        <section class="warehouse-lines" formArrayName="detalle">
+          <header class="warehouse-lines-header">
+            <div><p>Detalle de {{ movementNature() === 'E' ? 'entrada' : 'salida' }}</p><h3>Productos de la operación</h3></div>
+            <button type="button" class="admin-secondary-button admin-secondary-button--small" [disabled]="saving()" (click)="addLine()">
+              <fa-icon [icon]="addIcon" /> Agregar producto
+            </button>
+          </header>
+
+          @for (line of lines.controls; track line; let index = $index) {
+            <div class="warehouse-line" [formGroupName]="index">
+              <div class="warehouse-line-heading">
+                <strong>Producto {{ index + 1 }}</strong>
+                <button type="button" class="admin-icon-button warehouse-remove" [disabled]="lines.length <= 1 || saving()" [attr.aria-label]="'Quitar producto ' + (index + 1)" [title]="'Quitar producto ' + (index + 1)" (click)="removeLine(index)">
+                  <fa-icon [icon]="removeIcon" />
+                </button>
+              </div>
+              <div class="warehouse-line-fields">
+                <div class="admin-field warehouse-line-product">
+                  <label>Producto</label>
+                  <select class="admin-select" formControlName="productoId">
+                    <option [value]="0">Seleccionar producto</option>
+                    @for (product of products(); track product.productoId) {
+                      <option [value]="product.productoId">{{ product.nombre }} · {{ product.codigo }}</option>
+                    }
+                  </select>
+                  <app-form-error [control]="line.get('productoId')" fieldLabel="El producto" />
+                </div>
+                <div class="admin-field">
+                  <label>Cantidad</label>
+                  <input class="admin-input" type="number" min="0.001" step="0.001" formControlName="cantidad" />
+                  <app-form-error [control]="line.get('cantidad')" fieldLabel="La cantidad" />
+                </div>
+                <div class="admin-field warehouse-line-cost">
+                  <label>Costo unitario <span class="warehouse-optional">(opcional)</span></label>
+                  <input class="admin-input" type="number" min="0" step="0.01" formControlName="costoUnitario" />
+                </div>
+                <div class="admin-field">
+                  <label>Moneda</label>
+                  <select class="admin-select" formControlName="moneda">
+                    @for (currency of currencies(); track currency.code) {
+                      <option [value]="currency.code">{{ currency.code }}</option>
+                    }
+                  </select>
+                </div>
+                <div class="admin-field warehouse-line-lot">
+                  <label>Lote <span class="warehouse-optional">(opcional)</span></label>
+                  <input class="admin-input" maxlength="80" formControlName="lote" placeholder="Código de lote" />
+                </div>
+                <div class="admin-field">
+                  <label>Vencimiento <span class="warehouse-optional">(opcional)</span></label>
+                  <input class="admin-input" type="date" [min]="today" formControlName="fechaVencimiento" />
+                </div>
+              </div>
+            </div>
+          }
+        </section>
+        <ng-container *ngTemplateOutlet="actions"></ng-container>
+      </form>
+    }
+
+    <ng-template #actions>
+      <footer class="admin-modal-actions warehouse-form-actions">
+        <button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="close()">Cancelar</button>
+        <button
+          type="submit"
+          class="admin-primary-button"
+          [disabled]="saving() || loadingProducts()"
+        >
+          @if (saving()) {
+            <span class="loading loading-spinner loading-sm"></span>
+            Guardando...
+          } @else {
+            <fa-icon [icon]="saveIcon" />
+            {{ mode() === 'movement' ? (movementNature() === 'E' ? 'Registrar entrada' : 'Registrar salida') : 'Guardar' }}
+          }
+        </button>
+      </footer>
+    </ng-template>
+  </div>
+</dialog>

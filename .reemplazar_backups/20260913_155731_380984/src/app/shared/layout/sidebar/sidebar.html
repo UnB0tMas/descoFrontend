@@ -1,0 +1,101 @@
+@if (mobileOpen) {
+  <button
+    type="button"
+    class="sidebar-backdrop"
+    aria-label="Cerrar menú"
+    (click)="closeMobile()"
+  ></button>
+}
+
+<aside
+  class="sidebar-shell"
+  [class.sidebar-open]="mobileOpen"
+  [class.sidebar-collapsed]="collapsed"
+>
+  <div class="sidebar-inner">
+    <div class="brand-row">
+      <div class="brand-mark">
+        <fa-icon [icon]="logoIcon" />
+      </div>
+
+      @if (!collapsed) {
+        <div class="brand-copy">
+          <p class="brand-name">DESCO</p>
+          <p class="brand-caption">Gestión territorial</p>
+        </div>
+      }
+
+      <button
+        type="button"
+        class="mobile-close"
+        aria-label="Cerrar menú"
+        (click)="closeMobile()"
+      >
+        <fa-icon [icon]="closeIcon" />
+      </button>
+    </div>
+
+    @if (!collapsed) {
+      <div class="profile-context">
+        <span class="profile-dot"></span>
+        <div>
+          <p>Perfil activo</p>
+          <strong>{{ primaryRole() }}</strong>
+        </div>
+      </div>
+    }
+
+    <nav class="sidebar-nav desco-scrollbar" aria-label="Navegación principal">
+      @if (!collapsed) {
+        <p class="nav-caption">Módulos</p>
+      }
+
+      <div class="nav-list">
+        @for (item of items(); track item.id) {
+          <app-sidebar-item
+            [item]="item"
+            [collapsed]="collapsed"
+            (navigate)="closeMobile()"
+            (requestExpand)="expandSidebar()"
+          />
+        }
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button
+        type="button"
+        class="logout-button"
+        [class.sidebar-action-busy]="loggingOut()"
+        [disabled]="loggingOut()"
+        [attr.aria-label]="collapsed ? 'Cerrar sesión' : null"
+        title="Cerrar sesión"
+        (click)="logout()"
+      >
+        @if (loggingOut()) {
+          <span class="loading loading-spinner loading-xs"></span>
+        } @else {
+          <fa-icon [icon]="logoutIcon" />
+        }
+
+        @if (!collapsed) {
+          <span>{{ loggingOut() ? 'Cerrando...' : 'Cerrar sesión' }}</span>
+        }
+      </button>
+
+      <button
+        type="button"
+        class="collapse-button"
+        [attr.aria-label]="collapsed ? 'Expandir menú' : 'Contraer menú'"
+        [title]="collapsed ? 'Expandir menú' : 'Contraer menú'"
+        (click)="toggleCollapsed()"
+      >
+        <fa-icon [icon]="collapsed ? expandIcon : collapseIcon" />
+
+        @if (!collapsed) {
+          <span>Contraer menú</span>
+        }
+      </button>
+    </div>
+  </div>
+</aside>

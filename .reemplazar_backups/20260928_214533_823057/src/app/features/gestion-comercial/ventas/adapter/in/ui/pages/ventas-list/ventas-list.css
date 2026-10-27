@@ -1,0 +1,70 @@
+:host {
+  display: block;
+}
+
+.sales-filters {
+  display: flex;
+  margin-bottom: 1rem;
+  align-items: end;
+  gap: .7rem;
+  padding: .8rem;
+}
+
+.sales-filters label {
+  display: grid;
+  min-width: 12rem;
+  gap: .3rem;
+}
+
+.sales-filters label > span {
+  color: var(--desco-text-muted);
+  font-size: .6rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.sales-search {
+  flex: 1;
+}
+
+.sales-table-shell {
+  overflow: hidden;
+}
+
+.sale-state {
+  display: inline-flex;
+  border-radius: 999px;
+  padding: .22rem .48rem;
+  font-size: .58rem;
+  font-weight: 850;
+}
+
+.sale-state--ok {
+  background: var(--desco-success-soft);
+  color: var(--desco-success-text);
+}
+
+.sale-state--warning {
+  background: var(--desco-warning-soft);
+  color: var(--desco-warning-text);
+}
+
+.sale-state--muted {
+  background: var(--desco-surface-soft);
+  color: var(--desco-text-muted);
+}
+
+.sale-state--info {
+  background: var(--desco-primary-soft);
+  color: var(--desco-primary-text);
+}
+
+@media (max-width: 720px) {
+  .sales-filters {
+    flex-wrap: wrap;
+  }
+
+  .sales-filters label {
+    width: 100%;
+  }
+}

@@ -1,0 +1,11 @@
+:host { display: block; }
+.producer-summary { display: flex; min-width: 0; align-items: center; gap: .8rem; }
+.producer-avatar { display: grid; width: 2.6rem; height: 2.6rem; flex: 0 0 auto; place-items: center; border-radius: .85rem; background: #eff6ff; color: #1d4ed8; }
+.producer-main { min-width: 0; flex: 1; }
+.producer-main > strong, .producer-main > span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.producer-main > strong { color: #0f172a; font-size: .78rem; font-weight: 800; }
+.producer-main > span { margin-top: .15rem; color: #64748b; font-size: .65rem; }
+.producer-meta { display: flex; flex-wrap: wrap; gap: .55rem; margin-top: .45rem; color: #94a3b8; font-size: .61rem; font-weight: 650; }
+.producer-meta span { display: inline-flex; align-items: center; gap: .25rem; }
+.producer-summary--compact .producer-meta { display: none; }
+.producer-summary--compact .producer-avatar { width: 2.2rem; height: 2.2rem; }

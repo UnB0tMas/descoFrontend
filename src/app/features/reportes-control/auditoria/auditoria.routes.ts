@@ -1,0 +1,4 @@
+import { Routes } from '@angular/router';
+import { moduleAccessGuard } from '../../../core/access/module-access.guard';
+import { permissionGuard } from '../../../core/access/permission.guard';
+export const auditoriaRoutes: Routes = [{ path: 'auditoria', data: { breadcrumb: 'Auditoría', module: 'AUDITORIA', permission: 'AUDITORIA_LISTAR' }, canActivate: [moduleAccessGuard, permissionGuard], loadComponent: () => import('./adapter/in/ui/pages/auditoria-list/auditoria-list').then(m => m.AuditoriaListPage) }, { path: 'auditoria/:id', data: { breadcrumb: 'Detalle de auditoría', module: 'AUDITORIA', permission: 'AUDITORIA_VER' }, canActivate: [moduleAccessGuard, permissionGuard], loadComponent: () => import('./adapter/in/ui/pages/auditoria-detail/auditoria-detail').then(m => m.AuditoriaDetailPage) }];

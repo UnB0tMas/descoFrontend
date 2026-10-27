@@ -1,0 +1,11 @@
+{
+  "proyecto": "D:\\FrancoSystem\\desco_frontend",
+  "fecha": "2026-10-11T22:54:57",
+  "cambios": [
+    {
+      "ruta": "src/app/features/recursos/almacenes/adapter/in/ui/pages/almacen-operations/almacen-operations.ts",
+      "accion": "escribir",
+      "existia": true
+    }
+  ]
+}

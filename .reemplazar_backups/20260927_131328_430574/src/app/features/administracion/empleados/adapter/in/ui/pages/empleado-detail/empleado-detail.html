@@ -1,0 +1,242 @@
+<div class="desco-page">
+  <app-page-header
+    [title]="fullName()"
+    subtitle="Información personal, asignación laboral, cuenta y roles del empleado."
+    eyebrow="Empleado"
+    [icon]="pageIcon"
+  >
+    <div pageActions class="flex flex-wrap gap-2">
+      <a class="admin-secondary-button" routerLink="/administracion/empleados">
+        <fa-icon [icon]="backIcon" />
+        Volver
+      </a>
+
+      <button
+        type="button"
+        class="admin-secondary-button"
+        [disabled]="loading()"
+        (click)="load()"
+      >
+        <fa-icon [class.animate-spin]="loading()" [icon]="refreshIcon" />
+        Actualizar
+      </button>
+
+      @if (detail(); as employee) {
+        <button
+          *appPermission="'EMPLEADOS_EDITAR'"
+          type="button"
+          class="admin-primary-button"
+          [disabled]="!employee.estado || referencesLoading()"
+          (click)="edit()"
+        >
+          @if (referencesLoading()) {
+            <span class="loading loading-spinner loading-sm"></span>
+          } @else {
+            <fa-icon [icon]="editIcon" />
+          }
+          Editar
+        </button>
+
+        <button
+          *appPermission="'EMPLEADOS_RETIRAR'"
+          type="button"
+          class="admin-danger-button"
+          [disabled]="!employee.estado || retiring()"
+          (click)="retire()"
+        >
+          @if (retiring()) {
+            <span class="loading loading-spinner loading-sm"></span>
+          } @else {
+            <fa-icon [icon]="retireIcon" />
+          }
+          Retirar
+        </button>
+      }
+    </div>
+  </app-page-header>
+
+  <div class="mt-5">
+    @if (loading()) {
+      <app-loading-state
+        title="Cargando empleado"
+        message="Consultando su información actual e historial."
+      />
+    } @else if (errorMessage()) {
+      <app-error-state
+        [message]="errorMessage() || 'Intenta nuevamente.'"
+        (retry)="load()"
+      />
+    } @else if (detail(); as employee) {
+      <section class="admin-detail-grid">
+        <article class="admin-detail-card">
+          <span>Código</span>
+          <strong>{{ employee.codigoEmpleado }}</strong>
+        </article>
+        <article class="admin-detail-card">
+          <span>Documento</span>
+          <strong>{{ employee.tipoDocumento }} {{ employee.numeroDocumento }}</strong>
+        </article>
+        <article class="admin-detail-card">
+          <span>UOT</span>
+          <strong>{{ employee.uotNombre || uotName() }}</strong>
+          <small>{{ employee.uotCodigo || '' }}</small>
+        </article>
+        <article class="admin-detail-card">
+          <span>Estado</span>
+          <strong>{{ employee.estado ? 'Activo' : 'Retirado' }}</strong>
+        </article>
+      </section>
+
+      <div class="employee-detail-grid mt-4">
+        <section class="admin-surface">
+          <div class="admin-section-header">
+            <div>
+              <p>Identificación</p>
+              <h2>Datos personales</h2>
+            </div>
+            <fa-icon class="text-blue-600" [icon]="identityIcon" />
+          </div>
+
+          <div class="admin-info-list">
+            <div><span>Nombres</span><strong>{{ employee.nombres }}</strong></div>
+            <div><span>Apellido paterno</span><strong>{{ employee.apellidoPaterno }}</strong></div>
+            <div><span>Apellido materno</span><strong>{{ employee.apellidoMaterno || '—' }}</strong></div>
+            <div><span>Fecha de nacimiento</span><strong>{{ employee.fechaNacimiento ? (employee.fechaNacimiento | date:'dd/MM/yyyy') : '—' }}</strong></div>
+            <div><span>Teléfono</span><strong>{{ employee.telefono || '—' }}</strong></div>
+            <div><span>Correo</span><strong>{{ employee.correo || '—' }}</strong></div>
+          </div>
+        </section>
+
+        <section class="admin-surface">
+          <div class="admin-section-header">
+            <div>
+              <p>Asignación laboral</p>
+              <h2>Situación actual</h2>
+            </div>
+            <fa-icon class="text-blue-600" [icon]="organizationIcon" />
+          </div>
+
+          @if (currentAssignment(); as assignment) {
+            <div class="admin-info-list">
+              <div><span>Área actual</span><strong>{{ assignment.area }}</strong></div>
+              <div><span>Cargo actual</span><strong>{{ assignment.cargo || '—' }}</strong></div>
+              <div><span>Desde</span><strong>{{ assignment.fechaDesde ? (assignment.fechaDesde | date:'dd/MM/yyyy') : '—' }}</strong></div>
+              <div><span>Fecha de ingreso</span><strong>{{ employee.fechaIngreso ? (employee.fechaIngreso | date:'dd/MM/yyyy') : '—' }}</strong></div>
+              <div><span>Fecha de cese</span><strong>{{ employee.fechaCese ? (employee.fechaCese | date:'dd/MM/yyyy') : '—' }}</strong></div>
+            </div>
+          } @else {
+            <div class="admin-info-list">
+              <div><span>Área actual</span><strong>Sin área asignada</strong></div>
+              <div><span>Cargo actual</span><strong>Sin cargo asignado</strong></div>
+              <div><span>Fecha de ingreso</span><strong>{{ employee.fechaIngreso ? (employee.fechaIngreso | date:'dd/MM/yyyy') : '—' }}</strong></div>
+              <div><span>Fecha de cese</span><strong>{{ employee.fechaCese ? (employee.fechaCese | date:'dd/MM/yyyy') : '—' }}</strong></div>
+            </div>
+          }
+        </section>
+      </div>
+
+      <section class="admin-surface mt-4">
+        <div class="admin-section-header">
+          <div>
+            <p>Historial laboral</p>
+            <h2>Áreas y cargos</h2>
+          </div>
+          <fa-icon class="text-blue-600" [icon]="historyIcon" />
+        </div>
+
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Área</th>
+                <th>Cargo</th>
+                <th>Desde</th>
+                <th>Hasta</th>
+                <th class="text-center">Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (area of employee.areas; track area.empleadoAreaId) {
+                <tr>
+                  <td>
+                    <div class="admin-entity">
+                      <span class="admin-entity-icon">
+                        <fa-icon [icon]="organizationIcon" />
+                      </span>
+
+                      <div>
+                        <strong>{{ area.area }}</strong>
+                        <span>Área organizacional</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td>{{ area.cargo || '—' }}</td>
+                  <td>{{ area.fechaDesde ? (area.fechaDesde | date:'dd/MM/yyyy') : '—' }}</td>
+                  <td>{{ area.fechaHasta ? (area.fechaHasta | date:'dd/MM/yyyy') : '—' }}</td>
+                  <td class="text-center">
+                    <span
+                      class="admin-status"
+                      [class.admin-status--active]="area.estado"
+                      [class.admin-status--inactive]="!area.estado"
+                    >
+                      {{ area.estado ? 'Actual' : 'Histórico' }}
+                    </span>
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td colspan="5" class="admin-table-empty">No hay historial de áreas.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <div class="employee-detail-grid mt-4">
+        <section class="admin-surface">
+          <div class="admin-section-header">
+            <div>
+              <p>Cuenta</p>
+              <h2>Acceso al sistema</h2>
+            </div>
+            <fa-icon class="text-blue-600" [icon]="accountIcon" />
+          </div>
+
+          @if (employee.usuario; as user) {
+            <div class="admin-info-list">
+              <div><span>Usuario</span><strong>{{ user.nombreUsuario }}</strong></div>
+              <div><span>Estado</span><strong>{{ user.estadoCuenta || '—' }}</strong></div>
+              <div><span>Segundo factor</span><strong>{{ user.segundoFactorHabilitado ? 'Habilitado' : 'No habilitado' }}</strong></div>
+              <div><span>Último acceso</span><strong>{{ user.ultimoAccesoCorrecto ? (user.ultimoAccesoCorrecto | date:'dd/MM/yyyy HH:mm') : '—' }}</strong></div>
+            </div>
+          } @else {
+            <p class="admin-empty-copy p-4">El empleado no tiene una cuenta asociada.</p>
+          }
+        </section>
+
+        <section class="admin-surface">
+          <div class="admin-section-header">
+            <div>
+              <p>Roles del sistema</p>
+              <h2>Permisos de acceso</h2>
+            </div>
+            <span class="admin-count-badge">{{ employee.roles.length }}</span>
+          </div>
+
+          <div class="admin-chip-list">
+            @for (role of employee.roles; track role.rolId) {
+              <article>
+                <strong>{{ role.nombre }}</strong>
+                <span>{{ role.codigo }}</span>
+              </article>
+            } @empty {
+              <p class="admin-empty-copy">Sin roles asignados.</p>
+            }
+          </div>
+        </section>
+      </div>
+    }
+  </div>
+</div>
+
+<app-empleado-form />
+<app-action-confirm-dialog />

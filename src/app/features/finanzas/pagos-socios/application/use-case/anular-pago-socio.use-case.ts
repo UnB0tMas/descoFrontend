@@ -1,0 +1,1 @@
+import{inject,Injectable}from'@angular/core';import{PAGOS_SOCIOS_GATEWAY,PagosSociosGateway}from'../port/out/pagos-socios.gateway';@Injectable()export class AnularPagoSocioUseCase{private readonly g:PagosSociosGateway=inject(PAGOS_SOCIOS_GATEWAY);execute(id:number,motivo:string){return this.g.cancel(id,motivo);}}

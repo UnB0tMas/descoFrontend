@@ -1,0 +1,25 @@
+<section aria-labelledby="indicadores-title">
+  <div class="section-heading">
+    <div>
+      <p class="section-kicker">Resumen operativo</p>
+      <h2 id="indicadores-title">Indicadores prioritarios</h2>
+      <p class="section-copy">
+        Se muestran únicamente los indicadores asignados a tu perfil.
+      </p>
+    </div>
+
+    <div class="section-icon">
+      <fa-icon [icon]="chartIcon" />
+    </div>
+  </div>
+
+  <div class="kpi-grid">
+    @for (kpi of kpis(); track kpi.label) {
+      <app-kpi-card [data]="kpi" />
+    } @empty {
+      <div class="empty-panel">
+        No tienes indicadores configurados para este dashboard.
+      </div>
+    }
+  </div>
+</section>

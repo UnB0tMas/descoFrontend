@@ -1,0 +1,1 @@
+import{inject,Injectable}from'@angular/core';import{LIQUIDACIONES_GATEWAY,LiquidacionesGateway}from'../port/out/liquidaciones.gateway';@Injectable()export class CalcularLiquidacionUseCase{private readonly g:LiquidacionesGateway=inject(LIQUIDACIONES_GATEWAY);execute(participacionId:number){return this.g.calculate(participacionId);}}

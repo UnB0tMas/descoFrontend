@@ -1,0 +1,193 @@
+<div class="desco-page">
+  <app-page-header
+    title="Almacenes y stock"
+    [subtitle]="uot.isGeneral() ? 'Vista general de almacenes, stock y Kardex de tus UOT.' : 'Almacenes, stock y Kardex de ' + (uot.selected()?.nombre ?? 'la UOT activa') + '.'"
+    [icon]="pageIcon"
+  >
+    <div pageActions class="flex flex-wrap gap-2">
+      <button type="button" class="admin-secondary-button" [disabled]="loading()" (click)="load()">
+        <fa-icon [icon]="refreshIcon" />
+        Actualizar
+      </button>
+      <button
+        *appPermission="'ALMACENES_MOVIMIENTO'"
+        type="button"
+        class="admin-secondary-button"
+        [disabled]="warehouses().length === 0 || products().length === 0"
+        (click)="movement()"
+      >
+        <fa-icon [icon]="movementIcon" />
+        Movimiento
+      </button>
+      <button
+        *appPermission="'ALMACENES_CREAR'"
+        type="button"
+        class="admin-primary-button"
+        (click)="createWarehouse()"
+      >
+        <fa-icon [icon]="addIcon" />
+        Registrar almacén
+      </button>
+  
+    </div>
+  </app-page-header>
+
+  <section class="admin-surface warehouse-toolbar">
+    @if (uot.isGeneral()) {
+      <label>
+        <span>Filtrar por UOT</span>
+        <select class="admin-select" [value]="unitFilter() ?? 0" (change)="onUnitChange($any($event.target).value)">
+          <option [value]="0">Todas mis UOT</option>
+          @for (unit of uot.memberships(); track unit.uotId) {
+            <option [value]="unit.uotId">{{ unit.nombre }}</option>
+          }
+        </select>
+      </label>
+    }
+    <label>
+      <span>Almacén</span>
+      <select class="admin-select" [value]="warehouseFilter() ?? 0" (change)="onWarehouseChange($any($event.target).value)">
+        <option [value]="0">Todos</option>
+        @for (warehouse of warehouses(); track warehouse.almacenId) {
+          <option [value]="warehouse.almacenId">{{ warehouse.nombre }}</option>
+        }
+      </select>
+    </label>
+    <label>
+      <span>Producto</span>
+      <select class="admin-select" [value]="productFilter() ?? 0" (change)="onProductChange($any($event.target).value)">
+        <option [value]="0">Todos</option>
+        @for (product of products(); track product.productoId) {
+          <option [value]="product.productoId">{{ product.nombre }}</option>
+        }
+      </select>
+    </label>
+  </section>
+
+  <div class="warehouse-tabs" role="tablist">
+    <button type="button" [class.active]="activeTab() === 'warehouses'" (click)="setTab('warehouses')">
+      <fa-icon [icon]="warehouseIcon" /> Almacenes
+    </button>
+    <button type="button" [class.active]="activeTab() === 'stock'" (click)="setTab('stock')">
+      <fa-icon [icon]="stockIcon" /> Stock
+    </button>
+    <button
+      *appPermission="'ALMACENES_KARDEX'"
+      type="button"
+      [class.active]="activeTab() === 'kardex'"
+      (click)="setTab('kardex')"
+    >
+      <fa-icon [icon]="kardexIcon" /> Kardex
+    </button>
+  </div>
+
+  @if (loading()) {
+    <app-loading-state title="Cargando almacenes" message="Consultando stock y movimientos." />
+  } @else if (errorMessage()) {
+    <app-error-state [message]="errorMessage() || 'No fue posible consultar los almacenes.'" (retry)="load()" />
+  } @else if (activeTab() === 'warehouses') {
+    @if (warehouses().length === 0) {
+      <app-empty-state title="Sin almacenes" message="No existen almacenes disponibles para el contexto actual." />
+    } @else {
+      <section class="warehouse-card-grid">
+        @for (warehouse of warehouses(); track warehouse.almacenId) {
+          <article class="admin-surface warehouse-card">
+            <header>
+              <span class="warehouse-card-icon"><fa-icon [icon]="warehouseIcon" /></span>
+              <div>
+                <strong>{{ warehouse.nombre || 'Almacén' }}</strong>
+                <small>{{ warehouse.codigo || '—' }}</small>
+              </div>
+              <span class="warehouse-access">{{ warehouse.tipoAcceso || 'PROPIO' }}</span>
+            </header>
+            <dl>
+              <div><dt>UOT propietaria</dt><dd>{{ warehouse.uotPropietaria || '—' }}</dd></div>
+              <div><dt>Entradas</dt><dd>{{ warehouse.permiteEntrada === false ? 'No' : 'Sí' }}</dd></div>
+              <div><dt>Salidas</dt><dd>{{ warehouse.permiteSalida === false ? 'No' : 'Sí' }}</dd></div>
+            </dl>
+            @if (warehouse.descripcion) { <p>{{ warehouse.descripcion }}</p> }
+            <footer>
+              <button
+                *appPermission="'ALMACENES_MOVIMIENTO'"
+                type="button"
+                class="admin-secondary-button admin-secondary-button--small"
+                [disabled]="warehouse.permiteEntrada === false"
+                (click)="configureProduct(warehouse)"
+              >
+                <fa-icon [icon]="configureIcon" />
+                Agregar producto
+              </button>
+              <button
+                *appPermission="'ALMACENES_CREAR'"
+                type="button"
+                class="admin-secondary-button admin-secondary-button--small"
+                (click)="share(warehouse)"
+              >
+                <fa-icon [icon]="shareIcon" />
+                Compartir
+              </button>
+            </footer>
+          </article>
+        }
+      </section>
+    }
+  } @else if (activeTab() === 'stock') {
+    @if (filteredStock().length === 0) {
+      <app-empty-state title="Sin stock" message="No existen saldos para los filtros seleccionados." />
+    } @else {
+      <section class="admin-surface warehouse-table-shell">
+        <div class="admin-table-scroll">
+          <table class="admin-table">
+            <thead>
+              <tr><th>UOT</th><th>Almacén</th><th>Producto</th><th>Unidad</th><th>Actual</th><th>Reservado</th><th>Disponible</th><th>Actualización</th></tr>
+            </thead>
+            <tbody>
+              @for (item of filteredStock(); track item.almacenId + ':' + item.productoId) {
+                <tr>
+                  <td>{{ stockUot(item) }}</td>
+                  <td>{{ item.almacen }}</td>
+                  <td><strong>{{ item.producto }}</strong></td>
+                  <td>{{ item.unidadMedida }}</td>
+                  <td>{{ item.stockActual | number:'1.0-3' }}</td>
+                  <td>{{ item.stockReservado | number:'1.0-3' }}</td>
+                  <td><strong class="stock-value" [class]="stockTone(item)">{{ item.stockDisponible | number:'1.0-3' }}</strong></td>
+                  <td>{{ item.fechaActualizacion | date:'dd/MM/yyyy HH:mm' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    }
+  } @else {
+    @if (kardex().length === 0) {
+      <app-empty-state title="Sin movimientos" message="No existen movimientos en el Kardex para los filtros seleccionados." />
+    } @else {
+      <section class="admin-surface warehouse-table-shell">
+        <div class="admin-table-scroll">
+          <table class="admin-table">
+            <thead>
+              <tr><th>Fecha</th><th>UOT</th><th>Almacén</th><th>Tipo</th><th>Producto</th><th>Naturaleza</th><th>Cantidad</th><th>Referencia</th></tr>
+            </thead>
+            <tbody>
+              @for (item of kardex(); track item.movimientoInventarioId + ':' + item.productoId) {
+                <tr>
+                  <td>{{ item.fechaHora | date:'dd/MM/yyyy HH:mm' }}</td>
+                  <td>{{ item.uotNombre || '—' }}</td>
+                  <td>{{ item.almacen || '—' }}</td>
+                  <td>{{ item.tipoMovimiento || '—' }}</td>
+                  <td>{{ item.producto || '—' }}</td>
+                  <td><span class="warehouse-nature">{{ item.naturaleza === 'E' ? 'Entrada' : 'Salida' }}</span></td>
+                  <td>{{ item.cantidad | number:'1.0-3' }}</td>
+                  <td>{{ item.documentoReferencia || '—' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    }
+  }
+</div>
+
+<app-almacen-operation-form />

@@ -1,0 +1,216 @@
+<div class="desco-page">
+  <app-page-header
+    title="Empleados"
+    subtitle="Administra los trabajadores y su adscripción organizacional."
+    eyebrow="Administración"
+    [icon]="pageIcon"
+  >
+    <div pageActions class="flex flex-wrap gap-2">
+      <button
+        type="button"
+        class="admin-secondary-button"
+        [disabled]="loading()"
+        (click)="load()"
+      >
+        <fa-icon [class.animate-spin]="loading()" [icon]="refreshIcon" />
+        Actualizar
+      </button>
+
+      <button
+        *appPermission="'EMPLEADOS_CREAR'"
+        type="button"
+        class="admin-primary-button"
+        [disabled]="referencesLoading() || referencesError() !== null"
+        [attr.title]="referencesError() ? 'No se pudieron cargar las opciones' : companies().length === 0 && !referencesLoading() ? 'Primero registra una organización' : 'Crear empleado'"
+        (click)="create()"
+      >
+        @if (referencesLoading()) {
+          <span class="loading loading-spinner loading-sm"></span>
+        } @else {
+          <fa-icon [icon]="addIcon" />
+        }
+        Nuevo empleado
+      </button>
+    </div>
+  </app-page-header>
+
+  <section class="admin-surface mt-5">
+    <div class="admin-toolbar">
+      <div class="admin-field admin-toolbar-field">
+        <label for="employeeCompanyFilter">Organización</label>
+        <select
+          id="employeeCompanyFilter"
+          class="admin-select"
+          [value]="companyFilter() ?? 0"
+          (change)="changeCompany($any($event.target).value)"
+        >
+          <option [value]="0">Todas</option>
+          @for (company of companyFilters(); track company.value) {
+            <option [value]="company.value">{{ company.label }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="admin-field admin-toolbar-field">
+        <label for="employeeAreaFilter">Área</label>
+        <select
+          id="employeeAreaFilter"
+          class="admin-select"
+          [value]="areaFilter() ?? 0"
+          (change)="changeArea($any($event.target).value)"
+        >
+          <option [value]="0">Todas</option>
+          @for (area of filteredAreas(); track area.areaId) {
+            <option [value]="area.areaId">{{ area.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="admin-field admin-toolbar-field">
+        <label for="employeeActiveFilter">Estado</label>
+        <select
+          id="employeeActiveFilter"
+          class="admin-select"
+          [value]="activeFilter() === null ? '' : activeFilter()"
+          (change)="changeActive($any($event.target).value)"
+        >
+          <option value="">Todos</option>
+          <option value="true">Activos</option>
+          <option value="false">Retirados</option>
+        </select>
+      </div>
+    </div>
+
+    @if (loading()) {
+      <app-loading-state
+        title="Cargando empleados"
+        message="Consultando trabajadores registrados."
+      />
+    } @else if (errorMessage()) {
+      <app-error-state
+        [message]="errorMessage() || 'Intenta nuevamente.'"
+        (retry)="load()"
+      />
+    } @else if (result().items.length === 0) {
+      <app-empty-state
+        title="Sin empleados"
+        message="No hay empleados para los filtros seleccionados."
+      />
+    } @else {
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Empleado</th>
+              <th>Documento</th>
+              <th>Organización</th>
+              <th>Área / cargo</th>
+              <th>Cuenta</th>
+              <th class="text-center">Estado</th>
+              <th class="text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (employee of result().items; track employee.empleadoId) {
+              <tr>
+                <td>
+                  <div class="admin-entity">
+                    <span class="admin-avatar">
+                      {{ employee.nombres.charAt(0) }}{{ employee.apellidoPaterno.charAt(0) }}
+                    </span>
+                    <div>
+                      <strong>{{ fullName(employee) }}</strong>
+                      <span>{{ employee.codigoEmpleado }}</span>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div class="admin-stack-copy">
+                    <strong>{{ employee.numeroDocumento }}</strong>
+                    <span>{{ employee.tipoDocumento }}</span>
+                  </div>
+                </td>
+                <td>{{ employee.empresa }}</td>
+                <td>
+                  <div class="admin-stack-copy">
+                    <strong>{{ employee.area || 'Sin área' }}</strong>
+                    <span>{{ employee.cargo || 'Sin cargo' }}</span>
+                  </div>
+                </td>
+                <td>
+                  @if (employee.usuarioId) {
+                    <div class="admin-stack-copy">
+                      <strong>{{ employee.nombreUsuario }}</strong>
+                      <span>{{ employee.estadoCuenta || '—' }}</span>
+                    </div>
+                  } @else {
+                    <span class="admin-muted-badge">Sin cuenta</span>
+                  }
+                </td>
+                <td class="text-center">
+                  <span
+                    class="admin-status"
+                    [class.admin-status--active]="employee.estado"
+                    [class.admin-status--inactive]="!employee.estado"
+                  >
+                    {{ employee.estado ? 'Activo' : 'Retirado' }}
+                  </span>
+                </td>
+                <td>
+                  <div class="admin-row-actions">
+                    <a
+                      *appPermission="'EMPLEADOS_VER'"
+                      class="admin-icon-button"
+                      [routerLink]="['/administracion/empleados', employee.empleadoId]"
+                      title="Ver detalle"
+                    >
+                      <fa-icon [icon]="viewIcon" />
+                    </a>
+
+                    <button
+                      *appPermission="'EMPLEADOS_EDITAR'"
+                      type="button"
+                      class="admin-icon-button"
+                      [attr.title]="employee.estado ? 'Editar' : 'El empleado retirado es solo de consulta'"
+                      [disabled]="!employee.estado"
+                      (click)="edit(employee)"
+                    >
+                      <fa-icon [icon]="editIcon" />
+                    </button>
+
+                    <button
+                      *appPermission="'EMPLEADOS_RETIRAR'"
+                      type="button"
+                      class="admin-icon-button admin-icon-button--danger"
+                      [attr.title]="employee.estado ? 'Retirar' : 'El empleado ya está retirado'"
+                      [disabled]="!employee.estado || retiringId() === employee.empleadoId"
+                      (click)="retire(employee)"
+                    >
+                      @if (retiringId() === employee.empleadoId) {
+                        <span class="loading loading-spinner loading-xs"></span>
+                      } @else {
+                        <fa-icon [icon]="retireIcon" />
+                      }
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <app-paginator
+        [page]="result().page"
+        [size]="result().size"
+        [totalRecords]="result().totalRecords"
+        [totalPages]="result().totalPages"
+        (pageChange)="load($event, result().size)"
+        (sizeChange)="load(1, $event)"
+      />
+    }
+  </section>
+</div>
+
+<app-empleado-form />
+<app-action-confirm-dialog />

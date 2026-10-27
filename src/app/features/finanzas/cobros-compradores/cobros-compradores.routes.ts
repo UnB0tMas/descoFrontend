@@ -1,0 +1,4 @@
+import { Routes } from '@angular/router';
+import { moduleAccessGuard } from '../../../core/access/module-access.guard';
+import { permissionGuard } from '../../../core/access/permission.guard';
+export const cobrosCompradoresRoutes: Routes = [{ path: 'cobros', data: { breadcrumb: 'Cobros de compradores', module: 'COBROS', permission: 'COBROS_LISTAR' }, canActivate: [moduleAccessGuard, permissionGuard], loadComponent: () => import('./adapter/in/ui/pages/cobros-compradores-list/cobros-compradores-list').then(m => m.CobrosCompradoresListPage) }, { path: 'cobros/saldo/:campaniaVentaId', data: { breadcrumb: 'Saldo del comprador', module: 'COBROS', permission: 'COBROS_VER' }, canActivate: [moduleAccessGuard, permissionGuard], loadComponent: () => import('./adapter/in/ui/pages/cobro-comprador-detail/cobro-comprador-detail').then(m => m.CobroCompradorDetailPage) }];

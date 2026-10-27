@@ -1,0 +1,33 @@
+<dialog #dialog class="modal desco-modal" (cancel)="$event.preventDefault(); close()">
+  <div class="modal-box admin-modal-box evidence-preview-modal">
+    <header class="admin-modal-header">
+      <div class="admin-modal-title-group">
+        <span class="admin-modal-icon"><fa-icon [icon]="fileIcon" /></span>
+        <div><p>Evidencia</p><h2>{{ evidence()?.nombreOriginal || 'Vista previa' }}</h2></div>
+      </div>
+      <button type="button" class="admin-icon-button" aria-label="Cerrar" (click)="close()"><fa-icon [icon]="closeIcon" /></button>
+    </header>
+
+    @if (evidence(); as item) {
+      <div class="evidence-preview-body">
+        @if (isImage()) {
+          <img [src]="item.secureUrl" [alt]="item.nombreOriginal" />
+        } @else if (isPdf()) {
+          <iframe [src]="safeDocumentUrl()" [title]="item.nombreOriginal"></iframe>
+        } @else {
+          <div class="evidence-preview-generic">
+            <fa-icon [icon]="fileIcon" />
+            <strong>{{ item.nombreOriginal }}</strong>
+            <span>{{ item.mimeType }} · {{ formatBytes(item.tamanoBytes) }}</span>
+          </div>
+        }
+      </div>
+      <footer class="evidence-preview-footer">
+        <span>{{ item.mimeType }} · {{ formatBytes(item.tamanoBytes) }}</span>
+        <a class="admin-primary-button" [href]="item.secureUrl" target="_blank" rel="noopener noreferrer">
+          <fa-icon [icon]="openIcon" /> Abrir archivo
+        </a>
+      </footer>
+    }
+  </div>
+</dialog>

@@ -1,0 +1,123 @@
+:host {
+  display: block;
+}
+
+.resource-filter-bar {
+  display: flex;
+  margin-bottom: 1rem;
+  align-items: end;
+  gap: .75rem;
+  padding: .85rem;
+}
+
+.resource-filter-title {
+  display: flex;
+  min-height: 2.5rem;
+  align-items: center;
+  gap: .45rem;
+  color: var(--desco-text-muted);
+  font-size: .7rem;
+  font-weight: 800;
+}
+
+.resource-filter-field {
+  display: grid;
+  min-width: 12rem;
+  gap: .3rem;
+}
+
+.resource-filter-field--search {
+  min-width: 16rem;
+  flex: 1;
+}
+
+.resource-filter-field > span {
+  color: var(--desco-text-muted);
+  font-size: .62rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.resource-table-shell {
+  overflow: hidden;
+}
+
+.resource-cell-help {
+  display: block;
+  margin-top: .15rem;
+  color: var(--desco-text-muted);
+  font-size: .62rem;
+}
+
+.resource-uot-name {
+  color: var(--desco-text);
+}
+
+.resource-status {
+  display: inline-flex;
+  border-radius: 999px;
+  padding: .25rem .5rem;
+  font-size: .6rem;
+  font-weight: 850;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.resource-status--ok {
+  background: var(--desco-success-soft);
+  color: var(--desco-success-text);
+}
+
+.resource-status--warning {
+  background: var(--desco-warning-soft);
+  color: var(--desco-warning-text);
+}
+
+.resource-status--muted {
+  background: var(--desco-surface-soft);
+  color: var(--desco-text-muted);
+}
+
+.resource-status--info {
+  background: var(--desco-primary-soft);
+  color: var(--desco-primary-text);
+}
+
+.resource-incident-count {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  border-radius: 999px;
+  background: var(--desco-danger-soft);
+  padding: .25rem .5rem;
+  color: var(--desco-danger-text);
+  font-size: .65rem;
+  font-weight: 800;
+}
+
+.resource-actions-column {
+  width: 7rem;
+}
+
+@media (max-width: 900px) {
+  .resource-filter-bar {
+    flex-wrap: wrap;
+  }
+
+  .resource-filter-field,
+  .resource-filter-field--search {
+    min-width: min(100%, 14rem);
+    flex: 1 1 14rem;
+  }
+}
+
+.resource-kardex-row > td {
+  padding: 0 !important;
+}
+
+.resource-kardex-panel {
+  border-top: 1px solid var(--desco-border);
+  background: var(--desco-surface-soft);
+  padding: 1rem;
+}

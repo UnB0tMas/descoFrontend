@@ -1,0 +1,1 @@
+export interface ProduccionFiltro{estadoEstimacion?:string;zonaProductivaId?:number;predioId?:number;socioId?:number;asociacionId?:number;variedadPaltaId?:number;origen?:string;disponibleDesde?:string;disponibleHasta?:string;page:number;size:number;}

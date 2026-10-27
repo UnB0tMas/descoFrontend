@@ -1,0 +1,1 @@
+import{inject,Injectable}from'@angular/core';import{AUDITORIA_GATEWAY,AuditoriaGateway}from'../port/out/auditoria.gateway';@Injectable()export class ObtenerEventoAuditoriaUseCase{private readonly g:AuditoriaGateway=inject(AUDITORIA_GATEWAY);execute(id:number){return this.g.get(id);}}

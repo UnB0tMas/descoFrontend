@@ -1,0 +1,1 @@
+export interface Liquidacion{liquidacionSocioId:number;participacionId:number;campaniaVentaId:number;campania:string|null;version:number;fechaCalculo:string|null;importeBruto:number;totalAjustes:number;totalGastos:number;totalBonificaciones:number;importeNeto:number;moneda:string;estadoProceso:string;totalPagado:number;saldoPendiente:number;}

@@ -1,0 +1,1 @@
+import{inject,Injectable}from'@angular/core';import{GastoFiltro}from'../../domain/gasto-filtro.model';import{GASTOS_GATEWAY,GastosGateway}from'../port/out/gastos.gateway';@Injectable()export class ListarGastosUseCase{private readonly g:GastosGateway=inject(GASTOS_GATEWAY);execute(f:GastoFiltro){return this.g.list(f);}}

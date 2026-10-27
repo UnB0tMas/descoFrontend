@@ -1,0 +1,1 @@
+import{inject,Injectable}from'@angular/core';import{IncidenciaCreate}from'../../domain/incidencia-operativa.model';import{INCIDENCIAS_GATEWAY,IncidenciasGateway}from'../port/out/incidencias.gateway';@Injectable()export class RegistrarIncidenciaUseCase{private readonly g:IncidenciasGateway=inject(INCIDENCIAS_GATEWAY);execute(i:IncidenciaCreate){return this.g.create(i);}}

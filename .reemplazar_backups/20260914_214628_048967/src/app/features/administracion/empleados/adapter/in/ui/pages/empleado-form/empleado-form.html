@@ -1,0 +1,266 @@
+<dialog
+  #dialog
+  class="modal desco-modal"
+  (cancel)="$event.preventDefault(); close()"
+>
+  <div class="modal-box admin-modal-box admin-modal-box--wide">
+    <header class="admin-modal-header">
+      <div class="admin-modal-title-group">
+        <span class="admin-modal-icon">
+          <fa-icon [icon]="current() ? editIcon : addIcon" />
+        </span>
+        <div>
+          <p>Empleados</p>
+          <h2>{{ current() ? 'Editar empleado' : 'Registrar empleado' }}</h2>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        class="admin-icon-button"
+        aria-label="Cerrar"
+        [disabled]="saving() || identityLoading()"
+        (click)="close()"
+      >
+        <fa-icon [icon]="closeIcon" />
+      </button>
+    </header>
+
+    @if (errorMessage()) {
+      <div class="admin-inline-error" role="alert">
+        {{ errorMessage() }}
+      </div>
+    }
+
+    <form class="admin-form-grid" [formGroup]="form" (ngSubmit)="save()">
+      <div class="employee-form-section admin-field-span-2">
+        <span>Identificación</span>
+      </div>
+
+      <div class="admin-field">
+        <label for="employeeDocumentType">Tipo de documento</label>
+        <select
+          id="employeeDocumentType"
+          class="admin-select"
+          formControlName="tipoDocumento"
+          (change)="onDocumentTypeChange()"
+        >
+          @for (item of documentTypes; track item.value) {
+            <option [value]="item.value">{{ item.label }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="admin-field">
+        <label for="employeeDocument">Número de documento</label>
+        <div class="identity-document-control">
+          <input
+            id="employeeDocument"
+            class="admin-input"
+            type="text"
+            formControlName="numeroDocumento"
+            [attr.maxlength]="documentMaxLength()"
+            [attr.inputmode]="documentInputMode()"
+            autocomplete="off"
+            autocapitalize="characters"
+            spellcheck="false"
+            [readOnly]="saving() || identityLoading() || !!current()"
+            (input)="onDocumentInput()"
+          />
+
+          @if (shouldResolveIdentity()) {
+            <button
+              type="button"
+              class="identity-search-button"
+              [disabled]="!canResolveIdentity()"
+              [attr.aria-busy]="identityLoading()"
+              (click)="resolveIdentity()"
+            >
+              @if (identityLoading()) {
+                <span class="loading loading-spinner loading-xs"></span>
+                Buscando...
+              } @else {
+                <fa-icon [icon]="searchIcon" />
+                Buscar
+              }
+            </button>
+          }
+        </div>
+        <app-form-error
+          [control]="form.controls.numeroDocumento"
+          fieldLabel="El número de documento"
+          [messages]="{
+            dni: 'El DNI debe contener exactamente 8 dígitos.',
+            ruc: 'El RUC no es válido. Verifique los 11 dígitos y el dígito verificador.',
+            rucNature: 'Para una persona se requiere un RUC personal válido.',
+            blank: 'El número de documento no puede contener solo espacios.'
+          }"
+        />
+        @if (!shouldResolveIdentity()) {
+          <small class="identity-help">
+            DNI y RUC permiten completar automáticamente los datos disponibles. Los demás documentos se completan manualmente.
+          </small>
+        }
+      </div>
+
+      @if (identityMessage()) {
+        <div
+          class="identity-feedback admin-field-span-2"
+          [class.identity-feedback--success]="identityTone() === 'success'"
+          [class.identity-feedback--warning]="identityTone() === 'warning'"
+          [class.identity-feedback--error]="identityTone() === 'error'"
+          role="status"
+        >
+          {{ identityMessage() }}
+        </div>
+      }
+
+      @if (canToggleIdentityEditing()) {
+        <div class="admin-field admin-field-span-2">
+          <label>
+            <input
+              type="checkbox"
+              [checked]="identityEditingEnabled()"
+              (change)="toggleIdentityEditing($any($event.target).checked)"
+            />
+            Editar datos de la persona
+          </label>
+          <small>El número de documento no se puede modificar.</small>
+        </div>
+      }
+
+      <div class="admin-field">
+        <label for="employeeNames">Nombres</label>
+        <input id="employeeNames" class="admin-input" type="text" formControlName="nombres" maxlength="100" autocomplete="given-name" [readOnly]="isIdentityFieldReadOnly('names')" (input)="onPersonNameInput('nombres')" />
+        <app-form-error [control]="form.controls.nombres" fieldLabel="Los nombres" [messages]="{ blank: 'Los nombres no pueden contener solo espacios.', personName: 'Los nombres solo pueden contener letras, espacios, apóstrofes o guiones.' }" />
+      </div>
+
+      <div class="admin-field">
+        <label for="employeeLastName">Apellido paterno</label>
+        <input id="employeeLastName" class="admin-input" type="text" formControlName="apellidoPaterno" maxlength="80" autocomplete="family-name" [readOnly]="isIdentityFieldReadOnly('paternalSurname')" (input)="onPersonNameInput('apellidoPaterno')" />
+        <app-form-error [control]="form.controls.apellidoPaterno" fieldLabel="El apellido paterno" [messages]="{ blank: 'El apellido paterno no puede contener solo espacios.', personName: 'El apellido solo puede contener letras, espacios, apóstrofes o guiones.' }" />
+      </div>
+
+      <div class="admin-field">
+        <label for="employeeSecondLastName">Apellido materno</label>
+        <input id="employeeSecondLastName" class="admin-input" type="text" formControlName="apellidoMaterno" maxlength="80" autocomplete="additional-name" [readOnly]="isIdentityFieldReadOnly('maternalSurname')" (input)="onPersonNameInput('apellidoMaterno')" />
+        <app-form-error [control]="form.controls.apellidoMaterno" fieldLabel="El apellido materno" [messages]="{ personName: 'El apellido solo puede contener letras, espacios, apóstrofes o guiones.' }" />
+      </div>
+
+      <div class="admin-field">
+        <label for="employeeBirthDate">Fecha de nacimiento</label>
+        <input id="employeeBirthDate" class="admin-input" type="date" formControlName="fechaNacimiento" [min]="minBirthDate" [max]="maxBirthDate" autocomplete="bday" [readOnly]="isIdentityFieldReadOnly('birthDate')" />
+        <app-form-error [control]="form.controls.fechaNacimiento" fieldLabel="La fecha de nacimiento" [messages]="{ underage: 'La persona debe ser mayor de edad.', ageOutOfRange: 'La fecha de nacimiento está fuera del rango permitido.', invalidDate: 'Ingrese una fecha válida.' }" />
+      </div>
+
+      @if (resolvedSex()) {
+        <div class="admin-field">
+          <label for="employeeSex">Sexo</label>
+          <input id="employeeSex" class="admin-input" type="text" [value]="resolvedSex()" readonly aria-readonly="true" />
+        </div>
+      }
+
+
+      <div class="admin-field">
+        <label for="employeePhone">Teléfono</label>
+        <input id="employeePhone" class="admin-input" type="tel" inputmode="tel" formControlName="telefono" maxlength="16" autocomplete="tel" [readOnly]="isIdentityFieldReadOnly('phone')" (input)="onPhoneInput()" />
+        <app-form-error [control]="form.controls.telefono" fieldLabel="El teléfono" [messages]="{ phone: 'Ingrese un teléfono válido de 7 a 15 dígitos.' }" />
+      </div>
+
+      <div class="admin-field">
+        <label for="employeeEmail">Correo</label>
+        <input id="employeeEmail" class="admin-input" type="email" formControlName="correo" maxlength="180" autocomplete="email" [readOnly]="isIdentityFieldReadOnly('email')" />
+        <app-form-error [control]="form.controls.correo" fieldLabel="El correo" />
+      </div>
+
+      <div class="employee-form-section admin-field-span-2">
+        <span>Ubicación de la persona</span>
+      </div>
+
+      <app-geography-cascade
+        [districtCode]="initialDistrictCode()"
+        [populationCenterId]="initialPopulationCenterId()"
+        [disabled]="saving() || identityLoading()"
+        [locationLocked]="isIdentityFieldReadOnly('geography')"
+        (selectionChange)="setGeography($event)"
+      />
+
+      <div class="admin-field admin-field-span-2">
+        <app-form-error [control]="form.controls.distritoCodigo" fieldLabel="El distrito" />
+      </div>
+
+      <div class="admin-field admin-field-span-2">
+        <label for="employeeReference">Referencia de ubicación</label>
+        <input id="employeeReference" class="admin-input" type="text" formControlName="referencia" maxlength="300" autocomplete="street-address" placeholder="Sector, calle o referencia" [readOnly]="isIdentityFieldReadOnly('reference')" />
+        <app-form-error [control]="form.controls.referencia" fieldLabel="La referencia" />
+      </div>
+
+      <div class="employee-form-section admin-field-span-2">
+        <span>Información laboral</span>
+      </div>
+
+      <div class="admin-field">
+        <label for="employeeUot">UOT</label>
+        <select id="employeeUot" class="admin-select" formControlName="uotId" (change)="onUotChange()">
+          @for (unit of availableUnits(); track unit.uotId) {
+            <option [value]="unit.uotId">{{ unit.nombre }}</option>
+          }
+        </select>
+        <small>En vista general puede escoger la adscripción; al editar permanece fija.</small>
+        <app-form-error [control]="form.controls.uotId" fieldLabel="La UOT" />
+      </div>
+
+      <div class="admin-field">
+        <label for="employeeEntryDate">Fecha de ingreso</label>
+        <input id="employeeEntryDate" class="admin-input" type="date" formControlName="fechaIngreso" [min]="minimumEntryDate()" [max]="today" />
+        <app-form-error [control]="form.controls.fechaIngreso" fieldLabel="La fecha de ingreso" [messages]="{ futureDate: 'La fecha de ingreso no puede ser futura.', invalidDate: 'Ingrese una fecha válida.' }" />
+        @if (form.hasError('entryBeforeAdult')) {
+          <small class="employee-form-error">La fecha de ingreso no puede ser anterior a la mayoría de edad de la persona.</small>
+        }
+      </div>
+
+      <div class="admin-field">
+        <label for="employeeArea">Área</label>
+        <select id="employeeArea" class="admin-select" formControlName="areaId" (change)="onAreaChange()">
+          <option [value]="0">Sin área asignada</option>
+          @for (area of availableAreas(); track area.areaId) {
+            <option [value]="area.areaId">{{ area.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="admin-field">
+        <label for="employeeRoleName">
+          Cargo
+          @if (form.controls.areaId.value > 0) { <span aria-hidden="true">*</span> }
+        </label>
+        <input id="employeeRoleName" class="admin-input" type="text" formControlName="cargo" maxlength="120" placeholder="Cargo o función" />
+        <app-form-error [control]="form.controls.cargo" fieldLabel="El cargo" [messages]="{ blank: 'El cargo no puede contener solo espacios.' }" />
+      </div>
+
+      @if (current()) {
+        <div class="admin-field">
+          <label for="employeeAreaDate">Fecha de asignación de área</label>
+          <input id="employeeAreaDate" class="admin-input" type="date" formControlName="fechaAsignacionArea" [min]="form.controls.fechaIngreso.value || null" [max]="today" />
+          <app-form-error [control]="form.controls.fechaAsignacionArea" fieldLabel="La fecha de asignación" [messages]="{ futureDate: 'La fecha de asignación no puede ser futura.', invalidDate: 'Ingrese una fecha válida.' }" />
+          @if (form.hasError('areaDateBeforeEntry')) {
+            <small class="employee-form-error">La fecha de asignación de área no puede ser anterior a la fecha de ingreso.</small>
+          }
+        </div>
+      }
+
+      <footer class="admin-modal-actions admin-field-span-2">
+        <button type="button" class="admin-secondary-button" [disabled]="saving() || identityLoading()" (click)="close()">Cancelar</button>
+        <button type="submit" class="admin-primary-button" [disabled]="saving() || identityLoading() || identityBlocked()">
+          @if (saving()) {
+            <span class="loading loading-spinner loading-sm"></span>
+            Guardando...
+          } @else {
+            <fa-icon [icon]="saveIcon" />
+            Guardar
+          }
+        </button>
+      </footer>
+    </form>
+  </div>
+</dialog>

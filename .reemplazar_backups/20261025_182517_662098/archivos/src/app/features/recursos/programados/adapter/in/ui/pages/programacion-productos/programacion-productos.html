@@ -1,0 +1,109 @@
+<div class="desco-page">
+  <app-page-header title="Programación de productos" eyebrow="Recursos"
+    subtitle="Reservas técnicas por UOT con aprobación, entrega, devolución y consumo." [icon]="icon">
+    <div pageActions class="flex flex-wrap gap-2">
+      <a class="admin-secondary-button" routerLink="/recursos/programados">Volver a recursos programados</a>
+      <button type="button" class="admin-secondary-button" [disabled]="loading()" (click)="load()">
+        <fa-icon [icon]="refreshIcon" /> Actualizar
+      </button>
+    </div>
+  </app-page-header>
+  @if (errorMessage()) { <div class="admin-inline-error" role="alert">{{ errorMessage() }}</div> }
+  @if (canCreate()) {
+    <section class="admin-surface product-program-panel">
+      <header><h2>Solicitar suministro para un técnico</h2>
+        <p>Al aprobarse, la cantidad se reserva; al entregarse, se registra una salida de Kardex sin venta POS.</p></header>
+      <div class="product-program-grid">
+        <label class="admin-field"><span>Almacén</span>
+          <select class="admin-select" [value]="warehouseId()" (change)="warehouseId.set(+$any($event.target).value)">
+            <option value="0">Seleccionar almacén</option>
+            @for (w of warehouses(); track w.almacenId) { <option [value]="w.almacenId">{{ w.nombre }}</option> }
+          </select></label>
+        <label class="admin-field"><span>Producto habilitado para uso interno</span>
+          <select class="admin-select" [value]="productId()" (change)="productId.set(+$any($event.target).value)">
+            <option value="0">Seleccionar producto</option>
+            @for (p of policies(); track p.productoId) { <option [value]="p.productoId">{{ p.nombre }}</option> }
+          </select></label>
+        <label class="admin-field"><span>Empleado receptor</span>
+          @if (employees().length > 0) {
+            <select class="admin-select" [value]="employeeId()" (change)="employeeId.set(+$any($event.target).value)">
+              <option value="0">Seleccionar empleado</option>
+              @for (e of employees(); track e.id) { <option [value]="e.id">{{ e.name }}</option> }
+            </select>
+          } @else {
+            <input class="admin-input" type="number" min="1" [value]="employeeId() || ''"
+              placeholder="ID del empleado autorizado" (input)="employeeId.set(+$any($event.target).value)" />
+          }
+        </label>
+        <label class="admin-field"><span>Cantidad</span>
+          <input class="admin-input" type="number" min="0.001" step="0.001" [value]="amount()"
+            (input)="amount.set(+$any($event.target).value)" /></label>
+        <label class="admin-field"><span>Actividad</span>
+          <input class="admin-input" maxlength="250" [value]="activity()" (input)="activity.set($any($event.target).value)" /></label>
+        <label class="admin-field"><span>Lugar</span>
+          <input class="admin-input" maxlength="300" [value]="place()" (input)="place.set($any($event.target).value)" /></label>
+        <label class="admin-field"><span>Fecha y hora de inicio</span>
+          <input class="admin-input" type="datetime-local" [value]="start()" (change)="start.set($any($event.target).value)" /></label>
+        <label class="admin-field"><span>Fecha y hora de fin (opcional)</span>
+          <input class="admin-input" type="datetime-local" [value]="end()" (change)="end.set($any($event.target).value)" /></label>
+        <label class="admin-field"><span>ID del archivo de autorización (opcional)</span>
+          <input class="admin-input" type="number" min="1" [value]="authorizationFileId() || ''"
+            (input)="authorizationFileId.set(+$any($event.target).value)" /></label>
+        <label class="admin-field"><span>Observación</span>
+          <input class="admin-input" maxlength="500" [value]="observation()" (input)="observation.set($any($event.target).value)" /></label>
+      </div>
+      <button type="button" class="admin-primary-button" [disabled]="saving()" (click)="create()">Registrar solicitud</button>
+    </section>
+  }
+  <section class="admin-surface product-program-panel">
+    <header><h2>Solicitudes de productos de {{ uot.label() }}</h2></header>
+    <label class="admin-field"><span>Estado</span>
+      <select class="admin-select" [value]="estado()" (change)="estado.set($any($event.target).value);load()">
+        <option value="">Todos los estados</option>
+        @for (st of ['PENDIENTE','APROBADA','ENTREGADA','FINALIZADA','RECHAZADA','CANCELADA']; track st) {
+          <option [value]="st">{{ st }}</option>
+        }
+      </select></label>
+    @if (loading()) { <p>Cargando solicitudes...</p> }
+    <div class="admin-table-wrap"><table class="admin-table"><thead>
+      <tr><th>ID</th><th>Producto</th><th>Actividad</th><th>Programada</th><th>Entregada</th><th>Pendiente de regularizar</th><th>Estado</th><th></th></tr>
+      </thead><tbody>
+        @for (item of programs(); track item.programacionId) {
+          <tr><td>#{{ item.programacionId }}</td><td>{{ item.productoNombre }}</td><td>{{ item.actividad }}</td>
+            <td>{{ item.cantidadProgramada | number:'1.0-3' }}</td>
+            <td>{{ item.cantidadEntregada | number:'1.0-3' }}</td>
+            <td>{{ item.cantidadPendiente | number:'1.0-3' }}</td>
+            <td>{{ item.estadoProceso }}</td>
+            <td><button class="admin-secondary-button admin-secondary-button--small" type="button" (click)="selectProgram(item)">
+              Gestionar</button></td></tr>
+        } @empty { <tr><td colspan="8">No hay solicitudes para este filtro.</td></tr> }
+      </tbody></table></div>
+    @if (selected(); as item) {
+      <div class="product-program-selected">
+        <header><h3>Solicitud #{{ item.programacionId }} · {{ item.estadoProceso }}</h3>
+          <p>{{ item.actividad }} · {{ item.lugar }} · {{ item.fechaInicio | date:'dd/MM/yyyy HH:mm' }}</p></header>
+        <p>Producto: {{ item.productoNombre }}. Cantidad reservada / programada: {{ item.cantidadProgramada | number:'1.0-3' }}.</p>
+        @if (availableActions(item).length > 0) {
+          <div class="product-program-grid">
+            <label class="admin-field"><span>Operación</span>
+              <select class="admin-select" [value]="operation()" (change)="operation.set($any($event.target).value)">
+                <option value="">Seleccionar</option>
+                @for (action of availableActions(item); track action) { <option [value]="action">{{ action }}</option> }
+              </select></label>
+            @if (['ENTREGAR','DEVOLVER','CONSUMIR'].includes(operation())) {
+              <label class="admin-field"><span>Cantidad</span>
+                <input class="admin-input" type="number" min="0.001" step="0.001" [value]="operationQuantity()"
+                  (input)="operationQuantity.set(+$any($event.target).value)" /></label>
+            }
+            <label class="admin-field"><span>Motivo / observación</span>
+              <input class="admin-input" maxlength="300" [value]="operationNote()"
+                (input)="operationNote.set($any($event.target).value)" /></label>
+          </div>
+          <button type="button" class="admin-primary-button" [disabled]="saving() || !operation()" (click)="applyOperation()">
+            Confirmar operación</button>
+        } @else { <p>La solicitud no admite otras operaciones desde su estado actual.</p> }
+        <button type="button" class="admin-secondary-button" (click)="selected.set(null)">Cerrar detalle</button>
+      </div>
+    }
+  </section>
+</div>

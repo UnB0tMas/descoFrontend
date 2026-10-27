@@ -1,0 +1,1 @@
+import{inject,Injectable}from'@angular/core';import{ProrrateoInput}from'../../domain/prorrateo.model';import{GASTOS_GATEWAY,GastosGateway}from'../port/out/gastos.gateway';@Injectable()export class ProrratearGastoUseCase{private readonly g:GastosGateway=inject(GASTOS_GATEWAY);execute(id:number,p:readonly ProrrateoInput[]){return this.g.prorate(id,p);}}

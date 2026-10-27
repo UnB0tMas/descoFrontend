@@ -1,0 +1,281 @@
+<dialog
+  #dialog
+  class="modal desco-modal"
+  (cancel)="$event.preventDefault(); close()"
+>
+  <div class="modal-box admin-modal-box admin-modal-box--wide">
+    <header class="admin-modal-header">
+      <div class="admin-modal-title-group">
+        <span class="admin-modal-icon">
+          <fa-icon
+            [icon]="
+              mode() === 'create'
+                ? addIcon
+                : mode() === 'edit'
+                  ? editIcon
+                  : mode() === 'state'
+                    ? stateIcon
+                    : incidentIcon
+            "
+          />
+        </span>
+        <div>
+          <p>Inventario patrimonial</p>
+          <h2>{{ title() }}</h2>
+        </div>
+      </div>
+      <button
+        type="button"
+        class="admin-icon-button"
+        [disabled]="saving()"
+        aria-label="Cerrar"
+        (click)="close()"
+      >
+        <fa-icon [icon]="closeIcon" />
+      </button>
+    </header>
+
+    @if (errorMessage()) {
+      <div class="admin-inline-error" role="alert">{{ errorMessage() }}</div>
+    }
+
+    @if (mode() === 'state') {
+      <form class="admin-form-grid" [formGroup]="stateForm" (ngSubmit)="save()">
+        <div class="admin-field admin-field-span-2">
+          <label>Nuevo estado</label>
+          <select class="admin-select" formControlName="estado">
+            @for (state of states; track state.value) {
+              <option [value]="state.value">{{ state.label }}</option>
+            }
+          </select>
+        </div>
+        <div class="admin-field admin-field-span-2">
+          <label>Motivo</label>
+          <textarea
+            class="admin-textarea"
+            rows="4"
+            maxlength="500"
+            formControlName="motivo"
+            placeholder="Motivo u observación del cambio"
+          ></textarea>
+        </div>
+        <ng-container *ngTemplateOutlet="actions"></ng-container>
+      </form>
+    } @else if (mode() === 'incident') {
+      <form class="admin-form-grid" [formGroup]="incidentForm" (ngSubmit)="save()">
+        <div class="admin-field">
+          <label>Tipo de incidencia</label>
+          <select class="admin-select" formControlName="tipo">
+            @for (type of incidentTypes; track type.value) {
+              <option [value]="type.value">{{ type.label }}</option>
+            }
+          </select>
+        </div>
+        <div class="admin-field">
+          <label>Fecha y hora</label>
+          <input
+            class="admin-input"
+            type="datetime-local"
+            formControlName="fechaHora"
+          />
+        </div>
+        <div class="admin-field admin-field-span-2">
+          <label>Descripción</label>
+          <textarea
+            class="admin-textarea"
+            rows="4"
+            maxlength="700"
+            formControlName="descripcion"
+          ></textarea>
+          <app-form-error
+            [control]="incidentForm.controls.descripcion"
+            fieldLabel="La descripción"
+            [messages]="{ blank: 'La descripción no puede contener solo espacios.' }"
+          />
+        </div>
+        <div class="admin-field">
+          <label>Costo estimado</label>
+          <input
+            class="admin-input"
+            type="number"
+            min="0"
+            step="0.01"
+            formControlName="costoEstimado"
+          />
+        </div>
+        <ng-container *ngTemplateOutlet="actions"></ng-container>
+      </form>
+    } @else {
+      <form class="admin-form-grid" [formGroup]="form" (ngSubmit)="save()">
+        @if (mode() === 'create') {
+          <div class="admin-field">
+            <label>UOT</label>
+            <select class="admin-select" formControlName="uotId" (change)="onUotChange()">
+              <option [value]="0">Seleccionar</option>
+              @for (unit of availableUnits(); track unit.uotId) {
+                <option [value]="unit.uotId">{{ unit.nombre }}</option>
+              }
+            </select>
+            <app-form-error [control]="form.controls.uotId" fieldLabel="La UOT" />
+          </div>
+        }
+
+        <div class="admin-field">
+          <label>Tipo de bien</label>
+          <select
+            class="admin-select"
+            formControlName="tipoBienId"
+            [disabled]="referencesLoading()"
+          >
+            <option [value]="0">Seleccionar</option>
+            @for (type of assetTypes(); track type.value) {
+              <option [value]="type.value">{{ type.label }}</option>
+            }
+          </select>
+          <app-form-error
+            [control]="form.controls.tipoBienId"
+            fieldLabel="El tipo de bien"
+          />
+        </div>
+
+        @if (mode() === 'create') {
+          <div class="admin-field">
+            <label>Código patrimonial</label>
+            <input
+              class="admin-input"
+              formControlName="codigoPatrimonial"
+              maxlength="60"
+              autocomplete="off"
+              placeholder="DESCO propone uno automáticamente"
+            />
+            <small>
+              @if (codeLoading()) {
+                Generando código sugerido...
+              } @else {
+                Puede modificar el código sugerido o dejarlo vacío para que DESCO genere uno al guardar.
+              }
+            </small>
+            <app-form-error
+              [control]="form.controls.codigoPatrimonial"
+              fieldLabel="El código patrimonial"
+            />
+          </div>
+        }
+
+        <div class="admin-field">
+          <label>Nombre</label>
+          <input class="admin-input" formControlName="nombre" maxlength="150" />
+          <app-form-error
+            [control]="form.controls.nombre"
+            fieldLabel="El nombre"
+            [messages]="{ blank: 'El nombre no puede contener solo espacios.' }"
+          />
+        </div>
+
+        <div class="admin-field">
+          <label>Marca</label>
+          <input class="admin-input" formControlName="marca" maxlength="80" />
+        </div>
+        <div class="admin-field">
+          <label>Modelo</label>
+          <input class="admin-input" formControlName="modelo" maxlength="80" />
+        </div>
+        <div class="admin-field">
+          <label>Serie</label>
+          <input class="admin-input" formControlName="serie" maxlength="100" />
+        </div>
+
+        <div class="resource-form-section admin-field-span-2">
+          <span>Adquisición</span>
+        </div>
+
+        <div class="admin-field">
+          <label>Fecha de adquisición</label>
+          <input
+            class="admin-input"
+            type="date"
+            [max]="today"
+            formControlName="fechaAdquisicion"
+          />
+          <app-form-error
+            [control]="form.controls.fechaAdquisicion"
+            fieldLabel="La fecha de adquisición"
+            [messages]="{ futureDate: 'La fecha no puede ser futura.' }"
+          />
+        </div>
+        <div class="admin-field">
+          <label>Monto de adquisición</label>
+          <div class="resource-money-field">
+            <select class="admin-select" formControlName="moneda">
+              <option value="PEN">PEN</option>
+              <option value="USD">USD</option>
+            </select>
+            <input
+              class="admin-input"
+              type="number"
+              min="0"
+              step="0.01"
+              formControlName="montoAdquisicion"
+            />
+          </div>
+        </div>
+        <div class="admin-field admin-field-span-2">
+          <label>Proveedor</label>
+          <select
+            class="admin-select"
+            formControlName="proveedorEmpresaId"
+            [disabled]="referencesLoading()"
+          >
+            <option [value]="0">Sin proveedor registrado</option>
+            @for (organization of organizations(); track organization.value) {
+              <option [value]="organization.value">
+                {{ organization.label }}
+                @if (organization.description) {
+                  · {{ organization.description }}
+                }
+              </option>
+            }
+          </select>
+        </div>
+
+        <div class="admin-field admin-field-span-2">
+          <label>Observación</label>
+          <textarea
+            class="admin-textarea"
+            rows="3"
+            maxlength="500"
+            formControlName="observacion"
+          ></textarea>
+        </div>
+
+        <ng-container *ngTemplateOutlet="actions"></ng-container>
+      </form>
+    }
+
+    <ng-template #actions>
+      <footer class="admin-modal-actions admin-field-span-2">
+        <button
+          type="button"
+          class="admin-secondary-button"
+          [disabled]="saving()"
+          (click)="close()"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          class="admin-primary-button"
+          [disabled]="saving() || referencesLoading()"
+        >
+          @if (saving()) {
+            <span class="loading loading-spinner loading-sm"></span>
+            Guardando...
+          } @else {
+            <fa-icon [icon]="saveIcon" />
+            Guardar
+          }
+        </button>
+      </footer>
+    </ng-template>
+  </div>
+</dialog>

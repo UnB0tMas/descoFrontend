@@ -1,0 +1,99 @@
+:host {
+  display: contents;
+}
+
+.employee-form-section {
+  border-bottom: 1px solid var(--desco-border);
+  padding-bottom: 0.35rem;
+  color: var(--desco-primary);
+  font-size: 0.64rem;
+  font-weight: 850;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.identity-document-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.55rem;
+}
+
+.identity-search-button {
+  display: inline-flex;
+  min-height: 2.65rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border: 1px solid var(--desco-primary-border);
+  border-radius: 0.75rem;
+  background: var(--desco-primary-soft);
+  padding: 0 0.8rem;
+  color: var(--desco-primary-text);
+  font-size: 0.72rem;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.identity-search-button:hover:not(:disabled) {
+  border-color: var(--desco-primary-text);
+  background: var(--desco-primary-soft-hover);
+}
+
+.identity-search-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.identity-feedback {
+  border: 1px solid var(--desco-primary-soft-hover);
+  border-radius: 0.8rem;
+  background: var(--desco-surface-soft);
+  padding: 0.72rem 0.85rem;
+  color: var(--desco-text);
+  font-size: 0.74rem;
+  font-weight: 650;
+  line-height: 1.5;
+}
+
+.identity-feedback--success {
+  border-color: var(--desco-success-border);
+  background: var(--desco-success-soft);
+  color: var(--desco-success-text);
+}
+
+.identity-feedback--warning {
+  border-color: var(--desco-warning-border);
+  background: var(--desco-warning-soft);
+  color: var(--desco-warning-text);
+}
+
+.identity-feedback--error {
+  border-color: var(--desco-danger-border);
+  background: var(--desco-danger-soft);
+  color: var(--desco-danger-text);
+}
+
+.identity-help,
+.employee-form-error {
+  display: block;
+  margin-top: 0.38rem;
+  color: var(--desco-text-muted);
+  font-size: 0.68rem;
+  line-height: 1.45;
+}
+
+.employee-form-error {
+  color: var(--desco-danger-text);
+  font-weight: 650;
+}
+
+@media (max-width: 640px) {
+  .identity-document-control {
+    grid-template-columns: 1fr;
+  }
+
+  .identity-search-button {
+    width: 100%;
+  }
+}

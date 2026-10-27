@@ -1,0 +1,115 @@
+<div class="desco-page account-page">
+  <app-page-header
+    title="Dispositivos"
+    subtitle="Administra los dispositivos asociados a tu cuenta."
+    eyebrow="Mi cuenta"
+    [icon]="pageIcon"
+  >
+    <button
+      pageActions
+      type="button"
+      class="btn rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+      [disabled]="loading()"
+      (click)="load()"
+    >
+      <fa-icon [class.animate-spin]="loading()" [icon]="refreshIcon" />
+      Actualizar
+    </button>
+  </app-page-header>
+
+  <nav class="account-tabs" aria-label="Mi cuenta">
+    <a routerLink="/mi-cuenta/perfil" routerLinkActive="active">Perfil</a>
+    <a routerLink="/mi-cuenta/seguridad" routerLinkActive="active">Seguridad</a>
+    <a routerLink="/mi-cuenta/sesiones" routerLinkActive="active">Sesiones</a>
+    <a routerLink="/mi-cuenta/dispositivos" routerLinkActive="active">Dispositivos</a>
+  </nav>
+
+  <div class="mt-5">
+    @if (loading()) {
+      <app-loading-state title="Cargando dispositivos" message="Consultando los dispositivos de tu cuenta." />
+    } @else if (errorMessage()) {
+      <app-error-state [message]="errorMessage() || 'Intenta nuevamente.'" (retry)="load()" />
+    } @else {
+      <div class="device-grid">
+        @for (device of devices(); track device.dispositivoUsuarioId) {
+          <article class="device-card" [class.current]="device.dispositivoActual">
+            <div class="device-top">
+              <div class="device-symbol">
+                <fa-icon [icon]="deviceIcon" />
+              </div>
+
+              <div class="min-w-0 flex-1">
+                <div class="device-title-row">
+                  <h2>{{ deviceName(device) }}</h2>
+
+                  @if (device.dispositivoActual) {
+                    <span class="current-badge">Este dispositivo</span>
+                  }
+                </div>
+
+                <div class="recognition-row">
+                  <span
+                    class="recognition-badge"
+                    [class.recognized]="device.reconocidoVigente"
+                  >
+                    <fa-icon
+                      [icon]="device.reconocidoVigente ? shieldIcon : untrustedIcon"
+                    />
+                    {{ device.reconocidoVigente ? 'Reconocido' : 'No reconocido' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div class="device-meta">
+              <div>
+                <fa-icon [icon]="locationIcon" />
+                <span>{{ device.ultimaIp || 'IP no disponible' }}</span>
+              </div>
+
+              <div>
+                <fa-icon [icon]="clockIcon" />
+                <span>
+                  Última actividad:
+                  {{ device.fechaUltimaActividadUtc ? (device.fechaUltimaActividadUtc | date:'dd/MM/yyyy HH:mm') : '—' }}
+                </span>
+              </div>
+
+              @if (device.reconocidoVigente && device.fechaExpiracionReconocimientoUtc) {
+                <div>
+                  <fa-icon [icon]="shieldIcon" />
+                  <span>
+                    Reconocimiento hasta:
+                    {{ device.fechaExpiracionReconocimientoUtc | date:'dd/MM/yyyy HH:mm' }}
+                  </span>
+                </div>
+              }
+            </div>
+
+            <div class="device-actions">
+              <button
+                type="button"
+                class="recognition-button"
+                [class.remove]="device.reconocidoVigente"
+                [disabled]="processingId() === device.dispositivoUsuarioId"
+                (click)="toggleRecognition(device)"
+              >
+                @if (processingId() === device.dispositivoUsuarioId) {
+                  <span class="loading loading-spinner loading-xs"></span>
+                  Actualizando...
+                } @else {
+                  <fa-icon [icon]="device.reconocidoVigente ? untrustedIcon : checkIcon" />
+                  {{ device.reconocidoVigente ? 'Quitar reconocimiento' : 'Reconocer dispositivo' }}
+                }
+              </button>
+            </div>
+          </article>
+        } @empty {
+          <div class="device-empty">
+            No hay dispositivos para mostrar.
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>

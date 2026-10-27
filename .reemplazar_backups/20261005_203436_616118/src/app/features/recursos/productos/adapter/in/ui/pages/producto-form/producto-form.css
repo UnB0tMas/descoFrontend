@@ -1,0 +1,7 @@
+:host { display: contents; }
+.product-form-section { border-bottom:1px solid var(--desco-border); padding-bottom:.35rem; color:var(--desco-primary-text); font-size:.64rem; font-weight:850; letter-spacing:.09em; text-transform:uppercase; }
+.product-check { display:flex; align-items:flex-start; gap:.65rem; border:1px solid var(--desco-border); border-radius:.8rem; background:var(--desco-surface-soft); padding:.75rem; cursor:pointer; }
+.product-check input { margin-top:.15rem; }
+.product-check strong,.product-check small { display:block; }
+.product-check strong { color:var(--desco-text); font-size:.72rem; }
+.product-check small { margin-top:.15rem; color:var(--desco-text-muted); font-size:.62rem; line-height:1.4; }

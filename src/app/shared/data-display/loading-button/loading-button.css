@@ -1,0 +1,7 @@
+:host {
+  display: inline-block;
+}
+
+:host-context(.w-full) {
+  display: block;
+}

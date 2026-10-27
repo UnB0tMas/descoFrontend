@@ -1,0 +1,107 @@
+:host {
+  display: block;
+}
+
+.user-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.user-role-list {
+  display: grid;
+}
+
+.user-role-list article {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-top: 1px solid var(--desco-border-subtle);
+  padding: 0.75rem 1rem;
+}
+
+.user-role-list article:first-child {
+  border-top: 0;
+}
+
+.user-role-list article.inactive {
+  opacity: 0.68;
+}
+
+.user-role-list strong,
+.user-role-list span {
+  display: block;
+}
+
+.user-role-list strong {
+  color: var(--desco-text);
+  font-size: 0.76rem;
+}
+
+.user-role-list > article > div:first-child span {
+  margin-top: 0.15rem;
+  color: var(--desco-text-muted);
+  font-size: 0.64rem;
+  font-weight: 700;
+}
+
+.user-role-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.device-admin-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+  padding: 1rem;
+}
+
+.device-admin-grid article {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.7rem;
+  border: 1px solid var(--desco-border);
+  border-radius: 0.9rem;
+  padding: 0.75rem;
+}
+
+.device-admin-icon {
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 0.7rem;
+  background: var(--desco-primary-soft);
+  color: var(--desco-primary-text);
+}
+
+.device-admin-grid strong,
+.device-admin-grid span {
+  display: block;
+}
+
+.device-admin-grid strong {
+  overflow: hidden;
+  color: var(--desco-text);
+  font-size: 0.72rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.device-admin-grid article > div:nth-child(2) > span {
+  margin-top: 0.18rem;
+  color: var(--desco-text-muted);
+  font-size: 0.62rem;
+}
+
+@media (max-width: 900px) {
+  .user-detail-grid,
+  .device-admin-grid {
+    grid-template-columns: 1fr;
+  }
+}

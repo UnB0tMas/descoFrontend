@@ -1,0 +1,1 @@
+import {inject,Injectable} from '@angular/core';import {VisitaFiltro} from '../../domain/visita-filtro.model';import {VISITAS_GATEWAY,VisitasGateway} from '../port/out/visitas.gateway';@Injectable() export class ListarVisitasUseCase{private readonly gateway:VisitasGateway=inject(VISITAS_GATEWAY);execute(filter:VisitaFiltro){return this.gateway.list(filter);}}

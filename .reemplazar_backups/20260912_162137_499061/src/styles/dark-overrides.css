@@ -1,0 +1,47 @@
+html[data-theme='dark'] body,
+html[data-theme='dark'] .desco-app-shell { background:#000 !important; color:var(--desco-text); }
+html[data-theme='dark'] .bg-white,
+html[data-theme='dark'] .bg-slate-50,
+html[data-theme='dark'] .bg-slate-100 { background-color:var(--desco-surface) !important; }
+html[data-theme='dark'] .bg-blue-50 { background-color:#07172e !important; }
+html[data-theme='dark'] .bg-emerald-50 { background-color:#061c13 !important; }
+html[data-theme='dark'] .bg-amber-50 { background-color:#211504 !important; }
+html[data-theme='dark'] .bg-red-50,
+html[data-theme='dark'] .bg-rose-50 { background-color:#250909 !important; }
+html[data-theme='dark'] .text-slate-950,
+html[data-theme='dark'] .text-slate-900,
+html[data-theme='dark'] .text-slate-800,
+html[data-theme='dark'] .text-slate-700 { color:#f8fafc !important; }
+html[data-theme='dark'] .text-slate-600,
+html[data-theme='dark'] .text-slate-500,
+html[data-theme='dark'] .text-slate-400 { color:#a3a3a3 !important; }
+html[data-theme='dark'] .border-slate-50,
+html[data-theme='dark'] .border-slate-100,
+html[data-theme='dark'] .border-slate-200,
+html[data-theme='dark'] .border-slate-300 { border-color:var(--desco-border) !important; }
+html[data-theme='dark'] .hover\\:bg-slate-50:hover,
+html[data-theme='dark'] .hover\\:bg-blue-50:hover { background-color:#141414 !important; }
+html[data-theme='dark'] input,
+html[data-theme='dark'] select,
+html[data-theme='dark'] textarea,
+html[data-theme='dark'] .admin-input,
+html[data-theme='dark'] .admin-select,
+html[data-theme='dark'] .admin-textarea,
+html[data-theme='dark'] .modal-box,
+html[data-theme='dark'] .dropdown-content,
+html[data-theme='dark'] .desco-card {
+  background-color:var(--desco-surface) !important;
+  border-color:var(--desco-border) !important;
+  color:var(--desco-text) !important;
+}
+html[data-theme='dark'] input::placeholder,
+html[data-theme='dark'] textarea::placeholder { color:#737373; opacity:1; }
+html[data-theme='dark'] option { background:#0a0a0a; color:#f8fafc; }
+html[data-theme='dark'] .admin-table th,
+html[data-theme='dark'] .admin-table td { border-color:var(--desco-border); color:var(--desco-text); }
+html[data-theme='dark'] .admin-table tbody tr:hover { background:#111 !important; }
+html[data-theme='dark'] .apexcharts-tooltip,
+html[data-theme='dark'] .apexcharts-tooltip-title { background:#111 !important; border-color:#2b2b2b !important; color:#f8fafc !important; }
+html[data-theme='dark'] .apexcharts-text { fill:#d4d4d4 !important; }
+html[data-theme='dark'] .apexcharts-gridline { stroke:#292929 !important; }
+html[data-theme='dark'] dialog::backdrop { background:rgb(0 0 0 / .74); }

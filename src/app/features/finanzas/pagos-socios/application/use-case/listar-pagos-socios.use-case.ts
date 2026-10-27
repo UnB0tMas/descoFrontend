@@ -1,0 +1,1 @@
+import{inject,Injectable}from'@angular/core';import{PagoSocioFiltro}from'../../domain/pago-socio-filtro.model';import{PAGOS_SOCIOS_GATEWAY,PagosSociosGateway}from'../port/out/pagos-socios.gateway';@Injectable()export class ListarPagosSociosUseCase{private readonly g:PagosSociosGateway=inject(PAGOS_SOCIOS_GATEWAY);execute(f:PagoSocioFiltro){return this.g.list(f);}}

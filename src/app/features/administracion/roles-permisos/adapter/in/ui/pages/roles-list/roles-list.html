@@ -1,0 +1,268 @@
+<div class="desco-page">
+  <app-page-header
+    title="Roles y permisos"
+    subtitle="Administra roles y la asignación de permisos disponibles."
+    eyebrow="Administración"
+    [icon]="pageIcon"
+  >
+    <div pageActions class="flex flex-wrap gap-2">
+      <button
+        type="button"
+        class="admin-secondary-button"
+        [disabled]="loading()"
+        (click)="load()"
+      >
+        <fa-icon [class.animate-spin]="loading()" [icon]="refreshIcon" />
+        Actualizar
+      </button>
+
+      <button
+        *appPermission="'ROLESPERMISOS_CREAR'"
+        type="button"
+        class="admin-primary-button"
+        (click)="openCreate()"
+      >
+        <fa-icon [icon]="addIcon" />
+        Nuevo rol
+      </button>
+    </div>
+  </app-page-header>
+
+  <section class="admin-surface mt-5">
+    @if (loading()) {
+      <app-loading-state
+        title="Cargando roles"
+        message="Consultando roles y asignaciones activas."
+      />
+    } @else if (errorMessage()) {
+      <app-error-state
+        [message]="errorMessage() || 'Intenta nuevamente.'"
+        (retry)="load()"
+      />
+    } @else if (result().items.length === 0) {
+      <app-empty-state
+        title="Sin roles"
+        message="No hay roles disponibles."
+      />
+    } @else {
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Rol</th>
+              <th>Código</th>
+              <th class="text-center">Permisos</th>
+              <th class="text-center">Usuarios</th>
+              <th class="text-center">Segundo factor</th>
+              <th class="text-center">Estado</th>
+              <th class="text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (role of result().items; track role.rolId) {
+              <tr>
+                <td>
+                  <div class="admin-entity">
+                    <span class="admin-entity-icon">
+                      <fa-icon [icon]="pageIcon" />
+                    </span>
+
+                    <div>
+                      <strong>{{ role.nombre }}</strong>
+                      <span>{{ role.descripcion || 'Sin descripción' }}</span>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <span class="admin-code">{{ role.codigo }}</span>
+                </td>
+                <td class="text-center">
+                  <span class="admin-count-badge">{{ role.permisosActivos }}</span>
+                </td>
+                <td class="text-center">
+                  <span class="admin-count-badge">{{ role.usuariosActivos }}</span>
+                </td>
+                <td class="text-center">
+                  <span
+                    class="admin-status"
+                    [class.admin-status--info]="role.requiereSegundoFactor"
+                    [class.admin-status--neutral]="!role.requiereSegundoFactor"
+                  >
+                    {{ role.requiereSegundoFactor ? 'Requerido' : 'No requerido' }}
+                  </span>
+                </td>
+                <td class="text-center">
+                  <span
+                    class="admin-status"
+                    [class.admin-status--active]="role.estado"
+                    [class.admin-status--inactive]="!role.estado"
+                  >
+                    {{ role.estado ? 'Activo' : 'Inactivo' }}
+                  </span>
+                </td>
+                <td>
+                  <div class="admin-row-actions">
+                    <a
+                      *appPermission="'ROLESPERMISOS_VER'"
+                      class="admin-icon-button"
+                      [routerLink]="['/administracion/roles-permisos', role.rolId]"
+                      title="Ver detalle"
+                    >
+                      <fa-icon [icon]="viewIcon" />
+                    </a>
+
+                    @if (role.esSistema) {
+                      <span
+                        class="admin-managed-badge"
+                        title="Rol base administrado por el sistema"
+                      >
+                        <fa-icon [icon]="lockIcon" />
+                        Base
+                      </span>
+                    } @else {
+                      <button
+                        *appPermission="'ROLESPERMISOS_EDITAR'"
+                        type="button"
+                        class="admin-icon-button"
+                        title="Editar"
+                        (click)="openEdit(role)"
+                      >
+                        <fa-icon [icon]="editIcon" />
+                      </button>
+
+                      <a
+                        *appPermission="'ROLESPERMISOS_CREAR'"
+                        class="admin-icon-button"
+                        [routerLink]="['/administracion/roles-permisos', role.rolId, 'permisos']"
+                        title="Administrar permisos"
+                      >
+                        <fa-icon [icon]="permissionsIcon" />
+                      </a>
+
+                      <button
+                        *appPermission="'ROLESPERMISOS_RETIRAR'"
+                        type="button"
+                        class="admin-icon-button admin-icon-button--danger"
+                        title="Deshabilitar"
+                        [disabled]="disablingId() === role.rolId"
+                        (click)="disable(role)"
+                      >
+                        @if (disablingId() === role.rolId) {
+                          <span class="loading loading-spinner loading-xs"></span>
+                        } @else {
+                          <fa-icon [icon]="disableIcon" />
+                        }
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <app-paginator
+        [page]="result().page"
+        [size]="result().size"
+        [totalRecords]="result().totalRecords"
+        [totalPages]="result().totalPages"
+        (pageChange)="load($event, result().size)"
+        (sizeChange)="load(1, $event)"
+      />
+    }
+  </section>
+</div>
+
+<dialog #roleDialog class="modal desco-modal" (cancel)="$event.preventDefault(); closeModal()">
+  <div class="modal-box admin-modal-box">
+    <header class="admin-modal-header">
+      <div class="admin-modal-title-group">
+        <span class="admin-modal-icon">
+          <fa-icon [icon]="currentRole() ? editIcon : addIcon" />
+        </span>
+        <div>
+          <p>Roles y permisos</p>
+          <h2>{{ currentRole() ? 'Editar rol' : 'Registrar rol' }}</h2>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        class="admin-icon-button"
+        [disabled]="saving()"
+        (click)="closeModal()"
+      >
+        <fa-icon [icon]="closeIcon" />
+      </button>
+    </header>
+
+    @if (modalError()) {
+      <div class="admin-inline-error" role="alert">{{ modalError() }}</div>
+    }
+
+    <form class="admin-form-grid" [formGroup]="form" (ngSubmit)="save()">
+      <div class="admin-field admin-field-span-2">
+        <label for="roleName">Nombre</label>
+        <input
+          id="roleName"
+          class="admin-input"
+          type="text"
+          formControlName="nombre"
+          maxlength="100"
+        />
+        <app-form-error [control]="form.controls.nombre" fieldLabel="El nombre" [messages]="{ blank: 'El nombre no puede contener solo espacios.' }" />
+      </div>
+
+      <div class="admin-field admin-field-span-2">
+        <label for="roleDescription">Descripción</label>
+        <textarea
+          id="roleDescription"
+          class="admin-textarea"
+          formControlName="descripcion"
+          maxlength="200"
+          rows="3"
+        ></textarea>
+        <app-form-error [control]="form.controls.descripcion" fieldLabel="La descripción" [messages]="{ blank: 'La descripción no puede contener solo espacios.' }" />
+      </div>
+
+      <label class="admin-switch-row admin-field-span-2">
+        <div>
+          <strong>Requerir segundo factor</strong>
+          <span>El usuario deberá completar una verificación adicional al ingresar.</span>
+        </div>
+        <input
+          type="checkbox"
+          class="admin-switch-control"
+          formControlName="requiereSegundoFactor"
+        />
+      </label>
+
+      <footer class="admin-modal-actions admin-field-span-2">
+        <button
+          type="button"
+          class="admin-secondary-button"
+          [disabled]="saving()"
+          (click)="closeModal()"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          class="admin-primary-button"
+          [disabled]="saving()"
+        >
+          @if (saving()) {
+            <span class="loading loading-spinner loading-sm"></span>
+            Guardando...
+          } @else {
+            <fa-icon [icon]="saveIcon" />
+            Guardar
+          }
+        </button>
+      </footer>
+    </form>
+  </div>
+</dialog>
+
+<app-action-confirm-dialog />

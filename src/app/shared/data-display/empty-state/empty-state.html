@@ -1,0 +1,26 @@
+<section class="flex min-h-64 items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center">
+  <div class="max-w-md">
+    <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-xl text-blue-600">
+      <fa-icon [icon]="icon" />
+    </div>
+
+    <h3 class="mt-5 text-base font-semibold text-slate-950">
+      {{ title }}
+    </h3>
+
+    <p class="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500">
+      {{ message }}
+    </p>
+
+    @if (actionLabel) {
+      <button
+        type="button"
+        class="btn mt-5 rounded-xl border-0 bg-blue-600 text-white hover:bg-blue-700"
+        (click)="action.emit()"
+      >
+        <fa-icon [icon]="actionIcon" />
+        {{ actionLabel }}
+      </button>
+    }
+  </div>
+</section>

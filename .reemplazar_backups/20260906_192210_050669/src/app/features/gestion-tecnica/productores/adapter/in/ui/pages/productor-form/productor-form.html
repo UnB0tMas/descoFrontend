@@ -1,0 +1,188 @@
+<dialog #dialog class="modal desco-modal" (cancel)="$event.preventDefault(); close()">
+  <div class="modal-box admin-modal-box admin-modal-box--wide">
+    <header class="admin-modal-header">
+      <div class="admin-modal-title-group">
+        <span class="admin-modal-icon"><fa-icon [icon]="current() ? editIcon : addIcon" /></span>
+        <div><p>Productores</p><h2>{{ current() ? 'Editar productor' : 'Registrar productor' }}</h2></div>
+      </div>
+      <button type="button" class="admin-icon-button" aria-label="Cerrar" [disabled]="saving() || identityLoading() || identityLocks().geography" (click)="close()"><fa-icon [icon]="closeIcon" /></button>
+    </header>
+
+    @if (errorMessage()) { <div class="admin-inline-error" role="alert">{{ errorMessage() }}</div> }
+
+    <form class="admin-form-grid" [formGroup]="form" (ngSubmit)="save()">
+      <div class="producer-form-section admin-field-span-2"><span>Identificación</span></div>
+
+      <div class="admin-field">
+        <label for="producerDocumentType">Tipo de documento</label>
+        <select id="producerDocumentType" class="admin-select" formControlName="tipoDocumento" (change)="onDocumentTypeChange()">
+          @for (type of documentTypes; track type.value) { <option [value]="type.value">{{ type.label }}</option> }
+        </select>
+      </div>
+
+      <div class="admin-field">
+        <label for="producerDocument">Número de documento</label>
+        <div class="identity-document-control">
+          <input
+            id="producerDocument"
+            class="admin-input"
+            type="text"
+            formControlName="numeroDocumento"
+            [attr.maxlength]="documentMaxLength()"
+            [attr.inputmode]="documentInputMode()"
+            autocomplete="off"
+            autocapitalize="characters"
+            spellcheck="false"
+            [readOnly]="saving() || identityLoading()"
+            (input)="onDocumentInput()"
+          />
+          @if (shouldResolveIdentity()) {
+            <button type="button" class="identity-search-button" [disabled]="!canResolveIdentity()" [attr.aria-busy]="identityLoading()" (click)="resolveIdentity()">
+              @if (identityLoading()) {
+                <span class="loading loading-spinner loading-xs"></span> Validando...
+              } @else {
+                <fa-icon [icon]="searchIcon" /> Validar {{ form.controls.tipoDocumento.value }}
+              }
+            </button>
+          }
+        </div>
+        <app-form-error
+          [control]="form.controls.numeroDocumento"
+          fieldLabel="El documento"
+          [messages]="{
+            dni: 'El DNI debe contener exactamente 8 dígitos.',
+            ruc: 'El RUC no es válido. Verifique los 11 dígitos y el dígito verificador.',
+            rucNature: 'Para un productor solo se admite RUC de persona natural (10, 15 o 17).',
+            blank: 'El documento no puede contener solo espacios.'
+          }"
+        />
+        @if (!shouldResolveIdentity()) {
+          <small class="identity-help">CE, pasaporte y otros documentos se registran manualmente y no consumen VerificaPE.</small>
+        }
+      </div>
+
+      @if (identityMessage()) {
+        <div
+          class="identity-feedback admin-field-span-2"
+          [class.identity-feedback--success]="identityTone() === 'success'"
+          [class.identity-feedback--warning]="identityTone() === 'warning'"
+          [class.identity-feedback--error]="identityTone() === 'error'"
+          role="status"
+        >
+          {{ identityMessage() }}
+        </div>
+      }
+
+      <div class="admin-field">
+        <label for="producerNames">Nombres</label>
+        <input id="producerNames" class="admin-input" type="text" maxlength="100" formControlName="nombres" autocomplete="given-name" / [readOnly]="identityLocks().names">
+        <app-form-error [control]="form.controls.nombres" fieldLabel="Los nombres" [messages]="{ blank: 'Los nombres no pueden contener solo espacios.' }" />
+      </div>
+      <div class="admin-field">
+        <label for="producerLastName">Apellido paterno</label>
+        <input id="producerLastName" class="admin-input" type="text" maxlength="80" formControlName="apellidoPaterno" autocomplete="family-name" / [readOnly]="identityLocks().paternalSurname">
+        <app-form-error [control]="form.controls.apellidoPaterno" fieldLabel="El apellido paterno" [messages]="{ blank: 'El apellido paterno no puede contener solo espacios.' }" />
+      </div>
+      <div class="admin-field">
+        <label for="producerSecondLastName">Apellido materno</label>
+        <input id="producerSecondLastName" class="admin-input" type="text" maxlength="80" formControlName="apellidoMaterno" autocomplete="additional-name" / [readOnly]="identityLocks().maternalSurname">
+        <app-form-error [control]="form.controls.apellidoMaterno" fieldLabel="El apellido materno" />
+      </div>
+      <div class="admin-field">
+        <label for="producerBirthDate">Fecha de nacimiento</label>
+        <input id="producerBirthDate" class="admin-input" type="date" formControlName="fechaNacimiento" [max]="today" autocomplete="bday" / [readOnly]="identityLocks().birthDate">
+        <app-form-error [control]="form.controls.fechaNacimiento" fieldLabel="La fecha de nacimiento" [messages]="{ futureDate: 'La fecha de nacimiento no puede ser futura.' }" />
+      </div>
+      @if (resolvedSex()) {
+        <div class="admin-field">
+          <label for="producerSex">Sexo</label>
+          <input id="producerSex" class="admin-input" type="text" [value]="resolvedSex()" readonly aria-readonly="true" />
+        </div>
+      }
+
+      @if (resolvedReniecUbigeo()) {
+        <div class="admin-field">
+          <label for="producerReniecUbigeo">Ubigeo RENIEC</label>
+          <input id="producerReniecUbigeo" class="admin-input" type="text" [value]="resolvedReniecUbigeo()" readonly aria-readonly="true" />
+        </div>
+      }
+
+      @if (resolvedSunatUbigeo()) {
+        <div class="admin-field">
+          <label for="producerSunatUbigeo">Ubigeo SUNAT</label>
+          <input id="producerSunatUbigeo" class="admin-input" type="text" [value]="resolvedSunatUbigeo()" readonly aria-readonly="true" />
+        </div>
+      }
+
+      <div class="admin-field">
+        <label for="producerPhone">Teléfono</label>
+        <input id="producerPhone" class="admin-input" type="tel" inputmode="tel" maxlength="30" formControlName="telefono" autocomplete="tel" / [readOnly]="identityLocks().phone">
+        <app-form-error [control]="form.controls.telefono" fieldLabel="El teléfono" />
+      </div>
+      <div class="admin-field">
+        <label for="producerEmail">Correo</label>
+        <input id="producerEmail" class="admin-input" type="email" maxlength="180" formControlName="correo" autocomplete="email" / [readOnly]="identityLocks().email">
+        <app-form-error [control]="form.controls.correo" fieldLabel="El correo" />
+      </div>
+
+      <div class="producer-form-section admin-field-span-2"><span>Ubicación</span></div>
+      <app-geography-cascade
+        [districtCode]="initialDistrictCode()"
+        [populationCenterId]="initialPopulationCenterId()"
+        [disabled]="saving() || identityLoading()"
+        (selectionChange)="setGeography($event)"
+      />
+      <div class="admin-field admin-field-span-2">
+        <app-form-error [control]="form.controls.distritoCodigo" fieldLabel="El distrito" />
+      </div>
+      <div class="admin-field admin-field-span-2">
+        <label for="producerReference">Referencia de ubicación</label>
+        <input id="producerReference" class="admin-input" maxlength="300" formControlName="referencia" autocomplete="street-address" placeholder="Sector, calle, referencia u otra indicación" / [readOnly]="identityLocks().reference">
+        <app-form-error [control]="form.controls.referencia" fieldLabel="La referencia" />
+      </div>
+
+      <div class="producer-form-section admin-field-span-2"><span>Afiliación</span></div>
+      <div class="admin-field">
+        <label for="producerRegistrationDate">Fecha de alta</label>
+        <input id="producerRegistrationDate" class="admin-input" type="date" formControlName="fechaAlta" />
+        <app-form-error [control]="form.controls.fechaAlta" fieldLabel="La fecha de alta" />
+      </div>
+      <div class="admin-field">
+        <label for="producerAssociation">Asociación</label>
+        <select id="producerAssociation" class="admin-select" formControlName="asociacionId">
+          <option [value]="0">Seleccionar</option>
+          @for (association of associations(); track association.value) { <option [value]="association.value">{{ association.label }}</option> }
+        </select>
+        <app-form-error [control]="form.controls.asociacionId" fieldLabel="La asociación" />
+      </div>
+      <div class="admin-field">
+        <label for="producerPartnerCode">Código de socio</label>
+        <input id="producerPartnerCode" class="admin-input" type="text" maxlength="30" formControlName="codigoSocio" readonly aria-readonly="true" />
+        <small class="identity-help">Se genera automáticamente a partir del documento y se envía al backend porque el PA lo requiere.</small>
+        <app-form-error [control]="form.controls.codigoSocio" fieldLabel="El código de socio" />
+      </div>
+      <div class="admin-field">
+        <label for="producerMembershipDate">Fecha desde</label>
+        <input id="producerMembershipDate" class="admin-input" type="date" formControlName="fechaDesde" />
+        <app-form-error [control]="form.controls.fechaDesde" fieldLabel="La fecha de afiliación" />
+        @if (form.hasError('membershipDateOrder')) {
+          <small class="producer-form-error">La fecha de afiliación no puede ser anterior a la fecha de alta.</small>
+        }
+      </div>
+      <div class="admin-field">
+        <label for="producerMembershipStatus">Situación de membresía</label>
+        <select id="producerMembershipStatus" class="admin-select" formControlName="situacionMembresia">
+          @for (membership of memberships; track membership.value) { <option [value]="membership.value">{{ membership.label }}</option> }
+        </select>
+      </div>
+
+      <footer class="admin-modal-actions admin-field-span-2">
+        <button type="button" class="admin-secondary-button" [disabled]="saving() || identityLoading()" (click)="close()">Cancelar</button>
+        <button type="submit" class="admin-primary-button" [disabled]="saving() || identityLoading() || identityBlocked()">
+          @if (saving()) { <span class="loading loading-spinner loading-sm"></span> Guardando... }
+          @else { <fa-icon [icon]="saveIcon" /> Guardar }
+        </button>
+      </footer>
+    </form>
+  </div>
+</dialog>

@@ -1,0 +1,97 @@
+<dialog #dialog class="modal desco-modal" (cancel)="$event.preventDefault(); close()">
+  <div class="modal-box admin-modal-box admin-modal-box--wide">
+    <header class="admin-modal-header">
+      <div class="admin-modal-title-group">
+        <span class="admin-modal-icon"><fa-icon [icon]="current() ? editIcon : addIcon" /></span>
+        <div><p>Productores</p><h2>{{ current() ? 'Editar productor' : 'Registrar productor' }}</h2></div>
+      </div>
+      <button type="button" class="admin-icon-button" [disabled]="saving()" (click)="close()"><fa-icon [icon]="closeIcon" /></button>
+    </header>
+
+    @if (errorMessage()) { <div class="admin-inline-error" role="alert">{{ errorMessage() }}</div> }
+
+    <form class="admin-form-grid" [formGroup]="form" (ngSubmit)="save()">
+      <div class="producer-form-section admin-field-span-2"><span>Identificación</span></div>
+      <div class="admin-field">
+        <label for="producerDocumentType">Tipo de documento</label>
+        <select id="producerDocumentType" class="admin-select" formControlName="tipoDocumento">
+          @for (type of documentTypes; track type.value) { <option [value]="type.value">{{ type.label }}</option> }
+        </select>
+      </div>
+      <div class="admin-field">
+        <label for="producerDocument">Número de documento</label>
+        <input id="producerDocument" class="admin-input" type="text" maxlength="30" formControlName="numeroDocumento" />
+        <app-form-error [control]="form.controls.numeroDocumento" fieldLabel="El documento" />
+      </div>
+      <div class="admin-field">
+        <label for="producerNames">Nombres</label>
+        <input id="producerNames" class="admin-input" type="text" maxlength="100" formControlName="nombres" />
+        <app-form-error [control]="form.controls.nombres" fieldLabel="Los nombres" />
+      </div>
+      <div class="admin-field">
+        <label for="producerLastName">Apellido paterno</label>
+        <input id="producerLastName" class="admin-input" type="text" maxlength="80" formControlName="apellidoPaterno" />
+        <app-form-error [control]="form.controls.apellidoPaterno" fieldLabel="El apellido paterno" />
+      </div>
+      <div class="admin-field"><label>Apellido materno</label><input class="admin-input" maxlength="80" formControlName="apellidoMaterno" /></div>
+      <div class="admin-field"><label>Fecha de nacimiento</label><input class="admin-input" type="date" formControlName="fechaNacimiento" /></div>
+      <div class="admin-field"><label>Teléfono</label><input class="admin-input" maxlength="30" formControlName="telefono" /></div>
+      <div class="admin-field">
+        <label>Correo</label><input class="admin-input" type="email" maxlength="180" formControlName="correo" />
+        <app-form-error [control]="form.controls.correo" fieldLabel="El correo" />
+      </div>
+
+      <div class="producer-form-section admin-field-span-2"><span>Ubicación</span></div>
+      <app-geography-cascade
+        [districtCode]="initialDistrictCode()"
+        [populationCenterId]="initialPopulationCenterId()"
+        [disabled]="saving()"
+        (selectionChange)="setGeography($event)"
+      />
+      <div class="admin-field admin-field-span-2">
+        <app-form-error [control]="form.controls.distritoCodigo" fieldLabel="El distrito" />
+      </div>
+      <div class="admin-field admin-field-span-2">
+        <label>Referencia de ubicación</label>
+        <input class="admin-input" maxlength="300" formControlName="referencia" placeholder="Sector, calle, referencia u otra indicación" />
+      </div>
+
+      <div class="producer-form-section admin-field-span-2"><span>Afiliación</span></div>
+      <div class="admin-field">
+        <label>Fecha de alta</label><input class="admin-input" type="date" formControlName="fechaAlta" />
+        <app-form-error [control]="form.controls.fechaAlta" fieldLabel="La fecha de alta" />
+      </div>
+      <div class="admin-field">
+        <label>Asociación</label>
+        <select class="admin-select" formControlName="asociacionId">
+          <option [value]="0">Seleccionar</option>
+          @for (association of associations(); track association.value) { <option [value]="association.value">{{ association.label }}</option> }
+        </select>
+        <app-form-error [control]="form.controls.asociacionId" fieldLabel="La asociación" />
+      </div>
+      <div class="admin-field">
+        <label>Fecha desde</label><input class="admin-input" type="date" formControlName="fechaDesde" />
+        <app-form-error [control]="form.controls.fechaDesde" fieldLabel="La fecha de afiliación" />
+      </div>
+      <div class="admin-field">
+        <label>Situación de membresía</label>
+        <select class="admin-select" formControlName="situacionMembresia">
+          @for (membership of memberships; track membership.value) { <option [value]="membership.value">{{ membership.label }}</option> }
+        </select>
+      </div>
+      <div class="admin-field admin-field-span-2">
+        <div class="admin-info-note">
+          El código de socio se genera automáticamente al registrar. No debe ingresarlo el usuario.
+        </div>
+      </div>
+
+      <footer class="admin-modal-actions admin-field-span-2">
+        <button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="close()">Cancelar</button>
+        <button type="submit" class="admin-primary-button" [disabled]="saving()">
+          @if (saving()) { <span class="loading loading-spinner loading-sm"></span> Guardando... }
+          @else { <fa-icon [icon]="saveIcon" /> Guardar }
+        </button>
+      </footer>
+    </form>
+  </div>
+</dialog>

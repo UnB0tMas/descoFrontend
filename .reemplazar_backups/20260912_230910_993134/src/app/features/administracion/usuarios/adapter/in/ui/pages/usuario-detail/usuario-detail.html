@@ -1,0 +1,313 @@
+<div class="desco-page">
+  <app-page-header
+    [title]="detail()?.nombreUsuario || 'Detalle del usuario'"
+    subtitle="Consulta la cuenta, sus roles y los dispositivos asociados."
+    eyebrow="Usuario"
+    [icon]="pageIcon"
+  >
+    <div pageActions class="flex flex-wrap gap-2">
+      <a class="admin-secondary-button" routerLink="/administracion/usuarios">
+        <fa-icon [icon]="backIcon" />
+        Volver
+      </a>
+
+      <button
+        type="button"
+        class="admin-secondary-button"
+        [disabled]="loading()"
+        (click)="load()"
+      >
+        <fa-icon [class.animate-spin]="loading()" [icon]="refreshIcon" />
+        Actualizar
+      </button>
+
+      @if (detail()) {
+        <button
+          *appPermission="'USUARIOS_EDITAR'"
+          type="button"
+          class="admin-primary-button"
+          (click)="edit()"
+        >
+          <fa-icon [icon]="editIcon" />
+          Editar
+        </button>
+
+        @if (isDisabled()) {
+          <button
+            *appPermission="'USUARIOS_CONFIRMAR'"
+            type="button"
+            class="admin-success-button"
+            [disabled]="accountActionLoading()"
+            (click)="reactivate()"
+          >
+            @if (accountActionLoading()) {
+              <span class="loading loading-spinner loading-sm"></span>
+            } @else {
+              <fa-icon [icon]="reactivateIcon" />
+            }
+            Reactivar
+          </button>
+        } @else {
+          <button
+            *appPermission="'USUARIOS_RETIRAR'"
+            type="button"
+            class="admin-danger-button"
+            [disabled]="accountActionLoading()"
+            (click)="disable()"
+          >
+            @if (accountActionLoading()) {
+              <span class="loading loading-spinner loading-sm"></span>
+            } @else {
+              <fa-icon [icon]="disableIcon" />
+            }
+            Deshabilitar
+          </button>
+        }
+      }
+    </div>
+  </app-page-header>
+
+  <div class="mt-5">
+    @if (loading()) {
+      <app-loading-state
+        title="Cargando usuario"
+        message="Consultando roles, dispositivos y estado de la cuenta."
+      />
+    } @else if (errorMessage()) {
+      <app-error-state
+        [message]="errorMessage() || 'Intenta nuevamente.'"
+        (retry)="load()"
+      />
+    } @else if (detail(); as user) {
+      <section class="admin-detail-grid">
+        <article class="admin-detail-card">
+          <span>Usuario</span>
+          <strong>{{ user.nombreUsuario }}</strong>
+        </article>
+        <article class="admin-detail-card">
+          <span>Empleado</span>
+          <strong>{{ user.empleado || '—' }}</strong>
+        </article>
+        <article class="admin-detail-card">
+          <span>Documento</span>
+          <strong>{{ user.numeroDocumento || '—' }}</strong>
+        </article>
+        <article class="admin-detail-card">
+          <span>Estado</span>
+          <strong>{{ accountStateLabel(user.estadoCuenta) }}</strong>
+        </article>
+      </section>
+
+      <div class="user-detail-grid mt-4">
+        <section class="admin-surface">
+          <div class="admin-section-header">
+            <div>
+              <p>Cuenta</p>
+              <h2>Configuración actual</h2>
+            </div>
+            <fa-icon class="text-blue-600" [icon]="userIcon" />
+          </div>
+
+          <div class="admin-info-list">
+            <div>
+              <span>Fecha de creación</span>
+              <strong>
+                {{ user.fechaCreacion ? (user.fechaCreacion | date:'dd/MM/yyyy HH:mm') : '—' }}
+              </strong>
+            </div>
+            <div>
+              <span>Último acceso</span>
+              <strong>
+                {{ user.ultimoAccesoCorrecto ? (user.ultimoAccesoCorrecto | date:'dd/MM/yyyy HH:mm') : '—' }}
+              </strong>
+            </div>
+            <div>
+              <span>Cambio de contraseña requerido</span>
+              <strong>{{ user.requiereCambioPassword ? 'Sí' : 'No' }}</strong>
+            </div>
+            <div>
+              <span>Segundo factor</span>
+              <strong>{{ user.segundoFactorHabilitado ? 'Habilitado' : 'No habilitado' }}</strong>
+            </div>
+          </div>
+        </section>
+
+        <section class="admin-surface">
+          <div class="admin-section-header">
+            <div>
+              <p>Roles</p>
+              <h2>Accesos asignados</h2>
+            </div>
+
+            <button
+              *appPermission="'USUARIOS_CREAR'"
+              type="button"
+              class="admin-primary-button admin-primary-button--small"
+              [disabled]="rolesLoading() || roleOptions().length === 0"
+              (click)="openAssignRole()"
+            >
+              @if (rolesLoading()) {
+                <span class="loading loading-spinner loading-xs"></span>
+              } @else {
+                <fa-icon [icon]="addIcon" />
+              }
+              Asignar rol
+            </button>
+          </div>
+
+          <div class="user-role-list">
+            @for (role of user.roles; track role.rolId) {
+              <article [class.inactive]="!role.estado">
+                <div>
+                  <strong>{{ role.nombre }}</strong>
+                  <span>{{ role.codigo }}</span>
+                </div>
+
+                <div class="user-role-actions">
+                  <span
+                    class="admin-status"
+                    [class.admin-status--active]="role.estado"
+                    [class.admin-status--inactive]="!role.estado"
+                  >
+                    {{ role.estado ? 'Activo' : 'Histórico' }}
+                  </span>
+
+                  @if (role.estado) {
+                    <button
+                      *appPermission="'USUARIOS_RETIRAR'"
+                      type="button"
+                      class="admin-icon-button admin-icon-button--danger"
+                      title="Retirar rol"
+                      [disabled]="removingRoleId() === role.rolId"
+                      (click)="removeRole(role)"
+                    >
+                      @if (removingRoleId() === role.rolId) {
+                        <span class="loading loading-spinner loading-xs"></span>
+                      } @else {
+                        <fa-icon [icon]="removeIcon" />
+                      }
+                    </button>
+                  }
+                </div>
+              </article>
+            } @empty {
+              <p class="admin-empty-copy p-4">No hay roles asignados.</p>
+            }
+          </div>
+        </section>
+      </div>
+
+      <section class="admin-surface mt-4">
+        <div class="admin-section-header">
+          <div>
+            <p>Dispositivos</p>
+            <h2>Dispositivos asociados</h2>
+          </div>
+          <fa-icon class="text-blue-600" [icon]="deviceIcon" />
+        </div>
+
+        <div class="device-admin-grid">
+          @for (device of user.dispositivos; track device.dispositivoUsuarioId) {
+            <article>
+              <div class="device-admin-icon">
+                <fa-icon [icon]="deviceIcon" />
+              </div>
+              <div class="min-w-0 flex-1">
+                <strong>
+                  {{ device.navegador || 'Navegador' }}
+                  ·
+                  {{ device.sistemaOperativo || 'Dispositivo' }}
+                </strong>
+                <span>
+                  Última actividad:
+                  {{ device.ultimaActividad ? (device.ultimaActividad | date:'dd/MM/yyyy HH:mm') : '—' }}
+                </span>
+              </div>
+              <span
+                class="admin-status"
+                [class.admin-status--active]="device.esReconocido"
+                [class.admin-status--neutral]="!device.esReconocido"
+              >
+                {{ device.esReconocido ? 'Reconocido' : 'No reconocido' }}
+              </span>
+            </article>
+          } @empty {
+            <p class="admin-empty-copy">No hay dispositivos registrados.</p>
+          }
+        </div>
+      </section>
+    }
+  </div>
+</div>
+
+<dialog #roleDialog class="modal desco-modal" (cancel)="$event.preventDefault(); closeRoleDialog()">
+  <div class="modal-box admin-modal-box admin-modal-box--compact">
+    <header class="admin-modal-header">
+      <div class="admin-modal-title-group">
+        <span class="admin-modal-icon">
+          <fa-icon [icon]="roleIcon" />
+        </span>
+        <div>
+          <p>Usuarios y accesos</p>
+          <h2>Asignar rol</h2>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        class="admin-icon-button"
+        [disabled]="roleSaving()"
+        (click)="closeRoleDialog()"
+      >
+        <fa-icon [icon]="closeIcon" />
+      </button>
+    </header>
+
+    @if (roleError()) {
+      <div class="admin-inline-error" role="alert">{{ roleError() }}</div>
+    }
+
+    <form class="admin-form-grid" [formGroup]="roleForm" (ngSubmit)="assignRole()">
+      <div class="admin-field admin-field-span-2">
+        <label for="userRole">Rol</label>
+        <select id="userRole" class="admin-select" formControlName="rolId">
+          <option [value]="0">Seleccionar rol</option>
+          @for (role of roleOptions(); track role.value) {
+            <option [value]="role.value">{{ role.label }}</option>
+          }
+        </select>
+        <app-form-error
+          [control]="roleForm.controls.rolId"
+          fieldLabel="El rol"
+        />
+      </div>
+
+      <footer class="admin-modal-actions admin-field-span-2">
+        <button
+          type="button"
+          class="admin-secondary-button"
+          [disabled]="roleSaving()"
+          (click)="closeRoleDialog()"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          class="admin-primary-button"
+          [disabled]="roleSaving()"
+        >
+          @if (roleSaving()) {
+            <span class="loading loading-spinner loading-sm"></span>
+            Asignando...
+          } @else {
+            <fa-icon [icon]="saveIcon" />
+            Asignar
+          }
+        </button>
+      </footer>
+    </form>
+  </div>
+</dialog>
+
+<app-usuario-form />
+<app-action-confirm-dialog />

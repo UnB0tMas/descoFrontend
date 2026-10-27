@@ -1,0 +1,11 @@
+{
+  "proyecto": "D:\\FrancoSystem\\desco_frontend",
+  "fecha": "2026-10-25T18:29:54",
+  "cambios": [
+    {
+      "ruta": "src/app/features/recursos/programados/adapter/in/ui/pages/programacion-productos/programacion-productos.html",
+      "accion": "escribir",
+      "existia": true
+    }
+  ]
+}

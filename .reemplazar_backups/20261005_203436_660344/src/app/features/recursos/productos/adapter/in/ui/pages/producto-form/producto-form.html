@@ -1,0 +1,75 @@
+<dialog #dialog class="modal desco-modal" (cancel)="$event.preventDefault(); close()">
+  <div class="modal-box admin-modal-box admin-modal-box--wide">
+    <header class="admin-modal-header">
+      <div class="admin-modal-title-group">
+        <span class="admin-modal-icon"><fa-icon [icon]="icon()" /></span>
+        <div><p>Productos</p><h2>{{ title() }}</h2></div>
+      </div>
+      <button type="button" class="admin-icon-button" [disabled]="saving()" (click)="close()"><fa-icon [icon]="closeIcon" /></button>
+    </header>
+
+    @if (errorMessage()) { <div class="admin-inline-error" role="alert">{{ errorMessage() }}</div> }
+
+    @if (mode() === 'price') {
+      <form class="admin-form-grid" [formGroup]="priceForm" (ngSubmit)="save()">
+        <div class="product-form-section admin-field-span-2"><span>Contexto comercial</span></div>
+        <div class="admin-field admin-field-span-2"><label>UOT</label><input class="admin-input" [value]="uotLabel('price')" readonly /></div>
+        <ng-container *ngTemplateOutlet="priceFields; context: { form: priceForm }" />
+        <footer class="admin-modal-actions admin-field-span-2">
+          <button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="close()">Cancelar</button>
+          <button type="submit" class="admin-primary-button" [disabled]="saving() || referencesLoading()">@if (saving()) { <span class="loading loading-spinner loading-sm"></span> Guardando... } @else { <fa-icon [icon]="saveIcon" /> Guardar }</button>
+        </footer>
+      </form>
+    } @else {
+      <form class="admin-form-grid" [formGroup]="productForm" (ngSubmit)="save()">
+        <div class="product-form-section admin-field-span-2"><span>Identificación</span></div>
+        <div class="admin-field admin-field-span-2">
+          <label>UOT del producto</label>
+          <select class="admin-select" formControlName="uotContextoId" (change)="onCreateUotChange()">
+            <option [value]="0">Seleccionar UOT</option>
+            @for (unit of availableUnits(); track unit.uotId) { <option [value]="unit.uotId">{{ unit.nombre }}</option> }
+          </select>
+          <app-form-error [control]="productForm.controls.uotContextoId" fieldLabel="La UOT" />
+        </div>
+        <div class="admin-field">
+          <label>Código</label>
+          <input class="admin-input" formControlName="codigo" maxlength="50" placeholder="DESCO propone uno automáticamente" />
+          @if (mode() === 'create') { <small>{{ codeLoading() ? 'Generando código…' : 'Puede conservar el código sugerido.' }}</small> }
+        </div>
+        <div class="admin-field">
+          <label>Nombre</label>
+          <input class="admin-input" formControlName="nombre" maxlength="180" />
+          <app-form-error [control]="productForm.controls.nombre" fieldLabel="El nombre" [messages]="{ blank: 'El nombre no puede contener solo espacios.' }" />
+        </div>
+        <div class="admin-field admin-field-span-2">
+          <label>Descripción</label>
+          <textarea class="admin-textarea" formControlName="descripcion" maxlength="700" rows="3"></textarea>
+        </div>
+
+        <div class="product-form-section admin-field-span-2"><span>Clasificación y control</span></div>
+        <div class="admin-field"><label>Unidad de medida</label><select class="admin-select" formControlName="unidadMedida">@for (unit of units(); track unit.code) { <option [value]="unit.code">{{ unit.label }}</option> }</select></div>
+        <div class="admin-field"><label>Categoría</label><select class="admin-select" formControlName="categoria"><option value="">Sin categoría</option>@for (category of categories(); track category.code) { <option [value]="category.code">{{ category.label }}</option> }</select></div>
+        <label class="product-check"><input type="checkbox" formControlName="requiereLote" /><span><strong>Control por lote</strong><small>Exige lote en movimientos de inventario.</small></span></label>
+        <label class="product-check"><input type="checkbox" formControlName="controlaVencimiento" /><span><strong>Control de vencimiento</strong><small>Permite gestionar fecha de vencimiento por lote.</small></span></label>
+
+        @if (mode() === 'create') {
+          <div class="product-form-section admin-field-span-2"><span>Precio inicial</span></div>
+          <ng-container *ngTemplateOutlet="priceFields; context: { form: productForm }" />
+        } @else {
+          <div class="admin-info-note admin-field-span-2">El precio se versiona desde la acción “Nuevo precio”; editar el producto no altera el historial comercial.</div>
+        }
+
+        <footer class="admin-modal-actions admin-field-span-2">
+          <button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="close()">Cancelar</button>
+          <button type="submit" class="admin-primary-button" [disabled]="saving() || referencesLoading()">@if (saving()) { <span class="loading loading-spinner loading-sm"></span> Guardando... } @else { <fa-icon [icon]="saveIcon" /> Guardar }</button>
+        </footer>
+      </form>
+    }
+  </div>
+</dialog>
+
+<ng-template #priceFields let-form="form">
+  <div class="admin-field"><label>Precio inicial</label><input class="admin-input" type="number" min="0" step="0.01" [formControl]="form.controls.precioInicial" /></div>
+  <div class="admin-field"><label>Precio de venta</label><input class="admin-input" type="number" min="0.01" step="0.01" [formControl]="form.controls.precioVenta" /></div>
+  <div class="admin-field admin-field-span-2"><label>Moneda</label><select class="admin-select" [formControl]="form.controls.moneda">@for (currency of currencies(); track currency.code) { <option [value]="currency.code">{{ currency.label }}</option> }</select></div>
+</ng-template>

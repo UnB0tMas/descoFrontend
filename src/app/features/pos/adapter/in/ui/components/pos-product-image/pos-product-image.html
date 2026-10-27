@@ -1,0 +1,18 @@
+<div class="pos-product-image">
+  @if (src() && !failed()) {
+    <img
+      [src]="src()"
+      [alt]="alt"
+      loading="lazy"
+      (error)="onError()"
+    />
+  } @else {
+    <div class="pos-product-image__placeholder">
+      @if (loading()) {
+        <span class="loading loading-spinner loading-sm"></span>
+      } @else {
+        <span>Sin imagen</span>
+      }
+    </div>
+  }
+</div>

@@ -1,0 +1,151 @@
+:root {
+  --desco-radius-sm: 0.5rem;
+  --desco-radius-md: 0.75rem;
+  --desco-radius-lg: 1rem;
+  --desco-sidebar-width: 17rem;
+  --desco-topbar-height: 4rem;
+
+  --desco-page-bg: #f8fafc;
+  --desco-sidebar-bg: #ffffff;
+  --desco-surface: #ffffff;
+  --desco-surface-soft: #f1f5f9;
+  --desco-surface-elevated: #ffffff;
+  --desco-surface-hover: #f8fafc;
+  --desco-table-head: #f8fafc;
+  --desco-control-bg: #ffffff;
+  --desco-control-hover: #ffffff;
+  --desco-control-disabled: #f1f5f9;
+  --desco-border: #e2e8f0;
+  --desco-border-subtle: #f1f5f9;
+  --desco-border-strong: #cbd5e1;
+  --desco-text: #0f172a;
+  --desco-text-soft: #334155;
+  --desco-text-muted: #64748b;
+  --desco-placeholder: #94a3b8;
+
+  --desco-primary: #2563eb;
+  --desco-primary-hover: #1d4ed8;
+  --desco-primary-soft: #eff6ff;
+  --desco-primary-soft-hover: #dbeafe;
+  --desco-primary-border: #bfdbfe;
+  --desco-primary-text: #1d4ed8;
+  --desco-on-primary: #ffffff;
+  --desco-focus-ring: rgb(37 99 235 / 0.22);
+
+  --desco-danger: #dc2626;
+  --desco-danger-soft: #fef2f2;
+  --desco-danger-border: #fecaca;
+  --desco-danger-text: #b91c1c;
+  --desco-success: #15803d;
+  --desco-success-soft: #f0fdf4;
+  --desco-success-border: #bbf7d0;
+  --desco-success-text: #166534;
+  --desco-warning: #b45309;
+  --desco-warning-soft: #fffbeb;
+  --desco-warning-border: #fde68a;
+  --desco-warning-text: #92400e;
+  --desco-info: #2563eb;
+  --desco-info-soft: #eff6ff;
+  --desco-info-border: #bfdbfe;
+  --desco-info-text: #1d4ed8;
+
+  --desco-nav-hover-bg: #f8fafc;
+  --desco-nav-hover-border: #e0e7ff;
+  --desco-nav-hover-text: #1d4ed8;
+  --desco-nav-active-bg: #eff6ff;
+  --desco-nav-active-border: #bfdbfe;
+  --desco-nav-active-text: #1d4ed8;
+  --desco-nav-active-icon-bg: #ffffff;
+
+  --desco-table-hover: #f8fafc;
+  --desco-overlay: rgb(15 23 42 / 0.48);
+  --desco-skeleton: #e2e8f0;
+  --desco-scrollbar: #cbd5e1;
+  --desco-shadow-sm: 0 1px 2px rgb(15 23 42 / 0.06);
+  --desco-shadow-md: 0 10px 30px rgb(15 23 42 / 0.08);
+
+  color-scheme: light;
+}
+
+html[data-theme='dark'],
+html.dark {
+  --desco-page-bg: #000000;
+  --desco-sidebar-bg: #050505;
+  --desco-surface: #080808;
+  --desco-surface-soft: #0d0d0d;
+  --desco-surface-elevated: #111111;
+  --desco-surface-hover: #171717;
+  --desco-table-head: #101010;
+  --desco-control-bg: #0d0d0d;
+  --desco-control-hover: #141414;
+  --desco-control-disabled: #151515;
+  --desco-border: #292929;
+  --desco-border-subtle: #1f1f1f;
+  --desco-border-strong: #444444;
+  --desco-text: #f5f7fa;
+  --desco-text-soft: #d7dce3;
+  --desco-text-muted: #a3a3a3;
+  --desco-placeholder: #737373;
+
+  --desco-primary: #3b82f6;
+  --desco-primary-hover: #60a5fa;
+  --desco-primary-soft: #0b1f3a;
+  --desco-primary-soft-hover: #10294b;
+  --desco-primary-border: #1d4ed8;
+  --desco-primary-text: #93c5fd;
+  --desco-on-primary: #ffffff;
+  --desco-focus-ring: rgb(96 165 250 / 0.34);
+
+  --desco-danger: #f87171;
+  --desco-danger-soft: #260b0b;
+  --desco-danger-border: #7f1d1d;
+  --desco-danger-text: #fca5a5;
+  --desco-success: #4ade80;
+  --desco-success-soft: #071d12;
+  --desco-success-border: #166534;
+  --desco-success-text: #86efac;
+  --desco-warning: #fbbf24;
+  --desco-warning-soft: #241704;
+  --desco-warning-border: #854d0e;
+  --desco-warning-text: #fde68a;
+  --desco-info: #60a5fa;
+  --desco-info-soft: #0b1f3a;
+  --desco-info-border: #1d4ed8;
+  --desco-info-text: #93c5fd;
+
+  --desco-nav-hover-bg: #101820;
+  --desco-nav-hover-border: #223247;
+  --desco-nav-hover-text: #bfdbfe;
+  --desco-nav-active-bg: #0b1f3a;
+  --desco-nav-active-border: #2563eb;
+  --desco-nav-active-text: #bfdbfe;
+  --desco-nav-active-icon-bg: #10294b;
+
+  --desco-table-hover: #121212;
+  --desco-overlay: rgb(0 0 0 / 0.82);
+  --desco-skeleton: #252525;
+  --desco-scrollbar: #444444;
+  --desco-shadow-sm: none;
+  --desco-shadow-md: 0 10px 30px rgb(0 0 0 / 0.55);
+
+  color-scheme: dark;
+  background: #000000;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  color: var(--desco-text);
+  background: var(--desco-page-bg);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+::selection {
+  background: var(--desco-primary);
+  color: var(--desco-on-primary);
+}

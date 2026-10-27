@@ -1,0 +1,96 @@
+:host {
+  display: contents;
+}
+
+.uot-deactivation-loading {
+  display: flex;
+  min-height: 10rem;
+  align-items: center;
+  justify-content: center;
+  gap: .65rem;
+  margin: 0 1.15rem;
+  color: var(--desco-text-muted);
+  font-size: .75rem;
+}
+
+.uot-impact-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: .65rem;
+  margin: 1rem 1.15rem;
+}
+
+.uot-impact-grid article {
+  border: 1px solid var(--desco-border);
+  border-radius: .85rem;
+  background: var(--desco-surface-soft);
+  padding: .75rem;
+}
+
+.uot-impact-grid span,
+.uot-impact-grid strong {
+  display: block;
+}
+
+.uot-impact-grid span {
+  color: var(--desco-text-muted);
+  font-size: .62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.uot-impact-grid strong {
+  margin-top: .25rem;
+  font-size: 1.05rem;
+}
+
+.uot-blockers {
+  margin: 0 1.15rem;
+  border: 1px solid var(--desco-warning-border, #f59e0b);
+  border-radius: .9rem;
+  background: var(--desco-warning-soft);
+  padding: .8rem;
+  color: var(--desco-warning-text);
+}
+
+.uot-blockers header {
+  display: flex;
+  align-items: flex-start;
+  gap: .6rem;
+}
+
+.uot-blockers header strong,
+.uot-blockers header span {
+  display: block;
+}
+
+.uot-blockers header span {
+  margin-top: .1rem;
+  font-size: .68rem;
+}
+
+.uot-blockers ul {
+  margin: .65rem 0 0 1.3rem;
+  font-size: .7rem;
+}
+
+.uot-transfer-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .45rem;
+}
+
+.uot-transfer-summary span {
+  border-radius: 999px;
+  background: var(--desco-primary-soft);
+  padding: .3rem .55rem;
+  color: var(--desco-primary-text);
+  font-size: .65rem;
+  font-weight: 800;
+}
+
+@media (max-width: 760px) {
+  .uot-impact-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

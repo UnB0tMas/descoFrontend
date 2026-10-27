@@ -1,0 +1,88 @@
+:host {
+  display: contents;
+}
+
+.sale-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.sale-separate-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: .65rem;
+  border: 1px solid var(--desco-border);
+  border-radius: .85rem;
+  padding: .75rem;
+  background: var(--desco-surface-soft);
+  cursor: pointer;
+}
+
+.sale-separate-toggle strong,
+.sale-separate-toggle span {
+  display: block;
+}
+
+.sale-separate-toggle strong {
+  color: var(--desco-text);
+  font-size: .72rem;
+}
+
+.sale-separate-toggle span {
+  margin-top: .12rem;
+  color: var(--desco-text-muted);
+  font-size: .62rem;
+}
+
+.sale-lines {
+  display: grid;
+  gap: .65rem;
+  border-top: 1px solid var(--desco-border);
+  padding-top: .8rem;
+}
+
+.sale-lines > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+}
+
+.sale-lines p,
+.sale-lines h3 {
+  margin: 0;
+}
+
+.sale-lines p {
+  color: var(--desco-primary-text);
+  font-size: .6rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.sale-lines h3 {
+  margin-top: .1rem;
+  color: var(--desco-text);
+  font-size: .82rem;
+}
+
+.sale-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 8rem auto;
+  align-items: end;
+  gap: .55rem;
+  border: 1px solid var(--desco-border);
+  border-radius: .8rem;
+  padding: .65rem;
+  background: var(--desco-surface-soft);
+}
+
+@media (max-width: 620px) {
+  .sale-line {
+    grid-template-columns: 1fr;
+  }
+
+  .sale-line .admin-icon-button {
+    justify-self: end;
+  }
+}

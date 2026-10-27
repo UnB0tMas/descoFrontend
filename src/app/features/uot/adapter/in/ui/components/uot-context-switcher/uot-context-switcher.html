@@ -1,0 +1,46 @@
+<div
+  class="uot-switcher"
+  [class.uot-switcher--compact]="compact"
+  [class.uot-switcher--changing]="changing()"
+  [attr.aria-busy]="changing()"
+>
+  <span class="uot-switcher-icon" aria-hidden="true">
+    <fa-icon [icon]="store.isGeneral() ? generalIcon : unitIcon" />
+  </span>
+
+  <span
+    class="uot-switcher-mode"
+    [class.uot-switcher-mode--general]="store.isGeneral()"
+  >
+    {{ modeLabel() }}
+  </span>
+
+  @if (!compact) {
+    <span class="uot-switcher-copy">
+      <small>Contexto UOT</small>
+      <strong>{{ store.label() }}</strong>
+    </span>
+  }
+
+  <select
+    class="uot-switcher-select"
+    aria-label="Cambiar contexto UOT"
+    [value]="value()"
+    [disabled]="disabled()"
+    (change)="change($any($event.target).value)"
+  >
+    @if (store.canUseGeneral()) {
+      <option value="GENERAL">GENERAL · Todas mis UOT</option>
+    }
+
+    @for (unit of store.memberships(); track unit.uotId) {
+      <option [value]="unit.uotId">
+        UOT · {{ unit.codigo ? unit.codigo + ' · ' : '' }}{{ unit.nombre }}
+      </option>
+    }
+  </select>
+
+  @if (changing()) {
+    <span class="uot-switcher-spinner loading loading-spinner loading-xs" aria-hidden="true"></span>
+  }
+</div>

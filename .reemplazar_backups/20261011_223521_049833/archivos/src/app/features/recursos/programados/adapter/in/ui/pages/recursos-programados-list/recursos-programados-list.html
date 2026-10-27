@@ -1,0 +1,106 @@
+<div class="desco-page">
+  <app-page-header
+    title="Recursos programados"
+    [subtitle]="uot.isGeneral() ? 'Vista general de recursos programados de tus UOT; cada destino conserva su UOT.' : 'Recursos programados de ' + (uot.selected()?.nombre ?? 'la UOT activa') + '.'" 
+    eyebrow="Recursos"
+    [icon]="pageIcon"
+  >
+    <div pageActions class="flex flex-wrap gap-2">
+      <button type="button" class="admin-secondary-button" [disabled]="loading()" (click)="load()">
+        <fa-icon [class.animate-spin]="loading()" [icon]="refreshIcon" /> Actualizar
+      </button>
+      <button *appPermission="'RECURSOS_CREAR'" type="button" class="admin-primary-button" (click)="create()">
+        <fa-icon [icon]="addIcon" /> Programar recurso
+      </button>
+    </div>
+  </app-page-header>
+
+  <section class="admin-surface mt-5">
+    <div class="admin-toolbar">
+      <div class="admin-field admin-toolbar-field">
+        <label for="resourceStateFilter">Estado</label>
+        <select id="resourceStateFilter" class="admin-select" [value]="stateFilter()" (change)="stateFilter.set($any($event.target).value); load(1)">
+          <option value="">Todos</option>
+          <option value="PROGRAMADO">Programado</option>
+          <option value="EN_EJECUCION">En ejecución</option>
+          <option value="COMPLETADO">Completado</option>
+          <option value="CANCELADO">Cancelado</option>
+        </select>
+      </div>
+      <div class="admin-field admin-toolbar-field">
+        <label for="resourceDestinationFilter">Destino</label>
+        <select
+          id="resourceDestinationFilter"
+          class="admin-select"
+          [value]="destinationFilter()"
+          [disabled]="destinationsLoading()"
+          (change)="onDestinationFilter($any($event.target).value)"
+        >
+          <option value="">{{ destinationsLoading() ? 'Cargando destinos...' : 'Todos los destinos' }}</option>
+          @for (destination of destinations(); track destination.tipo + ':' + destination.destinoId) {
+            <option [value]="destinationKey(destination)">{{ destinationOptionLabel(destination) }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    @if (loading()) {
+      <app-loading-state title="Cargando recursos" message="Consultando programaciones y movimientos." />
+    } @else if (errorMessage()) {
+      <app-error-state [message]="errorMessage() || 'Intenta nuevamente.'" (retry)="load()" />
+    } @else if (result().items.length === 0) {
+      <app-empty-state title="Sin recursos programados" message="No hay programaciones para los filtros seleccionados." />
+    } @else {
+      <div class="admin-table-wrap">
+        <table class="admin-table resource-program-table">
+          <thead>
+            <tr><th>Recurso</th><th>UOT</th><th>Destino</th><th>Cantidad</th><th>Programación</th><th class="text-center">Estado</th><th class="text-right">Acciones</th></tr>
+          </thead>
+          <tbody>
+            @for (item of result().items; track item.recursoProgramadoId) {
+              <tr>
+                <td><div class="admin-stack-copy"><strong>{{ resourceName(item) }}</strong><span>{{ resourceKind(item) }} · #{{ item.recursoProgramadoId }}</span></div></td>
+                <td>{{ resourceUot(item) }}</td>
+                <td>{{ destination(item) }}</td>
+                <td><div class="admin-stack-copy"><strong>{{ item.cantidadProgramada }}</strong><span>Devuelto: {{ item.cantidadDevuelta }}</span></div></td>
+                <td>{{ item.fechaProgramacion ? (item.fechaProgramacion | date:'dd/MM/yyyy HH:mm') : '—' }}</td>
+                <td class="text-center">
+                  <span class="admin-status" [class.admin-status--info]="item.estadoProceso==='PROGRAMADO'" [class.admin-status--warning]="item.estadoProceso==='EN_EJECUCION'" [class.admin-status--active]="item.estadoProceso==='COMPLETADO'" [class.admin-status--inactive]="item.estadoProceso==='CANCELADO'">
+                    {{ item.estadoProceso }}
+                  </span>
+                </td>
+                <td>
+                  <div class="admin-row-actions">
+                    <button *appPermission="'RECURSOS_VER'" type="button" class="admin-icon-button" title="Ver detalle" (click)="view(item)"><fa-icon [icon]="viewIcon" /></button>
+                    @if (item.estadoProceso === 'PROGRAMADO') {
+                      <button *appPermission="'RECURSOS_EDITAR'" type="button" class="admin-icon-button" title="Editar" (click)="edit(item)"><fa-icon [icon]="editIcon" /></button>
+                      <button *appPermission="'RECURSOS_CREAR'" type="button" class="admin-icon-button admin-icon-button--success" title="Asignar" [disabled]="actionId()===item.recursoProgramadoId" (click)="assign(item)">
+                        @if (actionId()===item.recursoProgramadoId) { <span class="loading loading-spinner loading-xs"></span> } @else { <fa-icon [icon]="assignIcon" /> }
+                      </button>
+                      <button *appPermission="'RECURSOS_RETIRAR'" type="button" class="admin-icon-button admin-icon-button--danger" title="Cancelar" [disabled]="actionId()===item.recursoProgramadoId" (click)="cancel(item)">
+                        @if (actionId()===item.recursoProgramadoId) { <span class="loading loading-spinner loading-xs"></span> } @else { <fa-icon [icon]="cancelIcon" /> }
+                      </button>
+                    } @else if (item.estadoProceso === 'EN_EJECUCION') {
+                      <button *appPermission="'RECURSOS_CREAR'" type="button" class="admin-primary-button admin-primary-button--small" (click)="returnResource(item)"><fa-icon [icon]="returnIcon" /> Devolver</button><button *appPermission="'RECURSOS_CREAR'" type="button" class="admin-icon-button" [disabled]="item.estadoProceso!=='EN_EJECUCION'" title="Registrar consumo" (click)="consume(item)"><fa-icon [icon]="consumeIcon" /></button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <app-paginator
+        [page]="result().page"
+        [size]="result().size"
+        [totalRecords]="result().totalRecords"
+        [totalPages]="result().totalPages"
+        (pageChange)="load($event, result().size)"
+        (sizeChange)="load(1, $event)"
+      />
+    }
+  </section>
+</div>
+
+<app-recurso-programado-form />
+<app-action-confirm-dialog />

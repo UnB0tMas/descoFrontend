@@ -1,0 +1,1 @@
+import {inject,Injectable} from '@angular/core';import {SalidaFiltro} from '../../domain/salida-campo.model';import {SALIDAS_GATEWAY,SalidasGateway} from '../port/out/salidas.gateway';@Injectable() export class ListarSalidasUseCase{private readonly gateway:SalidasGateway=inject(SALIDAS_GATEWAY);execute(filter:SalidaFiltro){return this.gateway.list(filter);}}

@@ -1,0 +1,81 @@
+<dialog
+  #dialog
+  class="modal modal-bottom sm:modal-middle"
+  (cancel)="$event.preventDefault(); cancel()"
+>
+  @if (config(); as current) {
+    <div class="modal-box max-w-lg rounded-t-3xl border border-slate-200 bg-white p-0 shadow-2xl sm:rounded-3xl">
+      <div class="flex items-start gap-4 border-b border-slate-100 p-6">
+        <div
+          class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl"
+          [class]="iconClass(current.tone)"
+        >
+          <fa-icon [icon]="iconFor(current.tone)" />
+        </div>
+
+        <div class="min-w-0 flex-1">
+          <h2 class="text-lg font-semibold text-slate-950">
+            {{ current.title }}
+          </h2>
+          <p class="mt-1 text-sm leading-6 text-slate-600">
+            {{ current.message }}
+          </p>
+        </div>
+
+        <button
+          type="button"
+          class="btn btn-ghost btn-sm btn-square rounded-xl text-slate-500"
+          aria-label="Cerrar"
+          (click)="cancel()"
+        >
+          <fa-icon [icon]="closeIcon" />
+        </button>
+      </div>
+
+      @if (current.requiresReason) {
+        <div class="px-6 pt-5">
+          <label class="form-control w-full">
+            <span class="mb-2 text-sm font-semibold text-slate-700">
+              {{ current.reasonLabel }}
+            </span>
+            <textarea
+              class="textarea textarea-bordered min-h-28 w-full rounded-2xl border-slate-300 bg-white text-slate-900 focus:border-blue-500 focus:outline-none"
+              [placeholder]="current.reasonPlaceholder ?? ''"
+              [attr.maxlength]="current.maximumReasonLength ?? 500"
+              [ngModel]="reason()"
+              (ngModelChange)="reason.set($event)"
+            ></textarea>
+            <span class="mt-2 text-xs text-slate-500">
+              Entre {{ current.minimumReasonLength ?? 5 }} y {{ current.maximumReasonLength ?? 500 }} caracteres.
+            </span>
+          </label>
+        </div>
+      }
+
+      <div class="flex flex-col-reverse gap-3 p-6 sm:flex-row sm:justify-end">
+        <button
+          type="button"
+          class="btn rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+          (click)="cancel()"
+        >
+          {{ current.cancelLabel }}
+        </button>
+
+        <button
+          type="button"
+          class="btn rounded-xl border-0"
+          [class]="confirmButtonClass(current.tone)"
+          [disabled]="!canConfirm()"
+          (click)="confirm()"
+        >
+          <fa-icon [icon]="iconFor(current.tone)" />
+          {{ current.confirmLabel }}
+        </button>
+      </div>
+    </div>
+  }
+
+  <form method="dialog" class="modal-backdrop bg-slate-950/40">
+    <button type="button" aria-label="Cerrar" (click)="cancel()">close</button>
+  </form>
+</dialog>

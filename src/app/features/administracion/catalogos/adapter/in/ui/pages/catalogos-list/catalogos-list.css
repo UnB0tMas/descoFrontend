@@ -1,0 +1,315 @@
+:host {
+  display: block;
+}
+
+.catalog-shell {
+  overflow: hidden;
+}
+
+.catalog-browser {
+  display: grid;
+  gap: 0.75rem;
+  border-bottom: 1px solid var(--desco-border);
+  background: var(--desco-surface-soft);
+  padding: 0.9rem;
+}
+
+.catalog-group-tabs {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.catalog-group-tab {
+  display: flex;
+  min-width: 0;
+  min-height: 2.65rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  border: 1px solid var(--desco-border);
+  border-radius: 0.8rem;
+  background: var(--desco-surface-elevated);
+  padding: 0.6rem 0.75rem;
+  color: var(--desco-text-soft);
+  font-size: 0.7rem;
+  font-weight: 800;
+  line-height: 1.2;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
+}
+
+.catalog-group-tab:hover {
+  border-color: var(--desco-nav-hover-border);
+  background: var(--desco-nav-hover-bg);
+  color: var(--desco-nav-hover-text);
+}
+
+.catalog-group-tab--active {
+  border-color: var(--desco-primary);
+  background: var(--desco-primary);
+  color: var(--desco-on-primary);
+}
+
+.catalog-group-count {
+  display: grid;
+  min-width: 1.45rem;
+  height: 1.45rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 9999px;
+  background: var(--desco-surface-soft);
+  color: var(--desco-text-muted);
+  font-size: 0.6rem;
+  font-weight: 900;
+}
+
+.catalog-group-tab--active .catalog-group-count {
+  background: rgb(255 255 255 / 0.18);
+  color: var(--desco-on-primary);
+}
+
+.catalog-item-tabs {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.catalog-item-tab {
+  display: inline-flex;
+  min-height: 2rem;
+  align-items: center;
+  gap: 0.45rem;
+  border: 1px solid transparent;
+  border-radius: 9999px;
+  background: transparent;
+  padding: 0.42rem 0.7rem;
+  color: var(--desco-text-muted);
+  font-size: 0.67rem;
+  font-weight: 750;
+  cursor: pointer;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
+}
+
+.catalog-item-tab:hover {
+  border-color: var(--desco-border);
+  background: var(--desco-surface-hover);
+  color: var(--desco-text);
+}
+
+.catalog-item-tab--active {
+  border-color: var(--desco-primary-border);
+  background: var(--desco-primary-soft);
+  color: var(--desco-primary-text);
+}
+
+.catalog-item-dot {
+  width: 0.4rem;
+  height: 0.4rem;
+  flex: 0 0 auto;
+  border-radius: 9999px;
+  background: var(--desco-border-strong);
+}
+
+.catalog-item-tab--active .catalog-item-dot {
+  background: var(--desco-primary);
+  box-shadow: 0 0 0 0.18rem var(--desco-focus-ring);
+}
+
+.catalog-content {
+  min-width: 0;
+}
+
+.catalog-context {
+  display: flex;
+  min-height: 5.4rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid var(--desco-border);
+  background: var(--desco-surface);
+  padding: 0.9rem 1rem;
+}
+
+.catalog-context-copy {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.catalog-context-icon {
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--desco-primary-border);
+  border-radius: 0.8rem;
+  background: var(--desco-primary-soft);
+  color: var(--desco-primary-text);
+}
+
+.catalog-context-copy > div {
+  min-width: 0;
+}
+
+.catalog-context-kicker {
+  display: block;
+  margin-bottom: 0.12rem;
+  color: var(--desco-primary-text);
+  font-size: 0.6rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.catalog-context h2 {
+  margin: 0;
+  color: var(--desco-text);
+  font-size: 0.95rem;
+  font-weight: 850;
+}
+
+.catalog-context p {
+  margin: 0.18rem 0 0;
+  color: var(--desco-text-muted);
+  font-size: 0.69rem;
+  line-height: 1.4;
+}
+
+.catalog-context-count {
+  flex: 0 0 auto;
+  border: 1px solid var(--desco-border);
+  border-radius: 9999px;
+  background: var(--desco-surface-elevated);
+  padding: 0.34rem 0.62rem;
+  color: var(--desco-text-muted);
+  font-size: 0.63rem;
+  font-weight: 850;
+}
+
+.catalog-table-wrap {
+  border-radius: 0;
+}
+
+
+.catalog-status-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  border-bottom: 1px solid var(--desco-border);
+  background: var(--desco-surface);
+  padding: 0.7rem 1rem;
+}
+
+.catalog-status-tab {
+  display: inline-flex;
+  min-height: 2.15rem;
+  align-items: center;
+  gap: 0.45rem;
+  border: 1px solid var(--desco-border);
+  border-radius: 9999px;
+  background: var(--desco-surface-elevated);
+  padding: 0.35rem 0.7rem;
+  color: var(--desco-text-muted);
+  font-size: 0.68rem;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.catalog-status-tab:hover {
+  border-color: var(--desco-primary-border);
+  color: var(--desco-text);
+}
+
+.catalog-status-tab--active {
+  border-color: var(--desco-primary);
+  background: var(--desco-primary);
+  color: var(--desco-on-primary);
+}
+
+.catalog-status-count {
+  display: grid;
+  min-width: 1.35rem;
+  height: 1.35rem;
+  place-items: center;
+  border-radius: 9999px;
+  background: var(--desco-surface-soft);
+  color: var(--desco-text-muted);
+  font-size: 0.6rem;
+  font-weight: 900;
+}
+
+.catalog-status-tab--active .catalog-status-count {
+  background: rgb(255 255 255 / 0.18);
+  color: var(--desco-on-primary);
+}
+
+.catalog-no-actions {
+  color: var(--desco-text-muted);
+  text-align: right;
+}
+
+@media (max-width: 980px) {
+  .catalog-group-tabs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .catalog-browser {
+    padding: 0.75rem;
+  }
+
+  .catalog-group-tabs {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    scrollbar-width: thin;
+  }
+
+  .catalog-group-tab {
+    min-width: 9.5rem;
+    scroll-snap-align: start;
+  }
+
+  .catalog-item-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 0.15rem;
+    scrollbar-width: thin;
+  }
+
+  .catalog-item-tab {
+    flex: 0 0 auto;
+  }
+
+  .catalog-context {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 0.8rem;
+  }
+
+  .catalog-context-count {
+    align-self: flex-start;
+  }
+
+  .catalog-status-tabs {
+    overflow-x: auto;
+    padding: 0.65rem 0.75rem;
+  }
+
+  .catalog-status-tab {
+    flex: 0 0 auto;
+  }
+
+}

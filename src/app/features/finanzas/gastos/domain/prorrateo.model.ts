@@ -1,0 +1,1 @@
+export interface Prorrateo{gastoProrrateoSocioId:number;participacionId:number;importeAsignado:number;numeroDocumento:string|null;socioNombre:string|null;}export interface ProrrateoInput{participacionId:number;importeAsignado:number;}

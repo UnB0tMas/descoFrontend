@@ -1,0 +1,79 @@
+<div class="desco-page">
+  <app-page-header title="Operaciones de almacén" eyebrow="Recursos"
+    subtitle="Habilitación de productos por UOT y transferencia con Kardex en ambos almacenes." [icon]="icon">
+    <div pageActions class="flex flex-wrap gap-2">
+      <a class="admin-secondary-button" routerLink="/recursos/almacenes">Volver a almacenes</a>
+      <button type="button" class="admin-secondary-button" [disabled]="loading()" (click)="load()">
+        <fa-icon [icon]="refreshIcon" /> Actualizar
+      </button>
+    </div>
+  </app-page-header>
+  @if (errorMessage()) { <div class="admin-inline-error" role="alert">{{ errorMessage() }}</div> }
+  @if (loading()) { <section class="admin-surface warehouse-policy-panel">Cargando políticas y almacenes...</section> }
+  <section class="admin-surface warehouse-policy-panel">
+    <header><h2>Catálogo general · políticas de {{ uot.label() }}</h2>
+      <p>La venta y el uso interno se habilitan por separado, sin duplicar productos.</p></header>
+    <input class="admin-input" type="search" placeholder="Buscar producto por código o nombre" [value]="productSearch()"
+      (input)="productSearch.set($any($event.target).value)" />
+    <div class="admin-table-wrap">
+      <table class="admin-table"><thead><tr><th>Producto</th><th>Stock UOT</th><th>Venta</th><th>Uso interno</th><th></th></tr></thead>
+        <tbody>
+          @for (p of visiblePolicies(); track p.productoId) {
+            <tr><td><div class="admin-stack-copy"><strong>{{ p.nombre }}</strong><span>{{ p.codigo }}</span></div></td>
+              <td>{{ (p.stockActual - p.stockReservado) | number:'1.0-3' }}</td>
+              <td>{{ p.configurado && p.permiteVenta ? 'Habilitada' : 'No habilitada' }}</td>
+              <td>{{ p.configurado && p.permiteUsoInterno ? 'Habilitado' : 'No habilitado' }}</td>
+              <td><button type="button" class="admin-secondary-button admin-secondary-button--small" [disabled]="!canEdit() || working()"
+                (click)="editPolicy(p)">Configurar</button></td>
+            </tr>
+          } @empty { <tr><td colspan="5">No se encontraron productos.</td></tr> }
+        </tbody>
+      </table>
+    </div>
+    @if (editingPolicyId() !== null) {
+      <div class="warehouse-policy-edit">
+        <h3>Configurar producto #{{ editingPolicyId() }}</h3>
+        <label><input type="checkbox" [checked]="saleEnabled()" (change)="saleEnabled.set($any($event.target).checked)" /> Habilitar venta POS</label>
+        <label><input type="checkbox" [checked]="internalEnabled()" (change)="internalEnabled.set($any($event.target).checked)" /> Habilitar uso interno</label>
+        <div class="flex flex-wrap gap-2">
+          <button type="button" class="admin-primary-button" [disabled]="working()" (click)="savePolicy()">Guardar políticas</button>
+          <button type="button" class="admin-secondary-button" (click)="editingPolicyId.set(null)">Cancelar</button>
+        </div>
+      </div>
+    }
+  </section>
+  <section class="admin-surface warehouse-policy-panel">
+    <header><h2><fa-icon [icon]="transferIcon" /> Transferencia entre almacenes</h2>
+      <p>Requiere autorización para las UOT de origen y destino. Las existencias pertenecen siempre al almacén correspondiente.</p></header>
+    <div class="warehouse-policy-form">
+      <label class="admin-field"><span>Almacén origen (UOT actual)</span>
+        <select class="admin-select" [value]="sourceId()" (change)="sourceId.set(+$any($event.target).value);productId.set(0)">
+          <option value="0">Seleccionar origen</option>
+          @for (w of warehouses(); track w.almacenId) {
+            @if (w.uotPropietariaId === uot.selectedId()) { <option [value]="w.almacenId">{{ w.nombre }}</option> }
+          }
+        </select></label>
+      <label class="admin-field"><span>Almacén destino</span>
+        <select class="admin-select" [value]="destinationId()" (change)="destinationId.set(+$any($event.target).value)">
+          <option value="0">Seleccionar destino</option>
+          @for (w of warehouses(); track w.almacenId) {
+            @if (w.almacenId !== sourceId()) { <option [value]="w.almacenId">{{ w.nombre }} · {{ w.uotPropietaria }}</option> }
+          }
+        </select></label>
+      <label class="admin-field"><span>Producto disponible en origen</span>
+        <select class="admin-select" [value]="productId()" (change)="productId.set(+$any($event.target).value)">
+          <option value="0">Seleccionar producto</option>
+          @for (st of sourceStock(); track st.productoId) {
+            <option [value]="st.productoId">{{ st.producto }} · {{ st.stockDisponible | number:'1.0-3' }} disponibles</option>
+          }
+        </select></label>
+      <label class="admin-field"><span>Cantidad a transferir</span>
+        <input class="admin-input" type="number" min="0.001" step="0.001" [value]="quantity()"
+          (input)="quantity.set(+$any($event.target).value)" /></label>
+      <label class="admin-field warehouse-policy-wide"><span>Observación</span>
+        <input class="admin-input" maxlength="300" [value]="observation()" (input)="observation.set($any($event.target).value)" /></label>
+    </div>
+    <button type="button" class="admin-primary-button" [disabled]="working() || !canEdit() || !productId() || !sourceId() || !destinationId()"
+      (click)="transfer()">Registrar transferencia y Kardex</button>
+  </section>
+</div>

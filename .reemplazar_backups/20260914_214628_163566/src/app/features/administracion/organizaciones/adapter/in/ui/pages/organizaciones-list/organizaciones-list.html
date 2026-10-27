@@ -1,0 +1,145 @@
+<div class="desco-page">
+  <app-page-header
+    title="Organizaciones"
+    [subtitle]="isGeneral() ? 'Vista general: consulta empresas, asociaciones y áreas de todas tus UOT sin mezclar permisos.' : 'Empresas, asociaciones y áreas de ' + contextUotName() + '.'"
+    eyebrow="Administración"
+    [icon]="pageIcon"
+  >
+    <div pageActions class="flex flex-wrap gap-2">
+      <button type="button" class="admin-secondary-button" [disabled]="organizationsLoading() || areasLoading()" (click)="reloadAll()">
+        <fa-icon [icon]="refreshIcon" /> Actualizar
+      </button>
+      <button *appPermission="'ORGANIZACIONES_CREAR'" type="button" class="admin-secondary-button" (click)="createCompany()">
+        <fa-icon [icon]="addIcon" /> Nueva empresa
+      </button>
+      <button *appPermission="'ORGANIZACIONES_CREAR'" type="button" class="admin-primary-button" (click)="createAssociation()">
+        <fa-icon [icon]="associationIcon" /> Nueva asociación
+      </button>
+    </div>
+  </app-page-header>
+
+  <section class="admin-surface mt-5">
+    <div class="admin-toolbar">
+      @if (isGeneral()) {
+        <div class="admin-field">
+          <label for="organizationUotFilter">UOT</label>
+          <select id="organizationUotFilter" class="admin-select" [value]="unitFilter() ?? 0" (change)="changeUot($any($event.target).value)">
+            <option [value]="0">Todas mis UOT</option>
+            @for (unit of units(); track unit.uotId) {
+              <option [value]="unit.uotId">{{ unit.nombre }}</option>
+            }
+          </select>
+        </div>
+      } @else {
+        <span class="admin-muted-badge">UOT: {{ contextUotName() }}</span>
+      }
+    </div>
+  </section>
+
+  <div class="admin-tabs mt-5">
+    <button type="button" [class.active]="activeTab() === 'organizations'" (click)="setTab('organizations')">
+      <fa-icon [icon]="companyIcon" /> Organizaciones
+    </button>
+    <button type="button" [class.active]="activeTab() === 'areas'" (click)="setTab('areas')">
+      <fa-icon [icon]="areaIcon" /> Áreas
+    </button>
+  </div>
+
+  @if (activeTab() === 'organizations') {
+    <section class="admin-surface">
+      @if (organizationsLoading()) {
+        <app-loading-state title="Cargando organizaciones" message="Consultando los contratos visibles según el contexto UOT." />
+      } @else if (organizationsError()) {
+        <app-error-state [message]="organizationsError() || 'Intenta nuevamente.'" (retry)="loadOrganizations()" />
+      } @else if (organizations().items.length === 0) {
+        <app-empty-state title="Sin organizaciones" message="No hay empresas o asociaciones para el filtro UOT seleccionado." />
+      } @else {
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr><th>Organización</th><th>UOT</th><th>RUC</th><th>Tipo</th><th>Contacto</th><th class="text-center">Estado</th><th class="text-right">Acciones</th></tr>
+            </thead>
+            <tbody>
+              @for (company of organizations().items; track company.empresaId + '-' + company.uotId) {
+                <tr>
+                  <td><div class="admin-entity"><span class="admin-entity-icon"><fa-icon [icon]="company.esAsociacion ? associationIcon : companyIcon" /></span><div><strong>{{ company.razonSocial }}</strong><span>{{ company.nombreComercial || 'Sin nombre comercial' }}</span></div></div></td>
+                  <td><div class="admin-stack-copy"><strong>{{ company.uotNombre }}</strong><span>{{ company.uotCodigo }}</span></div></td>
+                  <td><span class="admin-code">{{ company.ruc }}</span></td>
+                  <td><span class="admin-type-badge">{{ company.esAsociacion ? 'Asociación' : 'Empresa' }}</span></td>
+                  <td><div class="admin-stack-copy"><strong>{{ company.correo || '—' }}</strong><span>{{ company.telefono || '—' }}</span></div></td>
+                  <td class="text-center"><span class="admin-status" [class.admin-status--active]="company.estado" [class.admin-status--inactive]="!company.estado">{{ company.estado ? 'Activa' : 'Inactiva' }}</span></td>
+                  <td><div class="admin-row-actions">
+                    <button *appPermission="'ORGANIZACIONES_VER'" type="button" class="admin-icon-button" title="Ver detalle" [disabled]="detailLoadingId() === company.empresaId || disablingOrganizationId() !== null" (click)="viewOrganization(company)"><fa-icon [icon]="viewIcon" /></button>
+                    <button *appPermission="'ORGANIZACIONES_EDITAR'" type="button" class="admin-icon-button" title="Editar en esta UOT" [disabled]="detailLoadingId() === company.empresaId || disablingOrganizationId() !== null" (click)="editOrganization(company)"><fa-icon [icon]="editIcon" /></button>
+                    <button *appPermission="'ORGANIZACIONES_RETIRAR'" type="button" class="admin-icon-button admin-icon-button--danger" title="Retirar de esta UOT" [disabled]="disablingOrganizationId() !== null" (click)="disableOrganization(company)"><fa-icon [icon]="disableIcon" /></button>
+                  </div></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <app-paginator [page]="organizations().page" [size]="organizations().size" [totalRecords]="organizations().totalRecords" [totalPages]="organizations().totalPages" (pageChange)="loadOrganizations($event, organizations().size)" (sizeChange)="loadOrganizations(1, $event)" />
+      }
+    </section>
+  } @else {
+    <section class="admin-surface area-workspace">
+      <div class="area-workspace__toolbar">
+        <div class="area-view-switch" role="group" aria-label="Vista de áreas">
+          <button type="button" [class.active]="areaView() === 'hierarchy'" (click)="setAreaView('hierarchy')"><fa-icon [icon]="areaIcon" /> Jerarquía</button>
+          <button type="button" [class.active]="areaView() === 'table'" (click)="setAreaView('table')"><fa-icon [icon]="tableIcon" /> Tabla</button>
+        </div>
+        <div class="admin-toolbar-actions">
+          <button type="button" class="admin-secondary-button" [disabled]="areasLoading() || referencesLoading()" (click)="reloadAll()"><fa-icon [icon]="refreshIcon" /> Actualizar</button>
+          <button *appPermission="'ORGANIZACIONES_CREAR'" type="button" class="admin-primary-button" [disabled]="referencesLoading() || referencesError() !== null" (click)="createArea()"><fa-icon [icon]="addIcon" /> Nueva área</button>
+        </div>
+      </div>
+
+      @if (referencesError()) {
+        <app-error-state [message]="referencesError() || 'Intenta nuevamente.'" (retry)="loadReferences()" />
+      } @else if (areaView() === 'hierarchy') {
+        @if (referencesLoading()) {
+          <app-loading-state title="Cargando estructura" message="Consultando áreas de la UOT." />
+        } @else {
+          <div class="area-hierarchy-heading">
+            <div><span>Mapa de áreas</span><strong>{{ contextUotName() }}</strong></div>
+            <small>La jerarquía se muestra para una UOT concreta.</small>
+          </div>
+          <app-area-hierarchy [companyName]="contextUotName()" [companyRuc]="null" [areas]="hierarchyAreas()" />
+        }
+      } @else {
+        @if (areasLoading()) {
+          <app-loading-state title="Cargando áreas" message="Consultando la estructura visible." />
+        } @else if (areasError()) {
+          <app-error-state [message]="areasError() || 'Intenta nuevamente.'" (retry)="loadAreas()" />
+        } @else if (areas().items.length === 0) {
+          <app-empty-state title="Sin áreas" message="No hay áreas para el filtro UOT seleccionado." />
+        } @else {
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead><tr><th>Código</th><th>Área</th><th>UOT</th><th>Área superior</th><th class="text-center">Estado</th><th class="text-right">Acciones</th></tr></thead>
+              <tbody>
+                @for (area of areas().items; track area.areaId + '-' + area.uotId) {
+                  <tr>
+                    <td><span class="admin-code">{{ area.codigo }}</span></td>
+                    <td class="admin-table-primary">{{ area.nombre }}</td>
+                    <td><div class="admin-stack-copy"><strong>{{ area.uotNombre }}</strong><span>{{ area.uotCodigo }}</span></div></td>
+                    <td>{{ area.areaPadre || 'Área principal' }}</td>
+                    <td class="text-center"><span class="admin-status" [class.admin-status--active]="area.estado" [class.admin-status--inactive]="!area.estado">{{ area.estado ? 'Activa' : 'Inactiva' }}</span></td>
+                    <td><div class="admin-row-actions">
+                      <button *appPermission="'ORGANIZACIONES_EDITAR'" type="button" class="admin-icon-button" title="Editar área" [disabled]="disablingAreaId() !== null" (click)="editArea(area)"><fa-icon [icon]="editIcon" /></button>
+                      <button *appPermission="'ORGANIZACIONES_RETIRAR'" type="button" class="admin-icon-button admin-icon-button--danger" title="Deshabilitar área" [disabled]="disablingAreaId() !== null" (click)="disableArea(area)"><fa-icon [icon]="disableIcon" /></button>
+                    </div></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <app-paginator [page]="areas().page" [size]="areas().size" [totalRecords]="areas().totalRecords" [totalPages]="areas().totalPages" (pageChange)="loadAreas($event, areas().size)" (sizeChange)="loadAreas(1, $event)" />
+        }
+      }
+    </section>
+  }
+</div>
+
+<app-organizacion-form />
+<app-action-confirm-dialog />

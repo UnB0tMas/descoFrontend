@@ -1,0 +1,1 @@
+import {inject,Injectable} from '@angular/core';import {VISITAS_GATEWAY,VisitasGateway} from '../port/out/visitas.gateway';@Injectable() export class ObtenerVisitaUseCase{private readonly gateway:VisitasGateway=inject(VISITAS_GATEWAY);execute(id:number){return this.gateway.get(id);}}

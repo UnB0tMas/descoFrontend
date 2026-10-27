@@ -1,0 +1,1 @@
+import {inject,Injectable} from '@angular/core';import {SANIDAD_GATEWAY,SanidadGateway} from '../port/out/sanidad.gateway';@Injectable() export class CerrarCasoSanitarioUseCase{private readonly gateway:SanidadGateway=inject(SANIDAD_GATEWAY);execute(id:number,motivo:string){return this.gateway.close(id,motivo);}}

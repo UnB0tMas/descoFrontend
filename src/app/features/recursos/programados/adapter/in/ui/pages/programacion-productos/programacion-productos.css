@@ -1,0 +1,31 @@
+:host { display: block; min-width: 0; }
+.product-program-panel { display: grid; gap: 1rem; min-width: 0; margin-top: 1rem; padding: 1rem; }
+.product-program-panel header h2 { margin: 0; color: var(--desco-text); font-size: 1.02rem; font-weight: 800; }
+.product-program-panel header p, .product-program-selected p { margin: .25rem 0 0; color: var(--desco-text-muted); font-size: .78rem; line-height: 1.5; }
+.product-program-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .85rem 1rem; }
+.product-program-grid .admin-field { min-width: 0; }
+.product-program-grid :is(.admin-input,.admin-select) { width: 100%; min-width: 0; }
+.product-program-panel > .admin-primary-button { justify-self: end; min-height: 2.6rem; }
+.product-program-list-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .6rem 1rem; }
+.product-program-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) minmax(11rem, 14rem); align-items: end; gap: .8rem; min-width: 0; }
+.product-program-toolbar .admin-field { min-width: 0; }
+.product-program-toolbar .admin-input, .product-program-toolbar .admin-select { width: 100%; min-width: 0; }
+.product-program-table-wrap { min-width: 0; width: 100%; overflow-x: auto; }
+.product-program-table { width: 100%; min-width: 58rem; }
+.product-program-table th, .product-program-table td { vertical-align: middle; }
+.product-program-table th:last-child { text-align: right; }
+.product-program-table .admin-row-actions { justify-content: flex-end; }
+.product-program-id { white-space: nowrap; color: var(--desco-text-muted); font-weight: 750; }
+.product-program-product { display: block; min-width: 9rem; max-width: 17rem; overflow-wrap: anywhere; line-height: 1.4; color: var(--desco-text); }
+.product-program-activity { display: -webkit-box; max-width: 16rem; overflow: hidden; overflow-wrap: anywhere; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-height: 1.45; }
+.product-program-loading { margin: 0; color: var(--desco-text-muted); font-size: .75rem; }
+.product-program-selected { display: grid; gap: .9rem; min-width: 0; padding: 1rem; border: 1px solid var(--desco-border); border-radius: .85rem; background: var(--desco-surface-soft); color: var(--desco-text); }
+.product-program-selected header h3 { margin: 0; color: var(--desco-text); font-size: .95rem; font-weight: 800; }
+.product-program-selected .admin-field { min-width: 0; }
+.product-program-selected > button { justify-self: end; }
+@media (max-width: 760px) {
+  .product-program-grid, .product-program-toolbar { grid-template-columns: minmax(0, 1fr); }
+  .product-program-panel { padding: .85rem; }
+  .product-program-panel > .admin-primary-button { width: 100%; justify-self: stretch; }
+  .product-program-selected > button { width: 100%; justify-self: stretch; }
+}

@@ -1,0 +1,28 @@
+:host {
+  display: contents;
+}
+
+.sale-action-current {
+  border: 1px solid var(--desco-border);
+  border-radius: .8rem;
+  padding: .7rem;
+  background: var(--desco-surface-soft);
+}
+
+.sale-action-current span,
+.sale-action-current strong,
+.sale-action-current small {
+  display: block;
+}
+
+.sale-action-current span,
+.sale-action-current small {
+  color: var(--desco-text-muted);
+  font-size: .62rem;
+}
+
+.sale-action-current strong {
+  margin-top: .12rem;
+  color: var(--desco-text);
+  font-size: .78rem;
+}

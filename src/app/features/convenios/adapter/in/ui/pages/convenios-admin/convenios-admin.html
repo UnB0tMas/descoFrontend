@@ -1,0 +1,67 @@
+<section class="space-y-5 p-4 sm:p-6">
+  <header>
+    <h1 class="text-xl font-semibold">Convenios y módulos especiales</h1>
+    <p class="text-sm text-gray-500">Cada convenio pertenece solo a la UOT seleccionada. Ningún módulo se habilita automáticamente.</p>
+  </header>
+  @if (error()) { <p role="alert" class="text-red-600">{{ error() }}</p> }
+  @if (loading()) { <p>Cargando convenios...</p> }
+  @else if (convenios().length === 0) { <p>No existen convenios activos en esta UOT.</p> }
+  @else {
+    @for (convenio of convenios(); track convenio.convenioId) {
+      <article class="rounded-lg border p-4 space-y-3">
+        <div>
+          <h2 class="font-semibold">{{ convenio.organizacion }}</h2>
+          <p class="text-sm text-gray-500">{{ convenio.tipoVinculo }} · {{ convenio.numeroConvenio || 'Sin número de convenio' }}</p>
+        </div>
+        @for (modulo of convenio.modulos; track modulo.codigo) {
+          <label class="flex gap-3 items-center">
+            <input type="checkbox" [checked]="modulo.habilitado" [disabled]="!editable || saving() !== null"
+              (change)="change(convenio.convenioId!, modulo.codigo!, $any($event.target).checked)" />
+            <span>{{ modulo.nombre }}</span>
+          </label>
+        }
+      </article>
+    }
+  }
+</section>
+
+@if (canViewUsers) {
+<section class="mt-6 space-y-4 rounded-lg border p-4">
+  <div>
+    <h2 class="font-semibold">Permisos individuales · APAPPSS</h2>
+    <p class="text-sm text-gray-500">Cada UOT autoriza a sus empleados. El convenio activo no concede permisos automáticamente. Las operaciones de predios fuera de APAPPSS conservan sus permisos generales.</p>
+  </div>
+  <div class="flex flex-wrap items-end gap-3">
+    <div class="min-w-64 flex-1">
+      <label class="block text-sm font-medium" for="apappss-employee">Empleado de esta UOT</label>
+      <select id="apappss-employee" class="admin-select w-full" [value]="selectedUserId() ?? ''" (change)="selectUser($any($event.target).value)">
+        <option value="">Seleccione un empleado</option>
+        @for (u of users(); track u.usuarioId) {
+          <option [value]="u.usuarioId">{{ u.empleado }} ({{ u.usuario }})</option>
+        }
+      </select>
+    </div>
+    <button type="button" class="admin-secondary-button" [disabled]="loadingUsers()" (click)="loadUsers()">Actualizar</button>
+  </div>
+  @if (userError()) { <p role="alert" class="text-red-600">{{userError()}}</p> }
+  @if (userSuccess()) { <p class="text-green-700">{{userSuccess()}}</p> }
+  @if (loadingUsers()) { <p>Cargando permisos...</p> }
+  @if (selectedUserId() !== null && !loadingUsers()) {
+    <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+      @for (p of catalog(); track p.codigo) {
+        <label class="flex items-center gap-2 rounded border p-2 text-sm">
+          <input type="checkbox" [checked]="isChecked(p.codigo!)" [disabled]="!canEditUsers || !apappssEnabled() || savingUser()"
+            (change)="togglePermission(p.codigo!, $any($event.target).checked)" />
+          <span>{{p.nombre}}</span>
+        </label>
+      }
+    </div>
+    <p class="text-xs text-gray-500">Para socios y predios también se requieren sus permisos generales de lectura o CRUD. Las autorizaciones APAPPSS se verifican adicionalmente.</p>
+    <button type="button" class="admin-primary-button" [disabled]="!canEditUsers || !apappssEnabled() || savingUser()" (click)="saveUser()">
+      {{savingUser() ? 'Guardando...' : 'Guardar permisos del empleado'}}
+    </button>
+  } @else if (!loadingUsers() && !apappssEnabled()) {
+    <p class="text-sm text-amber-700">Habilite APAPPSS en un convenio vigente para asignar permisos.</p>
+  }
+</section>
+}

@@ -1,0 +1,5 @@
+import { Parcela } from './parcela.model'; import { Cultivo } from './cultivo.model';
+export interface ExpedienteCenso { censoPlantasId:number; parcelaCultivoId:number; fechaCenso:string|null; plantasTotales:number; plantasProductivas:number; plantasNoProductivas:number; plantasNuevas:number; plantasMuertas:number; plantasAfectadas:number; observacion:string|null; estado:boolean; }
+export interface ExpedienteEvaluacion { evaluacionAgronomicaId:number; visitaTecnicaId:number; parcelaCultivoId:number|null; tipoEvaluacionId:number; tipoEvaluacion:string; fechaHora:string|null; resultado:string; observacion:string|null; estado:boolean; }
+export interface ExpedienteArchivo { archivoId:number; nombreOriginal:string; mimeType:string; secureUrl:string; fechaCarga:string|null; categoria:string|null; origenCaptura:string|null; parcelaId:number|null; parcelaCultivoId:number|null; censoPlantasId:number|null; evaluacionAgronomicaId:number|null; }
+export interface ExpedienteCultivo { parcela:Parcela; cultivos:readonly Cultivo[]; censos:readonly ExpedienteCenso[]; evaluaciones:readonly ExpedienteEvaluacion[]; archivos:readonly ExpedienteArchivo[]; }

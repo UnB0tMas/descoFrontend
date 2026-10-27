@@ -1,0 +1,58 @@
+<section class="area-hierarchy" aria-label="Jerarquía de áreas">
+  <div class="area-hierarchy__viewport">
+    <div class="area-hierarchy__canvas">
+      <article class="area-node area-node--company">
+        <span class="area-node__icon"><fa-icon [icon]="companyIcon" /></span>
+        <div>
+          <small>UOT</small>
+          <strong>{{ companyName() }}</strong>
+          @if (companyRuc()) {
+            <span>{{ companyRuc() }}</span>
+          }
+        </div>
+      </article>
+
+      @if (roots().length > 0) {
+        <div class="area-hierarchy__trunk" aria-hidden="true"></div>
+        <div class="area-hierarchy__roots">
+          @for (root of roots(); track root.area.areaId) {
+            <ng-container
+              [ngTemplateOutlet]="areaNode"
+              [ngTemplateOutletContext]="{ $implicit: root }"
+            />
+          }
+        </div>
+      } @else {
+        <div class="area-hierarchy__empty">
+          Esta UOT todavía no tiene áreas activas.
+        </div>
+      }
+    </div>
+  </div>
+</section>
+
+<ng-template #areaNode let-node>
+  <div class="area-branch">
+    <span class="area-branch__line area-branch__line--top" aria-hidden="true"></span>
+    <article class="area-node">
+      <span class="area-node__icon"><fa-icon [icon]="areaIcon" /></span>
+      <div>
+        <small>{{ node.children.length ? 'Área' : 'Área final' }}</small>
+        <strong>{{ node.area.nombre }}</strong>
+        <span>{{ node.area.codigo }}</span>
+      </div>
+    </article>
+
+    @if (node.children.length > 0) {
+      <span class="area-branch__line area-branch__line--down" aria-hidden="true"></span>
+      <div class="area-branch__children">
+        @for (child of node.children; track child.area.areaId) {
+          <ng-container
+            [ngTemplateOutlet]="areaNode"
+            [ngTemplateOutletContext]="{ $implicit: child }"
+          />
+        }
+      </div>
+    }
+  </div>
+</ng-template>

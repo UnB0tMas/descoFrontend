@@ -1,0 +1,112 @@
+<div class="desco-page">
+  <app-page-header title="Programación de productos" eyebrow="Recursos"
+    subtitle="Reservas técnicas por UOT con aprobación, entrega, devolución y consumo." [icon]="icon">
+    <div pageActions class="flex flex-wrap gap-2">
+      <a class="admin-secondary-button" routerLink="/recursos/programados">Volver a recursos programados</a>
+      <button type="button" class="admin-secondary-button" [disabled]="loading()" (click)="load()">
+        <fa-icon [icon]="refreshIcon" /> Actualizar
+      </button>
+    </div>
+  </app-page-header>
+  @if (errorMessage()) { <div class="admin-inline-error" role="alert">{{ errorMessage() }}</div> }
+  @if (canCreate()) {
+    <section class="admin-surface product-program-panel product-program-list">
+    <header class="product-program-list-heading">
+      <div>
+        <h2>Solicitudes de productos</h2>
+        <p>{{ uot.label() }} · Gestión de suministros para uso técnico.</p>
+      </div>
+      <span class="admin-count-badge">{{ filteredPrograms().length }} solicitudes</span>
+    </header>
+    <div class="admin-toolbar product-program-toolbar">
+      <div class="admin-field admin-toolbar-field product-program-search">
+        <label for="technicalProgramSearch">Buscar</label>
+        <input id="technicalProgramSearch" class="admin-input" type="search"
+          placeholder="Código, producto, actividad o lugar" [value]="search()"
+          (input)="changeSearch($any($event.target).value)" />
+      </div>
+      <div class="admin-field admin-toolbar-field product-program-state">
+        <label for="technicalProgramState">Estado</label>
+        <select id="technicalProgramState" class="admin-select" [value]="estado()"
+          (change)="changeStatus($any($event.target).value)">
+          <option value="">Todos los estados</option>
+          @for (st of ['PENDIENTE','APROBADA','ENTREGADA','FINALIZADA','RECHAZADA','CANCELADA']; track st) {
+            <option [value]="st">{{ st }}</option>
+          }
+        </select>
+      </div>
+    </div>
+    @if (loading() && programs().length > 0) {
+      <p class="product-program-loading" role="status" aria-live="polite">Actualizando solicitudes...</p>
+    }
+    <div class="admin-table-wrap product-program-table-wrap">
+      <table class="admin-table product-program-table">
+        <thead>
+          <tr>
+            <th>ID</th><th>Producto</th><th>Actividad</th>
+            <th class="text-right">Programada</th><th class="text-right">Entregada</th>
+            <th class="text-right">Por regularizar</th><th>Estado</th>
+            <th class="text-right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of visiblePrograms(); track item.programacionId) {
+            <tr>
+              <td><span class="product-program-id">#{{ item.programacionId }}</span></td>
+              <td><strong class="product-program-product">{{ item.productoNombre }}</strong></td>
+              <td><span class="product-program-activity" [title]="item.actividad">{{ item.actividad || '—' }}</span></td>
+              <td class="text-right">{{ item.cantidadProgramada | number:'1.0-3' }}</td>
+              <td class="text-right">{{ item.cantidadEntregada | number:'1.0-3' }}</td>
+              <td class="text-right">{{ item.cantidadPendiente | number:'1.0-3' }}</td>
+              <td><span class="admin-status"
+                [class.admin-status--warning]="item.estadoProceso === 'PENDIENTE'"
+                [class.admin-status--info]="item.estadoProceso === 'APROBADA' || item.estadoProceso === 'ENTREGADA'"
+                [class.admin-status--active]="item.estadoProceso === 'FINALIZADA'"
+                [class.admin-status--inactive]="item.estadoProceso === 'RECHAZADA' || item.estadoProceso === 'CANCELADA'">
+                {{ item.estadoProceso }}
+              </span></td>
+              <td><div class="admin-row-actions">
+                <button class="admin-secondary-button admin-secondary-button--small" type="button"
+                  [disabled]="loading()" (click)="selectProgram(item)">Gestionar</button>
+              </div></td>
+            </tr>
+          } @empty {
+            <tr><td class="admin-table-empty" colspan="8">
+              {{ loading() ? 'Cargando solicitudes...' : 'No hay solicitudes para los filtros seleccionados.' }}
+            </td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <app-paginator [page]="page()" [size]="pageSize()"
+      [totalRecords]="filteredPrograms().length" [totalPages]="totalPages()"
+      (pageChange)="changePage($event)" (sizeChange)="changePageSize($event)" />
+    @if (selected(); as item) {
+      <div class="product-program-selected">
+        <header><h3>Solicitud #{{ item.programacionId }} · {{ item.estadoProceso }}</h3>
+          <p>{{ item.actividad }} · {{ item.lugar }} · {{ item.fechaInicio | date:'dd/MM/yyyy HH:mm' }}</p></header>
+        <p>Producto: {{ item.productoNombre }}. Cantidad reservada / programada: {{ item.cantidadProgramada | number:'1.0-3' }}.</p>
+        @if (availableActions(item).length > 0) {
+          <div class="product-program-grid">
+            <label class="admin-field"><span>Operación</span>
+              <select class="admin-select" [value]="operation()" (change)="operation.set($any($event.target).value)">
+                <option value="">Seleccionar</option>
+                @for (action of availableActions(item); track action) { <option [value]="action">{{ action }}</option> }
+              </select></label>
+            @if (['ENTREGAR','DEVOLVER','CONSUMIR'].includes(operation())) {
+              <label class="admin-field"><span>Cantidad</span>
+                <input class="admin-input" type="number" min="0.001" step="0.001" [value]="operationQuantity()"
+                  (input)="operationQuantity.set(+$any($event.target).value)" /></label>
+            }
+            <label class="admin-field"><span>Motivo / observación</span>
+              <input class="admin-input" maxlength="300" [value]="operationNote()"
+                (input)="operationNote.set($any($event.target).value)" /></label>
+          </div>
+          <button type="button" class="admin-primary-button" [disabled]="saving() || !operation()" (click)="applyOperation()">
+            Confirmar operación</button>
+        } @else { <p>La solicitud no admite otras operaciones desde su estado actual.</p> }
+        <button type="button" class="admin-secondary-button" (click)="selected.set(null)">Cerrar detalle</button>
+      </div>
+    }
+  </section>
+</div>

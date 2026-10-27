@@ -1,0 +1,26 @@
+{
+  "proyecto": "D:\\FrancoSystem\\desco_frontend",
+  "fecha": "2026-10-25T19:29:56",
+  "cambios": [
+    {
+      "ruta": "src/app/features/recursos/programados/domain/recurso-programado.model.ts",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/recursos/programados/adapter/out/http/programados-http.mapper.ts",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/recursos/programados/adapter/in/ui/pages/recursos-programados-list/recursos-programados-list.ts",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/recursos/programados/adapter/in/ui/pages/recurso-programado-form/recurso-programado-form.ts",
+      "accion": "escribir",
+      "existia": true
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+import{inject,Injectable}from'@angular/core';import{REPORTES_GATEWAY,ReportesGateway}from'../port/out/reportes.gateway';@Injectable()export class ListarReportesUseCase{private readonly g:ReportesGateway=inject(REPORTES_GATEWAY);execute(){return this.g.list();}}

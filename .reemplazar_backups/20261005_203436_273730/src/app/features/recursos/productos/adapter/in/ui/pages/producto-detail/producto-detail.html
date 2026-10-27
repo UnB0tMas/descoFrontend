@@ -1,0 +1,45 @@
+<div class="desco-page">
+  <app-page-header [title]="detail()?.nombre || 'Detalle del producto'" subtitle="Información comercial, imagen principal y precio vigente por UOT." eyebrow="Productos" [icon]="priceIcon">
+    <div pageActions class="flex flex-wrap gap-2">
+      <a class="admin-secondary-button" routerLink="/recursos/productos"><fa-icon [icon]="backIcon" /> Volver</a>
+      <button type="button" class="admin-secondary-button" [disabled]="loading()" (click)="load()"><fa-icon [icon]="refreshIcon" /> Actualizar</button>
+      <button *appPermission="'PRODUCTOS_EDITAR'" type="button" class="admin-secondary-button" [disabled]="!detail() || actionLoadingId() !== null" (click)="editProduct()"><fa-icon [icon]="editIcon" /> Editar</button>
+      <button *appPermission="'PRODUCTOS_EDITAR'" type="button" class="admin-secondary-button" [disabled]="!detail() || actionLoadingId() !== null" (click)="toggleProductState()"><fa-icon [icon]="detail()?.estado === false ? reactivateIcon : deactivateIcon" /> {{ detail()?.estado === false ? 'Reactivar' : 'Desactivar' }}</button>
+      <button *appPermission="'PRODUCTOS_PRECIO'" type="button" class="admin-primary-button" [disabled]="!detail() || detail()?.estado === false" (click)="versionPrice()"><fa-icon [icon]="priceIcon" /> Nuevo precio</button>
+  
+    </div>
+  </app-page-header>
+
+  @if (loading()) { <app-loading-state title="Cargando producto" message="Consultando el detalle para la UOT seleccionada." /> }
+  @else if (errorMessage()) { <app-error-state [message]="errorMessage() || 'No fue posible consultar el producto.'" (retry)="load()" /> }
+  @else if (detail(); as item) {
+    <section class="product-detail-layout">
+      <article class="admin-surface product-detail-image"><app-resource-image variant="hero" [fileId]="item.archivoPrincipalId" [imageUrl]="item.imagenPrincipalUrl" [alt]="item.nombre || 'Producto'" /><div class="product-image-caption"><fa-icon [icon]="imageIcon" /><span>Imagen principal</span></div></article>
+      <article class="admin-surface product-summary">
+        <header><div><small>{{ item.uotNombre || 'UOT' }} · {{ item.uotCodigo || '' }}</small><h2>{{ item.nombre }}</h2><span>{{ item.codigo }}</span></div><span class="admin-status" [class.admin-status--active]="item.estado !== false" [class.admin-status--inactive]="item.estado === false">{{ item.estado === false ? 'Inactivo' : 'Activo' }}</span></header>
+        <div class="product-current-price"><span>Precio vigente</span>@if (item.precioVigente != null) { <strong>{{ item.moneda || 'PEN' }} {{ item.precioVigente | number:'1.2-2' }}</strong><small>Versión {{ item.precioVersion || '—' }}</small> } @else { <strong>Sin precio vigente</strong> }</div>
+        <dl><div><dt>Categoría</dt><dd>{{ item.categoriaNombre || item.categoriaCodigo || '—' }}</dd></div><div><dt>Unidad de medida</dt><dd>{{ item.unidadMedidaNombre || item.unidadMedidaCodigo || '—' }}</dd></div><div><dt>Control por lote</dt><dd>{{ item.requiereLote ? 'Sí' : 'No' }}</dd></div><div><dt>Control de vencimiento</dt><dd>{{ item.controlaVencimiento ? 'Sí' : 'No' }}</dd></div><div class="wide"><dt>Descripción</dt><dd>{{ item.descripcion || 'Sin descripción.' }}</dd></div></dl>
+      </article>
+    </section>
+
+    <section class="admin-surface product-files-section">
+      <app-local-file-panel [uotId]="item.uotId || targetUotId()" linkType="PRODUCTO" [linkId]="item.productoId || productId" [fileIds]="imageIds()" title="Imagen del producto" category="PRODUCTO_IMAGEN" accept="image/*" [forcePrincipal]="true" [canUpload]="canUploadImages()" (changed)="load()" />
+    </section>
+
+    <section *appPermission="'PRODUCTOS_PRECIO_HISTORIAL'" class="admin-surface product-history-section">
+      <header class="product-section-header"><div><p>Auditoría comercial</p><h2>Historial de precios</h2><span>Solo visible para perfiles autorizados.</span></div><button type="button" class="admin-secondary-button admin-secondary-button--small" [disabled]="historyLoading()" (click)="loadHistory()"><fa-icon [icon]="historyIcon" /> Actualizar historial</button></header>
+      @if (historyLoading()) { <app-loading-state title="Cargando historial" message="Consultando versiones de precio." /> }
+      @else if (historyError()) { <app-error-state [message]="historyError() || 'No se pudo consultar el historial.'" (retry)="loadHistory()" /> }
+      @else if (history().length === 0) { <app-empty-state title="Sin historial" message="Todavía no hay versiones de precio registradas en esta UOT." /> }
+      @else {
+        <div class="admin-table-scroll"><table class="admin-table"><thead><tr><th>Versión</th><th>Precio</th><th>Vigencia</th><th>Origen</th><th>Usuario</th><th>Estado</th><th>Acción</th></tr></thead><tbody>
+          @for (price of history(); track price.productoPrecioId) {
+            <tr><td><strong>v{{ price.version }}</strong></td><td>{{ price.moneda }} {{ price.precioVenta | number:'1.2-2' }}</td><td>{{ price.fechaDesde ? (price.fechaDesde | date:'dd/MM/yyyy HH:mm') : '—' }}<small class="history-help">hasta {{ price.fechaHasta ? (price.fechaHasta | date:'dd/MM/yyyy HH:mm') : 'actualidad' }}</small></td><td>@if (price.precioOrigenVersion) { v{{ price.precioOrigenVersion }} } @else { Nueva }</td><td>{{ price.nombreUsuario || 'Sistema' }}</td><td><span class="admin-status" [class.admin-status--active]="price.vigente">{{ price.vigente ? 'Vigente' : 'Histórico' }}</span></td><td>@if (!price.vigente) { <button *appPermission="['PRODUCTOS_PRECIO','PRODUCTOS_PRECIO_HISTORIAL']" type="button" class="admin-secondary-button admin-secondary-button--small" [disabled]="actionLoadingId() !== null" (click)="reactivate(price)">@if (actionLoadingId() === price.productoPrecioId) { <span class="loading loading-spinner loading-xs"></span> } @else { <fa-icon [icon]="reactivateIcon" /> } Reactivar</button> }</td></tr>
+          }
+        </tbody></table></div>
+      }
+    </section>
+  }
+</div>
+<app-producto-form />
+<app-action-confirm-dialog />

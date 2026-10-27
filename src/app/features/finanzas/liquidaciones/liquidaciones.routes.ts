@@ -1,0 +1,4 @@
+import { Routes } from '@angular/router';
+import { moduleAccessGuard } from '../../../core/access/module-access.guard';
+import { permissionGuard } from '../../../core/access/permission.guard';
+export const liquidacionesRoutes: Routes = [{ path: 'liquidaciones', data: { breadcrumb: 'Liquidaciones', module: 'LIQUIDACIONES', permission: 'LIQUIDACIONES_LISTAR' }, canActivate: [moduleAccessGuard, permissionGuard], loadComponent: () => import('./adapter/in/ui/pages/liquidaciones-list/liquidaciones-list').then(m => m.LiquidacionesListPage) }, { path: 'liquidaciones/:id', data: { breadcrumb: 'Detalle de liquidación', module: 'LIQUIDACIONES', permission: 'LIQUIDACIONES_VER' }, canActivate: [moduleAccessGuard, permissionGuard], loadComponent: () => import('./adapter/in/ui/pages/liquidacion-detail/liquidacion-detail').then(m => m.LiquidacionDetailPage) }];

@@ -1,0 +1,1 @@
+import{inject,Injectable}from'@angular/core';import{ReporteFiltro}from'../../domain/reporte-filtro.model';import{REPORTES_GATEWAY,ReportesGateway}from'../port/out/reportes.gateway';@Injectable()export class ExportarReporteUseCase{private readonly g:ReportesGateway=inject(REPORTES_GATEWAY);execute(f:ReporteFiltro){return this.g.export(f);}}

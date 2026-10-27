@@ -1,0 +1,131 @@
+<app-auth-layout>
+  <section class="auth-form-card">
+    <header class="auth-form-header">
+      <h1>Iniciar sesión</h1>
+    </header>
+
+    @if (errorMessage()) {
+      <div
+        class="auth-inline-error"
+        role="alert"
+      >
+        {{ errorMessage() }}
+      </div>
+    }
+
+    <form
+      class="auth-login-form"
+      [formGroup]="form"
+      (ngSubmit)="submit()"
+      autocomplete="on"
+    >
+      <div class="auth-field">
+        <label
+          class="auth-label"
+          for="nombreUsuario"
+        >
+          Usuario
+        </label>
+
+        <div class="auth-input-wrap">
+          <span
+            class="auth-input-icon"
+            aria-hidden="true"
+          >
+            <fa-icon [icon]="userIcon" />
+          </span>
+
+          <input
+            id="nombreUsuario"
+            name="username"
+            type="text"
+            class="auth-input"
+            formControlName="nombreUsuario"
+            autocomplete="username"
+            autocapitalize="none"
+            spellcheck="false"
+            placeholder="Nombre de usuario"
+            [readOnly]="loading()"
+          />
+        </div>
+
+        <app-form-error
+          [control]="form.controls.nombreUsuario"
+          fieldLabel="El usuario"
+        />
+      </div>
+
+      <div class="auth-field">
+        <div class="auth-password-row">
+          <label
+            class="auth-label"
+            for="current-password"
+          >
+            Contraseña
+          </label>
+
+          <a
+            routerLink="/recuperar-password"
+            class="auth-forgot-link"
+          >
+            Olvidé mi contraseña
+          </a>
+        </div>
+
+        <div class="auth-input-wrap">
+          <span
+            class="auth-input-icon"
+            aria-hidden="true"
+          >
+            <fa-icon [icon]="lockIcon" />
+          </span>
+
+          <input
+            id="current-password"
+            name="password"
+            [type]="passwordVisible() ? 'text' : 'password'"
+            class="auth-input auth-input-password"
+            formControlName="password"
+            autocomplete="current-password"
+            placeholder="Contraseña"
+            [readOnly]="loading()"
+          />
+
+          <button
+            type="button"
+            class="auth-password-toggle"
+            [disabled]="loading()"
+            [attr.aria-label]="passwordVisible() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+            [attr.aria-pressed]="passwordVisible()"
+            (click)="passwordVisible.set(!passwordVisible())"
+          >
+            <fa-icon
+              [icon]="passwordVisible() ? eyeSlashIcon : eyeIcon"
+            />
+          </button>
+        </div>
+
+        <app-form-error
+          [control]="form.controls.password"
+          fieldLabel="La contraseña"
+        />
+      </div>
+
+      <button
+        type="submit"
+        class="auth-primary-button"
+        [disabled]="loading()"
+        [attr.aria-busy]="loading()"
+      >
+        @if (loading()) {
+          <span
+            class="loading loading-spinner loading-sm"
+          ></span>
+          <span>Ingresando...</span>
+        } @else {
+          <span>Ingresar</span>
+        }
+      </button>
+    </form>
+  </section>
+</app-auth-layout>

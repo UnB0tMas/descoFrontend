@@ -1,0 +1,3 @@
+export interface PagoSocio{pagoSocioId:number;liquidacionSocioId:number;fechaHora:string|null;importe:number;medioPago:string;numeroOperacion:string|null;estadoProceso:string;importeNeto:number;numeroDocumento:string|null;socioNombre:string|null;saldoPosteriorPago:number;}
+export interface PagoSocioDetalle{pagoSocioId:number;liquidacionSocioId:number;fechaHora:string|null;importe:number;medioPago:string;numeroOperacion:string|null;estadoProceso:string;estado:boolean;importeNeto:number;totalConfirmadoHastaPago:number;saldoPosteriorPago:number;totalPagadoActual:number;saldoPendienteActual:number;saldoPendiente:number;}
+export interface PagoSocioCreate{liquidacionSocioId:number;importe:number;medioPago:string;numeroOperacion?:string;}

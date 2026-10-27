@@ -1,0 +1,111 @@
+<div class="desco-page">
+  <app-page-header
+    title="Documentos locales"
+    subtitle="Archivos almacenados de forma segura en el servidor DESCO."
+    [icon]="pageIcon"
+  >
+    <button type="button" class="admin-secondary-button" [disabled]="loading()" (click)="load()">
+      <fa-icon [icon]="refreshIcon" />
+      Actualizar
+    </button>
+  </app-page-header>
+
+  <section class="admin-surface local-doc-upload">
+    @if (uot.modo() === 'GENERAL') {
+      <label>
+        <span>UOT</span>
+        <select class="admin-select" [value]="unitFilter() ?? 0" (change)="onUnitChange($any($event.target).value)">
+          <option [value]="0">Todas para listar</option>
+          @for (unit of uot.memberships(); track unit.uotId) {
+            <option [value]="unit.uotId">{{ unit.nombre }}</option>
+          }
+        </select>
+      </label>
+    }
+    <label>
+      <span>Categoría</span>
+      <input
+        class="admin-input"
+        maxlength="80"
+        [value]="category()"
+        (input)="category.set($any($event.target).value)"
+      />
+    </label>
+    <label class="local-doc-description">
+      <span>Descripción</span>
+      <input
+        class="admin-input"
+        maxlength="300"
+        placeholder="Descripción opcional"
+        [value]="description()"
+        (input)="description.set($any($event.target).value)"
+      />
+    </label>
+    <label *appPermission="'ARCHIVOS_CREAR'" class="admin-primary-button local-doc-file-button">
+      @if (uploading()) {
+        <span class="loading loading-spinner loading-xs"></span>
+      } @else {
+        <fa-icon [icon]="uploadIcon" />
+      }
+      {{ uploading() ? 'Subiendo...' : 'Subir archivo' }}
+      <input
+        #fileInput
+        type="file"
+        [disabled]="uploading()"
+        (change)="upload(fileInput)"
+      />
+    </label>
+  </section>
+
+  @if (loading()) {
+    <app-loading-state title="Cargando documentos" message="Consultando archivos locales." />
+  } @else if (errorMessage()) {
+    <app-error-state [message]="errorMessage() || 'No fue posible consultar los documentos.'" (retry)="load()" />
+  } @else if (items().length === 0) {
+    <app-empty-state title="Sin documentos" message="No existen archivos locales en el contexto seleccionado." />
+  } @else {
+    <section class="admin-surface local-doc-table-shell">
+      <div class="admin-table-scroll">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              @if (uot.modo() === 'GENERAL') { <th>UOT</th> }
+              <th>Archivo</th><th>Categoría</th><th>Tipo</th><th>Tamaño</th><th>Fecha</th><th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of items(); track item.archivoId) {
+              <tr>
+                @if (uot.modo() === 'GENERAL') { <td>{{ item.uotNombre || '—' }}</td> }
+                <td>
+                  <strong>{{ item.nombreOriginal || 'Archivo' }}</strong>
+                  <small class="local-doc-help">{{ item.descripcion || '' }}</small>
+                </td>
+                <td>{{ item.categoria || '—' }}</td>
+                <td>{{ item.mimeType || '—' }}</td>
+                <td>{{ sizeLabel(item.tamanoBytes) }}</td>
+                <td>{{ item.fechaCarga | date:'dd/MM/yyyy HH:mm' }}</td>
+                <td>
+                  <div class="admin-table-actions">
+                    <button type="button" class="admin-icon-button" title="Abrir" (click)="open(item)">
+                      <fa-icon [icon]="viewIcon" />
+                    </button>
+                    <button
+                      *appPermission="'ARCHIVOS_RETIRAR'"
+                      type="button"
+                      class="admin-icon-button"
+                      title="Retirar"
+                      (click)="retire(item)"
+                    >
+                      <fa-icon [icon]="retireIcon" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+</div>

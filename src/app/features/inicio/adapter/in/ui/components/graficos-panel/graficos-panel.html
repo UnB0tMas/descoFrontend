@@ -1,0 +1,27 @@
+<section aria-labelledby="graficos-title">
+  <div class="section-heading">
+    <div>
+      <p class="section-kicker">Análisis</p>
+      <h2 id="graficos-title">Gráficos del perfil</h2>
+      <p class="section-copy">
+        La selección depende de tus roles, permisos y configuración personal.
+      </p>
+    </div>
+
+    <div class="section-icon">
+      <fa-icon [icon]="sectionIcon" />
+    </div>
+  </div>
+
+  <div class="charts-grid">
+    @for (grafico of graficos; track grafico.codigo) {
+      <div class="chart-slot">
+        <app-chart-card [data]="chartData(grafico)" />
+      </div>
+    } @empty {
+      <div class="empty-panel">
+        No tienes gráficos configurados para este dashboard.
+      </div>
+    }
+  </div>
+</section>

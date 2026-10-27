@@ -1,0 +1,1 @@
+import{inject,Injectable}from'@angular/core';import{PagoSocioCreate}from'../../domain/pago-socio.model';import{PAGOS_SOCIOS_GATEWAY,PagosSociosGateway}from'../port/out/pagos-socios.gateway';@Injectable()export class RegistrarPagoSocioUseCase{private readonly g:PagosSociosGateway=inject(PAGOS_SOCIOS_GATEWAY);execute(i:PagoSocioCreate){return this.g.create(i);}}

@@ -1,0 +1,1 @@
+import{inject,Injectable}from'@angular/core';import{INCIDENCIAS_GATEWAY,IncidenciasGateway}from'../port/out/incidencias.gateway';@Injectable()export class ResolverIncidenciaUseCase{private readonly g:IncidenciasGateway=inject(INCIDENCIAS_GATEWAY);execute(id:number,motivo:string){return this.g.resolve(id,motivo);}}

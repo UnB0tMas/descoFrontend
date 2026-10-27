@@ -1,0 +1,54 @@
+:root {
+  --desco-radius-sm: .5rem;
+  --desco-radius-md: .75rem;
+  --desco-radius-lg: 1rem;
+  --desco-shadow-sm: 0 1px 2px rgb(15 23 42 / .06);
+  --desco-shadow-md: 0 10px 30px rgb(15 23 42 / .08);
+  --desco-sidebar-width: 17rem;
+  --desco-topbar-height: 4rem;
+  --desco-page-bg: #f8fafc;
+  --desco-surface: #ffffff;
+  --desco-surface-soft: #f1f5f9;
+  --desco-surface-elevated: #ffffff;
+  --desco-border: #e2e8f0;
+  --desco-text: #0f172a;
+  --desco-text-muted: #64748b;
+  --desco-primary: #2563eb;
+  --desco-primary-soft: #eff6ff;
+  --desco-danger: #dc2626;
+  --desco-success: #15803d;
+  --desco-skeleton: #e2e8f0;
+  color-scheme: light;
+}
+
+html[data-theme='dark'] {
+  --color-base-100: #000000;
+  --color-base-200: #080808;
+  --color-base-300: #111111;
+  --color-base-content: #f8fafc;
+  --desco-shadow-sm: none;
+  --desco-shadow-md: 0 10px 30px rgb(0 0 0 / .45);
+  --desco-page-bg: #000000;
+  --desco-surface: #080808;
+  --desco-surface-soft: #050505;
+  --desco-surface-elevated: #101010;
+  --desco-border: #292929;
+  --desco-text: #f8fafc;
+  --desco-text-muted: #a3a3a3;
+  --desco-primary: #60a5fa;
+  --desco-primary-soft: #0b1728;
+  --desco-danger: #f87171;
+  --desco-success: #4ade80;
+  --desco-skeleton: #252525;
+  color-scheme: dark;
+  background: #000000;
+}
+
+html, body { min-height:100%; }
+body {
+  min-height:100vh;
+  margin:0;
+  color:var(--desco-text);
+  background:var(--desco-page-bg);
+  font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}

@@ -1,0 +1,51 @@
+{
+  "proyecto": "D:\\FrancoSystem\\desco_frontend",
+  "fecha": "2026-10-25T18:25:17",
+  "cambios": [
+    {
+      "ruta": "src/app/features/recursos/programados/adapter/in/ui/pages/programacion-productos/programacion-productos.ts",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/recursos/programados/adapter/in/ui/pages/programacion-productos/programacion-productos.html",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/recursos/programados/adapter/in/ui/pages/programacion-productos/programacion-productos.css",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/recursos/programados/adapter/in/ui/pages/recursos-programados-list/recursos-programados-list.ts",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/recursos/programados/adapter/in/ui/pages/recursos-programados-list/recursos-programados-list.html",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/recursos/programados/adapter/in/ui/pages/recursos-programados-list/recursos-programados-list.css",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/recursos/programados/adapter/in/ui/pages/recurso-programado-form/recurso-programado-form.css",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/shared/feedback/action-confirm-dialog/action-confirm-dialog.html",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/shared/feedback/action-confirm-dialog/action-confirm-dialog.ts",
+      "accion": "escribir",
+      "existia": true
+    }
+  ]
+}

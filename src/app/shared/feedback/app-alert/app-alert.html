@@ -1,0 +1,70 @@
+@if (alertService.current(); as alert) {
+  <div
+    class="fixed inset-0 z-[130] flex items-center justify-center bg-slate-950/45 p-4"
+    role="presentation"
+    (click)="alert.config.dismissible && alertService.cancel()"
+  >
+    <section
+      class="w-full max-w-md overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl shadow-slate-950/20"
+      role="dialog"
+      aria-modal="true"
+      [attr.aria-labelledby]="'alert-title-' + alert.id"
+      (click)="$event.stopPropagation()"
+    >
+      <div class="flex items-start justify-between gap-4 px-6 pt-6">
+        <div
+          class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-lg ring-1 ring-inset"
+          [class]="iconClass(alert.config.tone)"
+        >
+          <fa-icon [icon]="iconFor(alert)" />
+        </div>
+
+        @if (alert.config.dismissible) {
+          <button
+            type="button"
+            class="btn btn-ghost btn-sm btn-square rounded-xl text-slate-500 hover:bg-slate-100"
+            aria-label="Cerrar alerta"
+            (click)="alertService.cancel()"
+          >
+            <fa-icon [icon]="closeIcon" />
+          </button>
+        }
+      </div>
+
+      <div class="px-6 pb-2 pt-5">
+        <h2
+          class="text-xl font-bold tracking-tight text-slate-950"
+          [id]="'alert-title-' + alert.id"
+        >
+          {{ alert.config.title }}
+        </h2>
+
+        <p class="mt-2 text-sm leading-6 text-slate-600">
+          {{ alert.config.message }}
+        </p>
+      </div>
+
+      <div class="flex flex-col-reverse gap-3 px-6 pb-6 pt-5 sm:flex-row sm:justify-end">
+        @if (alert.config.cancelLabel) {
+          <button
+            type="button"
+            class="btn rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+            (click)="alertService.cancel()"
+          >
+            {{ alert.config.cancelLabel }}
+          </button>
+        }
+
+        <button
+          type="button"
+          class="btn rounded-xl border-0"
+          [class]="confirmClass(alert.config.tone)"
+          (click)="alertService.confirm()"
+        >
+          <fa-icon [icon]="iconFor(alert)" />
+          {{ alert.config.confirmLabel }}
+        </button>
+      </div>
+    </section>
+  </div>
+}

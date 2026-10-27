@@ -1,0 +1,63 @@
+:host {
+  display: block;
+}
+
+.product-filters {
+  display: flex;
+  margin-bottom: 1rem;
+  align-items: end;
+  gap: .75rem;
+  padding: .85rem;
+}
+
+.product-filters label {
+  display: grid;
+  min-width: 13rem;
+  gap: .3rem;
+}
+
+.product-filters label > span {
+  color: var(--desco-text-muted);
+  font-size: .62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.product-search {
+  flex: 1;
+}
+
+.product-table-shell {
+  overflow: hidden;
+}
+
+.product-help {
+  display: block;
+  overflow: hidden;
+  max-width: 26rem;
+  margin-top: .12rem;
+  color: var(--desco-text-muted);
+  font-size: .62rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.product-images-row > td {
+  padding: 0 !important;
+  background: var(--desco-surface-soft);
+}
+
+.product-images-row app-local-file-panel {
+  display: block;
+  padding: .85rem;
+}
+
+@media (max-width: 720px) {
+  .product-filters {
+    flex-wrap: wrap;
+  }
+
+  .product-filters label {
+    width: 100%;
+  }
+}

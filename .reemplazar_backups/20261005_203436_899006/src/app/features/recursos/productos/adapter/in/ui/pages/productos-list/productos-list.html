@@ -1,0 +1,82 @@
+<div class="desco-page">
+  <app-page-header
+    title="Productos"
+    [subtitle]="isGeneral() ? 'Vista general del catálogo y precios vigentes por UOT.' : 'Catálogo y precio vigente para ' + contextUotName() + '.'"
+    [icon]="pageIcon"
+  >
+    <div pageActions class="flex flex-wrap gap-2">
+      <button class="admin-secondary-button" type="button" [disabled]="loading()" (click)="load()"><fa-icon [icon]="refreshIcon" /> Actualizar</button>
+      <button *appPermission="'PRODUCTOS_CREAR'" class="admin-primary-button" type="button" (click)="create()"><fa-icon [icon]="addIcon" /> Registrar producto</button>
+    </div>
+  </app-page-header>
+
+  <section class="admin-surface resource-filter-bar">
+    <div class="resource-filter-title"><fa-icon [icon]="pageIcon" /> Catálogo</div>
+    @if (isGeneral()) {
+      <label class="resource-filter-field"><span>Filtrar por UOT</span><select class="admin-select" [value]="unitFilter() ?? 0" (change)="onUnitChange($any($event.target).value)"><option [value]="0">Todas mis UOT</option>@for (unit of units(); track unit.uotId) { <option [value]="unit.uotId">{{ unit.nombre }}</option> }</select></label>
+    }
+    <label class="resource-filter-field resource-filter-field--search"><span>Buscar</span><div class="resource-search-control"><input class="admin-input" type="search" placeholder="Código, nombre o descripción" [value]="search()" (input)="search.set($any($event.target).value)" (keyup.enter)="applyFilters()" /><button type="button" class="admin-icon-button resource-search-button" title="Buscar" (click)="applyFilters()"><fa-icon [icon]="searchIcon" /></button></div></label>
+    <label class="resource-filter-field"><span>Categoría</span><select class="admin-select" [value]="categoryFilter()" (change)="categoryFilter.set($any($event.target).value); applyFilters()"><option value="">Todas</option>@for (category of categories(); track category.code) { <option [value]="category.code">{{ category.label }}</option> }</select></label>
+    <label class="resource-filter-field"><span>Estado</span><select class="admin-select" [value]="stateFilter()" (change)="stateFilter.set($any($event.target).value); applyFilters()"><option value="ACTIVE">Activos</option><option value="INACTIVE">Inactivos</option><option value="ALL">Todos</option></select></label>
+    <div class="resource-view-switch" aria-label="Modo de visualización"><button type="button" class="admin-icon-button" [class.active]="viewMode() === 'table'" title="Vista tabla" (click)="setView('table')"><fa-icon [icon]="tableIcon" /></button><button type="button" class="admin-icon-button" [class.active]="viewMode() === 'cards'" title="Vista tarjetas" (click)="setView('cards')"><fa-icon [icon]="cardsIcon" /></button></div>
+  </section>
+
+  @if (loading()) { <app-loading-state title="Cargando productos" message="Consultando el catálogo paginado." /> }
+  @else if (errorMessage()) { <app-error-state [message]="errorMessage() || 'No fue posible consultar los productos.'" (retry)="load()" /> }
+  @else if (result().items.length === 0) { <app-empty-state title="Sin productos" message="No existen productos para los filtros seleccionados." /> }
+  @else {
+    @if (viewMode() === 'table') {
+      <section class="admin-surface resource-table-shell"><div class="resource-table-scroll"><table class="admin-table resource-products-table">
+        <thead><tr><th>Imagen</th><th>UOT</th><th>Código</th><th>Producto</th><th>Categoría</th><th>Unidad</th><th>Precio vigente</th><th>Estado</th><th>Acciones</th></tr></thead>
+        <tbody>
+          @for (item of result().items; track rowKey(item)) {
+            <tr>
+              <td class="resource-image-cell"><app-resource-image variant="thumb" [fileId]="item.archivoPrincipalId" [imageUrl]="item.imagenPrincipalUrl" [alt]="item.nombre || 'Producto'" /></td>
+              <td><div class="admin-stack-copy"><strong>{{ item.uotNombre || '—' }}</strong><span>{{ item.uotCodigo || '' }}</span></div></td>
+              <td><strong>{{ item.codigo || '—' }}</strong></td>
+              <td><strong>{{ item.nombre || '—' }}</strong><small class="resource-cell-help">{{ item.descripcion || 'Sin descripción' }}</small></td>
+              <td>{{ item.categoriaNombre || item.categoriaCodigo || '—' }}</td>
+              <td>{{ item.unidadMedidaNombre || item.unidadMedidaCodigo || '—' }}</td>
+              <td>@if (item.precioVigente != null) { <strong>{{ item.moneda || 'PEN' }} {{ item.precioVigente | number:'1.2-2' }}</strong><small class="resource-cell-help">Versión {{ item.precioVersion || '—' }}</small> } @else { <span class="resource-cell-help">Sin precio vigente</span> }</td>
+              <td><span class="resource-status" [class.resource-status--ok]="item.estado !== false" [class.resource-status--muted]="item.estado === false">{{ item.estado === false ? 'Inactivo' : 'Activo' }}</span></td>
+              <td class="resource-actions-column"><div class="resource-row-actions">
+                <a *appPermission="'PRODUCTOS_VER'" class="admin-icon-button" [routerLink]="['/recursos/productos', item.productoId]" [queryParams]="detailQuery(item)" title="Ver detalle"><fa-icon [icon]="viewIcon" /></a>
+                <button *appPermission="'PRODUCTOS_EDITAR'" type="button" class="admin-icon-button" title="Editar" [disabled]="rowBusy(item)" (click)="edit(item)"><fa-icon [icon]="editIcon" /></button>
+                <button *appPermission="'PRODUCTOS_PRECIO'" type="button" class="admin-icon-button" title="Registrar nueva versión de precio" [disabled]="item.estado === false" (click)="price(item)"><fa-icon [icon]="priceIcon" /></button>
+                <button *appPermission="'PRODUCTOS_IMAGENES'" type="button" class="admin-icon-button" title="Gestionar imagen" [disabled]="item.estado === false" (click)="selectImages(item)"><fa-icon [icon]="imageIcon" /></button>
+                <button *appPermission="'PRODUCTOS_EDITAR'" type="button" class="admin-icon-button" [title]="item.estado === false ? 'Reactivar' : 'Desactivar'" [disabled]="rowBusy(item)" (click)="toggleState(item)">@if (rowBusy(item)) { <span class="loading loading-spinner loading-xs"></span> } @else { <fa-icon [icon]="item.estado === false ? reactivateIcon : deactivateIcon" /> }</button>
+              </div></td>
+            </tr>
+            @if (isImagesSelected(item)) {
+              <tr class="product-images-row"><td colspan="9"><div class="resource-kardex-panel"><app-local-file-panel [uotId]="item.uotId || 0" linkType="PRODUCTO" [linkId]="item.productoId || 0" [fileIds]="imageIds(item)" title="Imagen principal del producto" category="PRODUCTO_IMAGEN" accept="image/*" [forcePrincipal]="true" [canUpload]="canUploadImages()" (changed)="load()" /></div></td></tr>
+            }
+          }
+        </tbody>
+      </table></div></section>
+    } @else {
+      <section class="resource-card-grid">
+        @for (item of result().items; track rowKey(item)) {
+          <article class="admin-surface resource-card">
+            <app-resource-image variant="card" [fileId]="item.archivoPrincipalId" [imageUrl]="item.imagenPrincipalUrl" [alt]="item.nombre || 'Producto'" />
+            <div class="resource-card-body">
+              <header><div><small>{{ item.uotNombre || 'UOT' }}</small><h3>{{ item.nombre || 'Producto' }}</h3><span>{{ item.codigo || '—' }}</span></div><span class="resource-status" [class.resource-status--ok]="item.estado !== false" [class.resource-status--muted]="item.estado === false">{{ item.estado === false ? 'Inactivo' : 'Activo' }}</span></header>
+              <dl><div class="resource-card-wide"><dt>Descripción</dt><dd>{{ item.descripcion || 'Sin descripción.' }}</dd></div><div><dt>Categoría</dt><dd>{{ item.categoriaNombre || item.categoriaCodigo || '—' }}</dd></div><div><dt>Unidad</dt><dd>{{ item.unidadMedidaNombre || item.unidadMedidaCodigo || '—' }}</dd></div><div class="resource-card-wide"><dt>Precio vigente</dt><dd>@if (item.precioVigente != null) { {{ item.moneda || 'PEN' }} {{ item.precioVigente | number:'1.2-2' }} } @else { Sin precio }</dd></div></dl>
+              <footer>
+                <a *appPermission="'PRODUCTOS_VER'" class="admin-secondary-button admin-secondary-button--small" [routerLink]="['/recursos/productos', item.productoId]" [queryParams]="detailQuery(item)"><fa-icon [icon]="viewIcon" /> Detalle</a>
+                <button *appPermission="'PRODUCTOS_EDITAR'" type="button" class="admin-icon-button" title="Editar" (click)="edit(item)"><fa-icon [icon]="editIcon" /></button>
+                <button *appPermission="'PRODUCTOS_PRECIO'" type="button" class="admin-icon-button" title="Nuevo precio" [disabled]="item.estado === false" (click)="price(item)"><fa-icon [icon]="priceIcon" /></button>
+                <button *appPermission="'PRODUCTOS_IMAGENES'" type="button" class="admin-icon-button" title="Gestionar imagen" [disabled]="item.estado === false" (click)="selectImages(item)"><fa-icon [icon]="imageIcon" /></button>
+                <button *appPermission="'PRODUCTOS_EDITAR'" type="button" class="admin-icon-button" [title]="item.estado === false ? 'Reactivar' : 'Desactivar'" (click)="toggleState(item)"><fa-icon [icon]="item.estado === false ? reactivateIcon : deactivateIcon" /></button>
+              </footer>
+              @if (isImagesSelected(item)) { <div class="product-card-files"><app-local-file-panel [uotId]="item.uotId || 0" linkType="PRODUCTO" [linkId]="item.productoId || 0" [fileIds]="imageIds(item)" title="Imagen principal" category="PRODUCTO_IMAGEN" accept="image/*" [forcePrincipal]="true" [canUpload]="canUploadImages()" (changed)="load()" /></div> }
+            </div>
+          </article>
+        }
+      </section>
+    }
+    <app-paginator [page]="result().page" [size]="result().size" [totalRecords]="result().totalRecords" [totalPages]="result().totalPages" (pageChange)="load($event, result().size)" (sizeChange)="load(1, $event)" />
+  }
+</div>
+
+<app-producto-form />
+<app-action-confirm-dialog />

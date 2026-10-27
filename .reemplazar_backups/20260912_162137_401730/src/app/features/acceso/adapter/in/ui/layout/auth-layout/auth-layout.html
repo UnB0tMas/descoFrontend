@@ -1,0 +1,41 @@
+<div class="auth-page">
+  <button
+    type="button"
+    class="auth-theme-toggle"
+    [attr.aria-label]="theme.isDark() ? 'Activar modo claro' : 'Activar modo oscuro'"
+    (click)="theme.toggle()"
+  >
+    <fa-icon [icon]="theme.isDark() ? lightIcon : darkIcon" />
+  </button>
+
+  <section class="auth-card" aria-label="Acceso al sistema DESCO">
+    <aside class="auth-info-panel" aria-label="Información institucional">
+      <div class="auth-brand">
+        <div class="auth-logo" aria-hidden="true"><fa-icon [icon]="brandIcon" /></div>
+        <div class="auth-brand-identity"><p class="auth-brand-name">DESCO</p><p class="auth-brand-unit">UOT Sara Sara</p></div>
+      </div>
+
+      <div class="auth-flat-illustration" aria-hidden="true">
+        <div class="auth-flat-lock"><fa-icon [icon]="shieldIcon" /></div>
+        <span class="auth-flat-line auth-flat-line--one"></span>
+        <span class="auth-flat-line auth-flat-line--two"></span>
+        <span class="auth-flat-dot auth-flat-dot--one"></span>
+        <span class="auth-flat-dot auth-flat-dot--two"></span>
+      </div>
+
+      <div class="auth-info-copy">
+        <span class="auth-info-kicker">Acceso institucional</span>
+        <p class="auth-info-title">Gestión territorial, productiva y comercial</p>
+        <p class="auth-info-location"><fa-icon [icon]="locationIcon" /> Páucar del Sara Sara · Ayacucho</p>
+      </div>
+    </aside>
+
+    <main class="auth-form-panel">
+      <div class="auth-mobile-brand">
+        <div class="auth-logo" aria-hidden="true"><fa-icon [icon]="brandIcon" /></div>
+        <div class="auth-brand-identity"><p class="auth-brand-name">DESCO</p><p class="auth-brand-unit">UOT Sara Sara</p></div>
+      </div>
+      <div class="auth-card-wrap"><ng-content /></div>
+    </main>
+  </section>
+</div>

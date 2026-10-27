@@ -1,0 +1,206 @@
+:host {
+  display: contents;
+}
+
+.organization-view {
+  display: grid;
+  gap: 1rem;
+}
+
+.organization-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.organization-summary > div {
+  min-width: 0;
+  border: 1px solid var(--desco-border);
+  border-radius: 0.9rem;
+  background: var(--desco-surface-soft);
+  padding: 0.8rem;
+}
+
+.organization-summary span,
+.organization-mini-list small {
+  display: block;
+  color: var(--desco-text-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.organization-summary strong {
+  display: block;
+  overflow: hidden;
+  margin-top: 0.2rem;
+  color: var(--desco-text);
+  font-size: 0.8rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.organization-view-section {
+  border: 1px solid var(--desco-border);
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+.organization-view-section > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--desco-border-subtle);
+  padding: 0.75rem 0.9rem;
+}
+
+.organization-view-section h3 {
+  margin: 0;
+  color: var(--desco-text);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.organization-view-section header span {
+  border-radius: 9999px;
+  background: var(--desco-primary-soft);
+  padding: 0.25rem 0.5rem;
+  color: var(--desco-primary-text);
+  font-size: 0.66rem;
+  font-weight: 800;
+}
+
+.organization-mini-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  padding: 0.75rem;
+}
+
+.organization-mini-list article {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.6rem;
+  border: 1px solid var(--desco-border-subtle);
+  border-radius: 0.85rem;
+  padding: 0.65rem;
+}
+
+.organization-mini-icon {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 0.65rem;
+  background: var(--desco-primary-soft);
+  color: var(--desco-primary-text);
+  font-size: 0.75rem;
+}
+
+.organization-mini-list article > div {
+  min-width: 0;
+}
+
+.organization-mini-list strong {
+  display: block;
+  overflow: hidden;
+  color: var(--desco-text);
+  font-size: 0.74rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.organization-mini-list small {
+  overflow: hidden;
+  margin-top: 0.1rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.organization-empty {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 1rem;
+  color: var(--desco-text-muted);
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .organization-summary,
+  .organization-mini-list {
+    grid-template-columns: 1fr;
+  }
+}
+.identity-document-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.55rem;
+}
+
+.identity-search-button {
+  display: inline-flex;
+  min-height: 2.65rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border: 1px solid var(--desco-primary-border);
+  border-radius: 0.75rem;
+  background: var(--desco-primary-soft);
+  padding: 0 0.8rem;
+  color: var(--desco-primary-text);
+  font-size: 0.72rem;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.identity-search-button:hover:not(:disabled) {
+  border-color: var(--desco-primary-text);
+  background: var(--desco-primary-soft-hover);
+}
+
+.identity-search-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.identity-feedback {
+  border: 1px solid var(--desco-primary-soft-hover);
+  border-radius: 0.8rem;
+  background: var(--desco-surface-soft);
+  padding: 0.72rem 0.85rem;
+  color: var(--desco-text);
+  font-size: 0.74rem;
+  font-weight: 650;
+  line-height: 1.5;
+}
+
+.identity-feedback--success {
+  border-color: var(--desco-success-border);
+  background: var(--desco-success-soft);
+  color: var(--desco-success-text);
+}
+
+.identity-feedback--warning {
+  border-color: var(--desco-warning-border);
+  background: var(--desco-warning-soft);
+  color: var(--desco-warning-text);
+}
+
+.identity-feedback--error {
+  border-color: var(--desco-danger-border);
+  background: var(--desco-danger-soft);
+  color: var(--desco-danger-text);
+}
+
+@media (max-width: 640px) {
+  .identity-document-control {
+    grid-template-columns: 1fr;
+  }
+
+  .identity-search-button {
+    width: 100%;
+  }
+}

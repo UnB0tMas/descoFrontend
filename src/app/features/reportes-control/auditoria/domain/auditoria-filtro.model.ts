@@ -1,0 +1,1 @@
+export interface AuditoriaFiltro{fechaDesde?:string;fechaHasta?:string;usuarioId?:number;moduloId?:number;accion?:string;esquemaEntidad?:string;nombreEntidad?:string;resultado?:string;page:number;size:number;}

@@ -1,0 +1,59 @@
+<div class="desco-paginator">
+  <div class="desco-paginator-copy">
+    <span>
+      Mostrando
+      <strong>{{ firstRecord }}</strong>
+      a
+      <strong>{{ lastRecord }}</strong>
+      de
+      <strong>{{ totalRecords }}</strong>
+    </span>
+
+    <label>
+      <span class="sr-only">Registros por página</span>
+      <select
+        class="desco-paginator-select"
+        [value]="size"
+        (change)="changeSize($any($event.target).value)"
+      >
+        @for (option of pageSizes; track option) {
+          <option [value]="option">{{ option }} por página</option>
+        }
+      </select>
+    </label>
+  </div>
+
+  <nav class="desco-paginator-nav" aria-label="Paginación">
+    <button
+      type="button"
+      class="desco-paginator-button"
+      [disabled]="page <= 1"
+      aria-label="Página anterior"
+      (click)="goTo(page - 1)"
+    >
+      <fa-icon [icon]="previousIcon" />
+    </button>
+
+    @for (pageNumber of visiblePages; track pageNumber) {
+      <button
+        type="button"
+        class="desco-paginator-button"
+        [class.desco-paginator-button--active]="pageNumber === page"
+        [attr.aria-current]="pageNumber === page ? 'page' : null"
+        (click)="goTo(pageNumber)"
+      >
+        {{ pageNumber }}
+      </button>
+    }
+
+    <button
+      type="button"
+      class="desco-paginator-button"
+      [disabled]="page >= totalPages || totalPages === 0"
+      aria-label="Página siguiente"
+      (click)="goTo(page + 1)"
+    >
+      <fa-icon [icon]="nextIcon" />
+    </button>
+  </nav>
+</div>

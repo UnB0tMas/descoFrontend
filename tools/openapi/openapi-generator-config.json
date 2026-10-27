@@ -1,0 +1,17 @@
+{
+  "generatorName": "typescript-angular",
+  "inputSpec": "http://localhost:8080/v3/api-docs",
+  "outputDir": "src/app/infrastructure/openapi/generated",
+  "additionalProperties": {
+    "ngVersion": "20.0.0",
+    "providedIn": "root",
+    "useSingleRequestParameter": true,
+    "stringEnums": true,
+    "withInterfaces": false,
+    "supportsES6": true,
+    "disallowAdditionalPropertiesIfNotPresent": false,
+    "modelPropertyNaming": "original",
+    "paramNaming": "camelCase",
+    "enumPropertyNaming": "PascalCase"
+  }
+}

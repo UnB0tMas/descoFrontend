@@ -1,0 +1,1 @@
+import {inject,Injectable} from '@angular/core';import {EVALUACIONES_GATEWAY,EvaluacionesGateway} from '../port/out/evaluaciones.gateway';@Injectable() export class ObtenerEvaluacionUseCase{private readonly gateway:EvaluacionesGateway=inject(EVALUACIONES_GATEWAY);execute(id:number){return this.gateway.get(id);}}

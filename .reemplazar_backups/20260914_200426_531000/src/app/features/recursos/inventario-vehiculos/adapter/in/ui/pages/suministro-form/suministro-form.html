@@ -1,0 +1,113 @@
+<dialog #dialog class="modal desco-modal" (cancel)="$event.preventDefault(); close()">
+  <div class="modal-box admin-modal-box">
+    <header class="admin-modal-header">
+      <div class="admin-modal-title-group">
+        <span class="admin-modal-icon"><fa-icon [icon]="icon()" /></span>
+        <div><p>Suministros</p><h2>{{ title() }}</h2></div>
+      </div>
+      <button type="button" class="admin-icon-button" [disabled]="saving()" (click)="close()"><fa-icon [icon]="closeIcon" /></button>
+    </header>
+
+    @if (errorMessage()) {
+      <div class="admin-inline-error">{{ errorMessage() }}</div>
+    }
+
+    @if (mode() === 'movement') {
+      <form class="admin-form-grid" [formGroup]="movementForm" (ngSubmit)="save()">
+        <div class="admin-field admin-field-span-2">
+          <label>Suministro</label>
+          <input class="admin-input" [value]="current()?.nombre || ''" readonly />
+        </div>
+        <div class="admin-field">
+          <label>UOT</label>
+          <input class="admin-input" [value]="current()?.uotNombre || ''" readonly />
+        </div>
+        <div class="admin-field">
+          <label>Tipo</label>
+          <select class="admin-select" formControlName="tipoMovimiento">
+            <option value="ENTRADA">Entrada</option>
+            <option value="AJUSTE_ENTRADA">Ajuste de entrada</option>
+            <option value="AJUSTE_SALIDA">Ajuste de salida</option>
+          </select>
+        </div>
+        <div class="admin-field">
+          <label>Cantidad</label>
+          <input class="admin-input" type="number" min="0.001" step="0.001" formControlName="cantidad" />
+          <app-form-error [control]="movementForm.controls.cantidad" fieldLabel="La cantidad" />
+        </div>
+        <div class="admin-field">
+          <label>Documento de referencia</label>
+          <input class="admin-input" maxlength="120" formControlName="documentoReferencia" />
+        </div>
+        <div class="admin-field admin-field-span-2">
+          <label>Observación</label>
+          <textarea class="admin-textarea" rows="3" maxlength="300" formControlName="observacion"></textarea>
+        </div>
+        <footer class="admin-modal-actions admin-field-span-2">
+          <button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="close()">Cancelar</button>
+          <button type="submit" class="admin-primary-button" [disabled]="saving()">
+            @if (saving()) { <span class="loading loading-spinner loading-sm"></span> Guardando... }
+            @else { <fa-icon [icon]="saveIcon" /> Registrar movimiento }
+          </button>
+        </footer>
+      </form>
+    } @else {
+      <form class="admin-form-grid" [formGroup]="form" (ngSubmit)="save()">
+        <div class="admin-field admin-field-span-2">
+          <label>UOT</label>
+          <select class="admin-select" formControlName="uotId" (change)="onUotChange()">
+            @for (unit of availableUnits(); track unit.uotId) {
+              <option [value]="unit.uotId">{{ unit.nombre }}</option>
+            }
+          </select>
+          <app-form-error [control]="form.controls.uotId" fieldLabel="La UOT" />
+        </div>
+        <div class="admin-field">
+          <label>Código</label>
+          <input
+            class="admin-input"
+            maxlength="40"
+            formControlName="codigo"
+            autocomplete="off"
+            placeholder="DESCO propone uno automáticamente"
+          />
+          <small>
+            @if (codeLoading()) {
+              Generando código sugerido...
+            } @else {
+              Puede modificarlo o dejarlo vacío para que DESCO genere uno al guardar.
+            }
+          </small>
+          <app-form-error [control]="form.controls.codigo" fieldLabel="El código" />
+        </div>
+        <div class="admin-field">
+          <label>Unidad</label>
+          <input class="admin-input" maxlength="20" formControlName="unidadMedida" placeholder="UND, KG, L..." />
+          <app-form-error [control]="form.controls.unidadMedida" fieldLabel="La unidad" />
+        </div>
+        <div class="admin-field admin-field-span-2">
+          <label>Nombre</label>
+          <input class="admin-input" maxlength="150" formControlName="nombre" />
+          <app-form-error [control]="form.controls.nombre" fieldLabel="El nombre" />
+        </div>
+        @if (mode() === 'create') {
+          <div class="admin-field">
+            <label>Stock inicial</label>
+            <input class="admin-input" type="number" min="0" step="0.001" formControlName="stockInicial" />
+          </div>
+        }
+        <div class="admin-field">
+          <label>Stock mínimo</label>
+          <input class="admin-input" type="number" min="0" step="0.001" formControlName="stockMinimo" />
+        </div>
+        <footer class="admin-modal-actions admin-field-span-2">
+          <button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="close()">Cancelar</button>
+          <button type="submit" class="admin-primary-button" [disabled]="saving()">
+            @if (saving()) { <span class="loading loading-spinner loading-sm"></span> Guardando... }
+            @else { <fa-icon [icon]="saveIcon" /> Guardar }
+          </button>
+        </footer>
+      </form>
+    }
+  </div>
+</dialog>

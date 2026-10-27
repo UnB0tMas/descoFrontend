@@ -1,0 +1,1 @@
+import {inject,Injectable} from '@angular/core';import { CensoFiltro } from '../../domain/censo-filtro.model';import {CENSOS_GATEWAY,CensosGateway} from '../port/out/censos.gateway';@Injectable() export class ListarCensosUseCase{private readonly gateway:CensosGateway=inject(CENSOS_GATEWAY);execute(filter:CensoFiltro){return this.gateway.list(filter);}}

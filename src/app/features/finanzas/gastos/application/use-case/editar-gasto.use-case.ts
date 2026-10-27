@@ -1,0 +1,1 @@
+import{inject,Injectable}from'@angular/core';import{GastoUpdate}from'../../domain/gasto.model';import{GASTOS_GATEWAY,GastosGateway}from'../port/out/gastos.gateway';@Injectable()export class EditarGastoUseCase{private readonly g:GastosGateway=inject(GASTOS_GATEWAY);execute(id:number,i:GastoUpdate){return this.g.update(id,i);}}

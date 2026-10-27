@@ -1,0 +1,6 @@
+:host { display: contents; }
+.geography-cascade { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .7rem; padding: .75rem; border: 1px solid var(--desco-border); border-radius: .9rem; background: var(--desco-surface-soft); }
+.geography-cascade label span { color: var(--desco-text-muted); font-size: .62rem; font-weight: 650; }
+.geography-status { grid-column: 1 / -1; display: flex; align-items: center; gap: .4rem; min-height: 1.1rem; color: var(--desco-text-muted); font-size: .66rem; font-weight: 650; }
+.geography-status--error { color: #b91c1c; }
+@media (max-width: 760px) { .geography-cascade { grid-template-columns: 1fr; } }

@@ -1,0 +1,4 @@
+import { Routes } from '@angular/router';
+import { moduleAccessGuard } from '../../../core/access/module-access.guard';
+import { permissionGuard } from '../../../core/access/permission.guard';
+export const ajustesPrecioRoutes: Routes = [{ path: 'ajustes', data: { breadcrumb: 'Ajustes de precio', module: 'AJUSTES', permission: 'AJUSTES_LISTAR' }, canActivate: [moduleAccessGuard, permissionGuard], loadComponent: () => import('./adapter/in/ui/pages/ajustes-precio-list/ajustes-precio-list').then(m => m.AjustesPrecioListPage) }, { path: 'ajustes/:id', data: { breadcrumb: 'Detalle del ajuste', module: 'AJUSTES', permission: 'AJUSTES_VER' }, canActivate: [moduleAccessGuard, permissionGuard], loadComponent: () => import('./adapter/in/ui/pages/ajuste-precio-detail/ajuste-precio-detail').then(m => m.AjustePrecioDetailPage) }];

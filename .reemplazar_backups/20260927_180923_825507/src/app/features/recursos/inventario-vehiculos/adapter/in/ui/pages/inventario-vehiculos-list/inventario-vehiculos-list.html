@@ -1,0 +1,488 @@
+<div class="desco-page">
+  <app-page-header
+    title="Inventario y suministros"
+    [subtitle]="
+      isGeneral()
+        ? 'Vista general de bienes patrimoniales y suministros de tus UOT.'
+        : 'Bienes patrimoniales y suministros de ' + (uot.selected()?.nombre ?? 'la UOT activa') + '.'
+    "
+    [icon]="pageIcon"
+  >
+    <div pageActions class="flex flex-wrap gap-2">
+      <button
+        type="button"
+        class="admin-secondary-button"
+        [disabled]="loading()"
+        (click)="load()"
+      >
+        <fa-icon [icon]="refreshIcon" />
+        Actualizar
+      </button>
+
+      <button
+        *appPermission="'INVENTARIO_CREAR'"
+        type="button"
+        class="admin-primary-button"
+        (click)="create()"
+      >
+        <fa-icon [icon]="addIcon" />
+        {{ activeTab() === 'assets' ? 'Registrar bien' : 'Registrar suministro' }}
+      </button>
+    </div>
+  </app-page-header>
+
+  <div class="admin-tabs mt-5">
+    <button
+      type="button"
+      [class.active]="activeTab() === 'assets'"
+      (click)="setTab('assets')"
+    >
+      <fa-icon [icon]="pageIcon" />
+      Bienes
+    </button>
+    <button
+      type="button"
+      [class.active]="activeTab() === 'supplies'"
+      (click)="setTab('supplies')"
+    >
+      <fa-icon [icon]="supplyIcon" />
+      Suministros
+    </button>
+  </div>
+
+  <section class="admin-surface resource-filter-bar">
+    <div class="resource-filter-title">
+      <fa-icon [icon]="filterIcon" />
+      <span>Filtros</span>
+    </div>
+
+    @if (isGeneral()) {
+      <label class="resource-filter-field">
+        <span>UOT</span>
+        <select
+          class="admin-select"
+          [value]="unitFilter() ?? 0"
+          (change)="onUnitChange($any($event.target).value)"
+        >
+          <option [value]="0">Todas mis UOT</option>
+          @for (unit of availableUnits(); track unit.uotId) {
+            <option [value]="unit.uotId">{{ unit.nombre }}</option>
+          }
+        </select>
+      </label>
+    }
+
+    <label class="resource-filter-field resource-filter-field--search">
+      <span>Buscar</span>
+      <div class="resource-search-control">
+        <input
+          class="admin-input"
+          type="search"
+          [placeholder]="
+            activeTab() === 'assets'
+              ? 'Código, bien, marca, modelo o serie'
+              : 'Código, suministro o unidad'
+          "
+          [value]="search()"
+          (input)="search.set($any($event.target).value)"
+          (keyup.enter)="applyFilters()"
+        />
+        <button
+          type="button"
+          class="admin-secondary-button resource-search-button"
+          title="Buscar"
+          aria-label="Buscar"
+          (click)="applyFilters()"
+        >
+          <fa-icon [icon]="searchIcon" />
+        </button>
+      </div>
+    </label>
+
+    @if (activeTab() === 'assets') {
+      <label class="resource-filter-field">
+        <span>Tipo</span>
+        <select
+          class="admin-select"
+          [value]="typeFilter() ?? 0"
+          (change)="typeFilter.set(+$any($event.target).value || null); applyFilters()"
+        >
+          <option [value]="0">Todos</option>
+          @for (type of assetTypes(); track type.id) {
+            <option [value]="type.id">{{ type.label }}</option>
+          }
+        </select>
+      </label>
+
+      <label class="resource-filter-field">
+        <span>Estado</span>
+        <select
+          class="admin-select"
+          [value]="stateFilter()"
+          (change)="stateFilter.set($any($event.target).value); applyFilters()"
+        >
+          <option value="">Todos</option>
+          <option value="DISPONIBLE">Disponible</option>
+          <option value="ASIGNADO">Asignado</option>
+          <option value="MANTENIMIENTO">Mantenimiento</option>
+          <option value="AVERIADO">Averiado</option>
+          <option value="NO_DISPONIBLE">No disponible</option>
+          <option value="INACTIVO">Inactivo</option>
+          <option value="BAJA">Baja</option>
+        </select>
+      </label>
+
+      <div class="resource-view-switch">
+        <button
+          type="button"
+          class="admin-icon-button"
+          [class.active]="viewMode() === 'table'"
+          title="Vista tabla"
+          (click)="setView('table')"
+        >
+          <fa-icon [icon]="tableIcon" />
+        </button>
+        <button
+          type="button"
+          class="admin-icon-button"
+          [class.active]="viewMode() === 'cards'"
+          title="Vista tarjetas"
+          (click)="setView('cards')"
+        >
+          <fa-icon [icon]="cardsIcon" />
+        </button>
+      </div>
+    }
+  </section>
+
+  @if (loading()) {
+    <app-loading-state
+      title="Cargando inventario"
+      message="Consultando recursos del contexto UOT."
+    />
+  } @else if (errorMessage()) {
+    <app-error-state
+      [message]="errorMessage() || 'No fue posible consultar el inventario.'"
+      (retry)="load()"
+    />
+  } @else if (activeTab() === 'assets') {
+    @if (assets().items.length === 0) {
+      <app-empty-state
+        title="Sin bienes"
+        message="No existen bienes para los filtros seleccionados."
+      />
+    } @else if (viewMode() === 'table') {
+      <section class="admin-surface resource-table-shell">
+        <div class="admin-table-scroll">
+          <table class="admin-table resource-assets-table">
+            <thead>
+              <tr>
+                <th>Imagen</th>
+                <th>UOT</th>
+                <th>Código</th>
+                <th>Bien</th>
+                <th>Tipo</th>
+                <th>Proveedor</th>
+                <th>Estado</th>
+                <th>Incidencias</th>
+                <th class="resource-actions-column">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of assets().items; track assetKey(item)) {
+                <tr>
+                  <td class="resource-image-cell">
+                    <app-resource-image
+                      variant="thumb"
+                      [fileId]="item.archivoPrincipalId"
+                      [imageUrl]="item.imagenPrincipalUrl"
+                      [alt]="item.nombre || 'Bien'"
+                    />
+                  </td>
+                  <td>
+                    <strong>{{ item.uotNombre || '—' }}</strong>
+                  </td>
+                  <td>
+                    <span class="admin-code">{{ item.codigoPatrimonial || '—' }}</span>
+                  </td>
+                  <td>
+                    <strong>{{ item.nombre || '—' }}</strong>
+                    <small class="resource-cell-help">
+                      {{ item.marca || '' }}
+                      @if (item.modelo) {
+                        @if (item.marca) { · }
+                        {{ item.modelo }}
+                      }
+                    </small>
+                  </td>
+                  <td>
+                    <strong>{{ item.tipoBien || '—' }}</strong>
+                    @if (vehicleSummary(item); as vehicleInfo) {
+                      <small class="resource-cell-help">{{ vehicleInfo }}</small>
+                    }
+                  </td>
+                  <td>{{ item.proveedorNombre || '—' }}</td>
+                  <td>
+                    <span class="resource-status" [class]="stateClass(item.estadoBien)">
+                      {{ stateLabel(item.estadoBien) }}
+                    </span>
+                  </td>
+                  <td>
+                    @if ((item.incidentesAbiertos ?? 0) > 0) {
+                      <span class="resource-incident-count">
+                        <fa-icon [icon]="incidentIcon" />
+                        {{ item.incidentesAbiertos }}
+                      </span>
+                    } @else {
+                      <span class="resource-cell-help">Sin incidencias</span>
+                    }
+                  </td>
+                  <td class="resource-actions-column">
+                    <div class="admin-table-actions resource-row-actions">
+                      <a
+                        *appPermission="'INVENTARIO_VER'"
+                        class="admin-icon-button"
+                        [routerLink]="['/recursos/inventario-vehiculos', item.bienInventarioId]"
+                        title="Ver detalle"
+                      >
+                        <fa-icon [icon]="viewIcon" />
+                      </a>
+                      <button
+                        *appPermission="'INVENTARIO_EDITAR'"
+                        type="button"
+                        class="admin-icon-button"
+                        title="Editar"
+                        (click)="editAsset(item)"
+                      >
+                        <fa-icon [icon]="editIcon" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    } @else {
+      <section class="resource-card-grid">
+        @for (item of assets().items; track assetKey(item)) {
+          <article class="admin-surface resource-card">
+            <app-resource-image
+              variant="card"
+              [fileId]="item.archivoPrincipalId"
+              [imageUrl]="item.imagenPrincipalUrl"
+              [alt]="item.nombre || 'Bien'"
+            />
+            <div class="resource-card-body">
+              <header>
+                <div>
+                  <small>{{ item.uotNombre || 'UOT' }}</small>
+                  <h3>{{ item.nombre || 'Bien' }}</h3>
+                  <span>{{ item.codigoPatrimonial || '—' }}</span>
+                </div>
+                <span class="resource-status" [class]="stateClass(item.estadoBien)">
+                  {{ stateLabel(item.estadoBien) }}
+                </span>
+              </header>
+
+              <dl>
+                <div>
+                  <dt>Tipo</dt>
+                  <dd>{{ item.tipoBien || '—' }}</dd>
+                </div>
+                <div>
+                  <dt>Proveedor</dt>
+                  <dd>{{ item.proveedorNombre || '—' }}</dd>
+                </div>
+                @if (vehicleSummary(item); as vehicleInfo) {
+                  <div class="resource-card-wide">
+                    <dt>Datos vehiculares</dt>
+                    <dd>{{ vehicleInfo }}</dd>
+                  </div>
+                }
+                <div>
+                  <dt>Incidencias</dt>
+                  <dd>{{ item.incidentesAbiertos ?? 0 }}</dd>
+                </div>
+              </dl>
+
+              <footer>
+                <a
+                  *appPermission="'INVENTARIO_VER'"
+                  class="admin-secondary-button admin-secondary-button--small"
+                  [routerLink]="['/recursos/inventario-vehiculos', item.bienInventarioId]"
+                >
+                  <fa-icon [icon]="viewIcon" />
+                  Detalle
+                </a>
+                <button
+                  *appPermission="'INVENTARIO_EDITAR'"
+                  type="button"
+                  class="admin-icon-button"
+                  title="Editar"
+                  (click)="editAsset(item)"
+                >
+                  <fa-icon [icon]="editIcon" />
+                </button>
+              </footer>
+            </div>
+          </article>
+        }
+      </section>
+    }
+
+    <app-paginator
+      [page]="assets().page"
+      [size]="assets().size"
+      [totalRecords]="assets().totalRecords"
+      [totalPages]="assets().totalPages"
+      (pageChange)="loadAssets($event, assets().size)"
+      (sizeChange)="loadAssets(1, $event)"
+    />
+  } @else {
+    @if (filteredSupplies().length === 0) {
+      <app-empty-state
+        title="Sin suministros"
+        message="No existen suministros para el contexto seleccionado."
+      />
+    } @else {
+      <section class="admin-surface resource-table-shell">
+        <div class="admin-table-scroll">
+          <table class="admin-table resource-supplies-table">
+            <thead>
+              <tr>
+                <th>UOT</th>
+                <th>Código</th>
+                <th>Suministro</th>
+                <th>Unidad</th>
+                <th>Stock actual</th>
+                <th>Reservado</th>
+                <th>Disponible</th>
+                <th>Reposición</th>
+                <th class="resource-actions-column">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of filteredSupplies(); track supplyKey(item)) {
+                <tr>
+                  <td><strong>{{ item.uotNombre || '—' }}</strong></td>
+                  <td><span class="admin-code">{{ item.codigo || '—' }}</span></td>
+                  <td><strong>{{ item.nombre || '—' }}</strong></td>
+                  <td>{{ item.unidadMedida || '—' }}</td>
+                  <td>{{ (item.stockActual ?? item.stock ?? 0) | number:'1.0-3' }}</td>
+                  <td>{{ (item.stockReservado ?? 0) | number:'1.0-3' }}</td>
+                  <td><strong>{{ (item.stockDisponible ?? 0) | number:'1.0-3' }}</strong></td>
+                  <td>
+                    @if (item.requiereReposicion) {
+                      <span class="resource-status resource-status--warning">Reponer</span>
+                    } @else {
+                      <span class="resource-status resource-status--ok">Correcto</span>
+                    }
+                  </td>
+                  <td class="resource-actions-column">
+                    <div class="admin-table-actions resource-row-actions">
+                      <button
+                        *appPermission="'INVENTARIO_EDITAR'"
+                        type="button"
+                        class="admin-icon-button"
+                        title="Editar suministro"
+                        (click)="editSupply(item)"
+                      >
+                        <fa-icon [icon]="editIcon" />
+                      </button>
+                      <button
+                        *appPermission="'INVENTARIO_EDITAR'"
+                        type="button"
+                        class="admin-icon-button"
+                        title="Registrar movimiento"
+                        (click)="movement(item)"
+                      >
+                        <fa-icon [icon]="movementIcon" />
+                      </button>
+                      <button
+                        *appPermission="'INVENTARIO_VER'"
+                        type="button"
+                        class="admin-icon-button"
+                        title="Ver Kardex"
+                        (click)="toggleKardex(item)"
+                      >
+                        <fa-icon [icon]="historyIcon" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+
+                @if (sameSupply(kardexSupply(), item)) {
+                  <tr class="resource-kardex-row">
+                    <td colspan="9">
+                      <div class="resource-kardex-panel">
+                        <strong>Kardex · {{ item.uotNombre }} · {{ item.nombre }}</strong>
+
+                        @if (kardexLoading()) {
+                          <app-loading-state
+                            title="Cargando Kardex"
+                            message="Consultando movimientos históricos."
+                          />
+                        } @else if (kardexError()) {
+                          <app-error-state
+                            [message]="kardexError() || 'No se pudo consultar el Kardex.'"
+                            (retry)="loadKardex(item)"
+                          />
+                        } @else if (kardex().length === 0) {
+                          <app-empty-state
+                            title="Sin movimientos"
+                            message="El suministro todavía no tiene movimientos."
+                          />
+                        } @else {
+                          <div class="admin-table-scroll resource-kardex-scroll mt-3">
+                            <table class="admin-table">
+                              <thead>
+                                <tr>
+                                  <th>Fecha</th>
+                                  <th>Tipo</th>
+                                  <th>Cantidad</th>
+                                  <th>Saldo</th>
+                                  <th>Documento</th>
+                                  <th>Usuario</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                @for (movementItem of kardex(); track movementItem.suministroMovimientoId) {
+                                  <tr>
+                                    <td>{{ movementItem.fechaHora || '—' }}</td>
+                                    <td>{{ movementItem.tipoMovimiento || '—' }}</td>
+                                    <td>{{ (movementItem.cantidad ?? 0) | number:'1.0-3' }}</td>
+                                    <td><strong>{{ (movementItem.saldo ?? 0) | number:'1.0-3' }}</strong></td>
+                                    <td>{{ movementItem.documentoReferencia || '—' }}</td>
+                                    <td>{{ movementItem.usuario || 'Sistema' }}</td>
+                                  </tr>
+                                }
+                              </tbody>
+                            </table>
+                          </div>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <app-paginator
+        [page]="supplies().page"
+        [size]="supplies().size"
+        [totalRecords]="supplies().totalRecords"
+        [totalPages]="supplies().totalPages"
+        (pageChange)="loadSupplies($event, supplies().size)"
+        (sizeChange)="loadSupplies(1, $event)"
+      />
+    }
+  }
+</div>
+
+<app-recurso-form />
+<app-suministro-form />

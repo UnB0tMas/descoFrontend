@@ -1,0 +1,107 @@
+<div class="desco-page">
+  <app-page-header
+    title="Ventas"
+    subtitle="Ventas, separaciones, pagos, comprobantes y entrega."
+    [icon]="pageIcon"
+  >
+    <button type="button" class="admin-secondary-button" [disabled]="loading()" (click)="load()">
+      <fa-icon [icon]="refreshIcon" />
+      Actualizar
+    </button>
+    <button *appPermission="'VENTAS_CREAR'" type="button" class="admin-primary-button" (click)="create()">
+      <fa-icon [icon]="addIcon" />
+      Nueva venta
+    </button>
+  </app-page-header>
+
+  <section class="admin-surface sales-filters">
+    @if (uot.modo() === 'GENERAL') {
+      <label>
+        <span>UOT</span>
+        <select class="admin-select" [value]="unitFilter() ?? 0" (change)="onUnitChange($any($event.target).value)">
+          <option [value]="0">Todas mis UOT</option>
+          @for (unit of uot.memberships(); track unit.uotId) {
+            <option [value]="unit.uotId">{{ unit.nombre }}</option>
+          }
+        </select>
+      </label>
+    }
+    <label>
+      <span>Estado</span>
+      <select class="admin-select" [value]="stateFilter()" (change)="onStateChange($any($event.target).value)">
+        <option value="">Todos</option>
+        <option value="REGISTRADA">Registrada</option>
+        <option value="SEPARADA">Separada</option>
+        <option value="PAGO_PARCIAL">Pago parcial</option>
+        <option value="PAGADA">Pagada</option>
+        <option value="ENTREGADA">Entregada</option>
+        <option value="ANULADA">Anulada</option>
+      </select>
+    </label>
+    <label class="sales-search">
+      <span>Buscar</span>
+      <input
+        class="admin-input"
+        type="search"
+        placeholder="Venta, cliente, almacén..."
+        [value]="search()"
+        (input)="search.set($any($event.target).value)"
+      />
+    </label>
+  </section>
+
+  @if (loading()) {
+    <app-loading-state title="Cargando ventas" message="Consultando las operaciones del contexto actual." />
+  } @else if (errorMessage()) {
+    <app-error-state [message]="errorMessage() || 'No fue posible consultar las ventas.'" (retry)="load()" />
+  } @else if (filtered().length === 0) {
+    <app-empty-state title="Sin ventas" message="No existen ventas que coincidan con los filtros." />
+  } @else {
+    <section class="admin-surface sales-table-shell">
+      <div class="admin-table-scroll">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Venta</th>
+              @if (uot.modo() === 'GENERAL') { <th>UOT</th> }
+              <th>Fecha</th>
+              <th>Cliente</th>
+              <th>Almacén</th>
+              <th>Estado</th>
+              <th>Total</th>
+              <th>Pagado</th>
+              <th>Saldo</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of filtered(); track item.ventaId) {
+              <tr>
+                <td><strong>#{{ item.ventaId }}</strong></td>
+                @if (uot.modo() === 'GENERAL') { <td>{{ item.uotNombre || '—' }}</td> }
+                <td>{{ item.fechaHora | date:'dd/MM/yyyy HH:mm' }}</td>
+                <td>{{ item.cliente || 'Público general' }}</td>
+                <td>{{ item.almacen || '—' }}</td>
+                <td><span class="sale-state" [class]="stateClass(item.estadoVenta)">{{ stateLabel(item.estadoVenta) }}</span></td>
+                <td><strong>{{ item.moneda || 'PEN' }} {{ item.total | number:'1.2-2' }}</strong></td>
+                <td>{{ item.pagado | number:'1.2-2' }}</td>
+                <td><strong>{{ item.saldo | number:'1.2-2' }}</strong></td>
+                <td>
+                  <a
+                    class="admin-icon-button"
+                    [routerLink]="['/gestion-comercial/ventas', item.ventaId]"
+                    title="Ver detalle"
+                  >
+                    <fa-icon [icon]="viewIcon" />
+                  </a>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+</div>
+
+<app-venta-form />

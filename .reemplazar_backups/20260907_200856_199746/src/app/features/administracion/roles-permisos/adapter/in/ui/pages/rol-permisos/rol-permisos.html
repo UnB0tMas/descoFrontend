@@ -1,0 +1,193 @@
+<div class="desco-page">
+  <app-page-header
+    title="Permisos del rol"
+    subtitle="Selecciona únicamente los permisos que deben formar parte del rol."
+    eyebrow="Administración"
+    [icon]="pageIcon"
+  >
+    <div pageActions class="flex flex-wrap gap-2">
+      <a
+        class="admin-secondary-button"
+        [routerLink]="['/administracion/roles-permisos', roleId]"
+      >
+        <fa-icon [icon]="backIcon" />
+        Volver
+      </a>
+
+      <button
+        type="button"
+        class="admin-secondary-button"
+        [disabled]="loading()"
+        (click)="load()"
+      >
+        <fa-icon [class.animate-spin]="loading()" [icon]="refreshIcon" />
+        Restablecer
+      </button>
+
+      @if (detail()?.rol?.esSistema) {
+        <span
+          class="admin-managed-badge"
+          title="Rol base administrado por el sistema"
+        >
+          <fa-icon [icon]="lockIcon" />
+          Solo lectura
+        </span>
+      } @else {
+        <button
+          type="button"
+          class="admin-primary-button"
+          [disabled]="saving() || !hasPermissionChanges()"
+          (click)="save()"
+        >
+          @if (saving()) {
+            <span class="loading loading-spinner loading-sm"></span>
+            Guardando...
+          } @else {
+            <fa-icon [icon]="saveIcon" />
+            Guardar permisos
+          }
+        </button>
+      }
+    </div>
+  </app-page-header>
+
+  <div class="mt-5">
+    @if (loading()) {
+      <app-loading-state
+        title="Cargando permisos"
+        message="Preparando los permisos disponibles para este rol."
+      />
+    } @else if (errorMessage()) {
+      <app-error-state
+        [message]="errorMessage() || 'Intenta nuevamente.'"
+        (retry)="load()"
+      />
+    } @else if (detail(); as value) {
+      <section class="role-permission-summary">
+        <div>
+          <span>Rol</span>
+          <strong>{{ value.rol.nombre }}</strong>
+        </div>
+        <div>
+          <span>Código</span>
+          <strong>{{ value.rol.codigo }}</strong>
+        </div>
+        <div>
+          <span>Seleccionados</span>
+          <strong>{{ selectedIds().size }}</strong>
+        </div>
+      </section>
+
+      @if (value.rol.esSistema) {
+        <div class="admin-notice admin-notice--warning mt-4">
+          Este rol es administrado por el sistema y sus permisos no pueden modificarse desde esta pantalla.
+        </div>
+      }
+
+      <section class="admin-surface mt-4">
+        <div class="permission-toolbar">
+          <div class="admin-search">
+            <fa-icon [icon]="searchIcon" />
+            <input
+              type="search"
+              placeholder="Buscar permiso o módulo"
+              [value]="search()"
+              (input)="search.set($any($event.target).value)"
+            />
+          </div>
+
+          <div class="permission-count">
+            {{ assignable().length }} permisos disponibles
+          </div>
+        </div>
+
+        <div class="permission-groups">
+          @for (group of groups(); track group.moduleCode) {
+            <section class="permission-group">
+              <header>
+                <div>
+                  <h2>{{ group.moduleName }}</h2>
+                  <span>{{ group.moduleCode }}</span>
+                </div>
+
+                @if (value.rol.esSistema) {
+                  <span class="admin-managed-badge">
+                    <fa-icon [icon]="lockIcon" />
+                    Base
+                  </span>
+                } @else {
+                  <button
+                    type="button"
+                    class="admin-secondary-button admin-secondary-button--small"
+                    (click)="toggleGroup(group)"
+                  >
+                    <fa-icon [icon]="selectIcon" />
+                    Alternar grupo
+                  </button>
+                }
+              </header>
+
+              <div class="permission-options">
+                @for (permission of group.permissions; track permission.permisoId) {
+                  <label class="permission-option">
+                    @if (value.rol.esSistema) {
+                      <span
+                        class="permission-state"
+                        [class.permission-state--selected]="isSelected(permission.permisoId)"
+                        aria-hidden="true"
+                      >
+                        @if (isSelected(permission.permisoId)) {
+                          <fa-icon [icon]="checkIcon" />
+                        }
+                      </span>
+                    } @else {
+                      <input
+                        type="checkbox"
+                        class="checkbox checkbox-primary checkbox-sm"
+                        [checked]="isSelected(permission.permisoId)"
+                        (change)="toggle(permission.permisoId, $any($event.target).checked)"
+                      />
+                    }
+                    <div>
+                      <strong>{{ permission.nombre }}</strong>
+                      <span>{{ permission.codigo }}</span>
+                      @if (permission.descripcion) {
+                        <small>{{ permission.descripcion }}</small>
+                      }
+                    </div>
+                    @if (permission.sensible) {
+                      <em>Sensible</em>
+                    }
+                  </label>
+                }
+              </div>
+            </section>
+          } @empty {
+            <div class="admin-table-empty">No hay permisos para el filtro indicado.</div>
+          }
+        </div>
+
+        @if (!value.rol.esSistema) {
+          <div class="permission-reason">
+            <label for="permissionReason">Motivo del cambio</label>
+            <textarea
+              id="permissionReason"
+              class="admin-textarea"
+              rows="3"
+              maxlength="500"
+              [placeholder]="reasonRequired() ? 'Indique el motivo del cambio' : 'Opcional'"
+              [value]="reason()"
+              (input)="onReasonInput($any($event.target).value)"
+            ></textarea>
+            <small>{{ reason().length }}/500 caracteres</small>
+            @if (reasonError()) {
+              <small class="text-red-600">{{ reasonError() }}</small>
+            } @else if (reasonRequired()) {
+              <small>Este cambio requiere un motivo.</small>
+            }
+          </div>
+        }
+      </section>
+    }
+  </div>
+</div>

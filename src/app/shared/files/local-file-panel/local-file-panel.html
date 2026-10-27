@@ -1,0 +1,90 @@
+<section class="admin-surface local-file-panel">
+  <div class="admin-section-header">
+    <div>
+      <p>Almacenamiento local</p>
+      <h2>{{ title }}</h2>
+    </div>
+
+    <div class="local-file-actions">
+      <button
+        type="button"
+        class="admin-icon-button"
+        title="Recargar"
+        [disabled]="loading()"
+        (click)="load()"
+      >
+        <fa-icon [class.animate-spin]="loading()" [icon]="refreshIcon" />
+      </button>
+
+      @if (canUpload) {
+        <label
+          class="admin-primary-button admin-primary-button--small local-upload-button"
+          [class.local-upload-button--disabled]="uploading()"
+        >
+          @if (uploading()) {
+            <span class="loading loading-spinner loading-xs"></span>
+            Subiendo…
+          } @else {
+            <fa-icon [icon]="uploadIcon" />
+            Subir
+          }
+          <input
+            #fileInput
+            type="file"
+            [accept]="accept"
+            [disabled]="uploading()"
+            (change)="upload(fileInput)"
+          />
+        </label>
+      }
+    </div>
+  </div>
+
+  @if (errorMessage()) {
+    <div class="admin-inline-error">{{ errorMessage() }}</div>
+  }
+
+  @if (loading()) {
+    <div class="local-file-empty">
+      <span class="loading loading-spinner loading-sm"></span>
+      Cargando archivos…
+    </div>
+  } @else if (previews().length === 0) {
+    <div class="local-file-empty">
+      <fa-icon [icon]="fileIcon" />
+      <span>Sin archivos vinculados.</span>
+    </div>
+  } @else {
+    <div class="local-file-grid">
+      @for (item of previews(); track item.id) {
+        <article class="local-file-card">
+          <button
+            type="button"
+            class="local-file-preview"
+            [disabled]="!item.url"
+            (click)="open(item)"
+          >
+            @if (item.url) {
+              <img [src]="item.url" alt="" />
+            } @else {
+              <fa-icon [icon]="imageIcon" />
+            }
+          </button>
+          <div>
+            <strong>Archivo #{{ item.id }}</strong>
+            <span>{{ item.url ? 'Disponible' : 'No disponible' }}</span>
+          </div>
+          <button
+            type="button"
+            class="admin-icon-button"
+            title="Abrir"
+            [disabled]="!item.url"
+            (click)="open(item)"
+          >
+            <fa-icon [icon]="viewIcon" />
+          </button>
+        </article>
+      }
+    </div>
+  }
+</section>

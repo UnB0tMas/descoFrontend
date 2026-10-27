@@ -1,0 +1,1 @@
+import {inject,Injectable} from '@angular/core';import {VISITAS_GATEWAY,VisitasGateway} from '../port/out/visitas.gateway';@Injectable() export class AnularVisitaUseCase{private readonly gateway:VisitasGateway=inject(VISITAS_GATEWAY);execute(id:number,motivo:string,fechaHoraFin:string){return this.gateway.annul(id,motivo,fechaHoraFin);}}

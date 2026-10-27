@@ -1,0 +1,128 @@
+<div class="desco-page">
+  <app-page-header
+    title="Productos"
+    subtitle="Catálogo global con precios versionados e imágenes."
+    [icon]="pageIcon"
+  >
+    <button class="admin-secondary-button" type="button" [disabled]="loading()" (click)="load()">
+      <fa-icon [icon]="refreshIcon" />
+      Actualizar
+    </button>
+    <button *appPermission="'PRODUCTOS_CREAR'" class="admin-primary-button" type="button" (click)="create()">
+      <fa-icon [icon]="addIcon" />
+      Registrar producto
+    </button>
+  </app-page-header>
+
+  <section class="admin-surface product-filters">
+    @if (uot.modo() === 'GENERAL') {
+      <label>
+        <span>UOT para precios</span>
+        <select class="admin-select" [value]="unitFilter() ?? 0" (change)="onUnitChange($any($event.target).value)">
+          <option [value]="0">Precio global / mis UOT</option>
+          @for (unit of uot.memberships(); track unit.uotId) {
+            <option [value]="unit.uotId">{{ unit.nombre }}</option>
+          }
+        </select>
+      </label>
+    }
+    <label class="product-search">
+      <span>Buscar</span>
+      <input
+        class="admin-input"
+        type="search"
+        placeholder="Código, producto, categoría..."
+        [value]="search()"
+        (input)="search.set($any($event.target).value)"
+      />
+    </label>
+  </section>
+
+  @if (loading()) {
+    <app-loading-state title="Cargando productos" message="Consultando el catálogo." />
+  } @else if (errorMessage()) {
+    <app-error-state [message]="errorMessage() || 'No fue posible consultar los productos.'" (retry)="load()" />
+  } @else if (filtered().length === 0) {
+    <app-empty-state title="Sin productos" message="No existen productos para los filtros seleccionados." />
+  } @else {
+    <section class="admin-surface product-table-shell">
+      <div class="admin-table-scroll">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Producto</th>
+              <th>Categoría</th>
+              <th>Unidad</th>
+              <th>Precio vigente</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of filtered(); track item.productoId) {
+              <tr>
+                <td><strong>{{ item.codigo || '—' }}</strong></td>
+                <td>
+                  <strong>{{ item.nombre || '—' }}</strong>
+                  <small class="product-help">{{ item.descripcion || '' }}</small>
+                </td>
+                <td>{{ item.categoria || '—' }}</td>
+                <td>{{ item.unidadMedida || '—' }}</td>
+                <td>
+                  @if (item.precioVenta != null) {
+                    <strong>{{ item.moneda || 'PEN' }} {{ item.precioVenta | number:'1.2-2' }}</strong>
+                  } @else {
+                    <span class="product-help">Sin precio</span>
+                  }
+                </td>
+                <td>{{ item.estado === false ? 'Inactivo' : 'Activo' }}</td>
+                <td>
+                  <div class="admin-table-actions">
+                    <button
+                      *appPermission="'PRODUCTOS_PRECIO'"
+                      type="button"
+                      class="admin-icon-button"
+                      title="Versionar precio"
+                      (click)="price(item)"
+                    >
+                      <fa-icon [icon]="priceIcon" />
+                    </button>
+                    <button
+                      *appPermission="'PRODUCTOS_CREAR'"
+                      type="button"
+                      class="admin-icon-button"
+                      title="Imágenes"
+                      (click)="selectImages(item)"
+                    >
+                      <fa-icon [icon]="imageIcon" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              @if (selectedForImages()?.productoId === item.productoId) {
+                <tr class="product-images-row">
+                  <td colspan="7">
+                    <app-local-file-panel
+                      [uotId]="selectedUnitId()"
+                      linkType="PRODUCTO"
+                      [linkId]="item.productoId || 0"
+                      [fileIds]="imageIds(item)"
+                      title="Imagen principal del producto"
+                      category="PRODUCTO_IMAGEN"
+                      accept="image/*"
+                      [forcePrincipal]="true"
+                      (changed)="load()"
+                    />
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+</div>
+
+<app-producto-form />

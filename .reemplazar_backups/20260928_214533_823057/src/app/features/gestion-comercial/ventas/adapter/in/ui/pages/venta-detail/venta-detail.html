@@ -1,0 +1,155 @@
+<div class="desco-page">
+  <app-page-header
+    title="Detalle de venta"
+    subtitle="Pagos, comprobante, reserva y entrega."
+    [icon]="paymentIcon"
+  >
+    <a class="admin-secondary-button" routerLink="/gestion-comercial/ventas">
+      <fa-icon [icon]="backIcon" />
+      Volver
+    </a>
+    <button type="button" class="admin-secondary-button" [disabled]="loading()" (click)="load()">
+      <fa-icon [icon]="refreshIcon" />
+      Actualizar
+    </button>
+    @if (canPay()) {
+      <button *appPermission="'VENTAS_PAGAR'" type="button" class="admin-primary-button" (click)="pay()">
+        <fa-icon [icon]="paymentIcon" />
+        Registrar pago
+      </button>
+    }
+  </app-page-header>
+
+  @if (loading()) {
+    <app-loading-state title="Cargando venta" message="Consultando detalle y pagos." />
+  } @else if (errorMessage()) {
+    <app-error-state [message]="errorMessage() || 'No fue posible cargar la venta.'" (retry)="load()" />
+  } @else if (detail()?.venta; as sale) {
+    <section class="sale-summary-grid">
+      <article class="admin-surface sale-summary-main">
+        <header>
+          <div>
+            <p>Venta #{{ sale.ventaId }}</p>
+            <h2>{{ sale.cliente || 'Público general' }}</h2>
+          </div>
+          <span>{{ sale.estadoVenta || '—' }}</span>
+        </header>
+        <dl>
+          <div><dt>UOT</dt><dd>{{ sale.uotNombre || '—' }}</dd></div>
+          <div><dt>Almacén</dt><dd>{{ sale.almacen || '—' }}</dd></div>
+          <div><dt>Fecha</dt><dd>{{ sale.fechaHora | date:'dd/MM/yyyy HH:mm' }}</dd></div>
+          <div><dt>Reserva hasta</dt><dd>{{ sale.reservaHasta ? (sale.reservaHasta | date:'dd/MM/yyyy HH:mm') : '—' }}</dd></div>
+        </dl>
+      </article>
+
+      <article class="admin-surface sale-totals">
+        <div><span>Total</span><strong>{{ sale.moneda || 'PEN' }} {{ sale.total | number:'1.2-2' }}</strong></div>
+        <div><span>Pagado</span><strong>{{ sale.pagado | number:'1.2-2' }}</strong></div>
+        <div><span>Saldo</span><strong>{{ sale.saldo | number:'1.2-2' }}</strong></div>
+      </article>
+    </section>
+
+    <section class="admin-surface sale-detail-card">
+      <header><p>Detalle</p><h2>Productos</h2></header>
+      <div class="admin-table-scroll">
+        <table class="admin-table">
+          <thead><tr><th>Producto</th><th>Cantidad</th><th>Precio unitario</th><th>Subtotal</th></tr></thead>
+          <tbody>
+            @for (line of detail()?.detalle || []; track line.detalleVentaId) {
+              <tr>
+                <td>{{ line.producto || '—' }}</td>
+                <td>{{ line.cantidad | number:'1.0-3' }}</td>
+                <td>{{ sale.moneda || 'PEN' }} {{ line.precioUnitario | number:'1.2-2' }}</td>
+                <td><strong>{{ line.subtotal | number:'1.2-2' }}</strong></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="sale-bottom-grid">
+      <article class="admin-surface sale-detail-card">
+        <header><p>Pagos</p><h2>Pagos confirmados</h2></header>
+        <div class="sale-payments">
+          @for (payment of detail()?.pagos || []; track payment.pagoVentaId) {
+            <div [class.sale-payment-cancelled]="payment.estadoPago === 'ANULADO'">
+              <div>
+                <strong>{{ payment.metodoPago || 'Pago' }}</strong>
+                <small>{{ payment.fechaHora | date:'dd/MM/yyyy HH:mm' }}</small>
+                @if (payment.numeroOperacion) { <small>Op. {{ payment.numeroOperacion }}</small> }
+              </div>
+              <strong>{{ payment.moneda || 'PEN' }} {{ payment.importe | number:'1.2-2' }}</strong>
+              @if (payment.estadoPago !== 'ANULADO') {
+                <button
+                  *appPermission="'VENTAS_ANULAR'"
+                  type="button"
+                  class="admin-icon-button"
+                  title="Anular pago"
+                  (click)="cancelPayment(payment)"
+                >
+                  <fa-icon [icon]="cancelIcon" />
+                </button>
+              } @else {
+                <span class="sale-cancelled-label">ANULADO</span>
+              }
+            </div>
+          } @empty {
+            <p class="sale-empty-copy">Todavía no hay pagos registrados.</p>
+          }
+        </div>
+      </article>
+
+      <article class="admin-surface sale-detail-card">
+        <header><p>Comprobante</p><h2>Documento de venta</h2></header>
+        @if (detail()?.comprobante; as receiptData) {
+          <div class="sale-receipt">
+            <span>{{ receiptData.tipo }}</span>
+            <strong>{{ receiptData.serie }}-{{ receiptData.numero }}</strong>
+            <small>{{ receiptData.fechaEmision | date:'dd/MM/yyyy HH:mm' }}</small>
+          </div>
+        } @else {
+          <p class="sale-empty-copy">Sin comprobante emitido.</p>
+          <button
+            *appPermission="'VENTAS_COMPROBANTE'"
+            type="button"
+            class="admin-secondary-button admin-secondary-button--small"
+            (click)="receipt()"
+          >
+            <fa-icon [icon]="receiptIcon" />
+            Emitir comprobante
+          </button>
+        }
+      </article>
+    </section>
+
+    <section class="sale-actions">
+      @if (canDeliver()) {
+        <button
+          *appPermission="'VENTAS_ENTREGAR'"
+          type="button"
+          class="admin-primary-button"
+          [disabled]="actionLoading()"
+          (click)="deliver()"
+        >
+          @if (actionLoading()) { <span class="loading loading-spinner loading-xs"></span> }
+          @else { <fa-icon [icon]="deliverIcon" /> }
+          Entregar venta
+        </button>
+      }
+      @if (canCancel()) {
+        <button
+          *appPermission="'VENTAS_ANULAR'"
+          type="button"
+          class="admin-danger-button"
+          (click)="cancelSale()"
+        >
+          <fa-icon [icon]="cancelIcon" />
+          Anular venta
+        </button>
+      }
+    </section>
+  }
+</div>
+
+<app-venta-action-form />

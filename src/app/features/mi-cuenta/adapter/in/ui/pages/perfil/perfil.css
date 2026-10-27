@@ -1,0 +1,250 @@
+:host {
+  display: block;
+}
+
+.account-page {
+  padding-bottom: 2rem;
+}
+
+.account-tabs {
+  display: flex;
+  margin-top: 1.5rem;
+  gap: 0.35rem;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--desco-border);
+}
+
+.account-tabs a {
+  flex: 0 0 auto;
+  border-bottom: 2px solid transparent;
+  padding: 0.8rem 0.9rem;
+  color: var(--desco-text-muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.account-tabs a:hover {
+  color: #1d4ed8;
+}
+
+.account-tabs a.active {
+  border-bottom-color: #2563eb;
+  color: #1d4ed8;
+}
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: minmax(16rem, 0.7fr) minmax(24rem, 1.3fr);
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.profile-summary,
+.profile-details,
+.roles-card {
+  border: 1px solid var(--desco-border);
+  border-radius: 1.25rem;
+  background: var(--desco-surface);
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+}
+
+.profile-summary {
+  padding: 2rem 1.5rem;
+  text-align: center;
+}
+
+.profile-avatar {
+  display: grid;
+  width: 5rem;
+  height: 5rem;
+  margin: 0 auto;
+  place-items: center;
+  border-radius: 1.5rem;
+  background: #1d4ed8;
+  color: white;
+  font-size: 1.4rem;
+  font-weight: 800;
+}
+
+.profile-summary h2 {
+  margin: 1rem 0 0;
+  color: var(--desco-text);
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.profile-username {
+  margin: 0.25rem 0 0;
+  color: var(--desco-text-muted);
+  font-size: 0.8rem;
+}
+
+.profile-status-row {
+  display: flex;
+  margin-top: 1.15rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.45rem;
+}
+
+.status-pill,
+.verified-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 9999px;
+  padding: 0.38rem 0.65rem;
+  font-size: 0.68rem;
+  font-weight: 750;
+}
+
+.status-pill {
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.status-dot {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 9999px;
+  background: #22c55e;
+}
+
+.verified-pill {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.profile-details {
+  padding: 1.25rem;
+}
+
+.profile-details header p,
+.roles-card header p {
+  margin: 0;
+  color: #2563eb;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.profile-details header h2,
+.roles-card header h2 {
+  margin: 0.15rem 0 0;
+  color: var(--desco-text);
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.detail-item {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.75rem;
+  border: 1px solid #f1f5f9;
+  border-radius: 1rem;
+  padding: 0.85rem;
+}
+
+.detail-icon,
+.roles-icon {
+  display: grid;
+  width: 2.35rem;
+  height: 2.35rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 0.75rem;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.detail-item div {
+  min-width: 0;
+}
+
+.detail-item span:not(.detail-icon) {
+  display: block;
+  color: var(--desco-text-muted);
+  font-size: 0.68rem;
+  font-weight: 650;
+}
+
+.detail-item strong {
+  display: block;
+  overflow: hidden;
+  margin-top: 0.15rem;
+  color: var(--desco-text);
+  font-size: 0.78rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.roles-card {
+  grid-column: 1 / -1;
+  padding: 1.25rem;
+}
+
+.roles-card header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.role-list {
+  display: flex;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.role-chip {
+  border: 1px solid #dbeafe;
+  border-radius: 0.85rem;
+  background: #eff6ff;
+  padding: 0.6rem 0.75rem;
+}
+
+.role-chip strong {
+  display: block;
+  color: #1e3a8a;
+  font-size: 0.76rem;
+}
+
+.role-chip span {
+  display: block;
+  margin-top: 0.15rem;
+  color: #60a5fa;
+  font-size: 0.62rem;
+  font-weight: 700;
+}
+
+.empty-copy {
+  margin: 0;
+  color: var(--desco-text-muted);
+  font-size: 0.8rem;
+}
+
+@media (max-width: 900px) {
+  .profile-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .roles-card {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 600px) {
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+}

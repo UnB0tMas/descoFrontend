@@ -1,0 +1,1 @@
+import{inject,Injectable}from'@angular/core';import{GASTOS_GATEWAY,GastosGateway}from'../port/out/gastos.gateway';@Injectable()export class ObtenerGastoUseCase{private readonly g:GastosGateway=inject(GASTOS_GATEWAY);execute(id:number){return this.g.get(id);}}

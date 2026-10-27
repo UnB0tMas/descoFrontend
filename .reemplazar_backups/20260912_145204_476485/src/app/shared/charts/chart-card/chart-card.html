@@ -1,0 +1,82 @@
+<article class="h-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+  <header class="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4">
+    <div class="flex min-w-0 items-start gap-3">
+      <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
+        <fa-icon [icon]="data.icon || fallbackIcon" />
+      </div>
+
+      <div class="min-w-0">
+        <h3 class="truncate text-sm font-semibold text-slate-950">
+          {{ data.title }}
+        </h3>
+
+        @if (data.subtitle) {
+          <p class="mt-1 text-xs leading-5 text-slate-500">
+            {{ data.subtitle }}
+          </p>
+        }
+      </div>
+    </div>
+
+    <div class="flex shrink-0 items-center gap-2">
+      <ng-content select="[chartActions]" />
+    </div>
+  </header>
+
+  <div class="p-4 sm:p-5">
+    @if (data.loading) {
+      <div class="flex min-h-72 items-end gap-3">
+        @for (bar of [1, 2, 3, 4, 5, 6, 7]; track bar) {
+          <div
+            class="skeleton flex-1 rounded-t-xl"
+            [style.height.%]="22 + bar * 9"
+          ></div>
+        }
+      </div>
+    } @else {
+      <div class="relative min-h-72">
+        <apx-chart
+          [series]="series"
+          [chart]="chart"
+          [annotations]="data.options.annotations"
+          [colors]="data.options.colors"
+          [dataLabels]="data.options.dataLabels"
+          [fill]="data.options.fill"
+          [forecastDataPoints]="data.options.forecastDataPoints"
+          [grid]="data.options.grid"
+          [labels]="data.options.labels"
+          [legend]="data.options.legend"
+          [markers]="data.options.markers"
+          [noData]="data.empty ? emptyNoData : data.options.noData"
+          [plotOptions]="data.options.plotOptions"
+          [responsive]="data.options.responsive"
+          [states]="data.options.states"
+          [stroke]="data.options.stroke"
+          [subtitle]="data.options.subtitle"
+          [theme]="data.options.theme"
+          [title]="data.options.title"
+          [tooltip]="data.options.tooltip"
+          [xaxis]="data.options.xaxis"
+          [yaxis]="data.options.yaxis"
+        />
+
+        @if (data.empty) {
+          <div
+            class="pointer-events-none absolute inset-0 flex items-center justify-center px-6"
+            aria-live="polite"
+          >
+            <div class="max-w-xs rounded-xl border border-slate-200 bg-white/95 px-4 py-3 text-center shadow-sm">
+              <p class="m-0 text-sm font-semibold text-slate-700">
+                Sin datos disponibles
+              </p>
+
+              <p class="mt-1 text-xs leading-5 text-slate-500">
+                {{ data.emptyMessage || 'Todavía no hay información para el periodo seleccionado.' }}
+              </p>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</article>

@@ -1,0 +1,198 @@
+<dialog #dialog class="modal desco-modal" (cancel)="$event.preventDefault(); close()">
+  <div class="modal-box admin-modal-box">
+    <header class="admin-modal-header">
+      <div class="admin-modal-title-group">
+        <span class="admin-modal-icon">
+          <fa-icon [icon]="current() ? editIcon : addIcon" />
+        </span>
+        <div>
+          <p>Usuarios y accesos</p>
+          <h2>{{ current() ? 'Editar cuenta' : 'Crear cuenta' }}</h2>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        class="admin-icon-button"
+        aria-label="Cerrar"
+        [disabled]="saving()"
+        (click)="close()"
+      >
+        <fa-icon [icon]="closeIcon" />
+      </button>
+    </header>
+
+    @if (errorMessage()) {
+      <div class="admin-inline-error" role="alert">{{ errorMessage() }}</div>
+    }
+
+    <form class="admin-form-grid" [formGroup]="form" (ngSubmit)="save()">
+      @if (!current()) {
+        <div class="admin-field admin-field-span-2">
+          <label for="userEmployee">Empleado</label>
+          <select
+            id="userEmployee"
+            class="admin-select"
+            formControlName="empleadoId"
+            (change)="suggestUsername($any($event.target).value)"
+          >
+            <option [value]="0">Seleccionar empleado</option>
+            @for (employee of employees(); track employee.value) {
+              <option [value]="employee.value">{{ employee.label }}</option>
+            }
+          </select>
+          <app-form-error
+            [control]="form.controls.empleadoId"
+            fieldLabel="El empleado"
+          />
+        </div>
+      }
+
+      <div class="admin-field admin-field-span-2">
+        <label for="username">Nombre de usuario</label>
+        <input
+          id="username"
+          class="admin-input"
+          type="text"
+          formControlName="nombreUsuario"
+          minlength="3"
+          maxlength="80"
+          autocomplete="off"
+          autocapitalize="none"
+          spellcheck="false"
+          (input)="onUsernameInput()"
+        />
+        <app-form-error
+          [control]="form.controls.nombreUsuario"
+          fieldLabel="El nombre de usuario"
+          [messages]="{ username: 'Use solo letras minúsculas, números, punto, guion o guion bajo, sin espacios.', minlength: 'El nombre de usuario debe tener al menos 3 caracteres.' }"
+        />
+      </div>
+
+      @if (!current()) {
+        <div class="admin-field">
+          <label for="initialPassword">Contraseña inicial</label>
+          <div class="admin-password-field">
+            <input
+              id="initialPassword"
+              class="admin-input"
+              [type]="showPassword() ? 'text' : 'password'"
+              formControlName="passwordInicial"
+              minlength="12"
+              maxlength="128"
+              autocomplete="new-password"
+              autocapitalize="off"
+              spellcheck="false"
+              placeholder="Mínimo 12 caracteres"
+            />
+            <button
+              type="button"
+              class="admin-password-toggle"
+              [attr.aria-label]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+              (click)="showPassword.set(!showPassword())"
+            >
+              <fa-icon [icon]="showPassword() ? eyeSlashIcon : eyeIcon" />
+            </button>
+          </div>
+          <app-form-error
+            [control]="form.controls.passwordInicial"
+            fieldLabel="La contraseña inicial"
+            [messages]="{ minlength: 'La contraseña debe tener al menos 12 caracteres.', passwordOuterWhitespace: 'La contraseña no puede comenzar ni terminar con espacios.', passwordControlCharacter: 'La contraseña contiene caracteres no permitidos.' }"
+          />
+        </div>
+
+        <div class="admin-field">
+          <label for="securityEmail">Correo de seguridad</label>
+          <input
+            id="securityEmail"
+            class="admin-input"
+            type="email"
+            formControlName="correoSeguridad"
+            maxlength="200"
+            autocomplete="email"
+            autocapitalize="none"
+            spellcheck="false"
+            (blur)="normalizeSecurityEmail()"
+          />
+          <app-form-error
+            [control]="form.controls.correoSeguridad"
+            fieldLabel="El correo de seguridad"
+          />
+        </div>
+
+        <div class="admin-field admin-field-span-2">
+          <label>Roles iniciales</label>
+          <div class="admin-option-grid">
+            @for (role of roles(); track role.value) {
+              <label class="admin-check-option">
+                <input
+                  type="checkbox"
+                  class="checkbox checkbox-primary checkbox-sm"
+                  [checked]="roleSelected(role.value)"
+                  (change)="toggleRole(role.value, $any($event.target).checked)"
+                />
+                <div>
+                  <strong>{{ role.label }}</strong>
+                  @if (role.description) {
+                    <span>{{ role.description }}</span>
+                  }
+                </div>
+              </label>
+            }
+          </div>
+        </div>
+      }
+
+      <label class="admin-switch-row admin-field-span-2">
+        <div>
+          <strong>Cambio de contraseña requerido</strong>
+          <span>Solicitar una nueva contraseña en el siguiente acceso.</span>
+        </div>
+        <input
+          type="checkbox"
+          class="admin-switch-control"
+          formControlName="requiereCambioPassword"
+        />
+      </label>
+
+      @if (current()) {
+        <label class="admin-switch-row admin-field-span-2">
+          <div>
+            <strong>Segundo factor</strong>
+            <span>Solicitar una verificación adicional durante el acceso.</span>
+          </div>
+          <input
+            type="checkbox"
+            class="admin-switch-control"
+            formControlName="segundoFactorHabilitado"
+          />
+        </label>
+      }
+
+      <footer class="admin-modal-actions admin-field-span-2">
+        <button
+          type="button"
+          class="admin-secondary-button"
+          [disabled]="saving()"
+          (click)="close()"
+        >
+          Cancelar
+        </button>
+
+        <button
+          type="submit"
+          class="admin-primary-button"
+          [disabled]="saving()"
+        >
+          @if (saving()) {
+            <span class="loading loading-spinner loading-sm"></span>
+            Guardando...
+          } @else {
+            <fa-icon [icon]="saveIcon" />
+            Guardar
+          }
+        </button>
+      </footer>
+    </form>
+  </div>
+</dialog>

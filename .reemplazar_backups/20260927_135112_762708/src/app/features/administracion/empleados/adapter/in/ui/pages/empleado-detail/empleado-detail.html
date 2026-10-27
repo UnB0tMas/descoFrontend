@@ -1,0 +1,176 @@
+<div class="desco-page">
+  <app-page-header
+    [title]="fullName()"
+    subtitle="Información personal, asignación laboral, cuenta y roles del empleado."
+    eyebrow="Empleado"
+    [icon]="pageIcon"
+  >
+    <div pageActions class="flex flex-wrap gap-2">
+      <a class="admin-secondary-button" routerLink="/administracion/empleados">
+        <fa-icon [icon]="backIcon" />
+        Volver
+      </a>
+
+      <button
+        type="button"
+        class="admin-secondary-button"
+        [disabled]="loading()"
+        (click)="load()"
+      >
+        <fa-icon [class.animate-spin]="loading()" [icon]="refreshIcon" />
+        Actualizar
+      </button>
+
+      @if (detail(); as employee) {
+        <button
+          *appPermission="'EMPLEADOS_EDITAR'"
+          type="button"
+          class="admin-primary-button"
+          [disabled]="!employee.estado || referencesLoading()"
+          (click)="edit()"
+        >
+          @if (referencesLoading()) {
+            <span class="loading loading-spinner loading-sm"></span>
+          } @else {
+            <fa-icon [icon]="editIcon" />
+          }
+          Editar
+        </button>
+
+        <button
+          *appPermission="'EMPLEADOS_RETIRAR'"
+          type="button"
+          class="admin-danger-button"
+          [disabled]="!employee.estado || retiring()"
+          (click)="retire()"
+        >
+          @if (retiring()) {
+            <span class="loading loading-spinner loading-sm"></span>
+          } @else {
+            <fa-icon [icon]="retireIcon" />
+          }
+          Retirar
+        </button>
+      }
+    </div>
+  </app-page-header>
+
+  <div class="mt-5">
+    @if (loading()) {
+      <app-loading-state
+        title="Cargando empleado"
+        message="Consultando su información actual e historial."
+      />
+    } @else if (errorMessage()) {
+      <app-error-state
+        [message]="errorMessage() || 'Intenta nuevamente.'"
+        (retry)="load()"
+      />
+    } @else if (detail(); as employee) {
+      <section class="admin-detail-grid">
+        <article class="admin-detail-card">
+          <span>Código</span>
+          <strong>{{ employee.codigoEmpleado }}</strong>
+        </article>
+        <article class="admin-detail-card">
+          <span>Documento</span>
+          <strong>{{ employee.tipoDocumento }} {{ employee.numeroDocumento }}</strong>
+        </article>
+        <article class="admin-detail-card">
+          <span>UOT</span>
+          <strong>{{ employee.uotNombre || uotName() }}</strong>
+          <small>{{ employee.uotCodigo || '' }}</small>
+        </article>
+        <article class="admin-detail-card">
+          <span>Estado</span>
+          <strong>{{ employee.estado ? 'Activo' : 'Retirado' }}</strong>
+        </article>
+      </section>
+
+      <div class="employee-detail-grid mt-4">
+        <section class="admin-surface employee-access-card">
+          <div class="admin-section-header">
+            <div>
+              <p>Cuenta</p>
+              <h2>Acceso al sistema</h2>
+            </div>
+            <fa-icon class="text-blue-600" [icon]="accountIcon" />
+          </div>
+
+          @if (employee.usuario; as user) {
+            <div class="employee-account-grid">
+              <article class="employee-account-item">
+                <span>Usuario</span>
+                <strong>{{ user.nombreUsuario }}</strong>
+              </article>
+              <article class="employee-account-item">
+                <span>Estado</span>
+                <strong>{{ user.estadoCuenta || '—' }}</strong>
+              </article>
+              <article class="employee-account-item">
+                <span>Segundo factor</span>
+                <strong>{{ user.segundoFactorHabilitado ? 'Habilitado' : 'No habilitado' }}</strong>
+              </article>
+              <article class="employee-account-item">
+                <span>Último acceso</span>
+                <strong>{{ user.ultimoAccesoCorrecto ? (user.ultimoAccesoCorrecto | date:'dd/MM/yyyy HH:mm') : '—' }}</strong>
+              </article>
+            </div>
+          } @else {
+            <div class="employee-access-empty">
+              <p>Sin cuenta de acceso al sistema.</p>
+            </div>
+          }
+        </section>
+
+        <section class="admin-surface employee-access-card">
+          <div class="admin-section-header">
+            <div>
+              <p>Acceso a la UOT</p>
+              <h2>Roles del sistema</h2>
+            </div>
+            <span class="admin-count-badge">{{ activeSystemRoles().length }}</span>
+          </div>
+
+          @if (!employee.usuario) {
+            <div class="employee-access-empty">
+              <p>Sin cuenta de acceso al sistema.</p>
+            </div>
+          } @else if (!hasActiveAccount()) {
+            <div class="employee-access-empty">
+              <p>La cuenta de acceso está inactiva.</p>
+            </div>
+          } @else {
+            <div class="employee-role-grid">
+              @for (role of activeSystemRoles(); track role.rolId) {
+                <article class="employee-role-card">
+                  <span class="employee-role-card__icon">
+                    <fa-icon [icon]="accountIcon" />
+                  </span>
+
+                  <div class="employee-role-card__body">
+                    <span class="employee-role-card__eyebrow">Rol efectivo</span>
+                    <strong class="employee-role-card__name">{{ role.nombre }}</strong>
+                    <span class="employee-role-card__code">{{ role.codigo }}</span>
+                    <span class="employee-role-card__meta">
+                      {{ role.fechaDesde ? ('Desde ' + (role.fechaDesde | date:'dd/MM/yyyy')) : 'Activo en la UOT' }}
+                    </span>
+                  </div>
+
+                  <span class="employee-role-card__status">Activo</span>
+                </article>
+              } @empty {
+                <div class="employee-access-empty">
+                  <p>Sin roles activos en esta UOT.</p>
+                </div>
+              }
+            </div>
+          }
+        </section>
+      </div>
+    }
+  </div>
+</div>
+
+<app-empleado-form />
+<app-action-confirm-dialog />

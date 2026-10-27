@@ -1,0 +1,80 @@
+<section class="geography-cascade" aria-label="Ubicación geográfica">
+  <div class="admin-field">
+    <label for="geoDepartment">Departamento</label>
+    <select
+      id="geoDepartment"
+      class="admin-select"
+      [disabled]="disabled || locationLocked || loading()"
+      (change)="changeDepartment($any($event.target).value)"
+    >
+      <option value="" [selected]="!selectedDepartment()">Seleccionar departamento</option>
+      @for (item of departments(); track item.code) {
+        <option [value]="item.code" [selected]="item.code === selectedDepartment()">{{ item.label }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="admin-field">
+    <label for="geoProvince">Provincia</label>
+    <select
+      id="geoProvince"
+      class="admin-select"
+      [disabled]="disabled || locationLocked || loading() || !selectedDepartment()"
+      (change)="changeProvince($any($event.target).value)"
+    >
+      <option value="" [selected]="!selectedProvince()">Seleccionar provincia</option>
+      @for (item of provinces(); track item.code) {
+        <option [value]="item.code" [selected]="item.code === selectedProvince()">{{ item.label }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="admin-field">
+    <label for="geoDistrict">Distrito <span aria-hidden="true">*</span></label>
+    <select
+      id="geoDistrict"
+      class="admin-select"
+      [disabled]="disabled || locationLocked || loading() || !selectedProvince()"
+      (change)="changeDistrict($any($event.target).value)"
+    >
+      <option value="" [selected]="!selectedDistrict()">Seleccionar distrito</option>
+      @for (item of districts(); track item.code) {
+        <option [value]="item.code" [selected]="item.code === selectedDistrict()">{{ item.label }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="admin-field">
+    <label for="geoPopulationCenter">Centro poblado <span>*Opcional</span></label>
+    <select
+      id="geoPopulationCenter"
+      class="admin-select"
+      [disabled]="disabled || populationCenterLocked || loading() || !selectedDistrict()"
+      (change)="changePopulationCenter($any($event.target).value)"
+    >
+      <option [value]="0" [selected]="selectedPopulationCenter() === null">Sin centro poblado</option>
+      @for (item of populationCenters(); track item.id) {
+        <option [value]="item.id" [selected]="item.id === selectedPopulationCenter()">{{ item.label }}</option>
+      }
+    </select>
+  </div>
+
+  @if (loading()) {
+    <div class="geography-status" aria-live="polite">
+      <span class="loading loading-spinner loading-xs"></span>
+      Cargando ubicación...
+    </div>
+  } @else if (errorMessage()) {
+    <div class="geography-status geography-status--error" role="alert">
+      <span>{{ errorMessage() }}</span>
+      <button
+        type="button"
+        class="geography-retry"
+        [disabled]="disabled"
+        (click)="retryLoad()"
+      >
+        Reintentar
+      </button>
+    </div>
+  }
+</section>

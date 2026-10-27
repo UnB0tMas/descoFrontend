@@ -1,0 +1,64 @@
+<div class="flex flex-col gap-4 border-t border-slate-100 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+  <div class="flex flex-wrap items-center gap-3 text-sm text-slate-500">
+    <span>
+      Mostrando
+      <strong class="font-semibold text-slate-800">{{ firstRecord }}</strong>
+      a
+      <strong class="font-semibold text-slate-800">{{ lastRecord }}</strong>
+      de
+      <strong class="font-semibold text-slate-800">{{ totalRecords }}</strong>
+    </span>
+
+    <label class="flex items-center gap-2">
+      <span class="sr-only">Registros por página</span>
+      <select
+        class="select select-bordered select-sm rounded-xl border-slate-200 bg-white text-slate-700"
+        [value]="size"
+        (change)="changeSize($any($event.target).value)"
+      >
+        @for (option of pageSizes; track option) {
+          <option [value]="option">{{ option }} por página</option>
+        }
+      </select>
+    </label>
+  </div>
+
+  <nav class="flex items-center gap-1" aria-label="Paginación">
+    <button
+      type="button"
+      class="btn btn-ghost btn-sm btn-square rounded-xl border border-slate-200 bg-white text-slate-600 disabled:bg-slate-50"
+      [disabled]="page <= 1"
+      aria-label="Página anterior"
+      (click)="goTo(page - 1)"
+    >
+      <fa-icon [icon]="previousIcon" />
+    </button>
+
+    @for (pageNumber of visiblePages; track pageNumber) {
+      <button
+        type="button"
+        class="btn btn-sm btn-square rounded-xl"
+        [class.bg-blue-600]="pageNumber === page"
+        [class.text-white]="pageNumber === page"
+        [class.border-0]="pageNumber === page"
+        [class.btn-ghost]="pageNumber !== page"
+        [class.border]="pageNumber !== page"
+        [class.border-slate-200]="pageNumber !== page"
+        [class.bg-white]="pageNumber !== page"
+        (click)="goTo(pageNumber)"
+      >
+        {{ pageNumber }}
+      </button>
+    }
+
+    <button
+      type="button"
+      class="btn btn-ghost btn-sm btn-square rounded-xl border border-slate-200 bg-white text-slate-600 disabled:bg-slate-50"
+      [disabled]="page >= totalPages || totalPages === 0"
+      aria-label="Página siguiente"
+      (click)="goTo(page + 1)"
+    >
+      <fa-icon [icon]="nextIcon" />
+    </button>
+  </nav>
+</div>

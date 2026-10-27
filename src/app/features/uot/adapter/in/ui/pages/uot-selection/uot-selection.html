@@ -1,0 +1,74 @@
+<div class="uot-selection-page">
+  <div class="uot-selection-shell">
+    <header class="uot-selection-header">
+      <div>
+        <p>DESCO · acceso multi-UOT</p>
+        <h1>Selecciona tu unidad de trabajo</h1>
+        <span>
+          La unidad elegida define los datos, permisos y operaciones disponibles durante la sesión.
+        </span>
+      </div>
+    </header>
+
+    @if (error()) {
+      <div class="admin-inline-error" role="alert">{{ error() }}</div>
+    }
+
+    @if (loading()) {
+      <div class="uot-selection-loading">
+        <span class="loading loading-spinner loading-md"></span>
+        <span>Consultando unidades autorizadas…</span>
+      </div>
+    } @else {
+      <div class="uot-selection-grid">
+        @for (unit of store.memberships(); track unit.uotId) {
+          <button
+            type="button"
+            class="uot-selection-card"
+            [disabled]="selecting() !== null"
+            (click)="select(unit.uotId)"
+          >
+            <span class="uot-selection-icon">
+              <fa-icon [icon]="unitIcon" />
+            </span>
+            <span class="uot-selection-copy">
+              <small>{{ unit.codigo || 'UOT' }}</small>
+              <strong>{{ unit.nombre }}</strong>
+              <span>
+                {{ unit.roles.length ? unit.roles.join(' · ') : 'Acceso asignado' }}
+              </span>
+            </span>
+            @if (selecting() === selectionKey(unit.uotId)) {
+              <span class="loading loading-spinner loading-sm"></span>
+            } @else {
+              <fa-icon class="uot-selection-arrow" [icon]="arrowIcon" />
+            }
+          </button>
+        }
+
+        @if (store.canUseGeneral()) {
+          <button
+            type="button"
+            class="uot-selection-card uot-selection-card--general"
+            [disabled]="selecting() !== null"
+            (click)="selectGeneral()"
+          >
+            <span class="uot-selection-icon">
+              <fa-icon [icon]="generalIcon" />
+            </span>
+            <span class="uot-selection-copy">
+              <small>Modo consolidado</small>
+              <strong>Vista general</strong>
+              <span>Consulta únicamente las UOT que tienes asignadas.</span>
+            </span>
+            @if (selecting() === 'GENERAL') {
+              <span class="loading loading-spinner loading-sm"></span>
+            } @else {
+              <fa-icon class="uot-selection-arrow" [icon]="arrowIcon" />
+            }
+          </button>
+        }
+      </div>
+    }
+  </div>
+</div>

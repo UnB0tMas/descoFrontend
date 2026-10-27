@@ -1,0 +1,72 @@
+:host {
+  display: contents;
+}
+
+.geography-cascade {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+  padding: 0.75rem;
+  border: 1px solid var(--desco-border);
+  border-radius: 0.9rem;
+  background: var(--desco-surface-soft);
+}
+
+.geography-cascade label span {
+  color: var(--desco-text-muted);
+  font-size: 0.62rem;
+  font-weight: 650;
+}
+
+.geography-status {
+  grid-column: 1 / -1;
+  display: flex;
+  min-height: 1.8rem;
+  align-items: center;
+  gap: 0.55rem;
+  color: var(--desco-text-muted);
+  font-size: 0.66rem;
+  font-weight: 650;
+}
+
+.geography-status--error {
+  justify-content: space-between;
+  border: 1px solid var(--desco-danger-border);
+  border-radius: 0.7rem;
+  background: var(--desco-danger-soft);
+  padding: 0.5rem 0.65rem;
+  color: var(--desco-danger-text);
+}
+
+.geography-retry {
+  flex: 0 0 auto;
+  border: 1px solid var(--desco-danger-border);
+  border-radius: 0.55rem;
+  background: transparent;
+  padding: 0.32rem 0.55rem;
+  color: inherit;
+  font-size: 0.64rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.geography-retry:hover:not(:disabled) {
+  background: var(--desco-surface-hover);
+}
+
+.geography-retry:focus-visible {
+  outline: 2px solid var(--desco-primary);
+  outline-offset: 2px;
+}
+
+.geography-retry:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+@media (max-width: 760px) {
+  .geography-cascade {
+    grid-template-columns: 1fr;
+  }
+}

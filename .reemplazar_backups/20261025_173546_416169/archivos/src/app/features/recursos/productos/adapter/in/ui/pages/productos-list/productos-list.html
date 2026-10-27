@@ -1,0 +1,178 @@
+<div class="desco-page">
+  <app-page-header
+    title="Productos"
+    [subtitle]="isGeneral() ? 'Vista general del catálogo y precios vigentes por UOT.' : 'Catálogo y precios vigentes de ' + contextUotName() + '.'"
+    [icon]="pageIcon"
+  >
+    <div pageActions class="flex flex-wrap gap-2">
+      <button type="button" class="admin-secondary-button" [disabled]="loading()" (click)="load()">
+        <fa-icon [icon]="refreshIcon" /> Actualizar
+      </button>
+      <button *appPermission="'PRODUCTOS_CREAR'" type="button" class="admin-primary-button" (click)="create()">
+        <fa-icon [icon]="addIcon" /> Registrar producto
+      </button>
+    </div>
+  </app-page-header>
+
+  <section class="admin-surface resource-filter-bar">
+    <div class="resource-filter-title"><fa-icon [icon]="filterIcon" /><span>Filtros</span></div>
+    @if (isGeneral()) {
+      <label class="resource-filter-field">
+        <span>UOT</span>
+        <select class="admin-select" [value]="unitFilter() ?? 0" (change)="onUnitChange($any($event.target).value)">
+          <option [value]="0">Todas mis UOT</option>
+          @for (unit of units(); track unit.uotId) {
+            <option [value]="unit.uotId">{{ unit.nombre }}</option>
+          }
+        </select>
+      </label>
+    }
+    <label class="resource-filter-field resource-filter-field--search">
+      <span>Buscar</span>
+      <div class="resource-search-control">
+        <input class="admin-input" type="search" placeholder="Código, producto o descripción"
+          [value]="search()" (input)="search.set($any($event.target).value)" (keyup.enter)="applyFilters()" />
+        <button type="button" class="admin-secondary-button resource-search-button" title="Buscar" (click)="applyFilters()">
+          <fa-icon [icon]="searchIcon" />
+        </button>
+      </div>
+    </label>
+    <label class="resource-filter-field">
+      <span>Categoría</span>
+      <select class="admin-select" [value]="categoryFilter()" (change)="categoryFilter.set($any($event.target).value); applyFilters()">
+        <option value="">Todas</option>
+        @for (category of categories(); track category.code) {
+          <option [value]="category.code">{{ category.label }}</option>
+        }
+      </select>
+    </label>
+    <label class="resource-filter-field">
+      <span>Estado</span>
+      <select class="admin-select" [value]="stateFilter()" (change)="stateFilter.set($any($event.target).value); applyFilters()">
+        <option value="ACTIVE">Activos</option>
+        <option value="INACTIVE">Inactivos</option>
+        <option value="ALL">Todos</option>
+      </select>
+    </label>
+    <div class="resource-view-switch">
+      <button type="button" class="admin-icon-button" [class.active]="viewMode() === 'table'" title="Vista tabla" (click)="setView('table')"><fa-icon [icon]="tableIcon" /></button>
+      <button type="button" class="admin-icon-button" [class.active]="viewMode() === 'cards'" title="Vista tarjetas" (click)="setView('cards')"><fa-icon [icon]="cardsIcon" /></button>
+    </div>
+  </section>
+
+  @if (errorMessage()) {
+    <app-error-state [message]="errorMessage() || 'No fue posible consultar los productos.'" (retry)="load()" />
+  } @else if (loading() && visibleItems().length === 0) {
+    <app-loading-state title="Cargando productos" message="Consultando el catálogo del contexto UOT." />
+  } @else if (visibleItems().length === 0) {
+    <app-empty-state title="Sin productos" message="No existen productos para los filtros seleccionados." />
+  } @else {
+    <div class="resource-data-stage" [class.resource-data-stage--loading]="loading()" [attr.aria-busy]="loading()">
+      @if (loading()) {
+        <div class="resource-page-loading" role="status" aria-live="polite">
+          <span class="loading loading-spinner loading-xs" aria-hidden="true"></span>
+          Cargando página {{ currentPage() }}...
+        </div>
+      }
+      <div class="resource-data-content" [attr.inert]="loading() ? '' : null">
+        @if (viewMode() === 'table') {
+          <section class="admin-surface resource-table-shell">
+      <div class="admin-table-wrap resource-table-scroll">
+        <table class="admin-table resource-products-table">
+          <thead>
+            <tr>
+              <th>Imagen</th><th>UOT</th><th>Código</th><th>Producto</th><th>Categoría</th>
+              <th>Unidad</th><th>Precio</th><th>Estado</th><th class="resource-actions-column">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of visibleItems(); track rowKey(item)) {
+              <tr>
+                <td class="resource-image-cell">
+                  <app-resource-image variant="thumb" [fileId]="item.archivoPrincipalId"
+                    [imageUrl]="item.imagenPrincipalUrl" [alt]="item.nombre || 'Producto'" />
+                </td>
+                <td><strong>{{ item.uotNombre || '—' }}</strong><small class="resource-cell-help">{{ item.uotCodigo || '' }}</small></td>
+                <td><span class="admin-code">{{ item.codigo || '—' }}</span></td>
+                <td><strong>{{ item.nombre || '—' }}</strong><small class="resource-cell-help">{{ item.descripcion || 'Sin descripción' }}</small></td>
+                <td>{{ item.categoriaNombre || item.categoriaCodigo || '—' }}</td>
+                <td>{{ item.unidadMedidaNombre || item.unidadMedidaCodigo || '—' }}</td>
+                <td>
+                  @if (item.precioVigente != null) {
+                    <strong>{{ item.moneda || 'PEN' }} {{ item.precioVigente | number:'1.2-2' }}</strong>
+                  } @else {
+                    <span class="resource-cell-help">Sin precio vigente</span>
+                  }
+                </td>
+                <td><span class="resource-status" [class.resource-status--ok]="item.estado !== false"
+                  [class.resource-status--muted]="item.estado === false">{{ item.estado === false ? 'Inactivo' : 'Activo' }}</span></td>
+                <td class="resource-actions-column">
+                  <div class="admin-table-actions resource-row-actions">
+                    <a *appPermission="'PRODUCTOS_VER'" class="admin-icon-button"
+                      [routerLink]="['/recursos/productos', item.productoId]" [queryParams]="detailQuery(item)"
+                      title="Ver detalle (imágenes, precios y estado)" aria-label="Ver detalle del producto">
+                      <fa-icon [icon]="viewIcon" />
+                    </a>
+                    <button *appPermission="'PRODUCTOS_EDITAR'" class="admin-icon-button" type="button"
+                      title="Editar producto" aria-label="Editar producto" (click)="edit(item)">
+                      <fa-icon [icon]="editIcon" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+          </section>
+        } @else {
+          <section class="resource-card-grid">
+      @for (item of visibleItems(); track rowKey(item)) {
+        <article class="admin-surface resource-card">
+          <app-resource-image variant="card" [fileId]="item.archivoPrincipalId"
+            [imageUrl]="item.imagenPrincipalUrl" [alt]="item.nombre || 'Producto'" />
+          <div class="resource-card-body">
+            <header>
+              <div><small>{{ item.uotNombre || 'UOT' }}</small><h3>{{ item.nombre || 'Producto' }}</h3><span>{{ item.codigo || '—' }}</span></div>
+              <span class="resource-status" [class.resource-status--ok]="item.estado !== false"
+                [class.resource-status--muted]="item.estado === false">{{ item.estado === false ? 'Inactivo' : 'Activo' }}</span>
+            </header>
+            <p>{{ item.descripcion || 'Sin descripción.' }}</p>
+            <dl>
+              <div><dt>Categoría</dt><dd>{{ item.categoriaNombre || item.categoriaCodigo || '—' }}</dd></div>
+              <div><dt>Unidad</dt><dd>{{ item.unidadMedidaNombre || item.unidadMedidaCodigo || '—' }}</dd></div>
+              <div class="resource-card-wide"><dt>Precio vigente</dt><dd>
+                @if (item.precioVigente != null) {
+                  <strong>{{ item.moneda || 'PEN' }} {{ item.precioVigente | number:'1.2-2' }}</strong>
+                } @else { Sin precio }
+              </dd></div>
+            </dl>
+            <footer>
+              <a *appPermission="'PRODUCTOS_VER'" class="admin-secondary-button admin-secondary-button--small"
+                [routerLink]="['/recursos/productos', item.productoId]" [queryParams]="detailQuery(item)">
+                <fa-icon [icon]="viewIcon" /> Ver detalle
+              </a>
+              <button *appPermission="'PRODUCTOS_EDITAR'" type="button" class="admin-secondary-button admin-secondary-button--small"
+                (click)="edit(item)"><fa-icon [icon]="editIcon" /> Editar</button>
+            </footer>
+          </div>
+        </article>
+      }
+          </section>
+        }
+      </div>
+    </div>
+  }
+
+  <div class="resource-paginator-shell" [attr.inert]="loading() ? '' : null">
+    <app-paginator
+      [page]="currentPage()"
+      [size]="pageSize()"
+      [totalRecords]="result().totalRecords"
+      [totalPages]="totalPages()"
+      (pageChange)="load($event, pageSize())"
+      (sizeChange)="changePageSize($event)"
+    />
+  </div>
+</div>
+<app-producto-form />

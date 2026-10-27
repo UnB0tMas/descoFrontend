@@ -1,0 +1,217 @@
+<div class="desco-page">
+  <app-page-header
+    title="Usuarios y accesos"
+    subtitle="Administra cuentas, estados y asignaciones de acceso."
+    eyebrow="Administración"
+    [icon]="pageIcon"
+  >
+    <div pageActions class="flex flex-wrap gap-2">
+      <button
+        type="button"
+        class="admin-secondary-button"
+        [disabled]="loading()"
+        (click)="load()"
+      >
+        <fa-icon [class.animate-spin]="loading()" [icon]="refreshIcon" />
+        Actualizar
+      </button>
+
+      <button
+        *appPermission="'USUARIOS_CREAR'"
+        type="button"
+        class="admin-primary-button"
+        [disabled]="referencesLoading() || referencesError() !== null"
+        [attr.title]="referencesError() ? 'No se pudieron cargar las opciones' : employees().length === 0 && !referencesLoading() ? 'Todos los empleados activos ya tienen una cuenta' : roles().length === 0 && !referencesLoading() ? 'No hay roles activos disponibles' : 'Crear cuenta'"
+        (click)="create()"
+      >
+        @if (referencesLoading()) {
+          <span class="loading loading-spinner loading-sm"></span>
+        } @else {
+          <fa-icon [icon]="addIcon" />
+        }
+        Nueva cuenta
+      </button>
+    </div>
+  </app-page-header>
+
+  <section class="admin-surface mt-5">
+    <div class="admin-toolbar">
+      <div class="admin-field admin-toolbar-field">
+        <label for="userStateFilter">Estado de cuenta</label>
+        <select
+          id="userStateFilter"
+          class="admin-select"
+          [value]="stateFilter()"
+          (change)="changeState($any($event.target).value)"
+        >
+          <option value="">Todos</option>
+          <option value="PENDIENTE_VALIDACION">Pendiente de validación</option>
+          <option value="ACTIVA">Activa</option>
+          <option value="DESHABILITADA">Deshabilitada</option>
+          <option value="BLOQUEADA">Bloqueada</option>
+        </select>
+      </div>
+
+      <div class="admin-field admin-toolbar-field">
+        <label for="userCompanyFilter">Organización</label>
+        <select
+          id="userCompanyFilter"
+          class="admin-select"
+          [value]="companyFilter() ?? 0"
+          (change)="changeCompany($any($event.target).value)"
+        >
+          <option [value]="0">Todas</option>
+          @for (company of companies(); track company.value) {
+            <option [value]="company.value">{{ company.label }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    @if (loading()) {
+      <app-loading-state
+        title="Cargando usuarios"
+        message="Consultando cuentas y accesos activos."
+      />
+    } @else if (errorMessage()) {
+      <app-error-state
+        [message]="errorMessage() || 'Intenta nuevamente.'"
+        (retry)="load()"
+      />
+    } @else if (result().items.length === 0) {
+      <app-empty-state
+        title="Sin usuarios"
+        message="No hay cuentas para los filtros seleccionados."
+      />
+    } @else {
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Usuario</th>
+              <th>Empleado</th>
+              <th>Organización</th>
+              <th class="text-center">Roles</th>
+              <th class="text-center">Sesiones</th>
+              <th class="text-center">Estado</th>
+              <th class="text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (user of result().items; track user.usuarioId) {
+              <tr>
+                <td>
+                  <div class="admin-entity">
+                    <span class="admin-avatar">
+                      {{ user.nombreUsuario.slice(0, 2).toUpperCase() }}
+                    </span>
+
+                    <div>
+                      <strong>{{ user.nombreUsuario }}</strong>
+                      <span>{{ user.codigoEmpleado || 'Sin código' }}</span>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div class="admin-stack-copy">
+                    <strong>{{ user.empleado || '—' }}</strong>
+                    <span>{{ user.numeroDocumento || '—' }}</span>
+                  </div>
+                </td>
+                <td>{{ user.empresa || '—' }}</td>
+                <td class="text-center">
+                  <span class="admin-count-badge">{{ user.rolesActivos }}</span>
+                </td>
+                <td class="text-center">
+                  <span class="admin-count-badge">{{ user.sesionesActivas }}</span>
+                </td>
+                <td class="text-center">
+                  <span
+                    class="admin-status"
+                    [class.admin-status--active]="user.estadoCuenta === 'ACTIVA'"
+                    [class.admin-status--inactive]="isDisabled(user)"
+                    [class.admin-status--info]="user.estadoCuenta === 'PENDIENTE_VALIDACION'"
+                    [class.admin-status--warning]="user.estadoCuenta === 'BLOQUEADA'"
+                  >
+                    {{ accountStateLabel(user.estadoCuenta) }}
+                  </span>
+                </td>
+                <td>
+                  <div class="admin-row-actions">
+                    <a
+                      *appPermission="'USUARIOS_VER'"
+                      class="admin-icon-button"
+                      [routerLink]="['/administracion/usuarios', user.usuarioId]"
+                      title="Ver detalle"
+                    >
+                      <fa-icon [icon]="viewIcon" />
+                    </a>
+
+                    <button
+                      *appPermission="'USUARIOS_EDITAR'"
+                      type="button"
+                      class="admin-icon-button"
+                      title="Editar"
+                      [disabled]="detailLoadingId() === user.usuarioId"
+                      (click)="edit(user)"
+                    >
+                      @if (detailLoadingId() === user.usuarioId) {
+                        <span class="loading loading-spinner loading-xs"></span>
+                      } @else {
+                        <fa-icon [icon]="editIcon" />
+                      }
+                    </button>
+
+                    @if (isDisabled(user)) {
+                      <button
+                        *appPermission="'USUARIOS_CONFIRMAR'"
+                        type="button"
+                        class="admin-icon-button admin-icon-button--success"
+                        title="Reactivar"
+                        [disabled]="actionUserId() === user.usuarioId"
+                        (click)="reactivate(user)"
+                      >
+                        @if (actionUserId() === user.usuarioId) {
+                          <span class="loading loading-spinner loading-xs"></span>
+                        } @else {
+                          <fa-icon [icon]="reactivateIcon" />
+                        }
+                      </button>
+                    } @else {
+                      <button
+                        *appPermission="'USUARIOS_RETIRAR'"
+                        type="button"
+                        class="admin-icon-button admin-icon-button--danger"
+                        title="Deshabilitar"
+                        [disabled]="actionUserId() === user.usuarioId"
+                        (click)="disable(user)"
+                      >
+                        @if (actionUserId() === user.usuarioId) {
+                          <span class="loading loading-spinner loading-xs"></span>
+                        } @else {
+                          <fa-icon [icon]="disableIcon" />
+                        }
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <app-paginator
+        [page]="result().page"
+        [size]="result().size"
+        [totalRecords]="result().totalRecords"
+        [totalPages]="result().totalPages"
+        (pageChange)="load($event, result().size)"
+        (sizeChange)="load(1, $event)"
+      />
+    }
+  </section>
+</div>
+
+<app-usuario-form />
+<app-action-confirm-dialog />

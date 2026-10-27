@@ -1,0 +1,204 @@
+<div class="desco-page">
+  <app-page-header
+    [title]="pageTitle"
+    [subtitle]="pageSubtitle"
+    eyebrow="Administración"
+    [icon]="pageIcon"
+  >
+    <div pageActions class="flex flex-wrap gap-2">
+      <button
+        type="button"
+        class="admin-secondary-button"
+        [disabled]="loading()"
+        (click)="load()"
+      >
+        <fa-icon [class.animate-spin]="loading()" [icon]="refreshIcon" />
+        Actualizar
+      </button>
+
+      <button
+        *appPermission="'CATALOGOS_CREAR'"
+        type="button"
+        class="admin-primary-button"
+        [disabled]="loading()"
+        (click)="create()"
+      >
+        <fa-icon [icon]="addIcon" />
+        {{ createLabel }}
+      </button>
+    </div>
+  </app-page-header>
+
+  <section class="admin-surface mt-5">
+    <div
+      class="catalog-workspace"
+      [class.catalog-workspace--fixed]="fixedCatalogCode"
+    >
+      @if (!fixedCatalogCode) {
+        <aside class="catalog-navigation" aria-label="Secciones de catálogos">
+          <header class="catalog-navigation-header">
+            <span class="catalog-navigation-icon">
+              <fa-icon [icon]="pageIcon" />
+            </span>
+            <div>
+              <strong>Catálogos</strong>
+              <span>Selecciona una sección</span>
+            </div>
+          </header>
+
+          <nav class="catalog-navigation-groups">
+            @for (group of catalogGroups; track group.codigo) {
+              <section class="catalog-nav-group">
+                <h2>{{ group.nombre }}</h2>
+
+                <div class="catalog-nav-items">
+                  @for (catalog of group.catalogos; track catalog.codigo) {
+                    <button
+                      type="button"
+                      class="catalog-nav-item"
+                      [class.catalog-nav-item--active]="catalog.codigo === catalogCode()"
+                      [attr.aria-current]="catalog.codigo === catalogCode() ? 'page' : null"
+                      (click)="changeCatalog(catalog.codigo)"
+                    >
+                      <span class="catalog-nav-marker" aria-hidden="true"></span>
+                      <span>{{ catalog.nombre }}</span>
+                    </button>
+                  }
+                </div>
+              </section>
+            }
+          </nav>
+        </aside>
+      }
+
+      <div class="catalog-content">
+        <header class="catalog-context">
+          <div>
+            <span class="catalog-context-kicker">
+              {{ selectedCatalog().grupoNombre }}
+            </span>
+            <h2>{{ selectedCatalog().nombre }}</h2>
+            <p>{{ selectedCatalog().descripcion }}</p>
+          </div>
+
+          @if (!loading() && !errorMessage()) {
+            <span class="catalog-context-count">
+              {{ result().totalRecords }}
+              {{ result().totalRecords === 1 ? 'registro' : 'registros' }}
+            </span>
+          }
+        </header>
+
+        @if (loading()) {
+          <app-loading-state title="Cargando" message="Consultando información." />
+        } @else if (errorMessage()) {
+          <app-error-state
+            title="No se pudo cargar"
+            [message]="errorMessage() || 'Intenta nuevamente.'"
+            (retry)="load()"
+          />
+        } @else if (result().items.length === 0) {
+          <app-empty-state [title]="emptyTitle" [message]="emptyMessage" />
+        } @else {
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Código</th>
+                  <th>Nombre</th>
+                  <th>Descripción</th>
+                  <th class="text-center">Uso</th>
+                  <th class="text-center">Estado</th>
+                  <th class="text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of result().items; track item.id) {
+                  <tr>
+                    <td>
+                      <div class="admin-entity">
+                        <span class="admin-entity-icon">
+                          <fa-icon [icon]="pageIcon" />
+                        </span>
+                        <div>
+                          <strong>{{ item.codigo }}</strong>
+                          <span>Código generado</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="admin-table-primary">{{ item.nombre }}</td>
+                    <td class="admin-table-muted max-w-md">
+                      {{ item.descripcion || '—' }}
+                    </td>
+                    <td class="text-center">
+                      <span
+                        class="admin-usage-badge"
+                        [class.admin-usage-badge--used]="item.enUso"
+                      >
+                        {{ item.cantidadUso }}
+                      </span>
+                    </td>
+                    <td class="text-center">
+                      <span
+                        class="admin-status"
+                        [class.admin-status--active]="item.estado"
+                        [class.admin-status--inactive]="!item.estado"
+                      >
+                        {{ item.estado ? 'Activo' : 'Inactivo' }}
+                      </span>
+                    </td>
+                    <td>
+                      <div class="admin-row-actions">
+                        <button
+                          *appPermission="'CATALOGOS_EDITAR'"
+                          type="button"
+                          class="admin-icon-button"
+                          title="Editar"
+                          [disabled]="disablingId() !== null"
+                          (click)="edit(item)"
+                        >
+                          <fa-icon [icon]="editIcon" />
+                        </button>
+
+                        <button
+                          *appPermission="'CATALOGOS_RETIRAR'"
+                          type="button"
+                          class="admin-icon-button admin-icon-button--danger"
+                          [attr.title]="
+                            item.enUso
+                              ? 'Está en uso y no puede deshabilitarse'
+                              : 'Deshabilitar'
+                          "
+                          [disabled]="item.enUso || disablingId() !== null"
+                          (click)="disable(item)"
+                        >
+                          @if (disablingId() === item.id) {
+                            <span class="loading loading-spinner loading-xs"></span>
+                          } @else {
+                            <fa-icon [icon]="disableIcon" />
+                          }
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <app-paginator
+            [page]="result().page"
+            [size]="result().size"
+            [totalRecords]="result().totalRecords"
+            [totalPages]="result().totalPages"
+            (pageChange)="load($event, result().size)"
+            (sizeChange)="load(1, $event)"
+          />
+        }
+      </div>
+    </div>
+  </section>
+</div>
+
+<app-catalogo-detail />
+<app-action-confirm-dialog />

@@ -1,0 +1,277 @@
+<div class="desco-page">
+  <app-page-header
+    title="Detalle del rol"
+    subtitle="Consulta permisos y usuarios vinculados al rol."
+    eyebrow="Administración"
+    [icon]="pageIcon"
+  >
+    <div pageActions class="flex flex-wrap items-center gap-2">
+      <a
+        class="admin-secondary-button"
+        routerLink="/administracion/roles-permisos"
+      >
+        <fa-icon [icon]="backIcon" />
+        Volver
+      </a>
+
+      <button
+        type="button"
+        class="admin-secondary-button"
+        [disabled]="loading()"
+        (click)="load()"
+      >
+        <fa-icon [class.animate-spin]="loading()" [icon]="refreshIcon" />
+        Actualizar
+      </button>
+
+      @if (detail(); as value) {
+        @if (value.rol.esSistema) {
+          <span
+            class="admin-managed-badge"
+            [attr.title]="systemRoleReason"
+          >
+            <fa-icon [icon]="lockIcon" />
+            Rol base
+          </span>
+
+          <button
+            *appPermission="'ROLESPERMISOS_CREAR'"
+            type="button"
+            class="admin-primary-button"
+            disabled
+            [attr.title]="systemRoleReason"
+            aria-describedby="system-role-reason"
+          >
+            <fa-icon [icon]="permissionsIcon" />
+            Administrar permisos
+          </button>
+
+          <button
+            *appPermission="'ROLESPERMISOS_RETIRAR'"
+            type="button"
+            class="admin-danger-button"
+            disabled
+            [attr.title]="systemRoleReason"
+            aria-describedby="system-role-reason"
+          >
+            <fa-icon [icon]="disableIcon" />
+            Deshabilitar
+          </button>
+        } @else {
+          <a
+            *appPermission="'ROLESPERMISOS_CREAR'"
+            class="admin-primary-button"
+            [routerLink]="[
+              '/administracion/roles-permisos',
+              value.rol.rolId,
+              'permisos'
+            ]"
+          >
+            <fa-icon [icon]="permissionsIcon" />
+            Administrar permisos
+          </a>
+
+          <button
+            *appPermission="'ROLESPERMISOS_RETIRAR'"
+            type="button"
+            class="admin-danger-button"
+            [disabled]="disabling()"
+            (click)="disable(confirmDialog)"
+          >
+            @if (disabling()) {
+              <span class="loading loading-spinner loading-sm"></span>
+              Deshabilitando...
+            } @else {
+              <fa-icon [icon]="disableIcon" />
+              Deshabilitar
+            }
+          </button>
+        }
+      }
+    </div>
+  </app-page-header>
+
+  <div class="mt-5">
+    @if (loading()) {
+      <app-loading-state
+        title="Cargando rol"
+        message="Consultando permisos y usuarios asociados."
+      />
+    } @else if (errorMessage()) {
+      <app-error-state
+        [message]="errorMessage() || 'Intenta nuevamente.'"
+        (retry)="load()"
+      />
+    } @else if (detail(); as value) {
+      <section class="admin-detail-grid">
+        <article class="admin-detail-card">
+          <span>Código</span>
+          <strong>{{ value.rol.codigo }}</strong>
+        </article>
+
+        <article class="admin-detail-card">
+          <span>Nombre</span>
+          <strong>{{ value.rol.nombre }}</strong>
+        </article>
+
+        <article class="admin-detail-card">
+          <span>Permisos activos</span>
+          <strong>{{ activePermissions().length }}</strong>
+        </article>
+
+        <article class="admin-detail-card">
+          <span>Usuarios</span>
+          <strong>{{ users().length }}</strong>
+        </article>
+      </section>
+
+      @if (value.rol.esSistema) {
+        <div
+          id="system-role-reason"
+          class="system-role-notice mt-4"
+          role="note"
+        >
+          <fa-icon [icon]="infoIcon" />
+          <div>
+            <strong>Rol base protegido</strong>
+            <span>
+              Sus datos, permisos y estado se mantienen desde la configuración
+              oficial del sistema, por eso estas acciones están disponibles
+              solo como consulta.
+            </span>
+          </div>
+        </div>
+      }
+
+      <section class="admin-surface mt-4">
+        <div class="admin-section-header">
+          <div>
+            <p>Autorización</p>
+            <h2>Permisos asignados</h2>
+          </div>
+
+          <span class="admin-count-badge">
+            {{ activePermissions().length }}
+          </span>
+        </div>
+
+        <div class="permission-chip-grid">
+          @for (permission of pagedPermissions(); track permission.permisoId) {
+            <article class="permission-chip">
+              <div>
+                <strong>{{ permission.nombre }}</strong>
+                <span>{{ permission.moduloNombre }}</span>
+              </div>
+              <small>{{ permission.accion || permission.codigo }}</small>
+            </article>
+          } @empty {
+            <p class="admin-empty-copy">El rol no tiene permisos activos.</p>
+          }
+        </div>
+
+        @if (activePermissions().length > 0) {
+          <app-paginator
+            [page]="permissionPage()"
+            [size]="permissionSize()"
+            [totalRecords]="activePermissions().length"
+            [totalPages]="permissionTotalPages()"
+            [pageSizes]="[10, 20, 50]"
+            (pageChange)="changePermissionPage($event)"
+            (sizeChange)="changePermissionSize($event)"
+          />
+        }
+      </section>
+
+      <section class="admin-surface mt-4">
+        <div class="admin-section-header">
+          <div>
+            <p>Asignaciones</p>
+            <h2>Usuarios con este rol</h2>
+          </div>
+
+          <span class="admin-count-badge">{{ users().length }}</span>
+        </div>
+
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Usuario</th>
+                <th>Empleado</th>
+                <th>Documento</th>
+                <th>Desde</th>
+                <th class="text-center">Estado</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              @for (user of pagedUsers(); track user.usuarioId) {
+                <tr>
+                  <td>
+                    <div class="admin-entity">
+                      <span class="admin-avatar">
+                        {{ user.nombreUsuario.slice(0, 2).toUpperCase() }}
+                      </span>
+
+                      <div>
+                        <strong>{{ user.nombreUsuario }}</strong>
+                        <span>Cuenta asignada</span>
+                      </div>
+                    </div>
+                  </td>
+
+                  <td>
+                    <div class="admin-stack-copy">
+                      <strong>{{ user.empleado || 'Sin empleado' }}</strong>
+                      <span>Empleado</span>
+                    </div>
+                  </td>
+
+                  <td>{{ user.numeroDocumento || '—' }}</td>
+
+                  <td>
+                    {{
+                      user.fechaDesde
+                        ? (user.fechaDesde | date:'dd/MM/yyyy HH:mm')
+                        : '—'
+                    }}
+                  </td>
+
+                  <td class="text-center">
+                    <span
+                      class="admin-status"
+                      [class.admin-status--active]="user.estado"
+                      [class.admin-status--inactive]="!user.estado"
+                    >
+                      {{ user.estado ? 'Activo' : 'Inactivo' }}
+                    </span>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="5" class="admin-table-empty">
+                    No hay usuarios asignados.
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        @if (users().length > 0) {
+          <app-paginator
+            [page]="userPage()"
+            [size]="userSize()"
+            [totalRecords]="users().length"
+            [totalPages]="userTotalPages()"
+            [pageSizes]="[10, 20, 50]"
+            (pageChange)="changeUserPage($event)"
+            (sizeChange)="changeUserSize($event)"
+          />
+        }
+      </section>
+    }
+  </div>
+</div>
+
+<app-action-confirm-dialog #confirmDialog />

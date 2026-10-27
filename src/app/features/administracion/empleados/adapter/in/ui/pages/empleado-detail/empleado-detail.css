@@ -1,0 +1,204 @@
+:host {
+  display: block;
+}
+
+.employee-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.employee-detail-section,
+.employee-history-section,
+.employee-access-card {
+  overflow: hidden;
+}
+
+.employee-detail-section > .admin-info-list {
+  margin: 1rem;
+}
+
+.employee-history-section > .admin-table-wrap {
+  margin: 0 1rem 1rem;
+  border: 1px solid var(--desco-border);
+  border-radius: 0.9rem;
+  overflow: auto;
+}
+
+.employee-access-card {
+  min-height: 100%;
+}
+
+.employee-access-card__body {
+  padding: 1rem;
+}
+
+.employee-account-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.employee-account-item {
+  display: grid;
+  min-width: 0;
+  gap: 0.28rem;
+  border: 1px solid var(--desco-border);
+  border-radius: 0.85rem;
+  background: var(--desco-surface-soft);
+  padding: 0.9rem 1rem;
+}
+
+.employee-account-item span {
+  color: var(--desco-text-muted);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.employee-account-item strong {
+  overflow-wrap: anywhere;
+  color: var(--desco-text);
+  font-size: 0.86rem;
+  font-weight: 850;
+  line-height: 1.35;
+}
+
+.employee-role-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.employee-role-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.8rem;
+  border: 1px solid var(--desco-border);
+  border-radius: 0.9rem;
+  background: var(--desco-surface-soft);
+  padding: 0.85rem 0.95rem;
+}
+
+.employee-role-item__icon {
+  display: grid;
+  width: 2.35rem;
+  height: 2.35rem;
+  place-items: center;
+  border-radius: 0.75rem;
+  background: var(--desco-primary-soft);
+  color: var(--desco-primary);
+}
+
+.employee-role-item__content {
+  display: grid;
+  min-width: 0;
+  gap: 0.15rem;
+}
+
+.employee-role-item__label {
+  color: var(--desco-text-muted);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.employee-role-item__content strong {
+  overflow: hidden;
+  color: var(--desco-text);
+  font-size: 0.88rem;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.employee-role-item__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.18rem;
+}
+
+.employee-role-code {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--desco-primary-border);
+  border-radius: 9999px;
+  background: var(--desco-primary-soft);
+  padding: 0.2rem 0.5rem;
+  color: var(--desco-primary-text);
+  font-size: 0.62rem;
+  font-weight: 850;
+  line-height: 1;
+}
+
+.employee-role-date {
+  color: var(--desco-text-muted);
+  font-size: 0.66rem;
+  font-weight: 650;
+}
+
+.employee-role-state {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--desco-success-border);
+  border-radius: 9999px;
+  background: var(--desco-success-soft);
+  padding: 0.26rem 0.55rem;
+  color: var(--desco-success-text);
+  font-size: 0.64rem;
+  font-weight: 850;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.employee-access-empty {
+  display: grid;
+  min-height: 6.5rem;
+  place-items: center;
+  border: 1px dashed var(--desco-border-strong);
+  border-radius: 0.85rem;
+  background: var(--desco-surface-soft);
+  padding: 1rem;
+  color: var(--desco-text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  .employee-detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .employee-detail-section > .admin-info-list {
+    margin: 0.75rem;
+  }
+
+  .employee-history-section > .admin-table-wrap {
+    margin: 0 0.75rem 0.75rem;
+  }
+
+  .employee-access-card__body {
+    padding: 0.75rem;
+  }
+
+  .employee-account-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .employee-role-item {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .employee-role-state {
+    grid-column: 2;
+    width: fit-content;
+  }
+}

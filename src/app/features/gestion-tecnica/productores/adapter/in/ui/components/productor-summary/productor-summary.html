@@ -1,0 +1,15 @@
+<article class="producer-summary" [class.producer-summary--compact]="compact()">
+  <div class="producer-avatar"><fa-icon [icon]="userIcon" /></div>
+  <div class="producer-main">
+    <strong>{{ fullName() }}</strong>
+    <span>{{ productor().codigoSocio || 'Sin código de socio' }} · {{ productor().asociacionNombre || 'Sin asociación' }}</span>
+    <div class="producer-meta">
+      <span><fa-icon [icon]="idIcon" /> {{ productor().tipoDocumento }} {{ productor().numeroDocumento }}</span>
+      @if (productor().telefono) { <span><fa-icon [icon]="phoneIcon" /> {{ productor().telefono }}</span> }
+      <span><fa-icon [icon]="leafIcon" /> {{ productor().situacionMembresia || 'Sin situación' }}</span>
+    </div>
+  </div>
+  <span class="admin-status" [class.admin-status--active]="productor().estado" [class.admin-status--inactive]="!productor().estado">
+    {{ productor().estado ? 'Activo' : 'Retirado' }}
+  </span>
+</article>

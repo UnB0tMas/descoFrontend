@@ -1,0 +1,10 @@
+:host { display: contents; }
+.evidence-dropzone { display: grid; min-height: 8rem; place-items: center; gap: .25rem; border: 1px dashed #93c5fd; border-radius: 1rem; background: #f8fbff; padding: 1rem; color: #2563eb; cursor: pointer; text-align: center; }
+.evidence-dropzone:hover { background: #eff6ff; }
+.evidence-dropzone strong { color: var(--desco-text); font-size: .78rem; }
+.evidence-dropzone span { color: var(--desco-text-muted); font-size: .66rem; }
+.evidence-dropzone input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.evidence-progress { display: grid; gap: .35rem; }
+.evidence-progress > div { height: .45rem; overflow: hidden; border-radius: 9999px; background: #e2e8f0; }
+.evidence-progress > div span { display: block; height: 100%; border-radius: inherit; background: #2563eb; transition: width 180ms ease; }
+.evidence-progress small { color: var(--desco-text-muted); font-size: .65rem; }
