@@ -1,0 +1,21 @@
+
+:host{display:block;min-width:0}
+.desco-image-upload{display:grid;gap:.7rem;min-width:0;border:1px dashed var(--desco-border);border-radius:1rem;padding:.85rem;background:var(--desco-surface-soft);color:var(--desco-text)}
+.desco-image-upload:focus-within{outline:2px solid var(--desco-primary);outline-offset:2px}
+.desco-image-upload__empty{display:flex;min-height:100px;flex-direction:column;align-items:center;justify-content:center;gap:.35rem;color:var(--desco-text-muted);font-size:.78rem}
+.desco-image-upload__empty fa-icon{color:var(--desco-primary);font-size:1.6rem}
+.desco-image-upload__empty strong{color:var(--desco-text);font-size:.9rem}
+.desco-image-upload__preview{overflow:hidden;border-radius:.65rem;background:var(--desco-surface);border:1px solid var(--desco-border)}
+.desco-image-upload__preview img{display:block;width:100%;height:clamp(140px,26vh,220px);object-fit:contain}
+.desco-image-upload__preview-bar{display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding:.45rem .7rem;color:var(--desco-text-muted);font-size:.75rem}
+.desco-image-upload__preview-bar button{background:transparent;color:var(--desco-text);border:0;cursor:pointer;padding:.35rem}
+.desco-image-upload__select{position:relative;display:flex;align-items:center;justify-content:center;gap:.5rem;padding:.7rem .8rem;border:1px solid var(--desco-border);background:var(--desco-surface);border-radius:.7rem;color:var(--desco-text);font-weight:700;font-size:.8rem;cursor:pointer}
+.desco-image-upload__select:hover{border-color:var(--desco-primary)}
+.desco-image-upload__select input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
+.desco-image-upload .is-disabled,.desco-image-upload.is-disabled{opacity:.6;pointer-events:none}
+.desco-image-upload__error{color:var(--desco-danger);font-size:.76rem;margin:0}
+
+.desco-image-upload__gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(105px,1fr));gap:.6rem}
+.desco-image-upload__item{position:relative;border:1px solid var(--desco-border);border-radius:.7rem;overflow:hidden;aspect-ratio:4/3;background:var(--desco-surface)}
+.desco-image-upload__item img{width:100%;height:100%;object-fit:cover}
+.desco-image-upload__item button{position:absolute;top:.35rem;right:.35rem;border:0;border-radius:.4rem;padding:.35rem;background:rgba(0,0,0,.8);color:white;cursor:pointer}

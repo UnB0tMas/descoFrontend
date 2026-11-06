@@ -1,0 +1,121 @@
+<div class="gp-productive-catalog" [class.desco-page]="!embedded">
+  @if (!embedded) {
+    <nav class="gp-catalog-breadcrumb" aria-label="Ruta de navegación">
+      <a routerLink="/administracion/catalogos">Catálogos</a><span aria-hidden="true">/</span>
+      @if (detail()) {
+        <button type="button" (click)="closeDetail()">{{ selectedCatalog().nombre }}</button><span aria-hidden="true">/</span>
+        <span aria-current="page">{{ detailEntityName() }}</span>
+      } @else {
+        <span aria-current="page">{{ selectedCatalog().nombre }}</span>
+      }
+    </nav>
+    <app-page-header title="Catálogos productivos" subtitle="Administra cultivos, especies animales y sanidad." eyebrow="Administración" [icon]="pageIcon">
+      <div pageActions class="flex flex-wrap gap-2">
+        <a routerLink="/administracion/catalogos" class="admin-secondary-button">Volver a catálogos</a>
+        <button type="button" class="admin-secondary-button" [disabled]="loading()" (click)="load()"><fa-icon [class.animate-spin]="loading()" [icon]="refreshIcon" /> Actualizar</button>
+        <button *appPermission="'CATALOGOS_CREAR'" type="button" class="admin-primary-button" [disabled]="loading() || disablingKey() !== null" (click)="create()"><fa-icon [icon]="addIcon" /> {{ primaryActionLabel() }}</button>
+      </div>
+    </app-page-header>
+  }
+
+  <section [class.admin-surface]="!embedded" [class.mt-5]="!embedded">
+    @if (!embedded) {
+      <div class="catalog-browser">
+        <nav class="catalog-item-tabs" aria-label="Catálogos de gestión productiva">
+          @for (tab of tabs; track tab.codigo) {
+            <button type="button" class="catalog-item-tab" [class.catalog-item-tab--active]="type() === tab.codigo"
+              [attr.aria-current]="type() === tab.codigo ? 'page' : null" (click)="changeType(tab.codigo)"><span class="catalog-item-dot" aria-hidden="true"></span>{{ tab.nombre }}</button>
+          }
+        </nav>
+      </div>
+    }
+
+    <header class="catalog-context">
+      <div class="catalog-context-copy">
+        <span class="catalog-context-icon" aria-hidden="true"><fa-icon [icon]="pageIcon" /></span>
+        <div>
+          <span class="catalog-context-kicker">Gestión productiva</span>
+          <h2>{{ detail() ? detailEntityName() : selectedCatalog().nombre }}</h2>
+          <p>{{ detail() ? childTitle() : selectedCatalog().descripcion }}</p>
+        </div>
+      </div>
+      @if (!loading() && !error()) {
+        <span class="catalog-context-count">{{ detail() ? associatedCount() : result().totalRecords }} {{ (detail() ? associatedCount() : result().totalRecords) === 1 ? 'registro' : 'registros' }}</span>
+      }
+    </header>
+
+    @if (detail()) {
+      <div class="gp-hierarchy-toolbar">
+        <button type="button" class="admin-secondary-button" (click)="closeDetail()">Volver a la lista</button>
+      </div>
+    }
+
+    @if (!loading() && !error()) {
+      <div class="gp-product-filter">
+        <label class="admin-field gp-product-search-field"><span>Buscar</span>
+          <input class="admin-input" type="search" [value]="search()" (input)="setSearch($any($event.target).value)" placeholder="Nombre o código" />
+        </label>
+        @if (!detail() && type() === 'SANIDAD') {
+          <label class="admin-field gp-product-parent-field"><span>Ámbito</span>
+            <select class="admin-select" [value]="sanidadScope()" (change)="changeSanidadScope($any($event.target).value)">
+              <option value="TODOS">Todos</option><option value="CULTIVO">Agrícola</option><option value="CRIANZA">Pecuario</option>
+            </select>
+          </label>
+        }
+      </div>
+    }
+
+    @if (loading()) {
+      <app-loading-state title="Cargando catálogos" message="Consultando los valores productivos." />
+    } @else if (error()) {
+      <app-error-state title="No se pudo cargar" [message]="error() || 'Intenta nuevamente.'" (retry)="load()" />
+    } @else if (result().items.length === 0) {
+      <app-empty-state [title]="detail() ? 'Sin registros asociados' : 'Sin registros'"
+        [message]="detail() ? 'Añade un registro con el botón superior.' : 'No hay registros para esta selección.'" />
+    } @else {
+      <div class="admin-table-wrap catalog-table-wrap gp-product-table-wrap">
+        <table class="admin-table">
+          <thead><tr>
+            <th>Código</th><th>Nombre</th>
+            @if (!detail() && type() === 'SANIDAD') { <th>Ámbito</th><th>Cultivo o especie</th> }
+            @if (detail() || type() !== 'SANIDAD') { <th>Descripción</th> }
+            <th class="text-right">Acciones</th>
+          </tr></thead>
+          <tbody>
+            @for (item of result().items; track rowKey(item)) {
+              <tr>
+                <td><span class="admin-code">{{ item.codigo || '—' }}</span></td>
+                <td class="admin-table-primary">{{ rowName(item) }}</td>
+                @if (!detail() && type() === 'SANIDAD') {
+                  <td class="admin-table-muted">{{ scopeName(item) }}</td>
+                  <td class="admin-table-muted">{{ parentName(item) }}</td>
+                }
+                @if (detail() || type() !== 'SANIDAD') {
+                  <td class="admin-table-muted gp-product-description">{{ associationDetail(item) }}</td>
+                }
+                <td><div class="admin-row-actions">
+                  @if (!detail() && (item.tipo === 'CULTIVO' || item.tipo === 'CRIANZA' || isDisease(item))) {
+                    <button type="button" class="admin-secondary-button gp-detail-button" [disabled]="disablingKey() !== null"
+                      (click)="openDetail(item)" title="Ver detalle"><fa-icon [icon]="detailIcon" /> Detalle</button>
+                  }
+                  <button *appPermission="'CATALOGOS_EDITAR'" type="button" class="admin-icon-button" title="Editar" aria-label="Editar registro"
+                    [disabled]="disablingKey() !== null" (click)="edit(item)"><fa-icon [icon]="editIcon" /></button>
+                  <button *appPermission="'CATALOGOS_EDITAR'" type="button" class="admin-icon-button admin-icon-button--danger"
+                    title="Desactivar" aria-label="Desactivar registro"
+                    [disabled]="disablingKey() !== null" (click)="disable(item)">
+                    @if (disablingKey() === rowKey(item)) { <span class="loading loading-spinner loading-xs"></span> }
+                    @else { <fa-icon [icon]="disableIcon" /> }
+                  </button>
+                </div></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <app-paginator [page]="result().page" [size]="result().size" [totalRecords]="result().totalRecords"
+        [totalPages]="result().totalPages" (pageChange)="changePage($event)" (sizeChange)="changePageSize($event)" />
+    }
+  </section>
+  <app-gp-accion-modal />
+  <app-action-confirm-dialog />
+</div>

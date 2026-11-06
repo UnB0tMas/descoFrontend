@@ -66,7 +66,7 @@
       <span>Producto</span>
       <select class="admin-select" [value]="productFilter() ?? 0" (change)="onProductChange($any($event.target).value)">
         <option [value]="0">Todos</option>
-        @for (product of products(); track product.productoId) {
+        @for (product of filterProducts(); track product.productoId) {
           <option [value]="product.productoId">{{ product.nombre }}</option>
         }
       </select>
@@ -89,7 +89,7 @@
         </div>
         <div class="warehouse-detail-actions">
           <button type="button" class="admin-secondary-button admin-secondary-button--small" [disabled]="detailLoading()" (click)="reloadDetailStock()"><fa-icon [icon]="refreshIcon" /> Actualizar</button>
-          <button *appPermission="'ALMACENES_MOVIMIENTO'" type="button" class="admin-primary-button" [disabled]="warehouse.permiteEntrada === false" (click)="configureProduct(warehouse)"><fa-icon [icon]="addIcon" /> Agregar producto</button>
+          <button *appPermission="'ALMACENES_MOVIMIENTO'" type="button" class="admin-primary-button" [disabled]="warehouse.permiteEntrada === false || warehouse.estado === false" (click)="configureProduct(warehouse)"><fa-icon [icon]="addIcon" /> Agregar producto</button>
         </div>
       </header>
       @if (warehouse.descripcion) { <p class="warehouse-detail-description">{{ warehouse.descripcion }}</p> }
@@ -160,15 +160,22 @@
                       <span class="admin-status"
                         [class.admin-status--active]="stockStatus(item) === 'Disponible'"
                         [class.admin-status--warning]="stockStatus(item) === 'Reponer'"
-                        [class.admin-status--inactive]="stockStatus(item) === 'Agotado'">
+                        [class.admin-status--inactive]="stockStatus(item) === 'Agotado' || stockStatus(item) === 'Inactivo'">
                         {{ stockStatus(item) }}
                       </span>
                     </td>
                     <td class="text-right">
                       <div class="admin-row-actions warehouse-actions">
-                        <a *appPermission="'PRODUCTOS_VER'" class="admin-icon-button" [routerLink]="['/recursos/productos', item.productoId]" [queryParams]="{ uotId: detailUotId() }" title="Ver ficha del producto" [attr.aria-label]="'Ver ficha de ' + item.producto"><fa-icon [icon]="editIcon" /></a>
-                        <button *appPermission="'ALMACENES_MOVIMIENTO'" type="button" class="admin-icon-button" [disabled]="warehouse.permiteEntrada === false" (click)="detailMovement(item, 'E')" title="Registrar entrada" [attr.aria-label]="'Registrar entrada de ' + item.producto"><fa-icon [icon]="entryIcon" /></button>
-                        <button *appPermission="'ALMACENES_MOVIMIENTO'" type="button" class="admin-icon-button" [disabled]="warehouse.permiteSalida === false || (item.stockDisponible ?? 0) <= 0" (click)="detailMovement(item, 'S')" title="Registrar salida" [attr.aria-label]="'Registrar salida de ' + item.producto"><fa-icon [icon]="exitIcon" /></button>
+                        @if(canManageDetail()) {
+                          <button type="button" class="admin-icon-button" title="Editar configuración" (click)="manageProduct(item,'EDITAR')"><fa-icon [icon]="settingsIcon" /></button>
+                          <button type="button" class="admin-icon-button" [disabled]="!!managementBlock(item,item.estado===false?'REACTIVAR':'DESACTIVAR')" [title]="managementBlock(item,item.estado===false?'REACTIVAR':'DESACTIVAR') || (item.estado===false?'Reactivar producto':'Desactivar producto')" (click)="manageProduct(item,item.estado===false?'REACTIVAR':'DESACTIVAR')"><fa-icon [icon]="item.estado===false?refreshIcon:stateIcon" /></button>
+                        }
+                        @if(item.estado !== false && canSetSalePrice(item.productoId)) {
+                          <button *appPermission="'PRODUCTOS_PRECIO'" type="button" class="admin-icon-button" title="Definir precio de venta" (click)="editSalePrice(item)"><fa-icon [icon]="editIcon" /></button>
+                        }
+                        <a *appPermission="'PRODUCTOS_VER'" class="admin-icon-button" [routerLink]="['/recursos/productos', item.productoId]" [queryParams]="{ uotId: detailUotId() }" title="Ver ficha del producto" [attr.aria-label]="'Ver ficha de ' + item.producto"><fa-icon [icon]="viewIcon" /></a>
+                        <button *appPermission="'ALMACENES_MOVIMIENTO'" type="button" class="admin-icon-button" [disabled]="warehouse.permiteEntrada === false || item.estado === false" (click)="detailMovement(item, 'E')" title="Registrar entrada" [attr.aria-label]="'Registrar entrada de ' + item.producto"><fa-icon [icon]="entryIcon" /></button>
+                        <button *appPermission="'ALMACENES_MOVIMIENTO'" type="button" class="admin-icon-button" [disabled]="warehouse.permiteSalida === false || item.estado === false || (item.stockDisponible ?? 0) <= 0" (click)="detailMovement(item, 'S')" title="Registrar salida" [attr.aria-label]="'Registrar salida de ' + item.producto"><fa-icon [icon]="exitIcon" /></button>
                         <button *appPermission="'ALMACENES_KARDEX'" type="button" class="admin-icon-button" (click)="reloadDetailKardex(item.productoId ?? null)" title="Ver kardex del producto" [attr.aria-label]="'Ver kardex de ' + item.producto"><fa-icon [icon]="kardexIcon" /></button>
                       </div>
                     </td>
@@ -276,7 +283,7 @@
                 *appPermission="'ALMACENES_MOVIMIENTO'"
                 type="button"
                 class="admin-secondary-button admin-secondary-button--small"
-                [disabled]="warehouse.permiteEntrada === false"
+                [disabled]="warehouse.permiteEntrada === false || warehouse.estado === false"
                 (click)="configureProduct(warehouse)"
               >
                 <fa-icon [icon]="configureIcon" />
@@ -296,7 +303,7 @@
           <table class="admin-table warehouse-data-table">
             <thead><tr>
               <th>UOT / almacén</th><th>Producto</th><th>Unidad</th>
-              <th class="text-right">Actual</th><th class="text-right">Reservado</th><th class="text-right">Disponible</th><th>Actualización</th>
+              <th class="text-right">Actual</th><th class="text-right">Reservado</th><th class="text-right">Disponible</th><th>Actualización</th><th class="text-right">Acciones</th>
             </tr></thead>
             <tbody>
               @for (item of pagedStock(); track item.almacenId + ':' + item.productoId) {
@@ -306,8 +313,14 @@
                   <td><span class="admin-muted-badge">{{ item.unidadMedida || '—' }}</span></td>
                   <td class="text-right warehouse-number">{{ (item.stockActual ?? 0) | number:'1.0-3' }}</td>
                   <td class="text-right warehouse-number admin-table-muted">{{ (item.stockReservado ?? 0) | number:'1.0-3' }}</td>
-                  <td class="text-right"><div class="warehouse-stock-cell"><strong class="warehouse-number" [class]="stockTone(item)">{{ (item.stockDisponible ?? 0) | number:'1.0-3' }}</strong><span class="admin-status" [class.admin-status--active]="stockStatus(item) === 'Disponible'" [class.admin-status--warning]="stockStatus(item) === 'Reponer'" [class.admin-status--inactive]="stockStatus(item) === 'Agotado'">{{ stockStatus(item) }}</span></div></td>
+                  <td class="text-right"><div class="warehouse-stock-cell"><strong class="warehouse-number" [class]="stockTone(item)">{{ (item.stockDisponible ?? 0) | number:'1.0-3' }}</strong><span class="admin-status" [class.admin-status--active]="stockStatus(item) === 'Disponible'" [class.admin-status--warning]="stockStatus(item) === 'Reponer'" [class.admin-status--inactive]="stockStatus(item) === 'Agotado' || stockStatus(item) === 'Inactivo'">{{ stockStatus(item) }}</span></div></td>
                   <td><div class="admin-stack-copy"><strong>{{ item.fechaActualizacion | date:'dd/MM/yyyy' }}</strong><span>{{ item.fechaActualizacion | date:'HH:mm' }} h</span></div></td>
+                  <td><div class="admin-row-actions">
+                        @if(canManageProduct(item)){
+                          <button type="button" class="admin-icon-button" title="Editar configuración" [attr.aria-label]="'Editar configuración de ' + item.producto" (click)="manageProduct(item,'EDITAR')"><fa-icon [icon]="settingsIcon" /></button>
+                          <button type="button" class="admin-icon-button" [disabled]="!!managementBlock(item,item.estado===false?'REACTIVAR':'DESACTIVAR')" [title]="managementBlock(item,item.estado===false?'REACTIVAR':'DESACTIVAR') || (item.estado===false?'Reactivar producto':'Desactivar producto')" [attr.aria-label]="(item.estado===false?'Reactivar ':'Desactivar ') + item.producto" (click)="manageProduct(item,item.estado===false?'REACTIVAR':'DESACTIVAR')"><fa-icon [icon]="item.estado===false?refreshIcon:stateIcon" /></button>
+                        }
+                  </div></td>
                 </tr>
               }
             </tbody>
@@ -357,3 +370,5 @@
 </div>
 
 <app-almacen-operation-form />
+<app-producto-form />
+<app-almacen-producto-form />

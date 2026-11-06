@@ -1,5 +1,5 @@
 <dialog #dialog class="modal desco-modal" (cancel)="$event.preventDefault(); close()">
-  <div class="modal-box admin-modal-box">
+  <div class="modal-box admin-modal-box desco-fixed-form-modal">
     <header class="admin-modal-header">
       <div class="admin-modal-title-group">
         <span class="admin-modal-icon">
@@ -24,7 +24,8 @@
       <div class="admin-inline-error">{{ error() }}</div>
     }
 
-    <form class="admin-form-grid" [formGroup]="form" (ngSubmit)="save()">
+    <form class="desco-fixed-form-layout" [formGroup]="form" (ngSubmit)="save()">
+      <div class="desco-fixed-form-body admin-form-grid">
       <div class="admin-field admin-field-span-2">
         <label>Predio</label>
         <select class="admin-select" formControlName="predioId">
@@ -74,7 +75,8 @@
         />
       </div>
 
-      <footer class="admin-modal-actions admin-field-span-2">
+      </div>
+      <footer class="admin-modal-actions desco-fixed-form-footer">
         <button
           type="button"
           class="admin-secondary-button"

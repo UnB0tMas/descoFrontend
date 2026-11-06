@@ -22,6 +22,12 @@ export const catalogosRoutes: Routes = [
       ),
   },
   {
+    path: 'catalogos-productivos',
+    data: {breadcrumb: 'Catálogos productivos', ...catalogAccess},
+    canActivate: [moduleAccessGuard, permissionGuard],
+    loadComponent: () => import('./catalogos-productivos').then(m => m.CatalogosProductivos),
+  },
+  {
     path: 'tipos-bien',
     redirectTo: 'catalogos',
     pathMatch: 'full',

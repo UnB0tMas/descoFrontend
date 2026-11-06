@@ -1,5 +1,37 @@
 <div class="property-map-shell">
- <div #mapHost class="property-map" [style.height]="height" aria-label="Ubicación del predio"></div>
- @if(editable){<button type="button" class="property-map-locate" [disabled]="locating()" (click)="useCurrentLocation()">@if(locating()){<span class="loading loading-spinner loading-xs"></span> Obteniendo...}@else{<fa-icon [icon]="locateIcon"/> Usar ubicación actual}</button>}
- @if(latitude!==null&&longitude!==null){<div class="property-map-coordinates"><fa-icon [icon]="mapIcon"/><span>{{latitude.toFixed(6)}}, {{longitude.toFixed(6)}}</span></div>}
+  <div #mapHost class="property-map" [style.height]="height" aria-label="Mapa para seleccionar una ubicación"></div>
+  <div class="property-map-actions">
+    <button type="button" class="property-map-tool" aria-label="Ampliar mapa" title="Ver mapa completo" (click)="openExpanded()">
+      <fa-icon [icon]="expandedIcon" /> <span>Ampliar mapa</span>
+    </button>
+    @if (editable) {
+      <button type="button" class="property-map-tool property-map-tool--locate"
+        [disabled]="locating()" (click)="useCurrentLocation()">
+        @if (locating()) { <span class="loading loading-spinner loading-xs"></span> Buscando GPS… }
+        @else { <fa-icon [icon]="locationIcon" /> Ubicación actual }
+      </button>
+    }
+  </div>
+  @if (mapError()) { <p class="property-map-message" role="alert">{{ mapError() }}</p> }
+  @if (gpsError()) { <p class="property-map-message" role="status">{{ gpsError() }}</p> }
 </div>
+<dialog #expandedDialog class="property-map-fullscreen" (cancel)="closeExpanded($event)" (close)="closeExpanded()"
+  aria-label="Mapa ampliado de la parcela">
+  <div class="property-map-fullscreen__content">
+    <header class="property-map-fullscreen__header">
+      <div><strong>Ubicación de la parcela</strong><p>Usa el GPS, mueve el marcador o pulsa otro punto del mapa.</p></div>
+      <div class="property-map-fullscreen__actions">
+        @if (editable) {
+          <button type="button" class="property-map-tool property-map-tool--locate" [disabled]="locating()"
+            (click)="useCurrentLocation()"><fa-icon [icon]="locationIcon" /> Ubicación actual</button>
+        }
+        <button type="button" class="property-map-tool" aria-label="Cerrar mapa ampliado" (click)="closeExpanded()">
+          <fa-icon [icon]="closeIcon" /> Cerrar
+        </button>
+      </div>
+    </header>
+    <div #expandedMapHost class="property-map-fullscreen__map" aria-label="Mapa ampliado"></div>
+    @if (mapError()) { <p class="property-map-message" role="alert">{{ mapError() }}</p> }
+    @if (gpsError()) { <p class="property-map-message" role="status">{{ gpsError() }}</p> }
+  </div>
+</dialog>

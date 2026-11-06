@@ -10,10 +10,9 @@ import { mapOpenApiError } from '../../../../../../../../infrastructure/openapi/
 import { ToastService } from '../../../../../../../../shared/feedback/toast-center/toast.service';
 import { PageHeaderComponent } from '../../../../../../../../shared/layout/page-header/page-header';
 import { UotContextStore } from '../../../../../../../uot/state/uot-context.store';
-import { LogisticsOperationsApiService, ProductUotPolicy } from '../../../../../../shared/logistics-operations-api.service';
+import { LogisticsOperationsApiService, ProductUotPolicy, TransferProduct } from '../../../../../../shared/logistics-operations-api.service';
 import { ResourceApiService } from '../../../../../../shared/resource-api.service';
 import { ResourceWarehouseResponse } from '../../../../../../../../infrastructure/openapi/generated/model/resourceWarehouseResponse';
-import { ResourceStockResponse } from '../../../../../../../../infrastructure/openapi/generated/model/resourceStockResponse';
 
 @Component({
   selector: 'app-almacen-operations', standalone: true,
@@ -36,22 +35,29 @@ export class AlmacenOperationsPage implements OnInit {
   readonly errorMessage = signal<string | null>(null);
   readonly policies = signal<readonly ProductUotPolicy[]>([]);
   readonly warehouses = signal<readonly ResourceWarehouseResponse[]>([]);
-  readonly stock = signal<readonly ResourceStockResponse[]>([]);
   readonly sourceId = signal(0);
   readonly destinationId = signal(0);
   readonly productId = signal(0);
-  readonly quantity = signal(1);
+  readonly quantity = signal(0);
+  readonly transferProducts = signal<readonly TransferProduct[]>([]);
+  readonly transferLoading = signal(false);
+  readonly selectedTransferProduct = computed(() => this.transferProducts().find(p => p.productoId === this.productId()));
+  readonly maxQuantity = computed(() => this.selectedTransferProduct()?.apto ? Number(this.selectedTransferProduct()?.stockDisponible ?? 0) : 0);
+  readonly validQuantity = computed(() => {
+    const quantity = this.quantity();
+    return Number.isFinite(quantity) && quantity > 0 && quantity <= this.maxQuantity()
+      && Math.abs(quantity * 1000 - Math.round(quantity * 1000)) < 0.000001;
+  });
   readonly observation = signal('');
   readonly editingPolicyId = signal<number | null>(null);
   readonly saleEnabled = signal(false);
   readonly internalEnabled = signal(true);
   readonly productSearch = signal('');
+  private transferQuery = 0;
   readonly visiblePolicies = computed(() => {
     const search = this.productSearch().trim().toLocaleLowerCase();
     return this.policies().filter((p) => !search || (p.nombre + ' ' + p.codigo).toLowerCase().includes(search));
   });
-  readonly sourceStock = computed(() => this.stock().filter((s) =>
-    Number(s.almacenId) === this.sourceId() && Number(s.stockDisponible ?? 0) > 0));
   canEdit(): boolean { return this.permission.has('ALMACENES_MOVIMIENTO'); }
   private uotId(): number | null {
     const selected = this.uot.selectedId();
@@ -63,6 +69,7 @@ export class AlmacenOperationsPage implements OnInit {
     if (!uotId) {
       this.errorMessage.set('Seleccione una UOT específica para configurar productos y transferir stock.');
       this.policies.set([]);
+      this.sourceId.set(0); this.destinationId.set(0); this.loadTransferProducts();
       return;
     }
     this.loading.set(true);
@@ -70,17 +77,53 @@ export class AlmacenOperationsPage implements OnInit {
     forkJoin({
       policies: this.operations.listPolicies(uotId),
       warehouses: this.resources.listWarehouses(),
-      stock: this.resources.listStock(uotId),
     }).pipe(finalize(() => this.loading.set(false))).subscribe({
-      next: ({ policies, warehouses, stock }) => {
+      next: ({ policies, warehouses }) => {
         if (uotId !== this.uotId()) return;
         this.policies.set(policies);
         this.warehouses.set(warehouses.filter((w) => w.estado !== false));
-        this.stock.set(stock);
         if (!warehouses.some((w) => Number(w.almacenId) === this.sourceId()
           && Number(w.uotPropietariaId) === uotId)) this.sourceId.set(0);
+        this.loadTransferProducts();
       },
       error: (error) => this.errorMessage.set(mapOpenApiError(error).message),
+    });
+  }
+  onTransferWarehouseChange(value: string, source: boolean): void {
+    if (source) this.sourceId.set(Number(value));
+    else this.destinationId.set(Number(value));
+    if (this.sourceId() === this.destinationId()) this.destinationId.set(0);
+    this.loadTransferProducts();
+  }
+  onTransferProductChange(value: string): void {
+    const product = this.transferProducts().find(p => p.productoId === Number(value) && p.apto);
+    this.productId.set(product?.productoId ?? 0);
+    this.quantity.set(0);
+  }
+  onQuantityInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const value = input.valueAsNumber;
+    const limited = Number.isFinite(value) ? Math.max(0, Math.min(value, this.maxQuantity())) : 0;
+    this.quantity.set(limited);
+    if (Number.isFinite(value) && value !== limited) input.value = String(limited);
+  }
+  private loadTransferProducts(): void {
+    const query = ++this.transferQuery;
+    const source = this.sourceId(), destination = this.destinationId();
+    this.transferProducts.set([]); this.productId.set(0); this.quantity.set(0);
+    this.transferLoading.set(false);
+    if (!source || !destination || !this.uotId()) return;
+    this.transferLoading.set(true);
+    this.operations.listTransferProducts(source, destination).subscribe({
+      next: products => {
+        if (query !== this.transferQuery) return;
+        this.transferProducts.set(products); this.transferLoading.set(false);
+      },
+      error: error => {
+        if (query !== this.transferQuery) return;
+        this.transferLoading.set(false);
+        this.errorMessage.set(mapOpenApiError(error).message);
+      },
     });
   }
   editPolicy(policy: ProductUotPolicy): void {
@@ -114,7 +157,7 @@ export class AlmacenOperationsPage implements OnInit {
       Number(source.uotPropietariaId) !== this.uotId() ||
       this.productId() <= 0 || !Number.isFinite(quantity) || quantity <= 0 ||
       Math.abs(quantity * 1000 - Math.round(quantity * 1000)) > 0.000001 ||
-      Number(this.sourceStock().find((s) => s.productoId === this.productId())?.stockDisponible ?? 0) < quantity) {
+      this.transferLoading() || !this.selectedTransferProduct()?.apto || !this.validQuantity()) {
       this.errorMessage.set('Seleccione origen, destino distinto, producto y cantidad disponible válidos.');
       return;
     }
@@ -127,9 +170,9 @@ export class AlmacenOperationsPage implements OnInit {
     }).pipe(finalize(() => this.working.set(false))).subscribe({
       next: (id) => {
         this.toast.success(`Transferencia #${id} registrada`, 'Se actualizaron los Kardex de ambos almacenes.');
-        this.productId.set(0); this.quantity.set(1); this.observation.set(''); this.load();
+        this.productId.set(0); this.quantity.set(0); this.observation.set(''); this.load();
       },
-      error: (error) => this.errorMessage.set(mapOpenApiError(error).message),
+      error: (error) => { this.errorMessage.set(mapOpenApiError(error).message); this.loadTransferProducts(); },
     });
   }
 }

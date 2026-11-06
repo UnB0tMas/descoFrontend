@@ -13,6 +13,9 @@
         @if (referencesLoading()) { <span class="loading loading-spinner loading-xs"></span> } @else { <fa-icon [icon]="addIcon" /> }
         Nuevo
       </button>
+      @if (workspace() === 'crates' || workspace() === 'deliveries' || workspace() === 'campaigns') {
+        <a class="admin-secondary-button" routerLink="/gestion-comercial/acopio-rapido">Acopio individual APAPPSS</a>
+      }
       @if (workspace() === 'crates') {
         <button *appPermission="'JABAS_CREAR'" type="button" class="admin-secondary-button" (click)="openCrate('crate-assign')">Asignar</button>
         <button *appPermission="'JABAS_CREAR'" type="button" class="admin-secondary-button" (click)="openCrate('crate-return')">Devolver</button>

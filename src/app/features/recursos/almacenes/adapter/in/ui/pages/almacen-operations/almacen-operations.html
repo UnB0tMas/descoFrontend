@@ -47,33 +47,35 @@
       <p>Requiere autorización para las UOT de origen y destino. Las existencias pertenecen siempre al almacén correspondiente.</p></header>
     <div class="warehouse-policy-form">
       <label class="admin-field"><span>Almacén origen (UOT actual)</span>
-        <select class="admin-select" [value]="sourceId()" (change)="sourceId.set(+$any($event.target).value);productId.set(0)">
+        <select class="admin-select" [disabled]="working()" [value]="sourceId()" (change)="onTransferWarehouseChange($any($event.target).value,true)">
           <option value="0">Seleccionar origen</option>
           @for (w of warehouses(); track w.almacenId) {
             @if (w.uotPropietariaId === uot.selectedId()) { <option [value]="w.almacenId">{{ w.nombre }}</option> }
           }
         </select></label>
       <label class="admin-field"><span>Almacén destino</span>
-        <select class="admin-select" [value]="destinationId()" (change)="destinationId.set(+$any($event.target).value)">
+        <select class="admin-select" [disabled]="working()" [value]="destinationId()" (change)="onTransferWarehouseChange($any($event.target).value,false)">
           <option value="0">Seleccionar destino</option>
           @for (w of warehouses(); track w.almacenId) {
             @if (w.almacenId !== sourceId()) { <option [value]="w.almacenId">{{ w.nombre }} · {{ w.uotPropietaria }}</option> }
           }
         </select></label>
       <label class="admin-field"><span>Producto disponible en origen</span>
-        <select class="admin-select" [value]="productId()" (change)="productId.set(+$any($event.target).value)">
+        <select class="admin-select" [disabled]="working() || transferLoading() || !sourceId() || !destinationId()" [value]="productId()" (change)="onTransferProductChange($any($event.target).value)">
           <option value="0">Seleccionar producto</option>
-          @for (st of sourceStock(); track st.productoId) {
-            <option [value]="st.productoId">{{ st.producto }} · {{ st.stockDisponible | number:'1.0-3' }} disponibles</option>
+          @for (st of transferProducts(); track st.productoId) {
+            <option [value]="st.productoId" [disabled]="!st.apto">{{ st.producto }} · {{ st.stockDisponible | number:'1.0-3' }} disponibles{{ st.apto ? '' : ' · No apto: ' + st.motivo }}</option>
           }
         </select></label>
       <label class="admin-field"><span>Cantidad a transferir</span>
-        <input class="admin-input" type="number" min="0.001" step="0.001" [value]="quantity()"
-          (input)="quantity.set(+$any($event.target).value)" /></label>
+        <input class="admin-input" type="number" min="0.001" step="0.001" [max]="maxQuantity()" [disabled]="working() || !selectedTransferProduct()?.apto || transferLoading()" [value]="quantity()"
+          (input)="onQuantityInput($event)" />
+        @if (selectedTransferProduct()?.apto) { <small>Máximo disponible: {{ maxQuantity() | number:'1.0-3' }} {{ selectedTransferProduct()?.unidadMedida }}</small> }
+      </label>
       <label class="admin-field warehouse-policy-wide"><span>Observación</span>
         <input class="admin-input" maxlength="300" [value]="observation()" (input)="observation.set($any($event.target).value)" /></label>
     </div>
-    <button type="button" class="admin-primary-button" [disabled]="working() || !canEdit() || !productId() || !sourceId() || !destinationId()"
+    <button type="button" class="admin-primary-button" [disabled]="working() || loading() || transferLoading() || !canEdit() || !selectedTransferProduct()?.apto || !validQuantity() || !sourceId() || !destinationId() || sourceId() === destinationId()"
       (click)="transfer()">Registrar transferencia y Kardex</button>
   </section>
 </div>

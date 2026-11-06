@@ -1,1 +1,1 @@
-cd D:\FrancoSystem\desco_frontend; node .\tools\openapi\generate-api.mjs
+cd D:\FrancoSystem\Tesis\sistema\desco_frontend; node .\tools\openapi\generate-api.mjs

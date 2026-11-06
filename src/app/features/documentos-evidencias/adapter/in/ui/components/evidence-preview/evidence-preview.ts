@@ -1,3 +1,4 @@
+import { DialogBackdropDirective } from '../../../../../../../shared/feedback/dialog-lifecycle/dialog-backdrop.directive';
 import { ChangeDetectionStrategy, Component, ElementRef, ViewChild, inject, signal } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
@@ -7,7 +8,7 @@ import { DocumentoEvidencia, DocumentoEvidenciaDetalle } from '../../../../../do
 @Component({
   selector: 'app-evidence-preview',
   standalone: true,
-  imports: [FaIconComponent],
+  imports: [DialogBackdropDirective, FaIconComponent],
   templateUrl: './evidence-preview.html',
   styleUrl: './evidence-preview.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

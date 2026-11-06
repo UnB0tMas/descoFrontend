@@ -10,11 +10,11 @@
 
 
 export interface InventoryVehicleRegisterRequest { 
-    placa: string;
+    placa?: string;
     /**
      * Código del catálogo TIPO_VEHICULO.
      */
     tipoVehiculo: string;
-    kilometrajeKm: number;
+    kilometrajeKm?: number;
+    color?: string;
 }
-

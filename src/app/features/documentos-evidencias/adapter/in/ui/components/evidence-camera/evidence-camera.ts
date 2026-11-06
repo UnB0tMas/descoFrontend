@@ -1,3 +1,4 @@
+import { DialogBackdropDirective } from '../../../../../../../shared/feedback/dialog-lifecycle/dialog-backdrop.directive';
 import { ChangeDetectionStrategy, Component, ElementRef, ViewChild, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
@@ -10,7 +11,7 @@ import { AdminModalResult } from '../../../../../../administracion/shared/admin-
 import { RegistrarFotografiaUseCase } from '../../../../../application/use-case/registrar-fotografia.use-case';
 import { EvidenciaContexto } from '../../../../../domain/evidencia-contexto.model';
 
-@Component({ selector: 'app-evidence-camera', standalone: true, imports: [ReactiveFormsModule, FaIconComponent, FormErrorComponent], templateUrl: './evidence-camera.html', styleUrl: './evidence-camera.css', changeDetection: ChangeDetectionStrategy.OnPush })
+@Component({ selector: 'app-evidence-camera', standalone: true, imports: [DialogBackdropDirective, ReactiveFormsModule, FaIconComponent, FormErrorComponent], templateUrl: './evidence-camera.html', styleUrl: './evidence-camera.css', changeDetection: ChangeDetectionStrategy.OnPush })
 export class EvidenceCameraComponent {
   @ViewChild('dialog', { static: true }) private readonly dialogRef!: ElementRef<HTMLDialogElement>;
   @ViewChild('video') private readonly videoRef?: ElementRef<HTMLVideoElement>;

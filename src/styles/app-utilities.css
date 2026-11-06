@@ -324,6 +324,8 @@
   align-items: center;
   justify-content: flex-end;
   gap: 0.35rem;
+  flex-wrap: nowrap;
+  white-space: nowrap;
 }
 
 /* ============================================================
@@ -810,16 +812,22 @@
    ADMINISTRACIÓN — TABLAS
    ============================================================ */
 
-.admin-table-wrap {
+.admin-table-wrap,
+.admin-table-scroll {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
   scrollbar-width: thin;
   scrollbar-color: #cbd5e1 transparent;
 }
 
 .admin-table {
-  width: 100%;
-  min-width: 48rem;
+  width: max-content;
+  min-width: max(100%, 48rem);
+  table-layout: auto;
   border-collapse: separate;
   border-spacing: 0;
 }
@@ -1349,3 +1357,63 @@
 
 /* GESTION TECNICA - NORMALIZACION TRANSVERSAL */
 .technical-toolbar{align-items:flex-end}.technical-search-form{display:flex;min-width:min(100%,28rem);flex:1 1 28rem;align-items:flex-end;gap:.5rem}.technical-search-form .admin-input{min-width:12rem;flex:1 1 18rem}.technical-filter-switch{min-width:11.5rem;flex:0 1 14rem;padding:.62rem .72rem}.technical-filter-switch strong{font-size:.7rem}.technical-filter-switch span{margin-top:.08rem;font-size:.6rem}.technical-table-copy{display:grid;min-width:0;gap:.12rem}.technical-table-copy>strong,.technical-table-copy>span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.technical-table-copy>strong{color:#0f172a;font-size:.75rem;font-weight:800}.technical-table-copy>span{color:#64748b;font-size:.64rem;font-weight:600}.technical-loading-button{min-width:6.5rem}.admin-icon-button--success{border-color:#bbf7d0;background:#f0fdf4;color:#15803d}.admin-icon-button--success:hover:not(:disabled){border-color:#86efac;background:#dcfce7;color:#166534}.technical-modal-context{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.55rem;border:1px solid #e2e8f0;border-radius:.85rem;background:#f8fafc;padding:.7rem}.technical-modal-context span,.technical-modal-context strong{display:block}.technical-modal-context span{color:#94a3b8;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.035em}.technical-modal-context strong{margin-top:.16rem;overflow:hidden;color:#334155;font-size:.72rem;font-weight:800;text-overflow:ellipsis;white-space:nowrap}@media(max-width:760px){.technical-search-form{flex-wrap:wrap}.technical-search-form .admin-input{flex-basis:100%}.technical-filter-switch{flex-basis:100%}.technical-modal-context{grid-template-columns:1fr}}
+
+
+/* MODALES - Configuración universal de desenfoque del contenido de fondo.
+   Se aplica a cualquier diálogo nativo abierto con showModal(), incluidos
+   crear, editar, desactivar y confirmar, sin afectar al panel en primer plano. */
+dialog[open]::backdrop,
+dialog:modal::backdrop {
+  -webkit-backdrop-filter: blur(7px);
+  backdrop-filter: blur(7px);
+}
+/* Backdrops de componentes que utilizan una capa externa al dialog. */
+[data-modal-backdrop] {
+  -webkit-backdrop-filter: blur(7px);
+  backdrop-filter: blur(7px);
+}
+@media (prefers-reduced-transparency: reduce) {
+  dialog[open]::backdrop,
+  dialog:modal::backdrop,
+  [data-modal-backdrop] {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* Tablas y tarjetas uniformes en los módulos históricos de Gestión Técnica. */
+.technical-view-control{display:flex;justify-content:flex-end;gap:.22rem;margin:.6rem .95rem;padding:.2rem;border:1px solid var(--desco-border);border-radius:.72rem;width:max-content;max-width:calc(100% - 1.9rem);margin-left:auto;background:var(--desco-surface)}
+.technical-view-button{font:inherit;font-size:.8rem;font-weight:650;color:var(--desco-text-muted);background:transparent;border:0;border-radius:.5rem;padding:.52rem .85rem;cursor:pointer}
+.technical-view-button.active{background:var(--desco-surface-soft);color:var(--desco-primary)}
+.technical-view-button:focus-visible{outline:2px solid var(--desco-primary);outline-offset:2px}
+.technical-record-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,310px),1fr));gap:.85rem;padding:1rem;min-width:0}
+.technical-record-card{display:flex;flex-direction:column;gap:.9rem;min-width:0;border:1px solid var(--desco-border);border-radius:var(--desco-radius-md);background:var(--desco-surface);padding:1rem}
+.technical-record-card header{display:grid;gap:.2rem}
+.technical-record-card header strong{font-weight:750;color:var(--desco-text);overflow-wrap:anywhere}
+.technical-record-card header span{font-size:.76rem;color:var(--desco-text-muted);overflow-wrap:anywhere}
+.technical-record-data{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem .9rem;margin:0}
+.technical-record-data>div{min-width:0}
+.technical-record-data dt{color:var(--desco-text-muted);font-size:.73rem;margin-bottom:.2rem}
+.technical-record-data dd{margin:0;color:var(--desco-text);font-size:.84rem;font-weight:550;overflow-wrap:anywhere}
+.technical-record-card footer{margin-top:auto;border-top:1px solid var(--desco-border);padding-top:.65rem}
+.technical-record-card footer .admin-row-actions{justify-content:flex-end}
+@media(max-width:430px){.technical-record-data{grid-template-columns:minmax(0,1fr)}}
+
+/* Modal de formularios largos: el marco, cabecera y acciones nunca forman parte del scroll. */
+.desco-fixed-form-modal{box-sizing:border-box;display:flex!important;flex-direction:column!important;
+  width:min(calc(100vw - 1rem),58rem);max-height:calc(100dvh - 1.5rem)!important;
+  min-height:0;overflow:hidden!important;padding:0!important}
+.desco-fixed-form-modal>.admin-modal-header{position:relative!important;top:auto;flex:0 0 auto;
+  z-index:2;padding:1rem 1.2rem;min-height:4.4rem;background:var(--desco-surface);margin:0}
+.desco-fixed-form-modal>.desco-fixed-form-layout{display:flex!important;flex:1 1 auto;flex-direction:column;
+  min-height:0;min-width:0;margin:0;overflow:hidden}
+.desco-fixed-form-modal .desco-fixed-form-body{display:grid;flex:1 1 auto;min-height:0;min-width:0;
+  overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;
+  align-content:start;padding:1.1rem 1.2rem}
+.desco-fixed-form-modal .desco-fixed-form-footer{position:relative;flex:0 0 auto;
+  display:flex;justify-content:flex-end;align-items:center;gap:.65rem;
+  margin:0;padding:.85rem 1.2rem;border-top:1px solid var(--desco-border);
+  background:var(--desco-surface)}
+.desco-fixed-form-modal>.admin-inline-error{flex:0 0 auto;margin:.65rem 1.2rem 0}
+@media(max-width:620px){.desco-fixed-form-modal .desco-fixed-form-body{padding:.85rem}
+ .desco-fixed-form-modal>.admin-modal-header,.desco-fixed-form-modal .desco-fixed-form-footer{padding:.85rem}}

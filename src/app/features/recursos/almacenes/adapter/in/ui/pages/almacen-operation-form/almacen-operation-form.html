@@ -1,4 +1,4 @@
-<dialog #dialog class="modal desco-modal" (cancel)="$event.preventDefault(); close()">
+<dialog appDialogBackdrop #dialog class="modal desco-modal" (cancel)="$event.preventDefault(); close()">
   <div
     class="modal-box admin-modal-box warehouse-modal-box"
     [class.warehouse-modal-box--incoming]="mode() === 'movement' && movementNature() === 'E'"
@@ -234,15 +234,24 @@
 
         @if (selectedConfigureProduct()?.permiteVenta === true) {
           <div class="admin-field">
-            <label>Precio de venta de la UOT (opcional)</label>
-            <input class="admin-input" type="number" min="0" step="0.01" formControlName="precioVenta" />
-            <small>Se guarda como nueva versión comercial propia de la UOT; no modifica el costo del Kardex. Si lo dejas en cero, no se habilita venta.</small>
+            <label>Precio de venta de la UOT</label>
+            <input class="admin-input" type="number" min="0.0001" step="0.0001" formControlName="precioVenta" />
+            <app-form-error [control]="configureForm.controls.precioVenta" fieldLabel="El precio de venta" />
+            <small>Precio comercial de esta UOT; no altera el costo del Kardex.</small>
+          </div>
+          <div class="admin-field">
+            <label>Moneda de venta</label>
+            <select class="admin-select" formControlName="monedaVenta">
+              @for (currency of currencies(); track currency.code) {
+                <option [value]="currency.code">{{ currency.code }} · {{ currency.label }}</option>
+              }
+            </select>
           </div>
         } @else {
           <div class="admin-info-note admin-field-span-2">Producto para uso operativo: se controla stock y costo, sin precio de venta.</div>
         }
         <div class="admin-field">
-          <label>Moneda</label>
+          <label>Moneda del costo</label>
           <select class="admin-select" formControlName="moneda">
             @for (currency of currencies(); track currency.code) {
               <option [value]="currency.code">{{ currency.code }} · {{ currency.label }}</option>
@@ -250,7 +259,6 @@
           </select>
           <small>Solo se utiliza cuando se informa un costo unitario.</small>
         </div>
-
         <div class="warehouse-form-section admin-field-span-2">
           <span>Trazabilidad</span>
         </div>
@@ -410,7 +418,7 @@
           </div>
           <div class="admin-field">
             <label for="warehouse-movement-store">Almacén</label>
-            <select id="warehouse-movement-store" class="admin-select" formControlName="almacenId">
+            <select id="warehouse-movement-store" class="admin-select" formControlName="almacenId" (change)="onMovementWarehouseChange()">
               <option [value]="0">Seleccionar almacén</option>
               @for (warehouse of warehousesForUnit(); track warehouse.almacenId) {
                 <option [value]="warehouse.almacenId">{{ warehouse.nombre }}</option>
@@ -458,7 +466,7 @@
                   <label>Producto</label>
                   <select class="admin-select" formControlName="productoId">
                     <option [value]="0">Seleccionar producto</option>
-                    @for (product of products(); track product.productoId) {
+                    @for (product of movementProducts(); track product.productoId) {
                       <option [value]="product.productoId">{{ product.nombre }} · {{ product.codigo }}</option>
                     }
                   </select>
@@ -482,11 +490,11 @@
                   </select>
                 </div>
                 <div class="admin-field warehouse-line-lot">
-                  <label>Lote <span class="warehouse-optional">(opcional)</span></label>
+                  <label>Lote <span class="warehouse-optional">{{ movementNature() === 'S' ? '(automático si se omite)' : movementProduct(index)?.requiereLote ? '(obligatorio)' : '(opcional)' }}</span></label>
                   <input class="admin-input" maxlength="80" formControlName="lote" placeholder="Código de lote" />
                 </div>
                 <div class="admin-field">
-                  <label>Vencimiento <span class="warehouse-optional">(opcional)</span></label>
+                  <label>Vencimiento <span class="warehouse-optional">{{ movementNature() === 'E' && movementProduct(index)?.controlaVencimiento ? '(obligatorio)' : '(opcional)' }}</span></label>
                   <input class="admin-input" type="date" [min]="today" formControlName="fechaVencimiento" />
                 </div>
               </div>

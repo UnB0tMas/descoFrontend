@@ -1,3 +1,4 @@
+import { DialogBackdropDirective } from '../../../../../../../shared/feedback/dialog-lifecycle/dialog-backdrop.directive';
 import { DecimalPipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
@@ -32,6 +33,14 @@ import { POS_GATEWAY, PosGateway } from '../../../../../application/port/out/pos
 
 import { AccessStore } from '../../../../../../../core/access/access.store';
 import { mapOpenApiError } from '../../../../../../../infrastructure/openapi/openapi-http-error.mapper';
+import { DataTableComponent } from '../../../../../../../shared/data-display/data-table/data-table';
+import { DataTableColumn } from '../../../../../../../shared/data-display/data-table/data-table.types';
+import { PaginatorComponent } from '../../../../../../../shared/data-display/paginator/paginator';
+import { RecordCardComponent } from '../../../../../../../shared/data-display/record-card/record-card';
+import { ListViewMode, ListViewSwitchComponent } from '../../../../../../../shared/data-display/list-view-switch/list-view-switch';
+import { PersonDataFieldsComponent } from '../../../../../../../shared/forms/person-registration/person-data-fields';
+import { PersonLookupComponent, PersonDocumentOption } from '../../../../../../../shared/forms/person-registration/person-lookup';
+import { ActionConfirmDialogComponent } from '../../../../../../../shared/feedback/action-confirm-dialog/action-confirm-dialog';
 import { EmptyStateComponent } from '../../../../../../../shared/data-display/empty-state/empty-state';
 import { ErrorStateComponent } from '../../../../../../../shared/data-display/error-state/error-state';
 import { LoadingStateComponent } from '../../../../../../../shared/data-display/loading-state/loading-state';
@@ -48,7 +57,7 @@ import {
   PosDocumentType,
   PosPaymentMethod,
   PosProduct,
-  PosTechnicalEmployee, PosTechnicalLine, PosTechnicalRecord, PosSaleRecord, PosSaleDetail,
+  PosSaleRecord, PosSaleDetail,
 } from '../../../../../domain/pos.model';
 import { PosCartStore } from '../../../../../state/pos-cart.store';
 import { PosProductImageComponent } from '../../components/pos-product-image/pos-product-image';
@@ -57,6 +66,14 @@ import { PosProductImageComponent } from '../../components/pos-product-image/pos
   selector: 'app-pos-page',
   standalone: true,
   imports: [
+    DialogBackdropDirective,
+    ActionConfirmDialogComponent,
+    DataTableComponent,
+    PaginatorComponent,
+    RecordCardComponent,
+    ListViewSwitchComponent,
+    PersonDataFieldsComponent,
+    PersonLookupComponent,
     DecimalPipe,
     ReactiveFormsModule,
     FaIconComponent,
@@ -72,6 +89,11 @@ import { PosProductImageComponent } from '../../components/pos-product-image/pos
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PosPage {
+  @ViewChild(ActionConfirmDialogComponent) private confirmation?: ActionConfirmDialogComponent;
+  @ViewChild(PersonLookupComponent) private customerLookup?: PersonLookupComponent;
+  @ViewChild('checkoutDialog') private checkoutDialog?: ElementRef<HTMLDialogElement>;
+  @ViewChild('saleDetailDialog') private saleDetailDialog?: ElementRef<HTMLDialogElement>;
+  @ViewChild('receiptDialog') private receiptDialog?: ElementRef<HTMLDialogElement>;
   @ViewChild('manualCustomerDialog', { static: true })
   private readonly manualCustomerDialog!: ElementRef<HTMLDialogElement>;
 
@@ -101,26 +123,23 @@ export class PosPage {
   readonly customerTone = signal<'neutral' | 'success' | 'warning' | 'error'>('neutral');
   readonly checkoutError = signal<string | null>(null);
   readonly lastSaleId = signal<number | null>(null);
-  readonly activeView = signal<'venta' | 'tecnica' | 'historial'>('venta');
-  readonly technicalCatalog = signal<readonly PosProduct[]>([]);
-  readonly technicalEmployees = signal<readonly PosTechnicalEmployee[]>([]);
-  readonly technicalDeliveries = signal<readonly PosTechnicalRecord[]>([]);
-  readonly technicalLines = signal<readonly PosTechnicalLine[]>([]);
-  readonly technicalLoading = signal(false);
-  readonly technicalProcessing = signal(false);
-  readonly technicalError = signal<string | null>(null);
+  readonly activeView = signal<'venta' | 'historial'>('venta');
+  readonly catalogView = signal<ListViewMode>('table');
+  readonly historyView = signal<ListViewMode>('table');
+  readonly catalogPage = signal(1);
+  readonly catalogPageSize = signal(10);
+  readonly historyPage = signal(1);
+  readonly historyPageSize = signal(10);
+  readonly historySearch = signal('');
+  readonly receiptSale = signal<PosSaleDetail | null>(null);
+  readonly receiptLoading = signal(false);
+  readonly receiptError = signal<string | null>(null);
   readonly sales = signal<readonly PosSaleRecord[]>([]);
   readonly historyLoading = signal(false);
   readonly historyError = signal<string | null>(null);
   readonly selectedSale = signal<PosSaleDetail | null>(null);
   readonly saleActionId = signal<number | null>(null);
   readonly cancelReason = signal('');
-  readonly technicalProductId = signal(0);
-  readonly technicalQuantity = signal(1);
-  readonly technicalEmployeeId = signal(0);
-  readonly technicalReason = signal('');
-  readonly technicalObservation = signal('');
-
   readonly warehouses = signal<readonly {
     warehouseId: number;
     code: string;
@@ -141,6 +160,116 @@ export class PosPage {
   readonly paymentIcon = faCreditCard;
   readonly warehouseIcon = faWarehouse;
   readonly closeIcon = faXmark;
+  readonly personDocumentOptions: readonly PersonDocumentOption[] = [{ value: 'DNI', label: 'DNI' }, { value: 'RUC', label: 'RUC' }];
+  readonly companyDocumentOptions: readonly PersonDocumentOption[] = [{ value: 'RUC', label: 'RUC' }];
+
+  readonly generalCustomer: PosCustomer = {
+    type: 'PERSONA', personId: null, companyId: null,
+    documentType: 'DNI', documentNumber: '', displayName: 'Cliente varios',
+  };
+
+  useGeneralCustomer(): void {
+    if (this.cart.locked() || this.processing()) return;
+    this.cart.setCustomer(null);
+    this.customerForm.controls.documentNumber.setValue('');
+    this.customerMessage.set(null);
+    this.customerTone.set('neutral');
+    this.customerLookup?.focusDocument();
+  }
+
+  customerDocumentOptions(): readonly PersonDocumentOption[] {
+    return this.customerForm.controls.type.value === 'EMPRESA' ? this.companyDocumentOptions : this.personDocumentOptions;
+  }
+
+  setHistoryView(view: ListViewMode): void {
+    this.historyView.set(view);
+    try { localStorage.setItem('desco:pos:history-view', view); } catch { /* storage disabled */ }
+  }
+
+  setCatalogView(view: ListViewMode): void {
+    this.catalogView.set(view);
+    if (typeof localStorage !== 'undefined') {
+      try { localStorage.setItem('desco:pos:view', view); } catch { /* storage disabled */ }
+    }
+  }
+
+  onCatalogSearch(value: string): void {
+    this.search.set(value);
+    this.catalogPage.set(1);
+  }
+
+  onHistorySearch(value: string): void {
+    this.historySearch.set(value);
+    this.historyPage.set(1);
+  }
+
+  async openCheckoutDialog(): Promise<void> {
+    if (!this.canCheckout()) return;
+    // Cuando el registro es incierto o ya tiene ID, no se altera el cliente del reintento.
+    if (!this.cart.customer() && !this.cart.locked()) {
+      const response = await this.confirmation?.show({
+        title: 'Venta sin cliente',
+        message: '¿Está seguro de continuar sin identificar al cliente?',
+        confirmLabel: 'Continuar sin cliente',
+        cancelLabel: 'Agregar cliente',
+        tone: 'warning',
+      });
+      if (!response?.confirmed) {
+        this.customerLookup?.focusDocument();
+        return;
+      }
+    }
+    if (this.canCheckout() && !this.checkoutDialog?.nativeElement.open) {
+      this.checkoutDialog?.nativeElement.showModal();
+    }
+  }
+
+  closeCheckoutDialog(): void {
+    if (!this.processing()) this.checkoutDialog?.nativeElement.close();
+  }
+
+  closeSaleDetail(): void {
+    this.saleDetailDialog?.nativeElement.close();
+    this.selectedSale.set(null);
+  }
+
+  openReceipt(saleId: number): void {
+    this.receiptSale.set(null);
+    this.receiptError.set(null);
+    this.receiptLoading.set(true);
+    this.receiptDialog?.nativeElement.showModal();
+    this.operations.getSaleDetail(saleId).pipe(finalize(() => this.receiptLoading.set(false))).subscribe({
+      next: (detail) => this.receiptSale.set(detail),
+      error: (error) => this.receiptError.set(mapOpenApiError(error).message),
+    });
+  }
+
+  closeReceipt(): void { this.receiptDialog?.nativeElement.close(); }
+
+  printReceipt(): void { if (this.receiptSale()) window.print(); }
+
+  readonly savings = computed(() => this.cart.items().reduce((total, item) =>
+    total + Math.max(0, item.initialPrice - item.unitPrice) * item.quantity, 0));
+  readonly salesCount = computed(() => this.sales().length);
+  readonly salesTotal = computed(() => this.sales().reduce((sum, item) => sum + item.total, 0));
+  readonly salesPaid = computed(() => this.sales().reduce((sum, item) => sum + item.paid, 0));
+
+  readonly productColumns: readonly DataTableColumn<PosProduct>[] = [
+    { key: 'name', label: 'Producto', format: (_value, row) => `${row.name}${row.code ? ' · ' + row.code : ''}` },
+    { key: 'category', label: 'Categoría', format: (_value, row) => row.category || '—' },
+    { key: 'unitPrice', label: 'Precio', align: 'right', format: (_value, row) => `${row.currency} ${row.unitPrice.toFixed(2)}` },
+    { key: 'stockAvailable', label: 'Disponible', align: 'right', format: (_value, row) => `${row.stockAvailable} ${row.unit}` },
+  ];
+
+  readonly saleColumns: readonly DataTableColumn<PosSaleRecord>[] = [
+    { key: 'saleId', label: 'Venta', format: (_value, row) => `#${row.saleId}` },
+    { key: 'date', label: 'Fecha' },
+    { key: 'customer', label: 'Cliente', format: (_value, row) => row.customer || 'Cliente varios' },
+    { key: 'state', label: 'Estado' },
+    { key: 'total', label: 'Total', align: 'right', format: (_value, row) => `${row.currency} ${row.total.toFixed(2)}` },
+    { key: 'paid', label: 'Pagado', align: 'right', format: (_value, row) => row.paid.toFixed(2) },
+    { key: 'balance', label: 'Saldo', align: 'right', format: (_value, row) => row.balance.toFixed(2) },
+  ];
 
   readonly filteredCatalog = computed(() => {
     const term = this.search().trim().toLowerCase();
@@ -161,6 +290,27 @@ export class PosPage {
     );
   });
 
+  readonly catalogTotalPages = computed(() => Math.ceil(this.filteredCatalog().length / this.catalogPageSize()));
+  readonly currentCatalogPage = computed(() => Math.min(this.catalogPage(), Math.max(1, this.catalogTotalPages())));
+  readonly catalogPageItems = computed(() => {
+    const start = (this.currentCatalogPage() - 1) * this.catalogPageSize();
+    return this.filteredCatalog().slice(start, start + this.catalogPageSize());
+  });
+
+  readonly filteredSales = computed(() => {
+    const term = this.historySearch().trim().toLocaleLowerCase();
+    if (!term) return this.sales();
+    return this.sales().filter((sale) =>
+      [sale.saleId.toString(), sale.customer, sale.state, sale.date]
+        .some((value) => value.toLocaleLowerCase().includes(term)));
+  });
+  readonly historyTotalPages = computed(() => Math.ceil(this.filteredSales().length / this.historyPageSize()));
+  readonly currentHistoryPage = computed(() => Math.min(this.historyPage(), Math.max(1, this.historyTotalPages())));
+  readonly historyPageItems = computed(() => {
+    const start = (this.currentHistoryPage() - 1) * this.historyPageSize();
+    return this.filteredSales().slice(start, start + this.historyPageSize());
+  });
+
   readonly customerForm = this.fb.nonNullable.group({
     type: ['PERSONA' as PosCustomerType, [Validators.required]],
     documentType: ['DNI' as PosDocumentType, [Validators.required]],
@@ -168,12 +318,18 @@ export class PosPage {
   });
 
   readonly manualForm = this.fb.nonNullable.group({
-    names: ['', [Validators.maxLength(120)]],
-    paternalSurname: ['', [Validators.maxLength(80)]],
-    maternalSurname: ['', [Validators.maxLength(80)]],
+    tipoDocumento: ['DNI'],
+    numeroDocumento: [''],
+    nombres: ['', [Validators.required, Validators.maxLength(100)]],
+    apellidoPaterno: ['', [Validators.required, Validators.maxLength(80)]],
+    apellidoMaterno: ['', [Validators.required, Validators.maxLength(80)]],
+    fechaNacimiento: [''],
+    telefono: ['', [Validators.maxLength(30)]],
+    correo: ['', [Validators.email, Validators.maxLength(180)]],
+    distritoCodigo: [''],
+    centroPobladoId: [0],
+    referencia: [''],
     businessName: ['', [Validators.maxLength(200)]],
-    phone: ['', [Validators.maxLength(30)]],
-    email: ['', [Validators.email, Validators.maxLength(180)]],
   });
 
   readonly paymentForm = this.fb.nonNullable.group({
@@ -196,33 +352,29 @@ export class PosPage {
     this.lastIdentity = key;
     this.warehouses.set([]);
     this.catalog.set([]);
-    this.technicalCatalog.set([]);
-    this.technicalLines.set([]);
-    this.technicalDeliveries.set([]);
     this.sales.set([]);
     this.selectedSale.set(null);
+    this.catalogPage.set(1);
+    this.historyPage.set(1);
     this.contextError.set(null);
     this.catalogError.set(null);
-    this.technicalError.set(null);
     this.historyError.set(null);
     if (!uotId || uotId <= 0 || userId <= 0) {
       this.contextError.set('Seleccione una UOT específica y una sesión válida para operar.');
       return;
     }
     this.cart.initialize(userId, uotId);
+    try {
+      this.catalogView.set(localStorage.getItem('desco:pos:view') === 'cards' ? 'cards' : 'table');
+      this.historyView.set(localStorage.getItem('desco:pos:history-view') === 'cards' ? 'cards' : 'table');
+    } catch { /* storage unavailable */ }
     this.loadContext();
   }
 
-  changeView(view: 'venta' | 'tecnica' | 'historial'): void {
-    if (this.processing() || this.technicalProcessing()) return;
-    if (view === 'tecnica' && !this.canUseTechnical()) return;
+  changeView(view: 'venta' | 'historial'): void {
+    if (this.processing()) return;
     this.activeView.set(view);
-    if (view === 'tecnica') this.loadTechnical();
     if (view === 'historial') this.loadHistory();
-  }
-
-  canUseTechnical(): boolean {
-    return this.permissions.has('VENTAS_ENTREGA_TECNICA');
   }
 
   loadContext(): void {
@@ -308,6 +460,7 @@ export class PosPage {
         next: (products) => {
           if (uotId !== this.currentUotId() || warehouseId !== this.cart.warehouseId()) return;
           this.catalog.set(products);
+          this.catalogPage.set(1);
           this.cart.syncCatalog(products);
         },
         error: (error) =>
@@ -333,17 +486,26 @@ export class PosPage {
     }
 
     this.loadCatalog();
-    this.technicalLines.set([]);
-    this.technicalCatalog.set([]);
-    if (this.activeView() === 'tecnica') this.loadTechnical();
   }
 
   add(product: PosProduct): void {
+    if (this.cart.locked() || this.processing()) return;
     const error = this.cart.add(product);
 
     if (error) {
       this.toast.warning('No se agregó el producto', error);
     }
+  }
+
+  async removeProduct(productId: number): Promise<void> {
+    if (this.cart.locked() || this.processing()) return;
+    const item = this.cart.items().find(x => x.productId === productId);
+    if (!item) return;
+    const response = await this.confirmation?.show({
+      title: 'Quitar producto', message: `¿Quitar ${item.name} del carrito?`,
+      confirmLabel: 'Quitar', cancelLabel: 'Conservar', tone: 'warning',
+    });
+    if (response?.confirmed) this.cart.remove(productId);
   }
 
   increment(productId: number): void {
@@ -397,7 +559,20 @@ export class PosPage {
     }
   }
 
-  clearCart(): void {
+  async clearCart(): Promise<void> {
+    if (this.cart.items().length === 0 || this.processing()) return;
+    if (this.cart.locked()) {
+      this.toast.warning('Venta en proceso', 'Reanude la operación pendiente.');
+      return;
+    }
+    const response = await this.confirmation?.show({
+      title: 'Vaciar carrito',
+      message: 'Se quitarán todos los productos de la venta actual.',
+      confirmLabel: 'Vaciar',
+      cancelLabel: 'Conservar',
+      tone: 'danger',
+    });
+    if (!response?.confirmed) return;
     if (!this.cart.clearEditableCart()) {
       this.toast.warning(
         'Venta en proceso',
@@ -426,18 +601,18 @@ export class PosPage {
     this.resetCustomerSelection();
   }
 
-  onCustomerDocumentTypeChange(): void {
-    if (this.customerForm.controls.type.value === 'EMPRESA') {
-      this.customerForm.controls.documentType.setValue('RUC');
-    }
-
+  onCustomerDocumentTypeChange(type?: string): void {
+    this.customerForm.controls.documentType.setValue(
+      this.customerForm.controls.type.value === 'EMPRESA' ? 'RUC' : (type === 'RUC' ? 'RUC' : 'DNI'),
+    );
+    this.customerForm.controls.documentNumber.setValue('');
     this.resetCustomerSelection();
   }
 
-  onCustomerDocumentInput(): void {
+  onCustomerDocumentInput(value?: string): void {
     const type = this.customerForm.controls.documentType.value;
     const control = this.customerForm.controls.documentNumber;
-    const sanitized = control.value.replace(/\D+/g, '').slice(
+    const sanitized = (value ?? control.value).replace(/\D+/g, '').slice(
       0,
       type === 'DNI' ? 8 : 11,
     );
@@ -522,13 +697,22 @@ export class PosPage {
       return;
     }
 
+    const isPerson = this.customerForm.controls.type.value === 'PERSONA';
+    for (const control of [
+      this.manualForm.controls.nombres, this.manualForm.controls.apellidoPaterno,
+      this.manualForm.controls.apellidoMaterno,
+    ]) {
+      control.setValidators(isPerson ? [Validators.required] : []);
+      control.updateValueAndValidity({ emitEvent: false });
+    }
+    this.manualForm.controls.businessName.setValidators(isPerson ? [] : [Validators.required]);
+    this.manualForm.controls.businessName.updateValueAndValidity({ emitEvent: false });
     this.manualForm.reset({
-      names: '',
-      paternalSurname: '',
-      maternalSurname: '',
+      tipoDocumento: this.customerForm.controls.documentType.value,
+      numeroDocumento: this.customerForm.controls.documentNumber.value,
+      nombres: '', apellidoPaterno: '', apellidoMaterno: '', fechaNacimiento: '',
+      telefono: '', correo: '', distritoCodigo: '', centroPobladoId: 0, referencia: '',
       businessName: '',
-      phone: '',
-      email: '',
     });
 
     this.manualCustomerDialog.nativeElement.showModal();
@@ -564,10 +748,10 @@ export class PosPage {
     const raw = this.manualForm.getRawValue();
 
     if (type === 'PERSONA') {
-      if (!raw.names.trim() || !raw.paternalSurname.trim()) {
+      if (!raw.nombres.trim() || !raw.apellidoPaterno.trim() || !raw.apellidoMaterno.trim()) {
         this.toast.warning(
           'Datos incompletos',
-          'Ingrese nombres y apellido paterno del cliente.',
+          'Complete nombres y apellidos del cliente.',
         );
         return;
       }
@@ -587,16 +771,16 @@ export class PosPage {
         type,
         documentType,
         documentNumber,
-        names: raw.names.trim() || undefined,
+        names: raw.nombres.trim() || undefined,
         paternalSurname:
-          raw.paternalSurname.trim() || undefined,
+          raw.apellidoPaterno.trim() || undefined,
         maternalSurname:
-          raw.maternalSurname.trim() || undefined,
+          raw.apellidoMaterno.trim() || undefined,
         businessName:
           raw.businessName.trim() || undefined,
-        phone: raw.phone.trim() || undefined,
+        phone: raw.telefono.trim() || undefined,
         email:
-          raw.email.trim().toLowerCase() || undefined,
+          raw.correo.trim().toLowerCase() || undefined,
       })
       .pipe(finalize(() => this.manualSaving.set(false)))
       .subscribe({
@@ -625,7 +809,7 @@ export class PosPage {
     const draft = this.cart.draft();
     const uotId = this.currentUotId();
     const warehouseId = this.cart.warehouseId();
-    const customer = this.cart.customer();
+    const customer = this.cart.customer() ?? this.generalCustomer;
     const paymentMethodId =
       Number(this.paymentForm.controls.paymentMethodId.value);
     const method = this.selectedPaymentMethod();
@@ -641,7 +825,7 @@ export class PosPage {
       || paymentMethodId <= 0
     ) {
       this.checkoutError.set(
-        'Seleccione almacén, cliente, productos y método de pago antes de finalizar.',
+        'Seleccione almacén, productos y método de pago antes de finalizar.',
       );
       return;
     }
@@ -698,6 +882,8 @@ export class PosPage {
       .subscribe({
         next: (result) => {
           this.lastSaleId.set(result.saleId);
+          this.checkoutDialog?.nativeElement.close();
+          this.openReceipt(result.saleId);
 
           this.toast.success(
             `Venta #${result.saleId} completada`,
@@ -735,102 +921,6 @@ export class PosPage {
       });
   }
 
-  loadTechnical(): void {
-    const uotId = this.currentUotId();
-    const warehouseId = this.cart.warehouseId();
-    if (!uotId || !warehouseId || !this.canUseTechnical()) return;
-    this.technicalLoading.set(true);
-    this.technicalError.set(null);
-    this.operations.listTechnicalCatalog(uotId, warehouseId)
-      .pipe(finalize(() => this.technicalLoading.set(false)))
-      .subscribe({
-        next: (products) => {
-          if (uotId !== this.currentUotId() || warehouseId !== this.cart.warehouseId()) return;
-          this.technicalCatalog.set(products);
-          const byId = new Map(products.map((p) => [p.productId, p] as const));
-          this.technicalLines.update((lines) => lines.map((line) => ({
-            ...line, stockAvailable: byId.get(line.productId)?.stockAvailable ?? 0,
-          })));
-        },
-        error: (error) => this.technicalError.set(mapOpenApiError(error).message),
-      });
-    this.operations.listTechnicalEmployees(uotId).subscribe({
-      next: (employees) => {
-        if (uotId !== this.currentUotId()) return;
-        this.technicalEmployees.set(employees);
-        if (!employees.some((item) => item.employeeId === this.technicalEmployeeId())) {
-          this.technicalEmployeeId.set(0);
-        }
-      },
-      error: (error) => this.technicalError.set(mapOpenApiError(error).message),
-    });
-    this.operations.listTechnicalDeliveries(uotId).subscribe({
-      next: (items) => {
-        if (uotId === this.currentUotId()) this.technicalDeliveries.set(items);
-      },
-      error: (error) => this.technicalError.set(mapOpenApiError(error).message),
-    });
-  }
-
-  addTechnical(): void {
-    if (this.technicalProcessing()) return;
-    const product = this.technicalCatalog().find((p) => p.productId === this.technicalProductId());
-    const quantity = Number(this.technicalQuantity());
-    if (!product || !Number.isFinite(quantity) || quantity <= 0
-      || Math.abs(quantity * 1000 - Math.round(quantity * 1000)) > 0.000001) {
-      this.technicalError.set('Seleccione un producto y una cantidad válida de hasta tres decimales.');
-      return;
-    }
-    const current = this.technicalLines().find((line) => line.productId === product.productId);
-    if (quantity + (current?.quantity ?? 0) > product.stockAvailable) {
-      this.technicalError.set('La cantidad solicitada supera el stock disponible.');
-      return;
-    }
-    this.technicalLines.update((lines) => current
-      ? lines.map((line) => line.productId === product.productId
-        ? { ...line, quantity: Math.round((line.quantity + quantity) * 1000) / 1000 } : line)
-      : [...lines, { productId: product.productId, name: product.name,
-        quantity, unit: product.unit, stockAvailable: product.stockAvailable }]);
-    this.technicalError.set(null);
-  }
-
-  removeTechnical(productId: number): void {
-    if (this.technicalProcessing()) return;
-    this.technicalLines.update((lines) => lines.filter((line) => line.productId !== productId));
-  }
-
-  registerTechnical(): void {
-    const uotId = this.currentUotId();
-    const warehouseId = this.cart.warehouseId();
-    const employeeId = this.technicalEmployeeId();
-    const reason = this.technicalReason().trim();
-    const lines = this.technicalLines();
-    if (this.technicalProcessing() || !uotId || !warehouseId || !employeeId || !reason
-      || reason.length > 300 || !lines.length || lines.some((l) => l.quantity <= 0
-        || l.quantity > l.stockAvailable)) {
-      this.technicalError.set('Seleccione empleado, productos con stock disponible y motivo de la salida.');
-      return;
-    }
-    this.technicalProcessing.set(true);
-    this.technicalError.set(null);
-    this.operations.registerTechnicalDelivery(uotId, warehouseId, employeeId, lines,
-      reason, this.technicalObservation().trim())
-      .pipe(finalize(() => this.technicalProcessing.set(false)))
-      .subscribe({
-        next: ({ deliveryId, movementId }) => {
-          this.toast.success(`Entrega técnica #${deliveryId} registrada`,
-            `Salida de Kardex #${movementId}. No es una venta.`);
-          this.technicalLines.set([]);
-          this.technicalReason.set('');
-          this.technicalObservation.set('');
-          this.loadTechnical();
-          this.loadCatalog();
-        },
-        error: (error) => this.technicalError.set(mapOpenApiError(error).message
-          + ' Si existe una respuesta incierta, consulte el historial antes de reintentar.'),
-      });
-  }
-
   loadHistory(): void {
     const uotId = this.currentUotId();
     if (!uotId) return;
@@ -840,19 +930,23 @@ export class PosPage {
       .pipe(finalize(() => this.historyLoading.set(false)))
       .subscribe({
         next: (sales) => {
-          if (uotId === this.currentUotId()) this.sales.set(sales);
+          if (uotId === this.currentUotId()) { this.sales.set(sales); this.historyPage.set(1); }
         },
         error: (error) => this.historyError.set(mapOpenApiError(error).message),
       });
   }
 
   viewSale(saleId: number): void {
+    if (this.saleActionId() !== null) return;
     this.saleActionId.set(saleId);
     this.historyError.set(null);
     this.operations.getSaleDetail(saleId)
       .pipe(finalize(() => this.saleActionId.set(null)))
       .subscribe({
-        next: (detail) => this.selectedSale.set(detail),
+        next: (detail) => {
+          this.selectedSale.set(detail);
+          if (!this.saleDetailDialog?.nativeElement.open) this.saleDetailDialog?.nativeElement.showModal();
+        },
         error: (error) => this.historyError.set(mapOpenApiError(error).message),
       });
   }
@@ -927,7 +1021,7 @@ export class PosPage {
         next: () => {
           this.toast.success(`Venta #${sale.saleId} anulada`);
           if (this.cart.pendingSaleId() === sale.saleId) this.cart.clearAfterSuccess();
-          this.selectedSale.set(null);
+          this.closeSaleDetail();
           this.cancelReason.set('');
           this.loadHistory();
           this.loadCatalog();
@@ -984,7 +1078,6 @@ export class PosPage {
     return !this.processing()
       && this.currentUotId() !== null
       && this.cart.warehouseId() !== null
-      && this.cart.customer() !== null
       && this.cart.items().length > 0
       && Number(this.paymentForm.controls.paymentMethodId.value) > 0
       && this.selectedPaymentMethod() !== null

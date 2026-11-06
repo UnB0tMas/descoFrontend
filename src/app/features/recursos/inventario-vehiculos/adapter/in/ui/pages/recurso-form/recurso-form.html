@@ -1,4 +1,4 @@
-<dialog #dialog class="modal desco-modal" (cancel)="$event.preventDefault(); close()"><div class="modal-box admin-modal-box admin-modal-box--wide">
+<dialog appDialogBackdrop #dialog class="modal desco-modal" (cancel)="$event.preventDefault(); close()"><div class="modal-box admin-modal-box admin-modal-box--wide">
   <header class="admin-modal-header"><div class="admin-modal-title-group"><span class="admin-modal-icon"><fa-icon [icon]="icon()" /></span><div><p>Inventario patrimonial</p><h2>{{ title() }}</h2></div></div><button type="button" class="admin-icon-button" [disabled]="saving()" aria-label="Cerrar" (click)="close()"><fa-icon [icon]="closeIcon" /></button></header>
   @if (errorMessage()) { <div class="admin-inline-error" role="alert">{{ errorMessage() }}</div> }
 
@@ -8,8 +8,11 @@
     <form class="admin-form-grid" [formGroup]="incidentForm" (ngSubmit)="save()"><div class="admin-field"><label>Tipo de incidencia</label><select class="admin-select" formControlName="tipo">@for (type of incidentTypes; track type.value) { <option [value]="type.value">{{ type.label }}</option> }</select></div><div class="admin-field"><label>Fecha y hora</label><input class="admin-input" type="datetime-local" formControlName="fechaHora" /></div><div class="admin-field admin-field-span-2"><label>Descripción</label><textarea class="admin-textarea" rows="4" maxlength="700" formControlName="descripcion"></textarea><app-form-error [control]="incidentForm.controls.descripcion" fieldLabel="La descripción" [messages]="{ blank: 'La descripción no puede contener solo espacios.' }" /></div><div class="admin-field"><label>Costo estimado</label><input class="admin-input" type="number" min="0" step="0.01" formControlName="costoEstimado" /></div><ng-container *ngTemplateOutlet="actions"></ng-container></form>
   } @else if (mode() === 'vehicle' || mode() === 'mileage') {
     <form class="admin-form-grid" [formGroup]="vehicleForm" (ngSubmit)="save()">
-      @if (mode() === 'vehicle') { <div class="admin-field"><label>Placa</label><input class="admin-input" maxlength="12" formControlName="placa" autocomplete="off" /><app-form-error [control]="vehicleForm.controls.placa" fieldLabel="La placa" /></div><div class="admin-field"><label>Tipo de vehículo</label><select class="admin-select" formControlName="tipoVehiculo"><option value="">Seleccionar</option>@for (type of vehicleTypes(); track type.code) { <option [value]="type.code">{{ type.label }}</option> }</select><app-form-error [control]="vehicleForm.controls.tipoVehiculo" fieldLabel="El tipo de vehículo" /></div> }
-      <div class="admin-field admin-field-span-2"><label>Kilometraje</label><input class="admin-input" type="number" min="0" step="0.1" formControlName="kilometrajeKm" /><app-form-error [control]="vehicleForm.controls.kilometrajeKm" fieldLabel="El kilometraje" /></div>
+      @if (mode() === 'vehicle') {
+        <ng-container *ngTemplateOutlet="vehicleFields"></ng-container>
+      } @else {
+        <div class="admin-field admin-field-span-2"><label>Kilometraje</label><input class="admin-input" type="number" min="0" max="99999999999.9" step="0.1" formControlName="kilometrajeKm" /><app-form-error [control]="vehicleForm.controls.kilometrajeKm" fieldLabel="El kilometraje" /></div>
+      }
       <ng-container *ngTemplateOutlet="actions"></ng-container>
     </form>
   } @else {
@@ -18,6 +21,10 @@
       <div class="admin-field"><label>Tipo de bien</label><select class="admin-select" formControlName="tipoBienId"><option [value]="0">Seleccionar</option>@for (type of assetTypes(); track type.value) { <option [value]="type.value">{{ type.label }}</option> }</select><app-form-error [control]="form.controls.tipoBienId" fieldLabel="El tipo de bien" /></div>
 <div class="admin-field"><label>Nombre</label><input class="admin-input" formControlName="nombre" maxlength="150" /><app-form-error [control]="form.controls.nombre" fieldLabel="El nombre" [messages]="{ blank: 'El nombre no puede contener solo espacios.' }" /></div>
       <div class="admin-field"><label>Marca</label><input class="admin-input" formControlName="marca" maxlength="80" /></div><div class="admin-field"><label>Modelo</label><input class="admin-input" formControlName="modelo" maxlength="80" /></div><div class="admin-field"><label>Serie</label><input class="admin-input" formControlName="serie" maxlength="100" /></div>
+      @if (isVehicleAsset()) {
+        <div class="resource-form-section admin-field-span-2"><span>Datos del vehículo</span></div>
+        <ng-container *ngTemplateOutlet="vehicleFields"></ng-container>
+      }
       <div class="resource-form-section admin-field-span-2"><span>Adquisición</span></div>
       <div class="admin-field"><label>Fecha de adquisición</label><input class="admin-input" type="date" [max]="today" formControlName="fechaAdquisicion" /><app-form-error [control]="form.controls.fechaAdquisicion" fieldLabel="La fecha de adquisición" [messages]="{ futureDate: 'La fecha no puede ser futura.' }" /></div>
       <div class="admin-field"><label>Monto de adquisición</label><div class="resource-money-field"><select class="admin-select" formControlName="moneda">@for (currency of currencies(); track currency.code) { <option [value]="currency.code">{{ currency.code }}</option> }</select><input class="admin-input" type="number" min="0" step="0.01" formControlName="montoAdquisicion" /></div></div>
@@ -26,5 +33,18 @@
       <ng-container *ngTemplateOutlet="actions"></ng-container>
     </form>
   }
+  <ng-template #vehicleFields>
+    <div class="admin-form-grid admin-field-span-2" [formGroup]="vehicleForm">
+      @if(vehicleTypes().length > 1) {
+      <div class="admin-field admin-field-span-2"><label>Tipo de vehículo</label><select class="admin-select" formControlName="tipoVehiculo"><option value="">Seleccionar</option>@for(type of vehicleTypes();track type.code){<option [value]="type.code">{{type.label}}</option>}</select><app-form-error [control]="vehicleForm.controls.tipoVehiculo" fieldLabel="El tipo de vehículo" /></div>
+      }
+      <div class="admin-field admin-field-span-2"><label>Color (opcional)</label><input class="admin-input" maxlength="50" formControlName="color" placeholder="Ej. Blanco" /><app-form-error [control]="vehicleForm.controls.color" fieldLabel="El color" /></div>
+      <div class="admin-field"><label>Placa (opcional)</label><input class="admin-input" maxlength="12" formControlName="placa" autocomplete="off" placeholder="Pendiente de trámite" /><app-form-error [control]="vehicleForm.controls.placa" fieldLabel="La placa" /></div>
+      <div class="admin-field"><label>Kilometraje (opcional)</label><input class="admin-input" type="number" min="0" max="99999999999.9" step="0.1" formControlName="kilometrajeKm" placeholder="Sin registrar" /><app-form-error [control]="vehicleForm.controls.kilometrajeKm" fieldLabel="El kilometraje" /></div>
+      @if(!vehicleForm.controls.placa.value.trim()){
+        <p class="admin-field-span-2 text-sm text-desco-warning" role="status">Placa pendiente de registro. El vehículo no podrá habilitarse ni asignarse hasta completar la placa.</p>
+      }
+    </div>
+  </ng-template>
   <ng-template #actions><footer class="admin-modal-actions admin-field-span-2"><button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="close()">Cancelar</button><button type="submit" class="admin-primary-button" [disabled]="saving() || referencesLoading()">@if (saving()) { <span class="loading loading-spinner loading-sm"></span> Guardando... } @else { <fa-icon [icon]="saveIcon" /> Guardar }</button></footer></ng-template>
 </div></dialog>

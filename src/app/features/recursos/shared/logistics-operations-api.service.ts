@@ -60,6 +60,15 @@ export interface StockTransferInput {
   observacion?: string;
 }
 
+export interface TransferProduct {
+  productoId: number;
+  producto: string;
+  unidadMedida: string;
+  stockDisponible: number;
+  apto: boolean;
+  motivo: string | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class LogisticsOperationsApiService {
   private readonly http = inject(HttpClient);
@@ -90,6 +99,12 @@ export class LogisticsOperationsApiService {
         headers: { 'X-Idempotency-Key': key },
       }).pipe(map(unwrapApiResponse)),
     );
+  }
+
+  listTransferProducts(almacenOrigenId: number, almacenDestinoId: number) {
+    return this.http.get<ApiEnvelope<TransferProduct[]>>(`${this.url}/transferencias/productos`, {
+      params: new HttpParams().set('almacenOrigenId', almacenOrigenId).set('almacenDestinoId', almacenDestinoId),
+    }).pipe(map(response => unwrapApiResponse(response) ?? []));
   }
 
   transfer(input: StockTransferInput) {

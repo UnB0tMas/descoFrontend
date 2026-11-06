@@ -1,0 +1,26 @@
+<section class="space-y-4 p-4 sm:p-6">
+  <header><h1 class="text-xl font-semibold">APAPPSS</h1>
+    <p class="text-sm text-gray-500">Gestión de socios y predios por convenio y UOT.</p></header>
+  @if (error()) { <p class="e1-error" role="alert">{{error()}}</p> }
+  @if (showPredios() || showPlantas()) {
+    <label class="admin-field">Convenio vigente
+      <select class="admin-select" [(ngModel)]="convenioId">
+        <option [ngValue]="0">Seleccione el convenio</option>
+        @for (c of convenios(); track c.id) { <option [ngValue]="c.id">{{c.nombre}}</option> }
+      </select>
+    </label>
+  }
+  @if (showSocios() || showPredios() || showPlantas()) {
+    <nav class="flex flex-wrap gap-2 border-b pb-3" aria-label="Gestión de socios y predios">
+      @if (showSocios()) { <button type="button" class="admin-secondary-button" (click)="select('socios')">Socios</button> }
+      @if (showPredios()) { <button type="button" class="admin-secondary-button" (click)="select('predios')">Predios</button> }
+      @if (showPlantas()) { <button type="button" class="admin-secondary-button" (click)="select('plantas')">Plantas y sanidad</button> }
+      @if(convenioId > 0){<a class="admin-secondary-button" routerLink="/gestion-tecnica/salidas/operativas" [queryParams]="{convenioId:convenioId}">Salidas y visitas</a>}
+    </nav>
+    @if (current() === 'plantas' && convenioId > 0) { <app-plantas-e3-page [convenioId]="convenioId" /> }
+    @if (current() === 'socios') { <app-productores-list-page [apappss]="true" /> }
+    @if (current() === 'predios' && convenioId > 0) {
+      <app-predios-list-page [apappss]="true" [convenioId]="convenioId" />
+    } @else if (current() === 'predios') { <p>Seleccione un convenio activo para consultar predios.</p> }
+  } @else { <p>No tiene permisos para consultar módulos APAPPSS.</p> }
+</section>

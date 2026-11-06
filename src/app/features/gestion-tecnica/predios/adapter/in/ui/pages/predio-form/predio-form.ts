@@ -16,7 +16,17 @@ import {
   faTrashCan,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
-import { finalize, Observable } from 'rxjs';
+import { finalize, Observable, of, throwError, map } from 'rxjs';
+import { ReferenceDataService } from '../../../../../../../../core/reference-data/reference-data.service';
+import { ReferenceItem } from '../../../../../../../../core/reference-data/reference-data.model';
+import { UotContextStore } from '../../../../../../../../features/uot/state/uot-context.store';
+import { ExpedienteE1UseCase } from '../../../../../expediente/application/expediente-e1.use-case';
+import { PersonaE1 } from '../../../../../expediente/domain/expediente-e1.model';
+import { provideExpedienteE1 } from '../../../../../expediente/expediente-e1.providers';
+import { PersonLookupComponent } from '../../../../../../../../shared/forms/person-registration/person-lookup';
+import { PersonRegistrationModalComponent } from '../../../../../../../../shared/forms/person-registration/person-registration-modal';
+import { PersonOwnerChoice, PersonOwnerInput } from '../../../../../../../../shared/forms/person-registration/person-owner-picker';
+import { sanitizeDocument } from '../../../../../../../../shared/forms/validators/desco-input.validators';
 
 import { mapOpenApiError } from '../../../../../../../../infrastructure/openapi/openapi-http-error.mapper';
 import { ToastService } from '../../../../../../../../shared/feedback/toast-center/toast.service';
@@ -36,7 +46,6 @@ import {
   todayLocalIsoDate,
 } from '../../../../../../../../shared/forms/validators/desco-input.validators';
 import { AdminModalResult } from '../../../../../../../administracion/shared/admin-modal.types';
-import { ListarProductoresUseCase } from '../../../../../../productores/application/use-case/listar-productores.use-case';
 import { CrearPredioUseCase } from '../../../../../application/use-case/crear-predio.use-case';
 import { EditarPredioUseCase } from '../../../../../application/use-case/editar-predio.use-case';
 import { PredioDetalle } from '../../../../../domain/predio-detalle.model';
@@ -51,12 +60,6 @@ import {
 } from '../../../../../domain/titularidad.model';
 import { PredioMapComponent } from '../../components/predio-map/predio-map';
 
-interface ProducerOption {
-  id: number;
-  label: string;
-  document: string;
-}
-
 @Component({
   selector: 'app-predio-form',
   standalone: true,
@@ -67,7 +70,10 @@ interface ProducerOption {
     FormErrorComponent,
     GeographyCascadeComponent,
     PredioMapComponent,
+    PersonLookupComponent,
+    PersonRegistrationModalComponent,
   ],
+  providers: [...provideExpedienteE1()],
   templateUrl: './predio-form.html',
   styleUrl: './predio-form.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -75,18 +81,28 @@ interface ProducerOption {
 export class PredioFormComponent {
   @ViewChild('dialog', { static: true })
   private dialog!: ElementRef<HTMLDialogElement>;
+  @ViewChild(PersonRegistrationModalComponent) private personModal!: PersonRegistrationModalComponent;
 
   private readonly fb = inject(FormBuilder);
   private readonly create = inject(CrearPredioUseCase);
   private readonly update = inject(EditarPredioUseCase);
-  private readonly producersUseCase = inject(ListarProductoresUseCase);
+  private readonly catalogos = inject(ReferenceDataService);
+  private readonly expediente = inject(ExpedienteE1UseCase);
+  private readonly uot = inject(UotContextStore);
   private readonly toast = inject(ToastService);
 
   readonly saving = signal(false);
   readonly referencesLoading = signal(false);
   readonly current = signal<PredioDetalle | null>(null);
   readonly error = signal<string | null>(null);
-  readonly producers = signal<readonly ProducerOption[]>([]);
+  readonly ownershipTypes = signal<readonly ReferenceItem[]>([]);
+  readonly ownerPerson = signal<PersonaE1 | null>(null);
+  readonly persons = signal<PersonaE1[]>([]);
+  readonly personLoading = signal(false);
+  readonly documentTypes = [{value:'DNI',label:'DNI'},{value:'CE',label:'Carné de extranjería'},{value:'PASAPORTE',label:'Pasaporte'}];
+  readonly personLabels = new Map<number,string>();
+  personDocumentType: 'DNI'|'CE'|'PASAPORTE'='DNI';
+  personDocument = '';
   readonly owners = signal<readonly TitularidadInput[]>([]);
   readonly latitude = signal<number | null>(null);
   readonly longitude = signal<number | null>(null);
@@ -94,20 +110,13 @@ export class PredioFormComponent {
   readonly initialPopulationCenterId = signal<number | null>(null);
 
   private resolver: ((result: AdminModalResult) => void) | null = null;
+  private personSwitching = false;
 
   readonly closeIcon = faXmark;
   readonly saveIcon = faFloppyDisk;
   readonly addIcon = faPlus;
   readonly editIcon = faPen;
   readonly deleteIcon = faTrashCan;
-
-  readonly ownershipTypes: readonly TipoTitularidad[] = [
-    'PROPIETARIO',
-    'COPROPIETARIO',
-    'POSESIONARIO',
-    'ARRENDATARIO',
-    'OTRO',
-  ];
 
   readonly today = todayLocalIsoDate();
 
@@ -184,7 +193,7 @@ export class PredioFormComponent {
         '',
         [Validators.required, notFutureDateValidator],
       ],
-      ownerSocioId: [0, [Validators.min(0)]],
+      ownerPersonaId: [0, [Validators.min(0)]],
       ownerTipo: ['PROPIETARIO' as TipoTitularidad],
       ownerPorcentaje: [
         100,
@@ -209,16 +218,25 @@ export class PredioFormComponent {
   open(detail: PredioDetalle | null = null): Promise<AdminModalResult> {
     this.current.set(detail);
     this.error.set(null);
-    this.producers.set([]);
+    this.ownershipTypes.set([]);
+    this.personLabels.clear(); this.ownerPerson.set(null); this.persons.set([]);
+    this.personLoading.set(false);
+    this.personDocumentType='DNI'; this.personDocument='';
     this.owners.set(
       detail?.titulares
-        .filter((item) => item.estado)
+        .filter((item) => item.estado && !!(item.personaId ?? item.socioId))
+        .sort((a,b) => (a.rolTitularidad === 'PRINCIPAL' ? -1 : 1) - (b.rolTitularidad === 'PRINCIPAL' ? -1 : 1))
         .map((item) => ({
-          socioId: item.socioId,
-          tipoTitularidad: item.tipoTitularidad as TipoTitularidad,
+          personaId: (item.personaId ?? item.socioId)!,
+          socioId: item.socioId ?? undefined,
+          tipoTitularidad: item.tipoTitularidad,
           porcentaje: item.porcentaje,
         })) ?? [],
     );
+    detail?.titulares.filter(x=>x.estado).forEach(x=> {
+      const id=x.personaId??x.socioId;
+      if (id) this.personLabels.set(id,[x.nombres,x.apellidoPaterno,x.apellidoMaterno].filter(Boolean).join(' ').trim() || x.numeroDocumento);
+    });
     this.latitude.set(detail?.latitud ?? null);
     this.longitude.set(detail?.longitud ?? null);
     this.initialDistrictCode.set(detail?.distritoCodigo ?? '');
@@ -239,7 +257,7 @@ export class PredioFormComponent {
       infraestructura: detail?.infraestructura ?? '',
       observacion: detail?.observacion ?? '',
       fechaDesde: detail?.fechaDesde?.slice(0, 10) ?? today,
-      ownerSocioId: 0,
+      ownerPersonaId: 0,
       ownerTipo: 'PROPIETARIO',
       ownerPorcentaje: 100,
     });
@@ -248,7 +266,7 @@ export class PredioFormComponent {
       detail ? 'disable' : 'enable'
     ]({ emitEvent: false });
 
-    this.loadProducers();
+    this.loadOwnershipTypes();
     this.dialog.nativeElement.showModal();
 
     return new Promise((resolve) => {
@@ -275,72 +293,133 @@ export class PredioFormComponent {
     this.longitude.set(point.longitude);
   }
 
-  addOwner(): void {
-    const value = this.form.getRawValue();
-    const id = Number(value.ownerSocioId);
-    const percentage = Number(value.ownerPorcentaje);
-
-    if (!id) {
-      this.error.set('Seleccione un titular.');
-      return;
-    }
-
-    if (!Number.isFinite(percentage) || percentage <= 0 || percentage > 100) {
-      this.error.set('Revise el porcentaje de titularidad.');
-      return;
-    }
-
-    if (this.owners().some((item) => item.socioId === id)) {
-      this.error.set('El socio ya forma parte de la titularidad.');
-      return;
-    }
-
-    if (this.totalOwnership() + percentage > 100.0001) {
-      this.error.set('La suma de porcentajes no puede superar el 100 %.');
-      return;
-    }
-
-    this.error.set(null);
-    this.owners.set([
-      ...this.owners(),
-      {
-        socioId: id,
-        tipoTitularidad: value.ownerTipo,
-        porcentaje: percentage,
+  private loadOwnershipTypes():void {
+    this.referencesLoading.set(true);
+    this.catalogos.catalog('TIPO_TITULARIDAD',true).pipe(finalize(()=>this.referencesLoading.set(false))).subscribe({
+      next:items=>{
+        this.ownershipTypes.set(items.filter(x=>!!x.code));
+        if (!items.some(x=>x.code===this.form.controls.ownerTipo.value))
+          this.form.controls.ownerTipo.setValue(items[0]?.code ?? '');
       },
-    ]);
-
-    this.form.patchValue({
-      ownerSocioId: 0,
-      ownerPorcentaje: Math.max(0.01, 100 - this.totalOwnership()),
+      error:()=>this.error.set('No se pudieron cargar los tipos de titularidad.'),
     });
   }
-
-  removeOwner(index: number): void {
-    this.owners.set(
-      this.owners().filter((_, currentIndex) => currentIndex !== index),
-    );
+  personMaxLength():number { return this.personDocumentType==='DNI' ? 8 : this.personDocumentType==='CE' ? 12 : 20; }
+  canSearchPerson():boolean { return !!this.uot.selectedId() && !this.personLoading() && !this.saving()
+    && (this.personDocumentType==='DNI' ? /^\d{8}$/.test(this.personDocument) : this.personDocument.trim().length>=6); }
+  changePersonType(type:string):void {
+    if (type==='DNI'||type==='CE'||type==='PASAPORTE') this.personDocumentType=type;
+    this.personDocument=''; this.ownerPerson.set(null); this.persons.set([]);
+  }
+  changePersonNumber(value:string):void {
+    this.personDocument=sanitizeDocument(this.personDocumentType,value);this.ownerPerson.set(null);this.persons.set([]);
+  }
+  searchPerson():void {
+    const uot=this.uot.selectedId(); if (!uot||!this.canSearchPerson()) return;
+    const query=this.personDocument;
+    const type=this.personDocumentType;
+    this.personLoading.set(true);this.persons.set([]);this.error.set(null);
+    this.expediente.buscarPersonas(uot,query).pipe(finalize(()=>this.personLoading.set(false))).subscribe({
+      next:people=> {
+        const matches=people.filter(x=>x.tipoDocumento===type && x.numeroDocumento===query);
+        this.persons.set(matches);
+        if (!matches.length) this.error.set('Persona no encontrada. Puede registrarla.');
+      },
+      error:()=>this.error.set('No se pudo buscar a la persona.'),
+    });
+  }
+  selectPerson(person:PersonaE1):void {
+    this.persons.set([]);this.ownerPerson.set(person);
+    this.form.controls.ownerPersonaId.setValue(person.personaId);
+    this.personLabels.set(person.personaId,person.nombreCompleto);
     this.error.set(null);
   }
+  readonly findPersonForModal = (type: string, document: string): Observable<readonly PersonOwnerChoice[]> => {
+    const uot = this.uot.selectedId();
+    return uot ? this.expediente.buscarPersonas(uot, document).pipe(
+      // Se respeta el tipo y documento exactos. No se consultan listados de socios.
+      map(people => people.filter(p => p.tipoDocumento === type && p.numeroDocumento === document))
+    ) : of([]);
+  };
 
-  totalOwnership(): number {
-    return this.owners().reduce(
-      (sum, item) => sum + Number(item.porcentaje),
-      0,
-    );
+  readonly savePersonForModal = (data: PersonOwnerInput): Observable<number> => {
+    const uot = this.uot.selectedId();
+    return uot ? this.expediente.crearPersona(uot, data) : throwError(() => new Error('Seleccione el ámbito.'));
+  };
+
+  manualPerson(): void { void this.openPersonModal(); }
+
+  private async openPersonModal(): Promise<void> {
+    if (this.personSwitching || this.personLoading() || this.saving()) return;
+    this.personSwitching = true;
+    const modal = this.dialog.nativeElement;
+    const body = modal.querySelector<HTMLElement>('.desco-fixed-form-body');
+    const previousScroll = body?.scrollTop ?? 0;
+    modal.classList.add('predio-switching-out');
+    await new Promise<void>(resolve => setTimeout(resolve, 140));
+    modal.classList.remove('predio-switching-out');
+    modal.close();
+    try {
+      const person = await this.personModal.open(this.personDocumentType, this.personDocument, 'manual');
+      if (person) this.selectPerson(person as PersonaE1);
+    } catch {
+      this.error.set('No se pudo abrir el registro de persona.');
+    } finally {
+      modal.showModal();
+      if (body) body.scrollTop = previousScroll;
+      this.personSwitching = false;
+    }
   }
 
-  producerLabel(id: number): string {
-    return this.producers().find((item) => item.id === id)?.label
-      ?? `Socio ${id}`;
+  addOwner(): void {
+    const value=this.form.getRawValue();
+    const id=this.ownerPerson()?.personaId ?? Number(value.ownerPersonaId);
+    const percentage=Number(value.ownerPorcentaje);
+    if (!id || !this.ownerPerson()) { this.error.set('Busque o registre a la persona.');return; }
+    if (!this.ownershipTypes().some(x=>x.code===value.ownerTipo)) { this.error.set('Seleccione el tipo de titularidad.');return; }
+    if (!Number.isFinite(percentage)||percentage<=0||percentage>100||
+        Math.abs(percentage*100-Math.round(percentage*100))>0.000001) {
+      this.error.set('Revise el porcentaje.');return;
+    }
+    if (this.owners().some(x=>x.personaId===id)) { this.error.set('La persona ya es titular.');return; }
+    let existing=[...this.owners()];
+    // Al añadir el primer cotitular se ajusta el 100 % inicial del principal.
+    if (existing.length===1 && Number(existing[0].porcentaje)===100 && percentage<100)
+      existing=[{...existing[0],porcentaje:Math.round((100-percentage)*100)/100}];
+    if (existing.reduce((sum,x)=>sum+Number(x.porcentaje),0)+percentage>100.000001) {
+      this.error.set('La suma no puede superar el 100 %.');return;
+    }
+    this.owners.set([...existing,{personaId:id,tipoTitularidad:value.ownerTipo,porcentaje:percentage}]);
+    this.ownerPerson.set(null);this.form.controls.ownerPersonaId.setValue(0);
+    this.personDocument='';this.persons.set([]);
+    this.form.controls.ownerPorcentaje.setValue(Math.max(.01,Math.round((100-this.totalOwnership())*100)/100));
+    this.error.set(null);
   }
+  removeOwner(index:number):void {
+    this.owners.set(this.owners().filter((_,i)=>i!==index));
+    this.error.set(null);
+  }
+  updateOwnerPercentage(index:number,value:string):void {
+    const percent=Number(value);
+    if (!Number.isFinite(percent)||percent<=0||percent>100||
+      Math.abs(percent*100-Math.round(percent*100))>0.000001) {
+      this.error.set('Revise el porcentaje.');return;
+    }
+    const items=[...this.owners()];items[index]={...items[index],porcentaje:percent};
+    if (items.reduce((sum,x)=>sum+Number(x.porcentaje),0)>100.000001) {
+      this.error.set('La suma no puede superar el 100 %.');return;
+    }
+    this.owners.set(items);this.error.set(null);
+  }
+  totalOwnership():number { return this.owners().reduce((sum,x)=>sum+Number(x.porcentaje),0); }
+  personLabel(id:number):string { return this.personLabels.get(id)??'Persona registrada'; }
 
   save(): void {
     this.form.updateValueAndValidity({ emitEvent: false });
     this.form.markAllAsTouched();
     const value = this.form.getRawValue();
 
-    if (this.form.invalid || this.saving()) {
+    if (this.form.invalid || this.saving() || this.personLoading()) {
       this.error.set('Revise los campos obligatorios.');
       return;
     }
@@ -486,19 +565,19 @@ export class PredioFormComponent {
     const previous = current.titulares
       .filter((item) => item.estado)
       .map((item) => ({
-        socioId: item.socioId,
+        personaId: (item.personaId ?? item.socioId)!,
         tipoTitularidad: item.tipoTitularidad as TipoTitularidad,
         porcentaje: Number(item.porcentaje),
       }))
-      .sort((a, b) => a.socioId - b.socioId);
+      .sort((a, b) => a.personaId - b.personaId);
 
     const next = [...this.owners()]
       .map((item) => ({
-        socioId: item.socioId,
+        personaId: (item.personaId ?? item.socioId)!,
         tipoTitularidad: item.tipoTitularidad,
         porcentaje: Number(item.porcentaje),
       }))
-      .sort((a, b) => a.socioId - b.socioId);
+      .sort((a, b) => a.personaId - b.personaId);
 
     if (previous.length !== next.length) {
       return true;
@@ -506,7 +585,7 @@ export class PredioFormComponent {
 
     return previous.some((item, index) => {
       const candidate = next[index];
-      return item.socioId !== candidate.socioId
+      return item.personaId !== candidate.personaId
         || item.tipoTitularidad !== candidate.tipoTitularidad
         || Math.abs(item.porcentaje - candidate.porcentaje) > 0.0001;
     });
@@ -522,33 +601,6 @@ export class PredioFormComponent {
       : Number(value);
   }
 
-  private loadProducers(): void {
-    this.referencesLoading.set(true);
-    this.producersUseCase
-      .execute({ situacion: 'ACTIVO', page: 1, size: 200 })
-      .pipe(finalize(() => this.referencesLoading.set(false)))
-      .subscribe({
-        next: (result) => {
-          this.producers.set(
-            result.items.map((item) => ({
-              id: item.socioId,
-              label: [item.nombres, item.apellidoPaterno, item.apellidoMaterno]
-                .filter(Boolean)
-                .join(' '),
-              document: item.numeroDocumento,
-            })),
-          );
-        },
-        error: (requestError) => {
-          const message = mapOpenApiError(requestError).message
-            || 'No se pudieron cargar los titulares disponibles.';
-          this.producers.set([]);
-          this.error.set(message);
-          this.toast.error('No se pudieron cargar los titulares', message);
-        },
-      });
-  }
-
   private finish(result: AdminModalResult): void {
     if (this.dialog.nativeElement.open) {
       this.dialog.nativeElement.close();
@@ -558,7 +610,7 @@ export class PredioFormComponent {
     this.resolver = null;
     this.current.set(null);
     this.error.set(null);
-    this.producers.set([]);
+    this.ownershipTypes.set([]);this.personLabels.clear();this.persons.set([]);this.ownerPerson.set(null);
     this.owners.set([]);
     this.latitude.set(null);
     this.longitude.set(null);

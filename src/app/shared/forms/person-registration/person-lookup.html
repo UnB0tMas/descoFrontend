@@ -1,0 +1,29 @@
+<section class="person-lookup" [class.person-lookup--compact]="compact" aria-label="Buscar persona">
+  @if (!compact) { <div class="person-lookup__heading"><h3>Identificar persona</h3></div> }
+  <div class="person-lookup__grid">
+    <div class="admin-field">
+      <label [for]="idPrefix + '-type'">Tipo de documento</label>
+      <select class="admin-select" [id]="idPrefix + '-type'" [value]="documentType" [disabled]="disabled || searching"
+        (change)="documentTypeChange.emit($any($event.target).value)">
+        @for (type of documentTypes; track type.value) { <option [value]="type.value">{{type.label}}</option> }
+      </select>
+    </div>
+    <div class="admin-field">
+      <label [for]="idPrefix + '-number'">Número de documento</label>
+      <input #numberInput class="admin-input" type="text" [id]="idPrefix + '-number'" [value]="documentNumber"
+        [attr.maxlength]="maxLength" [attr.inputmode]="inputMode" autocomplete="off" spellcheck="false"
+        [disabled]="disabled || searching" (input)="documentNumberChange.emit($any($event.target).value)"
+        (keydown.enter)="$event.preventDefault(); canSearch && searchRequested.emit()" />
+    </div>
+    <button type="button" class="admin-primary-button person-lookup__search"
+      [disabled]="!canSearch || searching || disabled" (click)="searchRequested.emit()">
+      {{searching ? 'Buscando…' : 'Buscar'}}
+    </button>
+  </div>
+  @if (message) { <p class="person-lookup__message" role="status">{{message}}</p> }
+  @if (showManualAction) { <div class="person-lookup__actions">
+    <span>¿No está registrada?</span>
+    <button type="button" class="admin-secondary-button" [disabled]="disabled || searching"
+      (click)="manualRequested.emit()">Registrar persona</button>
+  </div> }
+</section>

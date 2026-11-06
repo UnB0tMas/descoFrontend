@@ -1,0 +1,178 @@
+<section class="desco-page e4-page">
+  <app-page-header title="Acopio y control individual · APAPPSS" eyebrow="Gestión comercial">
+    <div pageActions class="e4-actions">
+      <a routerLink="/gestion-comercial/campanias" class="admin-secondary-button">Campañas</a>
+      <a routerLink="/gestion-comercial/operativos" class="admin-secondary-button">Operativos</a>
+      <a routerLink="/gestion-comercial/precios" class="admin-secondary-button">Precios y condiciones</a>
+      <button type="button" class="admin-secondary-button" (click)="refreshCampaign()" [disabled]="busy()||!campaignId">Actualizar</button>
+    </div>
+  </app-page-header>
+  @if(error()) { <app-error-state [message]="error()!" (retry)="refreshCampaign()"/> }
+  @if(lastMessage()) { <p role="status" class="e4-success">{{lastMessage()}}</p> }
+  @if(loading()) { <app-loading-state title="Cargando campañas" message="Consultando catálogos y opciones autorizadas."/> }
+  @else {
+    <section class="admin-surface e4-panel">
+      <div class="e4-row">
+        <label class="admin-field">Campaña
+          <select class="admin-select" [(ngModel)]="campaignId" (ngModelChange)="changeCampaign()">
+            <option [ngValue]="0">Seleccionar campaña</option>
+            @for(c of refs().campaigns;track c.value){<option [ngValue]="c.value">{{c.label}}</option>}
+          </select>
+        </label>
+        @if(campaign();as c){
+          <div class="admin-detail-card"><small>Estado</small><strong>{{c.estado}}</strong></div>
+          <div class="admin-detail-card"><small>Cupo total</small><strong>{{c.cupoJabas??'Sin configurar'}}</strong></div>
+          <div class="admin-detail-card"><small>Jabas pendientes</small><strong>{{c.jabasPendientes??0}}</strong></div>
+        }
+      </div>
+    </section>
+    @if(campaign();as c) {
+      <div class="e4-sections">
+        <section class="admin-surface e4-panel">
+          <h3>1. Cupo y tara de campaña</h3>
+          <p>Se configuran una sola vez. La tara y el precio de cada pesaje se guardan como datos históricos.</p>
+          <div class="e4-row">
+            <label class="admin-field">Cupo de jabas<input class="admin-input" type="number" min="1" max="100000" [(ngModel)]="cupo"/></label>
+            <label class="admin-field">Tara por jaba (kg)<input class="admin-input" type="number" min="0" max="9.999" step="0.001" [(ngModel)]="tara"/></label>
+            <button *appPermission="'CAMPANIAS_EDITAR'" class="admin-primary-button" type="button" [disabled]="busy()||cupo<1||tara<0" (click)="configure()">Guardar configuración</button>
+          </div>
+          <p>Las variedades, condiciones y precios de venta se configuran en el catálogo comercial existente.</p>
+          <div class="e4-prices">
+            @for(p of priceOptions();track p.variedadId+'-'+p.condicionId+'-'+p.version){
+              <span class="e4-tag">Variedad {{p.variedadId}} / condición {{p.condicionId}}: {{money(p.precio)}} por kg</span>
+            } @empty { <span>Sin precios vigentes registrados para la campaña.</span> }
+          </div>
+        </section>
+        <section class="admin-surface e4-panel">
+          <h3>2. Incorporación múltiple de socios</h3>
+          <p>Solo se inscriben los socios que participarán. La autorización de membresía se valida en el servidor.</p>
+          <details>
+            <summary>Seleccionar socios ({{selectedPartners().length}} seleccionados)</summary>
+            <div class="e4-partners">
+              @for(p of eligiblePartners();track p.value){
+                <label class="e4-choice"><input type="checkbox" [checked]="isPartnerSelected(p.value)"
+                  (change)="setPartnerChecked(p.value,$any($event.target).checked)"/>
+                  <span>{{p.label}}</span></label>
+              } @empty {<app-empty-state title="Sin socios" message="No hay membresías disponibles para incorporar."/>}
+            </div>
+          </details>
+          <button *appPermission="'PARTICIPANTES_CREAR'" type="button" class="admin-primary-button"
+            [disabled]="busy()||selectedPartners().length===0" (click)="includeSelected()">Incorporar seleccionados</button>
+        </section>
+        <section class="admin-surface e4-panel">
+          <h3>3. Asignar jabas y pesar por unidad</h3>
+          <div class="e4-row">
+            <label class="admin-field">Operativo
+              <select class="admin-select" [(ngModel)]="operationId" (ngModelChange)="changeOperation()">
+                <option [ngValue]="0">Seleccionar</option>
+                @for(op of eligibleOperations();track op.value){<option [ngValue]="op.value">{{op.label}}</option>}
+              </select>
+            </label>
+            <label class="admin-field">Socio del operativo
+              <select class="admin-select" [(ngModel)]="operativoSocioId">
+                <option [ngValue]="0">Seleccionar</option>
+                @for(s of partners();track s.value){<option [ngValue]="s.value">{{s.label}}</option>}
+              </select>
+            </label>
+            <label class="admin-field">Cantidad de jabas<input class="admin-input" type="number" min="1" max="3000" [(ngModel)]="cantidad"/></label>
+            <button *appPermission="'JABAS_CREAR'" class="admin-primary-button" type="button"
+              [disabled]="busy()||!operativoSocioId||cantidad<1" (click)="assign()">Entregar jabas</button>
+          </div>
+          <div class="e4-row">
+            <label class="admin-field">Asignación para control y pesaje
+              <select class="admin-select" [(ngModel)]="asignacionId" (ngModelChange)="selectAssignment()">
+                <option [ngValue]="0">Seleccione</option>
+                @for(a of assignments();track a.value){<option [ngValue]="a.value">{{a.label}}</option>}
+              </select>
+            </label>
+            @if(assignment().asignadas){
+              <div class="admin-detail-card"><small>Pesadas</small><strong>{{weighed()}} / {{assignment().asignadas}}</strong></div>
+              <div class="admin-detail-card"><small>Kg netos</small><strong>{{number(totalNet())}}</strong></div>
+              <div class="admin-detail-card"><small>Devueltas</small><strong>{{assignment().devueltas}}</strong></div>
+              <div class="admin-detail-card"><small>Faltantes</small><strong>{{assignment().faltantes}}</strong></div>
+            }
+          </div>
+          @if(nextUnit();as next){
+            <div class="e4-balance">
+              <div><strong>Siguiente jaba: {{next.numero}}</strong><small>El sistema asigna automáticamente el identificador, fecha, tara y precio.</small></div>
+              <label class="admin-field">Variedad
+                <select class="admin-select" [(ngModel)]="variedadId">
+                  <option [ngValue]="0">Seleccionar</option>
+                  @for(v of refs().varieties;track v.value){<option [ngValue]="v.value">{{v.label}}</option>}
+                </select>
+              </label>
+              <label class="admin-field">Condición comercial
+                <select class="admin-select" [(ngModel)]="condicionId">
+                  <option [ngValue]="0">Seleccionar</option>
+                  @for(v of refs().conditions;track v.value){<option [ngValue]="v.value">{{v.label}}</option>}
+                </select>
+              </label>
+              <label class="admin-field">Peso bruto (kg)
+                <input class="admin-input" type="number" step="0.001" min="0.001" [(ngModel)]="pesoBruto" (keydown.enter)="weigh()"/>
+              </label>
+              <button *appPermission="'ENTREGAS_CREAR'" type="button" class="admin-primary-button"
+                [disabled]="busy()||pesoBruto==null||pesoBruto<=tara||!variedadId||!condicionId" (click)="weigh()">Guardar y siguiente</button>
+            </div>
+          }
+          @if(assignment().unidades.length>0){
+            <div class="admin-table-wrap">
+              <table class="admin-table"><thead><tr><th>Jaba</th><th>Bruto</th><th>Tara</th><th>Neto</th><th>Clasificación</th><th>Pesaje</th><th>Devolución</th></tr></thead>
+                <tbody>@for(u of displayed();track u.unidadId){<tr>
+                  <td>{{u.numero}}</td><td>{{u.pesoBrutoKg??'—'}}</td><td>{{u.taraKg??'—'}}</td><td>{{u.pesoNetoKg??'—'}}</td>
+                  <td>{{u.variedadId??'—'}} / {{u.condicionId??'—'}}</td><td>{{u.pesaje}}</td><td>{{u.retorno}}</td>
+                </tr>}</tbody>
+              </table>
+            </div>
+            <app-paginator [page]="pagination" [size]="pageSize" [totalRecords]="assignment().unidades.length"
+              [totalPages]="totalPages()" (pageChange)="selectPage($event)" (sizeChange)="selectPageSize($event)"/>
+          }
+        </section>
+        @if(assignment().asignadas>0){
+          <section class="admin-surface e4-panel">
+            <h3>4. Conciliar retorno físico y confirmar la entrega</h3>
+            <p>Las jabas sin peso no se consideran vacías devueltas automáticamente. Indique cuántas volvieron vacías; el sistema calcula las faltantes.</p>
+            <div class="e4-row">
+              <div class="admin-detail-card"><small>Llenas pesadas</small><strong>{{weighed()}}</strong></div>
+              <label class="admin-field">Vacías devueltas<input class="admin-input" type="number" min="0" [(ngModel)]="vacias"/></label>
+              <div class="admin-detail-card"><small>Faltantes estimadas</small><strong>{{assignment().asignadas-weighed()-vacias}}</strong></div>
+              <button *appPermission="'JABAS_CREAR'" class="admin-primary-button" type="button"
+                [disabled]="busy()||!canReturn()||vacias<0||weighed()+vacias>assignment().asignadas" (click)="returnCrates()">Confirmar devolución</button>
+              <button *appPermission="'ENTREGAS_CONFIRMAR'" type="button" class="admin-secondary-button"
+                [disabled]="busy()||!assignmentReturned()||weighed()===0" (click)="confirm()">Confirmar acopio</button>
+            </div>
+          </section>
+          <section class="admin-surface e4-panel">
+            <h3>5. Ajustes particulares y cargos por incidencias</h3>
+            <div class="e4-row">
+              <label class="admin-field">Precio sancionado por kg<input class="admin-input" type="number" min="0" step="0.01" [(ngModel)]="precioNuevo"/></label>
+              <label class="admin-field e4-wide">Motivo de sanción<input class="admin-input" type="text" maxlength="400" [(ngModel)]="motivoSancion"/></label>
+              <button *appPermission="'AJUSTES_CREAR'" type="button" class="admin-secondary-button" [disabled]="busy()||precioNuevo==null||!motivoSancion.trim()" (click)="sanction()">Registrar sanción</button>
+            </div>
+            <div class="e4-row">
+              <label class="admin-field">Tarifa por jaba perdida (S/)<input class="admin-input" type="number" step="0.01" min="0" [(ngModel)]="tarifa"/></label>
+              <button *appPermission="'JABAS_ADMINISTRAR'" type="button" class="admin-secondary-button" [disabled]="busy()" (click)="saveTariff()">Versionar tarifa</button>
+              <label class="admin-field e4-wide">Motivo de cargo<input class="admin-input" type="text" maxlength="400" [(ngModel)]="motivoCargo"/></label>
+              <button *appPermission="'JABAS_APROBAR'" type="button" class="admin-secondary-button"
+                [disabled]="busy()||assignment().faltantes<1||!motivoCargo.trim()" (click)="validateMissing()">Confirmar incidencia</button>
+              <button *appPermission="'JABAS_APROBAR'" type="button" class="admin-secondary-button"
+                [disabled]="busy()||assignment().faltantes<1||!motivoCargo.trim()" (click)="charge()">Autorizar cargo por faltantes</button>
+            </div>
+            <p>Solo se afecta al socio y entrega seleccionados. Los descuentos no se aplican nuevamente sobre el importe base.</p>
+          </section>
+        }
+        @if(balance();as b){
+          <section class="admin-surface e4-panel">
+            <h3>Prebalance de la campaña · pendiente de liquidación E5</h3>
+            <div class="e4-row">
+              <div class="admin-detail-card"><small>Ventas confirmadas</small><strong>{{money(b.brutoConfirmado)}}</strong></div>
+              <div class="admin-detail-card"><small>Sanciones particulares</small><strong>− {{money(b.descuentosPrecio)}}</strong></div>
+              <div class="admin-detail-card"><small>Cargos individuales</small><strong>− {{money(b.cargosIndividuales)}}</strong></div>
+              <div class="admin-detail-card"><small>Saldo previo a gastos generales</small>
+                <strong>{{money(b.brutoConfirmado-b.descuentosPrecio-b.cargosIndividuales)}}</strong></div>
+            </div>
+          </section>
+        }
+      </div>
+    }
+  }
+</section>

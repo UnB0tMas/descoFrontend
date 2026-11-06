@@ -1,3 +1,39 @@
 :host {
   display: block;
 }
+
+/* El ancho natural de las columnas se conserva y el desborde se desplaza dentro de la tabla. */
+:host {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.desco-table-scroll {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+}
+
+.desco-data-table {
+  width: max-content;
+  min-width: 100%;
+  table-layout: auto;
+}
+
+.desco-data-table th,
+.desco-data-table td {
+  white-space: nowrap;
+}
+
+/* Apariencia admin: tipografía, densidad y foco consistentes con Recursos/Administración. */
+.desco-data-table.admin-table { width:100%; min-width: min(100%, 42rem); border-collapse:collapse; }
+.desco-data-table.admin-table :is(th,td) { padding:.8rem .9rem; font-size:.8125rem; line-height:1.4; vertical-align:middle; }
+.desco-data-table.admin-table th { font-size:.73rem; font-weight:750; letter-spacing:.025em; white-space:nowrap; }
+.desco-data-table.admin-table td { white-space:normal; overflow-wrap:anywhere; }
+.desco-data-table.admin-table tr.cursor-pointer { cursor:pointer; }
+.desco-data-table.admin-table tbody tr.cursor-pointer:hover { background:var(--desco-surface-soft); }
+.desco-data-table.admin-table tbody tr.cursor-pointer:focus-visible { outline:2px solid var(--desco-primary); outline-offset:-2px; }
+@media (max-width:780px) { .desco-data-table.admin-table :is(td,th) { padding:.65rem .7rem; } }

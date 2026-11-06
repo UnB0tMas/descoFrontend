@@ -25,9 +25,10 @@ import {
   faPlus,
   faRotate,
   faShareNodes,
-  faWarehouse,
+  faWarehouse, faSliders, faPowerOff,
 } from '@fortawesome/free-solid-svg-icons';
-import { finalize, forkJoin, of } from 'rxjs';
+import { finalize, forkJoin, of, firstValueFrom } from 'rxjs';
+import { ProductoFormComponent } from '../../../../../../productos/adapter/in/ui/pages/producto-form/producto-form';
 
 import { PermissionDirective } from '../../../../../../../../core/access/permission.directive';
 import { PermissionService } from '../../../../../../../../core/access/permission.service';
@@ -42,7 +43,8 @@ import { LoadingStateComponent } from '../../../../../../../../shared/data-displ
 import { PaginatorComponent } from '../../../../../../../../shared/data-display/paginator/paginator';
 import { PageHeaderComponent } from '../../../../../../../../shared/layout/page-header/page-header';
 import { UotContextStore } from '../../../../../../../uot/state/uot-context.store';
-import { ResourceApiService } from '../../../../../../shared/resource-api.service';
+import { AlmacenProductoFormComponent } from '../almacen-producto-form/almacen-producto-form';
+import { ResourceApiService, WarehouseProductOperation } from '../../../../../../shared/resource-api.service';
 import {
   AlmacenOperationFormComponent,
   WarehouseOperationOptions,
@@ -65,6 +67,7 @@ type WarehouseTab = 'warehouses' | 'stock' | 'kardex';
     PaginatorComponent,
     PageHeaderComponent,
     AlmacenOperationFormComponent,
+    ProductoFormComponent, AlmacenProductoFormComponent,
   ],
   templateUrl: './almacenes-list.html',
   styleUrl: './almacenes-list.css',
@@ -73,6 +76,10 @@ type WarehouseTab = 'warehouses' | 'stock' | 'kardex';
 export class AlmacenesListPage implements OnInit {
   @ViewChild(AlmacenOperationFormComponent)
   private form!: AlmacenOperationFormComponent;
+  @ViewChild(ProductoFormComponent) private priceForm!:ProductoFormComponent;
+
+  @ViewChild(AlmacenProductoFormComponent) private productConfiguration!:AlmacenProductoFormComponent;
+  readonly settingsIcon=faSliders;readonly stateIcon=faPowerOff;
 
   private readonly api = inject(ResourceApiService);
   private readonly permissions = inject(PermissionService);
@@ -88,6 +95,13 @@ export class AlmacenesListPage implements OnInit {
   readonly warehouses = signal<readonly ResourceWarehouseResponse[]>([]);
   readonly products = signal<readonly ResourceProductListItemResponse[]>([]);
   readonly stock = signal<readonly ResourceStockResponse[]>([]);
+  readonly filterProducts = computed(() => {
+    const warehouseId = this.warehouseFilter();
+    const productIds = new Set(this.stock()
+      .filter(row => !warehouseId || row.almacenId === warehouseId)
+      .map(row => row.productoId));
+    return this.products().filter(product => productIds.has(product.productoId));
+  });
   readonly kardex = signal<readonly ResourceKardexResponse[]>([]);
   readonly detailWarehouse = signal<ResourceWarehouseResponse | null>(null);
   readonly detailStock = signal<readonly ResourceStockResponse[]>([]);
@@ -150,7 +164,7 @@ export class AlmacenesListPage implements OnInit {
   ));
 
   readonly detailAlerts = computed(() => this.detailStock().filter((row) =>
-    (row.stockMinimo ?? 0) > 0 && (row.stockDisponible ?? 0) <= (row.stockMinimo ?? 0),
+    row.estado!==false && (row.stockMinimo ?? 0) > 0 && (row.stockDisponible ?? 0) <= (row.stockMinimo ?? 0),
   ).length);
 
   readonly filteredStock = computed(() => {
@@ -223,7 +237,8 @@ export class AlmacenesListPage implements OnInit {
     this.detailStockPage.set(1);
   }
 
-  stockStatus(row: ResourceStockResponse): 'Agotado' | 'Reponer' | 'Disponible' {
+  stockStatus(row: ResourceStockResponse): 'Agotado' | 'Reponer' | 'Disponible' | 'Inactivo' {
+    if(row.estado===false)return 'Inactivo';
     const available = row.stockDisponible ?? 0;
     if (available <= 0) return 'Agotado';
     return (row.stockMinimo ?? 0) > 0 && available <= (row.stockMinimo ?? 0)
@@ -255,6 +270,7 @@ export class AlmacenesListPage implements OnInit {
           this.products.set(products);
           this.stock.set(stock);
           this.kardex.set(kardex);
+          if (this.reconcileProductFilter()) this.loadKardex();
           this.stockPage.set(this.validPage(this.stockPage(), this.stockTotalPages()));
           this.kardexPage.set(this.validPage(this.kardexPage(), this.kardexTotalPages()));
         },
@@ -282,6 +298,7 @@ export class AlmacenesListPage implements OnInit {
     this.warehouseFilter.set(
       Number.isFinite(parsed) && parsed > 0 ? parsed : null,
     );
+    this.reconcileProductFilter();
     this.stockPage.set(1);
     this.kardexPage.set(1);
     if (this.activeTab() === 'kardex') this.loadKardex();
@@ -290,9 +307,19 @@ export class AlmacenesListPage implements OnInit {
   onProductChange(value: string): void {
     const parsed = Number(value);
     this.productFilter.set(Number.isFinite(parsed) && parsed > 0 ? parsed : null);
+    this.reconcileProductFilter();
     this.stockPage.set(1);
     this.kardexPage.set(1);
     if (this.activeTab() === 'kardex') this.loadKardex();
+  }
+
+  private reconcileProductFilter(): boolean {
+    const productId = this.productFilter();
+    if (productId && !this.filterProducts().some(product => product.productoId === productId)) {
+      this.productFilter.set(null);
+      return true;
+    }
+    return false;
   }
 
   async createWarehouse(): Promise<void> {
@@ -320,6 +347,39 @@ export class AlmacenesListPage implements OnInit {
         this.load();
       }
     }
+  }
+
+  canManageDetail():boolean{return this.permissions.has('ALMACENES_MOVIMIENTO')&&this.detailUotId()===this.detailWarehouse()?.uotPropietariaId;}
+  productUotId(item: ResourceStockResponse): number {
+    return this.queryUnitId() ?? this.warehouses().find(w => w.almacenId === item.almacenId)?.uotPropietariaId ?? 0;
+  }
+  canManageProduct(item: ResourceStockResponse): boolean {
+    return this.permissions.has('ALMACENES_MOVIMIENTO') && this.productUotId(item) > 0
+      && this.productUotId(item) === this.warehouses().find(w => w.almacenId === item.almacenId)?.uotPropietariaId;
+  }
+  managementBlock(item:ResourceStockResponse,operation:WarehouseProductOperation):string{
+    if(!this.canManageProduct(item))return 'Solo la UOT propietaria puede modificar esta configuración.';
+    if(operation==='DESACTIVAR'||operation==='RETIRAR'){
+      if((item.stockActual??0)!==0||(item.stockReservado??0)!==0)return 'El producto conserva stock o reservas.';
+      if(operation==='RETIRAR'&&item.tieneHistorial)return 'Tiene historial: desactívelo cuando su saldo sea cero.';
+    }
+    return '';
+  }
+  async manageProduct(item:ResourceStockResponse,operation:WarehouseProductOperation):Promise<void>{
+    if(this.managementBlock(item,operation))return;
+    if(await this.productConfiguration.show(item,this.productUotId(item),operation))this.refreshAfterOperation();
+  }
+
+  canSetSalePrice(id?:number):boolean{return this.products().some(product=>product.productoId===id&&product.permiteVenta===true&&product.estado!==false);}
+
+  async editSalePrice(item:ResourceStockResponse):Promise<void>{
+    if(!item.productoId||!this.permissions.has('PRODUCTOS_PRECIO'))return;
+    try{
+      const product=await firstValueFrom(this.api.getProduct(item.productoId,this.detailUotId()));
+      if(!product||product.permiteVenta!==true)return;
+      const result=await this.priceForm.openPrice(product,this.detailUotId());
+      if(result.saved)this.refreshAfterOperation();
+    }catch(error){this.detailError.set(mapOpenApiError(error).message);}
   }
 
   canMoveNature(nature: 'E' | 'S'): boolean {
@@ -442,6 +502,7 @@ export class AlmacenesListPage implements OnInit {
   }
 
   stockTone(item: ResourceStockResponse): string {
+    if(item.estado===false)return 'stock-value';
     const available = item.stockDisponible ?? 0;
     const minimum = item.stockMinimo ?? 0;
     if (available <= 0) return 'stock-value stock-value--danger';

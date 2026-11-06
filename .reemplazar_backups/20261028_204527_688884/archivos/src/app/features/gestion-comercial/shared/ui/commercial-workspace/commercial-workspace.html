@@ -1,0 +1,244 @@
+<section class="desco-page commercial-page">
+  <app-page-header
+    [title]="title()"
+    eyebrow="Gestión comercial"
+    [icon]="icon()"
+  >
+    <div pageActions class="flex flex-wrap gap-2">
+      <button type="button" class="admin-secondary-button" [disabled]="loading()" (click)="load()">
+        @if (loading()) { <span class="loading loading-spinner loading-xs"></span> } @else { <fa-icon [icon]="refreshIcon" /> }
+        Actualizar
+      </button>
+      <button *appPermission="primaryPermission()" type="button" class="admin-primary-button" [disabled]="referencesLoading()" (click)="openCreate()">
+        @if (referencesLoading()) { <span class="loading loading-spinner loading-xs"></span> } @else { <fa-icon [icon]="addIcon" /> }
+        Nuevo
+      </button>
+      @if (workspace() === 'crates') {
+        <button *appPermission="'JABAS_CREAR'" type="button" class="admin-secondary-button" (click)="openCrate('crate-assign')">Asignar</button>
+        <button *appPermission="'JABAS_CREAR'" type="button" class="admin-secondary-button" (click)="openCrate('crate-return')">Devolver</button>
+        <button *appPermission="'JABAS_RETIRAR'" type="button" class="admin-secondary-button" (click)="openCrate('crate-annul')">Anular</button>
+      }
+    </div>
+  </app-page-header>
+
+  @if (workspace() === 'pricing') {
+    <nav class="commercial-tabs" aria-label="Secciones de precios">
+      <button type="button" [class.is-active]="pricingTab() === 'prices'" (click)="changePricingTab('prices')">Precios</button>
+      <button type="button" [class.is-active]="pricingTab() === 'conditions'" (click)="changePricingTab('conditions')">Condiciones</button>
+    </nav>
+  }
+
+  <form class="commercial-filters" [formGroup]="filterForm" (ngSubmit)="applyFilters()">
+    @if (workspace() === 'campaigns') {
+      <select class="admin-select" formControlName="associationId" aria-label="Asociación">
+        <option [value]="0">Todas las asociaciones</option>
+        @for (item of refs().associations; track item.value) { <option [value]="item.value">{{ item.label }}</option> }
+      </select>
+      <select class="admin-select" formControlName="buyerId" aria-label="Comprador">
+        <option [value]="0">Todos los compradores</option>
+        @for (item of refs().buyers; track item.value) { <option [value]="item.value">{{ item.label }}</option> }
+      </select>
+    }
+    @if (workspace() === 'participants' || workspace() === 'operations' || workspace() === 'pricing') {
+      <select class="admin-select" formControlName="campaignId" aria-label="Campaña">
+        <option [value]="0">Todas las campañas</option>
+        @for (item of refs().campaigns; track item.value) { <option [value]="item.value">{{ item.label }}</option> }
+      </select>
+    }
+    @if (workspace() === 'deliveries' || workspace() === 'crates' || (workspace() === 'pricing' && pricingTab() === 'prices')) {
+      <select class="admin-select" formControlName="operationId" aria-label="Operativo">
+        <option [value]="0">Todos los operativos</option>
+        @for (item of refs().operations; track item.value) { <option [value]="item.value">{{ item.label }}</option> }
+      </select>
+    }
+    @if (workspace() === 'deliveries') {
+      <select class="admin-select" formControlName="qualityState" aria-label="Calidad">
+        <option value="">Toda calidad</option>
+        @for (state of qualityStates; track state) { <option [value]="state">{{ state }}</option> }
+      </select>
+    }
+    @if (workspace() !== 'crates' && !(workspace() === 'pricing' && pricingTab() === 'conditions')) {
+      <input class="admin-input" type="text" maxlength="30" formControlName="state" placeholder="Estado" aria-label="Estado" />
+    }
+    @if (workspace() === 'campaigns' || workspace() === 'deliveries') {
+      <input class="admin-input" type="date" formControlName="from" aria-label="Desde" [max]="filterForm.controls.to.value || today()" />
+      <input class="admin-input" type="date" formControlName="to" aria-label="Hasta" [min]="filterForm.controls.from.value" [attr.max]="workspace() === 'deliveries' ? today() : null" />
+    }
+    <button type="submit" class="admin-primary-button admin-primary-button--small" [disabled]="loading()">
+      @if (loading()) { <span class="loading loading-spinner loading-xs"></span> } Filtrar
+    </button>
+    <button type="button" class="admin-secondary-button admin-secondary-button--small" [disabled]="loading()" (click)="clearFilters()">Limpiar</button>
+  </form>
+
+  @if (errorMessage()) {
+    <app-error-state [message]="errorMessage()!" (retry)="load()" />
+  } @else if (loading()) {
+    <app-loading-state title="Cargando" variant="table" [rows]="6" />
+  } @else if (rows().items.length === 0) {
+    <app-empty-state title="Sin registros" message="No hay información para los filtros seleccionados." />
+  } @else {
+    <section class="desco-card overflow-hidden">
+      <div class="admin-table-wrap">
+        <table class="admin-table commercial-table">
+          <thead>
+            <tr>
+              @for (column of columns(); track column.key) { <th [class.text-right]="column.numeric">{{ column.label }}</th> }
+              <th class="text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of rows().items; track idOf(row)) {
+              <tr>
+                @for (column of columns(); track column.key) {
+                  <td [class.text-right]="column.numeric">{{ cell(row, column) }}</td>
+                }
+                <td>
+                  <div class="admin-row-actions justify-end">
+                      <button type="button" class="admin-icon-button" aria-label="Ver" [disabled]="actionKey() !== null" (click)="workspace() === 'crates' ? showCrateHistory(row) : view(row)">
+                        @if (actionKey() === 'view:' + idOf(row) || actionKey() === 'history:' + idOf(row)) { <span class="loading loading-spinner loading-xs"></span> } @else { <fa-icon [icon]="viewIcon" /> }
+                      </button>
+
+                    @if (workspace() === 'campaigns') {
+                      <button *appPermission="'CAMPANIAS_EDITAR'" type="button" class="admin-icon-button" aria-label="Editar" (click)="openEdit(row)"><fa-icon [icon]="editIcon" /></button>
+                      <button *appPermission="['CAMPANIAS_CONFIRMAR','CAMPANIAS_APROBAR']; mode: 'any'" type="button" class="admin-text-button" [disabled]="actionKey() !== null" (click)="campaignAction(row,'activate')">Activar</button>
+                      <button *appPermission="['CAMPANIAS_CONFIRMAR','CAMPANIAS_APROBAR']; mode: 'any'" type="button" class="admin-text-button" [disabled]="actionKey() !== null" (click)="campaignAction(row,'close')">Cerrar</button>
+                      <button *appPermission="'CAMPANIAS_RETIRAR'" type="button" class="admin-text-button admin-text-button--danger" [disabled]="actionKey() !== null" (click)="campaignAction(row,'cancel')">Cancelar</button>
+                    } @else if (workspace() === 'participants') {
+                      <button *appPermission="'PARTICIPANTES_CREAR'" type="button" class="admin-text-button" (click)="openParticipantProgram(row)">Programar</button>
+                      <button *appPermission="'PARTICIPANTES_RETIRAR'" type="button" class="admin-text-button admin-text-button--danger" [disabled]="actionKey() !== null" (click)="removeParticipant(row)">Retirar</button>
+                    } @else if (workspace() === 'operations') {
+                      <button *appPermission="'OPERATIVOS_EDITAR'" type="button" class="admin-icon-button" aria-label="Editar" (click)="openEdit(row)"><fa-icon [icon]="editIcon" /></button>
+                      <button *appPermission="'OPERATIVOS_CREAR'" type="button" class="admin-text-button" (click)="openZones(row)">Zonas</button>
+                      <button *appPermission="'OPERATIVOS_CONFIRMAR'" type="button" class="admin-text-button" [disabled]="actionKey() !== null" (click)="operationAction(row,'start')">Iniciar</button>
+                      <button *appPermission="['OPERATIVOS_CONFIRMAR','OPERATIVOS_APROBAR']; mode: 'any'" type="button" class="admin-text-button" [disabled]="actionKey() !== null" (click)="operationAction(row,'close')">Cerrar</button>
+                      <button *appPermission="'OPERATIVOS_RETIRAR'" type="button" class="admin-text-button admin-text-button--danger" [disabled]="actionKey() !== null" (click)="operationAction(row,'cancel')">Cancelar</button>
+                    } @else if (workspace() === 'deliveries') {
+                      <button *appPermission="'ENTREGAS_EDITAR'" type="button" class="admin-icon-button" aria-label="Editar" (click)="openEdit(row)"><fa-icon [icon]="editIcon" /></button>
+                      <button *appPermission="'ENTREGAS_CONFIRMAR'" type="button" class="admin-text-button" [disabled]="actionKey() !== null" (click)="confirmDelivery(row)">Confirmar</button>
+                      <button *appPermission="'ENTREGAS_RETIRAR'" type="button" class="admin-text-button admin-text-button--danger" [disabled]="actionKey() !== null" (click)="annulDelivery(row)">Anular</button>
+                    } @else if (workspace() === 'pricing' && pricingTab() === 'conditions') {
+                      <button *appPermission="'PRECIOS_ADMINISTRAR'" type="button" class="admin-icon-button" aria-label="Editar" (click)="openEdit(row)"><fa-icon [icon]="editIcon" /></button>
+                      <button *appPermission="'PRECIOS_RETIRAR'" type="button" class="admin-text-button admin-text-button--danger" [disabled]="actionKey() !== null" (click)="disableCondition(row)">Deshabilitar</button>
+                    } @else if (workspace() === 'pricing') {
+                      <button *appPermission="'PRECIOS_EDITAR'" type="button" class="admin-text-button" (click)="openPriceVersion(row)">Versionar</button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <app-paginator [page]="rows().page" [size]="rows().size" [totalRecords]="rows().totalRecords" [totalPages]="rows().totalPages" (pageChange)="load($event, rows().size)" (sizeChange)="load(1, $event)" />
+    </section>
+  }
+
+  <app-action-confirm-dialog />
+
+  <dialog #detailDialog class="modal desco-modal" (cancel)="$event.preventDefault(); closeDetail()">
+    <div class="modal-box admin-modal-box admin-modal-box--wide">
+      <header class="admin-modal-header"><div class="admin-modal-title-group"><span class="admin-modal-icon"><fa-icon [icon]="viewIcon" /></span><div><p>{{ title() }}</p><h2>Detalle</h2></div></div><button type="button" class="admin-icon-button" (click)="closeDetail()"><fa-icon [icon]="closeIcon" /></button></header>
+      @if (detailLoading()) {
+        <app-loading-state title="Cargando" variant="detail" [rows]="6" />
+      } @else {
+        <div class="commercial-detail-grid">
+          @for (pair of detailPairs(); track pair.label) { <div><span>{{ pair.label }}</span><strong>{{ pair.value }}</strong></div> }
+        </div>
+        @if (detailLists().length) {
+          <div class="commercial-detail-counts">
+            @for (item of detailLists(); track item.label) { <span>{{ item.label }} <strong>{{ item.count }}</strong></span> }
+          </div>
+        }
+      }
+      <footer class="admin-modal-actions"><button type="button" class="admin-secondary-button" (click)="closeDetail()">Cerrar</button></footer>
+    </div>
+  </dialog>
+
+  <dialog #editorDialog class="modal desco-modal" (cancel)="$event.preventDefault(); closeEditor()">
+    <div class="modal-box admin-modal-box admin-modal-box--wide">
+      <header class="admin-modal-header"><div class="admin-modal-title-group"><span class="admin-modal-icon"><fa-icon [icon]="editingId() ? editIcon : addIcon" /></span><div><p>{{ title() }}</p><h2>{{ modalTitle() }}</h2></div></div><button type="button" class="admin-icon-button" [disabled]="saving()" (click)="closeEditor()"><fa-icon [icon]="closeIcon" /></button></header>
+
+      @switch (modalKind()) {
+        @case ('campaign') {
+          <form class="admin-form-grid" [formGroup]="campaignForm" (ngSubmit)="saveEditor()">
+            <div class="admin-field"><label>Asociación</label><select class="admin-select" formControlName="associationId"><option [value]="0">Seleccionar</option>@for(item of refs().associations;track item.value){<option [value]="item.value">{{item.label}}</option>}</select><app-form-error [control]="campaignForm.controls.associationId" fieldLabel="La asociación" /></div>
+            <div class="admin-field"><label>Comprador</label><select class="admin-select" formControlName="buyerId"><option [value]="0">Seleccionar</option>@for(item of refs().buyers;track item.value){<option [value]="item.value">{{item.label}}</option>}</select><app-form-error [control]="campaignForm.controls.buyerId" fieldLabel="El comprador" /></div>
+            <div class="admin-field admin-field-span-2"><label>Nombre</label><input class="admin-input" type="text" maxlength="180" formControlName="name" autocomplete="off" /><app-form-error [control]="campaignForm.controls.name" fieldLabel="El nombre" /></div>
+            <div class="admin-field"><label>Inicio</label><input class="admin-input" type="date" formControlName="start" [max]="campaignForm.controls.end.value || undefined" /></div>
+            <div class="admin-field"><label>Fin</label><input class="admin-input" type="date" formControlName="end" [min]="campaignForm.controls.start.value" /></div>
+            <div class="admin-field admin-field-span-2"><label>Observación</label><textarea class="admin-textarea" rows="3" maxlength="400" formControlName="observation"></textarea></div>
+            <ng-container *ngTemplateOutlet="modalActions"></ng-container>
+          </form>
+        }
+        @case ('participant-include') {
+          <form class="admin-form-grid" [formGroup]="participantForm" (ngSubmit)="saveEditor()">
+            <div class="admin-field"><label>Campaña</label><select class="admin-select" formControlName="campaignId"><option [value]="0">Seleccionar</option>@for(item of refs().campaigns;track item.value){<option [value]="item.value">{{item.label}}</option>}</select></div>
+            <div class="admin-field"><label>Productor</label><select class="admin-select" formControlName="partnerAssociationId"><option [value]="0">Seleccionar</option>@for(item of refs().producers;track item.value){<option [value]="item.value">{{item.label}} · {{item.description}}</option>}</select></div>
+            <ng-container *ngTemplateOutlet="modalActions"></ng-container>
+          </form>
+        }
+        @case ('participant-program') {
+          <form class="admin-form-grid" [formGroup]="participantForm" (ngSubmit)="saveEditor()"><div class="admin-field admin-field-span-2"><label>Operativo</label><select class="admin-select" formControlName="operationId"><option [value]="0">Seleccionar</option>@for(item of refs().operations;track item.value){<option [value]="item.value">{{item.label}}</option>}</select></div><ng-container *ngTemplateOutlet="modalActions"></ng-container></form>
+        }
+        @case ('operation') {
+          <form class="admin-form-grid" [formGroup]="operationForm" (ngSubmit)="saveEditor()">
+            <div class="admin-field admin-field-span-2"><label>Campaña</label><select class="admin-select" formControlName="campaignId"><option [value]="0">Seleccionar</option>@for(item of refs().campaigns;track item.value){<option [value]="item.value">{{item.label}}</option>}</select></div>
+            <div class="admin-field"><label>Inicio programado</label><input class="admin-input" type="datetime-local" formControlName="start" [max]="operationForm.controls.end.value || undefined" /></div>
+            <div class="admin-field"><label>Fin programado</label><input class="admin-input" type="datetime-local" formControlName="end" [min]="operationForm.controls.start.value" /></div>
+            <div class="admin-field admin-field-span-2"><label>Observación</label><textarea class="admin-textarea" rows="3" maxlength="400" formControlName="observation"></textarea></div>
+            <ng-container *ngTemplateOutlet="modalActions"></ng-container>
+          </form>
+        }
+        @case ('operation-zones') {
+          <form class="admin-form-grid" (ngSubmit)="saveEditor()"><div class="admin-field admin-field-span-2"><span class="admin-field-label">Zonas</span><div class="commercial-check-grid">@for(item of refs().zones;track item.value){<label><input type="checkbox" [checked]="selectedZones().includes(item.value)" (change)="toggleZone(item.value,$any($event.target).checked)"/> <span>{{item.label}}</span></label>}</div></div><ng-container *ngTemplateOutlet="modalActions"></ng-container></form>
+        }
+        @case ('delivery') {
+          <form class="admin-form-grid" [formGroup]="deliveryForm" (ngSubmit)="saveEditor()">
+            <div class="admin-field"><label>Operativo</label><select class="admin-select" formControlName="operationId" (change)="onDeliveryOperationChange()"><option [value]="0">Seleccionar</option>@for(item of refs().operations;track item.value){<option [value]="item.value">{{item.label}}</option>}</select></div>
+            <div class="admin-field"><label>Productor programado</label><select class="admin-select" formControlName="operationPartnerId"><option [value]="0">Seleccionar</option>@for(item of operationPartners();track item.value){<option [value]="item.value">{{item.label}}</option>}</select></div>
+            <div class="admin-field"><label>Predio</label><select class="admin-select" formControlName="propertyId"><option [value]="0">Seleccionar</option>@for(item of refs().properties;track item.value){<option [value]="item.value">{{item.label}}</option>}</select></div>
+            <div class="admin-field"><label>Fecha y hora</label><input class="admin-input" type="datetime-local" formControlName="dateTime" [max]="nowDateTime()" /></div>
+            <div class="admin-field"><label>Peso bruto (kg)</label><input class="admin-input" type="number" inputmode="decimal" min="0.001" step="0.001" formControlName="grossKg" /></div>
+            <div class="admin-field"><label>Tara (kg)</label><input class="admin-input" type="number" inputmode="decimal" min="0" step="0.001" [max]="deliveryForm.controls.grossKg.value" formControlName="tareKg" /></div>
+            <div class="admin-field"><label>Rechazado (kg)</label><input class="admin-input" type="number" inputmode="decimal" min="0" step="0.001" [max]="deliveryForm.controls.grossKg.value - deliveryForm.controls.tareKg.value" formControlName="rejectedKg" /></div>
+            <div class="admin-field"><label>Control de calidad</label><select class="admin-select" formControlName="qualityState">@for(state of qualityStates;track state){<option [value]="state">{{state}}</option>}</select></div>
+            <div class="admin-field"><label>Ticket de balanza</label><input class="admin-input" maxlength="80" formControlName="ticket" /></div>
+            <div class="admin-field admin-field-span-2"><label>Observación</label><textarea class="admin-textarea" rows="2" maxlength="400" formControlName="observation"></textarea></div>
+            <div class="admin-field admin-field-span-2" formArrayName="details"><div class="commercial-lines-header"><span>Detalle</span><button type="button" class="admin-secondary-button admin-secondary-button--small" (click)="addDeliveryLine()">Agregar línea</button></div>@for(group of deliveryLines.controls;track $index;let i=$index){<div class="commercial-line" [formGroupName]="i"><select class="admin-select" formControlName="varietyId"><option [value]="0">Variedad</option>@for(item of refs().varieties;track item.value){<option [value]="item.value">{{item.label}}</option>}</select><select class="admin-select" formControlName="conditionId"><option [value]="0">Condición</option>@for(item of refs().conditions;track item.value){<option [value]="item.value">{{item.label}}</option>}</select><input class="admin-input" type="number" inputmode="decimal" min="0.001" step="0.001" formControlName="kg" placeholder="Kg"/><button type="button" class="admin-icon-button" [disabled]="deliveryLines.length===1" aria-label="Quitar línea" (click)="removeDeliveryLine(i)"><fa-icon [icon]="closeIcon"/></button></div>}</div>
+            <ng-container *ngTemplateOutlet="modalActions"></ng-container>
+          </form>
+        }
+        @case ('crate-receive') {
+          <form class="admin-form-grid" [formGroup]="crateForm" (ngSubmit)="saveEditor()"><div class="admin-field"><label>Operativo</label><select class="admin-select" formControlName="operationId"><option [value]="0">Seleccionar</option>@for(item of refs().operations;track item.value){<option [value]="item.value">{{item.label}}</option>}</select></div><div class="admin-field"><label>Cantidad</label><input class="admin-input" type="number" inputmode="numeric" min="1" step="1" formControlName="quantity"/></div><div class="admin-field"><label>Referencia</label><input class="admin-input" maxlength="80" formControlName="reference"/></div><div class="admin-field admin-field-span-2"><label>Observación</label><textarea class="admin-textarea" maxlength="300" formControlName="observation"></textarea></div><ng-container *ngTemplateOutlet="modalActions"></ng-container></form>
+        }
+        @case ('crate-assign') {
+          <form class="admin-form-grid" [formGroup]="crateForm" (ngSubmit)="saveEditor()"><div class="admin-field"><label>Operativo</label><select class="admin-select" formControlName="operationId" (change)="onCrateOperationChange()"><option [value]="0">Seleccionar</option>@for(item of refs().operations;track item.value){<option [value]="item.value">{{item.label}}</option>}</select></div><div class="admin-field"><label>Productor programado</label><select class="admin-select" formControlName="operationPartnerId"><option [value]="0">Seleccionar</option>@for(item of operationPartners();track item.value){<option [value]="item.value">{{item.label}}</option>}</select></div><div class="admin-field"><label>Cantidad</label><input class="admin-input" type="number" inputmode="numeric" min="1" step="1" formControlName="quantity"/></div><div class="admin-field admin-field-span-2"><label>Observación</label><textarea class="admin-textarea" maxlength="300" formControlName="observation"></textarea></div><ng-container *ngTemplateOutlet="modalActions"></ng-container></form>
+        }
+        @case ('crate-return') {
+          <form class="admin-form-grid" [formGroup]="crateForm" (ngSubmit)="saveEditor()"><div class="admin-field"><label>Operativo</label><select class="admin-select" formControlName="operationId" (change)="onCrateOperationChange()"><option [value]="0">Seleccionar</option>@for(item of refs().operations;track item.value){<option [value]="item.value">{{item.label}}</option>}</select></div><div class="admin-field"><label>Asignación</label><select class="admin-select" formControlName="assignmentId"><option [value]="0">Seleccionar</option>@for(item of crateAssignments();track item.value){<option [value]="item.value">{{item.label}}</option>}</select></div><div class="admin-field"><label>Jabas llenas</label><input class="admin-input" type="number" inputmode="numeric" min="0" step="1" formControlName="filled"/></div><div class="admin-field"><label>Jabas vacías</label><input class="admin-input" type="number" inputmode="numeric" min="0" step="1" formControlName="empty"/></div><div class="admin-field"><label>Entrega (opcional)</label><input class="admin-input" type="number" inputmode="numeric" min="1" step="1" formControlName="deliveryId"/></div><div class="admin-field admin-field-span-2"><label>Observación</label><textarea class="admin-textarea" maxlength="300" formControlName="observation"></textarea></div><ng-container *ngTemplateOutlet="modalActions"></ng-container></form>
+        }
+        @case ('crate-annul') {
+          <form class="admin-form-grid" [formGroup]="crateForm" (ngSubmit)="saveEditor()"><div class="admin-field"><label>Tipo</label><select class="admin-select" formControlName="movementType"><option value="ASIGNACION">Asignación</option><option value="DEVOLUCION">Devolución</option></select></div><div class="admin-field"><label>Movimiento</label><input class="admin-input" type="number" inputmode="numeric" min="1" step="1" formControlName="movementId"/></div><div class="admin-field admin-field-span-2"><label>Motivo</label><textarea class="admin-textarea" maxlength="300" formControlName="reason"></textarea></div><ng-container *ngTemplateOutlet="modalActions"></ng-container></form>
+        }
+        @case ('condition') {
+          <form class="admin-form-grid" [formGroup]="conditionForm" (ngSubmit)="saveEditor()"><div class="admin-field"><label>Modalidad</label><select class="admin-select" formControlName="modalityId"><option [value]="0">Seleccionar</option>@for(item of refs().salesModalities;track item.value){<option [value]="item.value">{{item.label}}</option>}</select></div><div class="admin-field"><label>Nombre</label><input class="admin-input" maxlength="160" formControlName="name"/></div><div class="admin-field"><label>Peso mínimo (g)</label><input class="admin-input" type="number" min="0" step="0.01" formControlName="minWeight"/></div><div class="admin-field"><label>Peso máximo (g)</label><input class="admin-input" type="number" min="0" step="0.01" [min]="conditionForm.controls.minWeight.value" formControlName="maxWeight"/></div><div class="admin-field admin-field-span-2"><label>Descripción</label><textarea class="admin-textarea" maxlength="300" formControlName="description"></textarea></div><ng-container *ngTemplateOutlet="modalActions"></ng-container></form>
+        }
+        @case ('price') {
+          <form class="admin-form-grid" [formGroup]="priceForm" (ngSubmit)="saveEditor()"><div class="admin-field"><label>Campaña</label><select class="admin-select" formControlName="campaignId"><option [value]="0">Seleccionar</option>@for(item of refs().campaigns;track item.value){<option [value]="item.value">{{item.label}}</option>}</select></div><div class="admin-field"><label>Operativo</label><select class="admin-select" formControlName="operationId"><option [value]="0">Todos / campaña</option>@for(item of refs().operations;track item.value){<option [value]="item.value">{{item.label}}</option>}</select></div><div class="admin-field"><label>Variedad</label><select class="admin-select" formControlName="varietyId"><option [value]="0">Seleccionar</option>@for(item of refs().varieties;track item.value){<option [value]="item.value">{{item.label}}</option>}</select></div><div class="admin-field"><label>Condición</label><select class="admin-select" formControlName="conditionId"><option [value]="0">Seleccionar</option>@for(item of refs().conditions;track item.value){<option [value]="item.value">{{item.label}}</option>}</select></div><div class="admin-field"><label>Precio</label><input class="admin-input" type="number" inputmode="decimal" min="0.0001" step="0.0001" formControlName="price"/></div><div class="admin-field"><label>Moneda</label><input class="admin-input" maxlength="3" minlength="3" pattern="[A-Za-z]{3}" formControlName="currency"/></div><div class="admin-field"><label>Unidad</label><input class="admin-input" maxlength="10" formControlName="unit"/></div><div class="admin-field"><label>Vigencia desde</label><input class="admin-input" type="datetime-local" formControlName="validFrom"/></div><ng-container *ngTemplateOutlet="modalActions"></ng-container></form>
+        }
+        @case ('price-version') {
+          <form class="admin-form-grid" [formGroup]="priceForm" (ngSubmit)="saveEditor()"><div class="admin-field"><label>Precio</label><input class="admin-input" type="number" inputmode="decimal" min="0.0001" step="0.0001" formControlName="price"/></div><div class="admin-field"><label>Vigencia desde</label><input class="admin-input" type="datetime-local" formControlName="validFrom"/></div><ng-container *ngTemplateOutlet="modalActions"></ng-container></form>
+        }
+      }
+    </div>
+  </dialog>
+
+  <ng-template #modalActions>
+    <footer class="admin-modal-actions admin-field-span-2">
+      <button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="closeEditor()">Cancelar</button>
+      <button type="submit" class="admin-primary-button" [disabled]="saving() || referencesLoading() || detailLoading()">
+        @if (saving()) { <span class="loading loading-spinner loading-sm"></span> Guardando... } @else { <fa-icon [icon]="saveIcon" /> Guardar }
+      </button>
+    </footer>
+  </ng-template>
+</section>

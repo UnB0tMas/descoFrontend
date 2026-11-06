@@ -1,0 +1,66 @@
+{
+  "proyecto": "D:\\FrancoSystem\\desco_frontend",
+  "fecha": "2026-10-28T20:45:27",
+  "cambios": [
+    {
+      "ruta": "src/app/features/convenios/adapter/in/ui/pages/apappss-workspace/apappss-workspace.html",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/gestion-comercial/e4/adapter/in/ui/e4-page.css",
+      "accion": "escribir",
+      "existia": false
+    },
+    {
+      "ruta": "src/app/features/gestion-comercial/e4/adapter/in/ui/e4-page.html",
+      "accion": "escribir",
+      "existia": false
+    },
+    {
+      "ruta": "src/app/features/gestion-comercial/e4/adapter/in/ui/e4-page.ts",
+      "accion": "escribir",
+      "existia": false
+    },
+    {
+      "ruta": "src/app/features/gestion-comercial/e4/adapter/out/http/e4-http.adapter.ts",
+      "accion": "escribir",
+      "existia": false
+    },
+    {
+      "ruta": "src/app/features/gestion-comercial/e4/application/port/e4.gateway.ts",
+      "accion": "escribir",
+      "existia": false
+    },
+    {
+      "ruta": "src/app/features/gestion-comercial/e4/application/use-case/e4.use-case.ts",
+      "accion": "escribir",
+      "existia": false
+    },
+    {
+      "ruta": "src/app/features/gestion-comercial/e4/domain/e4.model.ts",
+      "accion": "escribir",
+      "existia": false
+    },
+    {
+      "ruta": "src/app/features/gestion-comercial/e4/e4.providers.ts",
+      "accion": "escribir",
+      "existia": false
+    },
+    {
+      "ruta": "src/app/features/gestion-comercial/gestion-comercial.routes.ts",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/gestion-comercial/shared/ui/commercial-workspace/commercial-workspace.html",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/gestion-comercial/shared/ui/commercial-workspace/commercial-workspace.ts",
+      "accion": "escribir",
+      "existia": true
+    }
+  ]
+}

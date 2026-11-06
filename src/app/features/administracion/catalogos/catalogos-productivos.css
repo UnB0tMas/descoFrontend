@@ -1,0 +1,40 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+.gp-productive-catalog { min-width: 0; }
+.gp-product-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: .75rem;
+  border-bottom: 1px solid var(--desco-border);
+  background: var(--desco-surface);
+  padding: .75rem 1rem;
+}
+.gp-product-search-field { width: min(100%, 320px); }
+.gp-product-parent-field { width: min(100%, 240px); }
+.gp-product-table-wrap { overflow-x: auto; }
+.gp-product-description { max-width: 22rem; }
+.gp-hierarchy-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .75rem;
+  padding: .7rem 1rem;
+  border-bottom: 1px solid var(--desco-border);
+  background: var(--desco-surface-soft);
+}
+.gp-hierarchy-path { color: var(--desco-text-muted); font-size: .7rem; font-weight: 700; }
+.gp-hierarchy-associate { margin-left: auto; }
+.gp-sanidad-tabs { padding-left: 1rem; }
+.gp-detail-button { min-height: 1.9rem; padding: .3rem .55rem; font-size: .67rem; }
+@media (max-width: 640px) {
+  .gp-product-filter, .gp-hierarchy-toolbar { padding: .75rem; }
+  .gp-hierarchy-associate { margin-left: 0; }
+}
+
+/* La ruta interna comparte el patrón visual del expediente de parcela. */
+.gp-catalog-breadcrumb{display:flex;flex-wrap:wrap;align-items:center;gap:.65rem;margin-bottom:.6rem;color:var(--desco-text-muted);font-size:.8rem}
+.gp-catalog-breadcrumb a,.gp-catalog-breadcrumb button{color:var(--desco-primary);text-decoration:none;background:none;border:0;padding:0;font:inherit;cursor:pointer}
+.gp-catalog-breadcrumb a:hover,.gp-catalog-breadcrumb button:hover{text-decoration:underline}

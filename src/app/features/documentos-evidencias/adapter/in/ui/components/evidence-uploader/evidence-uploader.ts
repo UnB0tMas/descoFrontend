@@ -1,3 +1,4 @@
+import { DialogBackdropDirective } from '../../../../../../../shared/feedback/dialog-lifecycle/dialog-backdrop.directive';
 import { ChangeDetectionStrategy, Component, ElementRef, ViewChild, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
@@ -11,7 +12,7 @@ import { SubirDocumentoEvidenciaUseCase } from '../../../../../application/use-c
 import { EvidenciaCategoria } from '../../../../../domain/documento-evidencia.model';
 import { EVIDENCIA_CONTEXTOS, EvidenciaContexto, EvidenciaContextoTipo } from '../../../../../domain/evidencia-contexto.model';
 
-@Component({ selector: 'app-evidence-uploader', standalone: true, imports: [ReactiveFormsModule, FaIconComponent, FormErrorComponent], templateUrl: './evidence-uploader.html', styleUrl: './evidence-uploader.css', changeDetection: ChangeDetectionStrategy.OnPush })
+@Component({ selector: 'app-evidence-uploader', standalone: true, imports: [DialogBackdropDirective, ReactiveFormsModule, FaIconComponent, FormErrorComponent], templateUrl: './evidence-uploader.html', styleUrl: './evidence-uploader.css', changeDetection: ChangeDetectionStrategy.OnPush })
 export class EvidenceUploaderComponent {
   @ViewChild('dialog', { static: true }) private readonly dialogRef!: ElementRef<HTMLDialogElement>;
   private readonly fb = inject(FormBuilder);

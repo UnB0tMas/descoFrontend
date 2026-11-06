@@ -1,0 +1,316 @@
+<div class="desco-page e2-page">
+ <app-page-header [title]="detail()?.nombre||'Salida operativa'" eyebrow="Gestión técnica · Salidas de campo" [icon]="icon">
+  <div pageActions class="flex flex-wrap gap-2">
+   <a class="admin-secondary-button" routerLink="/gestion-tecnica/salidas/operativas" [queryParams]="convenioId?{convenioId}:undefined">Volver</a>
+   <button class="admin-icon-button" type="button" aria-label="Actualizar" title="Actualizar" (click)="load()">↻</button>
+  </div>
+ </app-page-header>
+ @if(loading()){<app-loading-state title="Cargando salida" message="Consultando expediente."/>}
+ @else if(error()){<app-error-state [message]="error()||'No disponible'" (retry)="load()"/>}
+ @else if(detail();as d){
+  <section class="e2-headbar admin-surface mt-3">
+   <div class="e2-status-summary"><span class="admin-status" [class.admin-status--active]="d.estado==='APROBADA'||d.estado==='CERRADA'" [class.admin-status--info]="d.estado==='SOLICITADA'||d.estado==='EN_EJECUCION'">{{d.estado.replaceAll('_',' ')}}</span><span class="e2-subline">Salida #{{d.salidaId}}</span></div>
+   <div class="e2-actions">
+    @if(d.estado==='SOLICITADA'){
+      <button *appPermission="'SALIDAS_CONFIRMAR'" class="admin-primary-button" type="button" (click)="openOperation('decision')">Resolver solicitud</button>
+    }
+   </div>
+  </section>
+  <div class="e2-workspace mt-3">
+   <aside class="e2-section-menu admin-surface" aria-label="Navegación de la salida">
+    <p class="e2-menu-title">Secciones</p>
+    <nav class="e2-section-list" aria-label="Apartados del expediente">
+     @for(tab of tabs;track tab.id){
+      @if(tab.id!=='seguimiento'||puedeVerSeguimiento()){
+       <button type="button" class="e2-section-item" [class.is-active]="activeTab()===tab.id"
+        [attr.aria-current]="activeTab()===tab.id?'page':null"
+        [disabled]="tab.id==='evidencias'&&!puedeVerEvidencias()"
+        [title]="tab.id==='evidencias'&&!puedeVerEvidencias()?'Disponible después de la aprobación':tab.name"
+        (click)="cambiarTab(tab.id)">
+        <fa-icon class="e2-menu-icon" [icon]="tab.icon" />
+        <span class="e2-menu-text">{{tab.name}}</span>
+        @if(seccionCantidad(tab.id)!==null){<span class="e2-menu-count">{{seccionCantidad(tab.id)}}</span>}
+       </button>
+      }
+     }
+    </nav>
+   </aside>
+   <main class="e2-main" id="e2-seccion-contenido">
+    @if(activeTab()==='resumen'){
+     <section class="admin-surface e2-panel">
+      <div class="admin-section-header"><h2>Información general</h2></div>
+      <dl class="e2-facts">
+       <div><dt>Motivo</dt><dd>{{motivoNombre(d.motivoSalidaId)}}</dd></div>
+       <div><dt>Inicio previsto</dt><dd>{{d.fechaInicioPrevista|date:'dd/MM/yyyy HH:mm'}}</dd></div>
+       <div><dt>Fin previsto</dt><dd>{{d.fechaFinPrevista?(d.fechaFinPrevista|date:'dd/MM/yyyy HH:mm'):'—'}}</dd></div>
+       <div><dt>Solicitante</dt><dd>{{d.participantes.length?d.participantes[0].nombre:'#'+d.solicitanteEmpleadoId}}</dd></div>
+      </dl>
+      @if(d.descripcion){<div class="e2-summary-description"><span>Descripción</span><p>{{d.descripcion}}</p></div>}
+     </section>
+    }
+    @if(activeTab()==='destinos'){
+     <section class="admin-surface e2-panel">
+      <div class="admin-section-header">
+       <div class="e2-section-heading"><h2>Destinos y actividades</h2><span class="e2-section-total">{{editable()?destinosCorreccion().length:d.destinos.length}} registrados</span></div>
+       @if(editable()){
+        <button *appPermission="'SALIDAS_EDITAR'" class="e2-add-action" type="button" [disabled]="saving()" (click)="abrirDestino()">
+         <span class="e2-add-symbol"><fa-icon [icon]="addIcon" /></span>Agregar destino
+        </button>
+       }
+      </div>
+      <div class="admin-table-wrap e2-scroll"><table class="admin-table e2-table e2-destinos-table">
+       <thead><tr><th>Predio / fundo</th><th>Actividad prevista</th>@if(editable()){<th class="text-right">Acciones</th>}</tr></thead>
+       <tbody>
+        @if(editable()){
+         @for(x of destinosCorreccion();track $index){
+          <tr><td><strong>{{predioNombre(x.predioId)}}</strong></td><td class="e2-wrap-cell">{{x.actividadPrevista||'—'}}</td>
+           <td class="text-right"><div class="admin-row-actions e2-row-actions">
+            <button *appPermission="'SALIDAS_EDITAR'" class="admin-icon-button" type="button" title="Editar destino" aria-label="Editar destino" [disabled]="saving()" (click)="abrirDestino($index)"><fa-icon [icon]="editIcon" /></button>
+            <button *appPermission="'SALIDAS_EDITAR'" class="admin-icon-button admin-icon-button--danger" type="button" title="Quitar destino" aria-label="Quitar destino" [disabled]="saving()" (click)="quitarDestino($index)"><fa-icon [icon]="removeIcon" /></button>
+           </div></td></tr>
+         } @empty {<tr><td colspan="3" class="e2-empty-row">No hay destinos. Agrega un predio para completar el borrador.</td></tr>}
+        } @else {
+         @for(x of d.destinos;track x.destinoId){<tr><td><strong>{{predioNombre(x.predioId)}}</strong></td><td class="e2-wrap-cell">{{x.actividadPrevista||'—'}}</td></tr>}
+         @empty {<tr><td colspan="2" class="e2-empty-row">Sin destinos</td></tr>}
+        }
+       </tbody>
+      </table></div>
+     </section>
+    }
+  @if(activeTab()==='recursos'){
+   <section class="admin-surface e2-panel mt-3">
+    <div class="admin-section-header"><h2>Recursos</h2><span class="admin-count-badge">{{editable()?bienesCorreccion().length:d.bienes.length}}</span></div>
+    @if(editable()){
+     <div *appPermission="'SALIDAS_EDITAR'">
+      <div class="admin-toolbar e2-tools">
+       <div class="admin-field e2-filter"><label for="e2RecursoBuscar">Buscar recurso</label><input id="e2RecursoBuscar" class="admin-input" [(ngModel)]="buscarRecurso" (keyup.enter)="buscarRecursos()" placeholder="Nombre o código" /></div>
+       <button class="admin-secondary-button" type="button" (click)="buscarRecursos()"><fa-icon [icon]="searchIcon" /> Buscar</button>
+       <div class="admin-field"><label for="e2RecursoTipo">Tipo</label><select id="e2RecursoTipo" class="admin-select" [(ngModel)]="tipoRecurso" (ngModelChange)="paginaRecursos=1"><option value="TODOS">Todos</option><option value="VEHICULO">Vehículos</option><option value="BIEN">Herramientas y equipos</option><option value="CONSUMIBLE">Consumibles</option></select></div>
+      </div>
+      <div class="e2-viewbar"><button type="button" class="admin-secondary-button" [class.e2-filter-on]="soloSeleccionados" [attr.aria-pressed]="soloSeleccionados" (click)="soloSeleccionados=!soloSeleccionados;paginaRecursos=1">{{soloSeleccionados?'Ver todos':'Seleccionados ('+bienesCorreccion().length+')'}}</button>
+       <div class="technical-view-control" role="group" aria-label="Vista de recursos"><button class="technical-view-button" type="button" [class.active]="vistaRecursos==='tabla'" [attr.aria-pressed]="vistaRecursos==='tabla'" (click)="vistaRecursos='tabla'">Tabla</button><button class="technical-view-button" type="button" [class.active]="vistaRecursos==='tarjetas'" [attr.aria-pressed]="vistaRecursos==='tarjetas'" (click)="vistaRecursos='tarjetas'">Tarjetas</button></div>
+      </div>
+      @if(vistaRecursos==='tabla'){
+       <div class="admin-table-wrap e2-scroll"><table class="admin-table e2-table"><thead><tr><th>Recurso</th><th>Tipo</th><th>Disponible</th><th>Cantidad</th><th class="text-right">Acción</th></tr></thead><tbody>
+         @for(r of recursosPaginados();track r.tipo+':'+r.id){<tr><td><strong>{{r.nombre}}</strong><small class="e2-subline">{{r.codigo||'—'}}</small></td><td>{{r.tipo}}</td><td>{{r.disponible}} {{r.unidad}}</td>
+          <td>@if(r.tipo==='CONSUMIBLE'&&selectedResource(r)){<input class="admin-input e2-qty" type="number" min="0.001" step="0.001" [max]="r.disponible" [ngModel]="selectedQty(r)" (ngModelChange)="changeResourceQty(r,$event)" [attr.aria-label]="'Cantidad de '+r.nombre"/>}@else{—}</td>
+          <td class="text-right"><button type="button" class="e2-picker-action" [class.is-selected]="selectedResource(r)" [attr.aria-pressed]="selectedResource(r)" [disabled]="!selectedResource(r)&&r.disponible<=0" (click)="toggleResource(r,!selectedResource(r))"><fa-icon [icon]="selectedResource(r)?checkIcon:addIcon" /> {{selectedResource(r)?'Seleccionado':'Agregar'}}</button></td></tr>}
+          @empty{<tr><td colspan="5">Sin recursos para este filtro</td></tr>}</tbody></table></div>
+      }@else{
+       <div class="desco-record-grid e2-resource-cards">@for(r of recursosPaginados();track r.tipo+':'+r.id){<app-record-card><header><strong>{{r.nombre}}</strong><span>{{r.tipo}}</span></header>
+         <dl><div><dt>Código</dt><dd>{{r.codigo||'—'}}</dd></div><div><dt>Disponible</dt><dd>{{r.disponible}} {{r.unidad}}</dd></div></dl>
+         @if(r.tipo==='CONSUMIBLE'&&selectedResource(r)){<label class="admin-field">Cantidad<input class="admin-input" type="number" min="0.001" step="0.001" [max]="r.disponible" [ngModel]="selectedQty(r)" (ngModelChange)="changeResourceQty(r,$event)" /></label>}
+         <footer><button type="button" class="e2-picker-action" [class.is-selected]="selectedResource(r)" [attr.aria-pressed]="selectedResource(r)" [disabled]="!selectedResource(r)&&r.disponible<=0" (click)="toggleResource(r,!selectedResource(r))"><fa-icon [icon]="selectedResource(r)?checkIcon:addIcon" /> {{selectedResource(r)?'Seleccionado':'Agregar recurso'}}</button></footer></app-record-card>}
+        </div>
+      }
+      <app-paginator [page]="paginaRecursos" [size]="pageSize" [totalRecords]="searchedResources().length" [totalPages]="paginasRecursos()" [pageSizes]="[10]" (pageChange)="paginaRecursos=$event" />
+     </div>
+    }@else{
+      @if(d.estado==='APROBADA'&&hasUndeliveredGoods(d)){
+       <div class="e2-resource-notes">@for(b of d.bienes;track b.solicitudRecursoId){@if(b.estado==='SOLICITADO'){
+        <label class="admin-field"><span>{{b.nombre}} · {{b.cantidadSolicitada}} {{b.unidad}}</span>
+          <textarea class="admin-textarea" rows="2" maxlength="500" [attr.aria-label]="'Estado de entrega de '+b.nombre" [ngModel]="observacionEntrega()[b.solicitudRecursoId]||''" (ngModelChange)="observacionDeEntrega(b.solicitudRecursoId,$event)" placeholder="Condición del recurso al entregarlo"></textarea></label>
+        }}</div>
+       <button *appPermission="'RECURSOS_CREAR'" class="admin-primary-button" type="button" [disabled]="saving()" (click)="entregar()">Registrar entrega</button>
+      }
+      <div class="e2-viewbar"><span class="e2-subline">{{d.bienes.length}} recursos</span><div class="technical-view-control" role="group" aria-label="Vista de recursos"><button type="button" class="technical-view-button" [class.active]="vistaRecursos==='tabla'" (click)="vistaRecursos='tabla'">Tabla</button><button type="button" class="technical-view-button" [class.active]="vistaRecursos==='tarjetas'" (click)="vistaRecursos='tarjetas'">Tarjetas</button></div></div>
+      @if(vistaRecursos==='tabla'){
+       <div class="admin-table-wrap e2-scroll"><table class="admin-table e2-table"><thead><tr><th>Recurso</th><th>Tipo</th><th>Cantidad</th><th>Estado</th></tr></thead><tbody>
+        @for(b of d.bienes;track b.solicitudRecursoId){<tr><td>{{b.nombre}}</td><td>{{b.tipo}}</td><td>{{b.cantidadSolicitada}} {{b.unidad}}</td><td><span class="admin-status">{{b.estado}}</span></td></tr>}
+        @empty{<tr><td colspan="4">Sin recursos</td></tr>}</tbody></table></div>
+      }@else{
+       <div class="desco-record-grid e2-resource-cards">@for(b of d.bienes;track b.solicitudRecursoId){<app-record-card><header><strong>{{b.nombre}}</strong><span class="admin-status">{{b.estado}}</span></header><dl><div><dt>Tipo</dt><dd>{{b.tipo}}</dd></div><div><dt>Cantidad</dt><dd>{{b.cantidadSolicitada}} {{b.unidad}}</dd></div></dl></app-record-card>}</div>
+      }
+    }
+   </section>
+  }
+  @if(activeTab()==='participantes'){
+   <section class="admin-surface e2-panel mt-3">
+    <div class="admin-section-header"><h2>Participantes</h2><span class="admin-count-badge">{{editable()?participantesCorreccion().length+1:d.participantes.length}}</span></div>
+    @if(editable()){
+     <div *appPermission="'SALIDAS_EDITAR'">
+      <div class="admin-toolbar e2-tools"><div class="admin-field e2-filter"><label for="e2ParticipanteBuscar">Buscar participante</label>
+       <input id="e2ParticipanteBuscar" class="admin-input" [(ngModel)]="buscarParticipante" (keyup.enter)="buscarParticipantes()" placeholder="Nombre o código" /></div>
+       <button type="button" class="admin-secondary-button" (click)="buscarParticipantes()"><fa-icon [icon]="searchIcon" /> Buscar</button></div>
+      <div class="e2-viewbar"><span class="e2-subline">Responsable incluido automáticamente</span>
+       <div class="technical-view-control" role="group" aria-label="Vista de participantes"><button type="button" class="technical-view-button" [class.active]="vistaParticipantes==='tabla'" (click)="vistaParticipantes='tabla'">Tabla</button><button type="button" class="technical-view-button" [class.active]="vistaParticipantes==='tarjetas'" (click)="vistaParticipantes='tarjetas'">Tarjetas</button></div></div>
+      @if(vistaParticipantes==='tabla'){
+       <div class="admin-table-wrap e2-scroll"><table class="admin-table e2-table"><thead><tr><th>Participante</th><th>Código</th><th>Rol</th><th class="text-right">Acción</th></tr></thead><tbody>
+       @for(p of participantesPaginados();track p.id){<tr><td>{{p.nombre}}</td><td>{{p.codigo||'—'}}</td><td>{{p.id===d.solicitanteEmpleadoId?'Responsable':'Técnico'}}</td>
+        <td class="text-right"><button type="button" class="e2-picker-action" [class.is-selected]="selectedParticipant(p.id)||p.id===d.solicitanteEmpleadoId" [attr.aria-pressed]="selectedParticipant(p.id)||p.id===d.solicitanteEmpleadoId" [disabled]="p.id===d.solicitanteEmpleadoId" (click)="toggleParticipant(p.id,!selectedParticipant(p.id))"><fa-icon [icon]="selectedParticipant(p.id)||p.id===d.solicitanteEmpleadoId?checkIcon:addIcon" /> {{p.id===d.solicitanteEmpleadoId?'Responsable':selectedParticipant(p.id)?'Seleccionado':'Agregar'}}</button></td></tr>}
+       @empty{<tr><td colspan="4">Sin participantes</td></tr>}</tbody></table></div>
+      }@else{
+       <div class="desco-record-grid e2-resource-cards">@for(p of participantesPaginados();track p.id){<app-record-card><header><strong>{{p.nombre}}</strong><span>{{p.codigo||'—'}}</span></header>
+        <dl><div><dt>Función</dt><dd>{{p.id===d.solicitanteEmpleadoId?'Responsable':'Técnico'}}</dd></div></dl>
+        <footer><button type="button" class="e2-picker-action" [class.is-selected]="selectedParticipant(p.id)||p.id===d.solicitanteEmpleadoId" [attr.aria-pressed]="selectedParticipant(p.id)||p.id===d.solicitanteEmpleadoId" [disabled]="p.id===d.solicitanteEmpleadoId" (click)="toggleParticipant(p.id,!selectedParticipant(p.id))"><fa-icon [icon]="selectedParticipant(p.id)||p.id===d.solicitanteEmpleadoId?checkIcon:addIcon" /> {{p.id===d.solicitanteEmpleadoId?'Responsable':selectedParticipant(p.id)?'Seleccionado':'Agregar participante'}}</button></footer></app-record-card>}
+       </div>
+      }
+      <app-paginator [page]="paginaParticipantes" [size]="pageSize" [totalRecords]="searchedParticipants().length" [totalPages]="paginasParticipantes()" [pageSizes]="[10]" (pageChange)="paginaParticipantes=$event" />
+     </div>
+    }@else{
+     <div class="e2-viewbar"><span class="e2-subline">{{d.participantes.length}} integrantes</span><div class="technical-view-control" role="group" aria-label="Vista de participantes"><button type="button" class="technical-view-button" [class.active]="vistaParticipantes==='tabla'" (click)="vistaParticipantes='tabla'">Tabla</button><button type="button" class="technical-view-button" [class.active]="vistaParticipantes==='tarjetas'" (click)="vistaParticipantes='tarjetas'">Tarjetas</button></div></div>
+     @if(vistaParticipantes==='tabla'){
+      <div class="admin-table-wrap e2-scroll"><table class="admin-table e2-table"><thead><tr><th>Nombre</th><th>Función</th></tr></thead><tbody>
+        @for(p of d.participantes;track p.empleadoId){<tr><td>{{p.nombre}}</td><td>{{p.responsable?'Responsable':(p.funcion||'Técnico')}}</td></tr>}
+        @empty{<tr><td colspan="2">Sin participantes</td></tr>}</tbody></table></div>
+     }@else{
+      <div class="desco-record-grid e2-resource-cards">@for(p of d.participantes;track p.empleadoId){<app-record-card><header><strong>{{p.nombre}}</strong></header><dl><div><dt>Función</dt><dd>{{p.responsable?'Responsable':(p.funcion||'Técnico')}}</dd></div></dl></app-record-card>}</div>
+     }
+    }
+   </section>
+  }
+  @if(activeTab()==='seguimiento'){
+   <section class="admin-surface e2-panel mt-3">
+    <div class="admin-section-header"><h2>Seguimiento en campo</h2><div class="e2-actions">
+     @if(d.estado==='APROBADA'){<button *appPermission="'SALIDAS_EDITAR'" type="button" class="admin-primary-button" [disabled]="saving()||hasUndeliveredGoods(d)" (click)="iniciar()">Iniciar salida</button>}
+
+     @if(d.estado==='EN_EJECUCION'){<button *appPermission="'VISITAS_EDITAR'" class="e2-add-action" type="button" (click)="openOperation('visita')"><span class="e2-add-symbol"><fa-icon [icon]="addIcon" /></span>Nueva visita</button>}
+     @if(d.estado==='EN_EJECUCION'){<button *appPermission="'SALIDAS_EDITAR'" class="admin-secondary-button" type="button" (click)="openOperation('retorno')">Registrar retorno</button>}
+     @if(d.estado==='EN_RETORNO'){<button *appPermission="'SALIDAS_CONFIRMAR'" class="admin-primary-button" type="button" (click)="openOperation('inspeccion')">Inspeccionar</button>}
+     @if(d.estado==='EN_RETORNO'&&!d.fechaFinPrevista){<button *appPermission="'SALIDAS_EDITAR'" class="admin-secondary-button" type="button" (click)="openOperation('fecha')">Regularizar fecha</button>}
+     @if(d.estado==='EN_RETORNO'){<button *appPermission="'SALIDAS_CONFIRMAR'" type="button" class="admin-secondary-button" [disabled]="saving()||!d.fechaFinPrevista||hasPendingInspection(d)" (click)="cerrar()">Cerrar salida</button>}
+    </div></div>
+    <div class="admin-table-wrap e2-scroll"><table class="admin-table e2-table"><thead><tr><th>Visita</th><th>Predio</th><th>Inicio</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>
+     @for(v of d.visitas;track v.visitaId){<tr><td>{{v.tipoVisita||('Visita #'+v.visitaId)}}</td><td>#{{v.predioId}}</td><td>{{v.fechaInicio|date:'dd/MM/yyyy HH:mm'}}</td><td>{{v.estado}}</td><td><div class="admin-row-actions">
+      <a class="admin-icon-button" title="Ver visita" [routerLink]="['/gestion-tecnica/visitas',v.visitaId]">↗</a>
+      @if(d.estado==='EN_EJECUCION'&&v.estado==='INICIADA'&&v.predioId){
+       <a class="admin-icon-button" title="Gestión productiva" [routerLink]="['/gestion-tecnica/gestion-productiva/predios',v.predioId,'parcelas']">☘</a>}
+      @if(convenioId&&v.predioId){<a class="admin-icon-button" title="Plantas de esta visita" [routerLink]="['/convenios/apappss/plantas',v.predioId]" [queryParams]="{convenioId:convenioId,visitaId:v.visitaId}">♧</a>}
+      @if(d.estado==='EN_EJECUCION'&&v.estado==='INICIADA'){<button *appPermission="'VISITAS_CONFIRMAR'" class="admin-icon-button" type="button" title="Finalizar visita" (click)="visitaFinalizar=v.visitaId;openOperation('finalizar')">✓</button>}
+     </div></td></tr>}@empty{<tr><td colspan="5">Sin visitas</td></tr>}</tbody></table></div>
+   </section>
+  }
+  @if(activeTab()==='historial'){
+   <section class="admin-surface e2-panel mt-3"><div class="admin-section-header"><h2>Historial</h2></div>
+    <ol class="e2-timeline">@for(h of d.historial;track h.eventoId){<li><span class="e2-timeline-node"></span><div class="e2-timeline-entry"><div class="e2-timeline-heading"><strong>{{h.tipo.replaceAll('_',' ')}}</strong><time>{{h.fechaHora|date:'dd/MM/yyyy HH:mm'}}</time></div>
+      @if(h.detalle){<p>{{h.detalle}}</p>}<small>Usuario #{{h.usuarioId}}</small></div></li>}
+     @empty{<li><p>Sin movimientos registrados.</p></li>}</ol>
+   </section>
+  }
+  @if(activeTab()==='documentos'){
+   <section class="admin-surface e2-panel mt-3">
+    <div class="admin-section-header"><h2>Documentos</h2><div class="e2-actions">
+     <a class="admin-secondary-button" routerLink="/documentos-evidencias/salidas">Mis documentos</a>
+     @if(d.estado==='SOLICITADA'){
+      <button *appPermission="'SALIDAS_EDITAR'" type="button" class="admin-secondary-button" [disabled]="documentosBusy()" (click)="generarWord()">Generar Word</button>
+      <label *appPermission="'SALIDAS_EDITAR'" class="e2-add-action e2-file-action"><span class="e2-add-symbol"><fa-icon [icon]="addIcon" /></span>Subir firmado<input type="file" accept=".doc,.docx,.pdf,image/jpeg,image/png,image/webp" [disabled]="documentosBusy()" (change)="adjuntarDocumento($any($event.target),'SOLICITUD_FIRMADA')" /></label>
+     }
+     @if(['APROBADA','EN_EJECUCION','EN_RETORNO'].includes(d.estado)){
+       <label *appPermission="'SALIDAS_EDITAR'" class="e2-add-action e2-file-action"><span class="e2-add-symbol"><fa-icon [icon]="addIcon" /></span>Agregar documento<input type="file" accept=".doc,.docx,.pdf,.xlsx,image/jpeg,image/png,image/webp" [disabled]="documentosBusy()" (change)="adjuntarDocumento($any($event.target),'EVIDENCIA_SALIDA')" /></label>
+     }
+    </div></div>
+    <div class="e2-viewbar e2-document-toolbar"><div class="admin-field e2-filter"><label for="e2DocBuscar">Buscar archivo</label><input id="e2DocBuscar" class="admin-input" [ngModel]="docsSearch()" (ngModelChange)="docsSearch.set($event)" placeholder="Nombre de archivo" /></div>
+      <div class="technical-view-control" role="group" aria-label="Vista de documentos"><button type="button" class="technical-view-button" [class.active]="vistaDocumentos==='tabla'" (click)="vistaDocumentos='tabla'">Tabla</button><button type="button" class="technical-view-button" [class.active]="vistaDocumentos==='tarjetas'" (click)="vistaDocumentos='tarjetas'">Tarjetas</button></div></div>
+    @if(documentosBusy()){<div class="e2-inline-progress"><span class="loading loading-spinner loading-sm"></span> Guardando archivo…</div>}
+    @if(vistaDocumentos==='tabla'){
+     <div class="admin-table-wrap e2-scroll"><table class="admin-table e2-table"><thead><tr><th>Archivo</th><th>Tipo</th><th>Fecha</th><th class="text-right">Acción</th></tr></thead><tbody>
+      @for(f of documentosFiltrados();track f.archivoId){<tr><td class="e2-wrap-cell">{{f.nombreOriginal}}</td><td>{{f.tipo.replaceAll('_',' ')}}</td><td>{{f.fechaCarga|date:'dd/MM/yyyy HH:mm'}}</td><td class="text-right"><button class="admin-secondary-button" type="button" (click)="archivos.descargar(f)">Descargar</button></td></tr>}
+      @empty{<tr><td colspan="4">Sin documentos</td></tr>}</tbody></table></div>
+    }@else{
+     <div class="desco-record-grid e2-resource-cards">@for(f of documentosFiltrados();track f.archivoId){<app-record-card><header><strong>{{f.nombreOriginal}}</strong></header><dl><div><dt>Tipo</dt><dd>{{f.tipo.replaceAll('_',' ')}}</dd></div><div><dt>Fecha</dt><dd>{{f.fechaCarga|date:'dd/MM/yyyy HH:mm'}}</dd></div></dl><footer><button class="admin-secondary-button" type="button" (click)="archivos.descargar(f)">Descargar</button></footer></app-record-card>}</div>
+    }
+   </section>
+  }
+  @if(activeTab()==='evidencias'){
+   @if(puedeVerEvidencias()){<section class="mt-3"><app-evidence-panel title="Evidencias de la salida" [readOnly]="d.estado==='CERRADA'" [context]="{tipo:'SALIDA',id:d.salidaId}" /></section>}
+  }
+  @if(editable()&&(activeTab()==='destinos'||activeTab()==='recursos'||activeTab()==='participantes')){
+   <footer *appPermission="'SALIDAS_EDITAR'" class="e2-global-footer admin-surface mt-3">
+    @if(d.estado==='BORRADOR'){<button class="admin-secondary-button" type="button" [disabled]="saving()" (click)="corregir(false)">Guardar cambios</button>}
+    <button class="admin-primary-button" type="button" [disabled]="saving()||!puedeEnviar()" (click)="corregir(true)">Enviar a aprobación</button>
+   </footer>
+  }
+  </main>
+  </div>
+ }
+</div>
+<dialog #operationDialog class="modal desco-modal" (cancel)="$event.preventDefault();closeOperation()">
+ <div class="modal-box admin-modal-box e2-modal-box">
+  <header class="admin-modal-header"><h2>
+   @switch(operation()){@case('cancelar'){Cancelar solicitud}@case('decision'){Decidir solicitud}
+     @case('destino'){@if(destinoEditIndex===null){Agregar destino}@else{Editar destino}}@case('vincular'){Vincular predio}@case('visita'){Nueva visita}@case('finalizar'){Finalizar visita}
+     @case('retorno'){Registrar retorno}@case('inspeccion'){Inspeccionar recursos}@case('fecha'){Regularizar fin}}
+  </h2><button type="button" class="admin-icon-button" title="Cerrar" aria-label="Cerrar" (click)="closeOperation()"><fa-icon [icon]="closeIcon"/></button></header>
+  <div class="e2-modal-body">
+   @if(operation()==='destino'){
+    <div class="e2-destination-form">
+     <div class="e2-modal-search"><label class="admin-field" for="e2-modal-buscar-predio">Buscar predio / fundo
+       <input id="e2-modal-buscar-predio" class="admin-input" [(ngModel)]="buscarPredio" (keyup.enter)="buscarPredios()" placeholder="Nombre o código" />
+      </label>
+      <button type="button" class="admin-secondary-button" (click)="buscarPredios()"><fa-icon [icon]="searchIcon" /> Buscar</button>
+     </div>
+     <label class="admin-field" for="e2-modal-predio">Predio / fundo
+      <select id="e2-modal-predio" class="admin-select" [(ngModel)]="predioModal">
+       <option [ngValue]="0">Seleccione un predio</option>
+       @for(p of candidatos();track p.predioId){<option [ngValue]="p.predioId">{{p.nombre}}</option>}
+      </select>
+     </label>
+     <label class="admin-field" for="e2-modal-actividad">Actividad prevista
+      <textarea id="e2-modal-actividad" class="admin-textarea" [(ngModel)]="actividadModal" maxlength="400" rows="4" placeholder="Describe la actividad prevista en este predio"></textarea>
+     </label>
+    </div>
+    <footer class="e2-modal-actions"><button class="admin-secondary-button" type="button" [disabled]="saving()" (click)="closeOperation()">Cancelar</button>
+     <button class="admin-primary-button" type="button" [disabled]="saving()||!predioModal||!actividadModal.trim()" (click)="guardarDestino()"><fa-icon [icon]="checkIcon" /> Guardar destino</button></footer>
+   }
+   @if(operation()==='cancelar'){
+    <label class="admin-field">Motivo de cancelación<textarea class="admin-textarea" rows="3" [(ngModel)]="motivoCancelar" maxlength="1200"></textarea></label>
+    <footer class="e2-modal-actions"><button type="button" class="admin-secondary-button" (click)="closeOperation()">Volver</button>
+     <button type="button" class="admin-danger-button" [disabled]="saving()||!motivoCancelar.trim()" (click)="cancelar()">Cancelar solicitud</button></footer>
+   }
+   @if(operation()==='decision'){
+    <label class="admin-field">Decisión<select class="admin-select" [(ngModel)]="decision"><option value="APROBADA">Aprobar</option><option value="OBSERVADA">Observar</option><option value="RECHAZADA">Rechazar</option></select></label>
+    @if(decision!=='APROBADA'){<label class="admin-field">Motivo<textarea class="admin-textarea" [(ngModel)]="motivoDecision" maxlength="1200" rows="3"></textarea></label>}
+    <footer class="e2-modal-actions"><button type="button" class="admin-secondary-button" (click)="closeOperation()">Volver</button>
+     <button type="button" class="admin-primary-button" [disabled]="saving()||(decision!=='APROBADA'&&!motivoDecision.trim())" (click)="decidir()">Confirmar</button></footer>
+   }
+   @if(operation()==='vincular'){
+    <label class="admin-field">Destino<select class="admin-select" [(ngModel)]="destinoVincular"><option [ngValue]="0">Seleccione</option>
+     @for(x of detail()?.destinos||[];track x.destinoId){@if(!x.predioId){<option [ngValue]="x.destinoId">{{x.referencia}}</option>}}</select></label>
+    <div class="e2-inline-search"><input class="admin-input" [(ngModel)]="buscarPredio" placeholder="Buscar predio" (keyup.enter)="buscarPredios()"/><button type="button" class="admin-secondary-button" (click)="buscarPredios()">Buscar</button></div>
+    <label class="admin-field">Predio registrado<select class="admin-select" [(ngModel)]="predioVincular"><option [ngValue]="0">Seleccione</option>
+     @for(x of candidatos();track x.predioId){<option [ngValue]="x.predioId">{{x.nombre}}</option>}</select></label>
+    <footer class="e2-modal-actions"><button class="admin-primary-button" type="button" [disabled]="saving()||!predioVincular||!destinoVincular" (click)="vincular()">Guardar</button></footer>
+   }
+   @if(operation()==='visita'){
+    <label class="admin-field">Destino<select class="admin-select" [(ngModel)]="destinoId"><option [ngValue]="0">Seleccione</option>
+     @for(x of detail()?.destinos||[];track x.destinoId){@if(x.predioId){<option [ngValue]="x.destinoId">{{predioNombre(x.predioId)}}</option>}}</select></label>
+    <label class="admin-field">Tipo de visita<select class="admin-select" [(ngModel)]="tipoVisitaId"><option [ngValue]="0">Seleccione</option>
+     @for(x of catalogos().tiposVisita;track x.id){<option [ngValue]="x.id">{{x.nombre}}</option>}</select></label>
+    <label class="admin-field">Objetivo<input class="admin-input" [(ngModel)]="objetivo" maxlength="250"/></label>
+    <footer class="e2-modal-actions"><button class="admin-primary-button" type="button" [disabled]="saving()||!destinoId||!tipoVisitaId" (click)="visitar()">Iniciar visita</button></footer>
+   }
+   @if(operation()==='finalizar'){
+    <label class="admin-field">Resumen<textarea class="admin-textarea" [(ngModel)]="resumen" maxlength="600" rows="3"></textarea></label>
+    <footer class="e2-modal-actions"><button class="admin-primary-button" type="button" [disabled]="saving()||!resumen.trim()" (click)="finalizarVisita()">Finalizar visita</button></footer>
+   }
+   @if(operation()==='retorno'){
+    <label class="admin-field">Observación general<textarea class="admin-textarea" [(ngModel)]="observacionGeneral" maxlength="1500" rows="3"></textarea></label>
+    <div class="admin-table-wrap e2-scroll"><table class="admin-table e2-table"><thead><tr><th>Recurso</th><th>Resultado</th><th>Cantidad devuelta</th><th>Observación</th></tr></thead><tbody>
+     @for(x of detail()?.bienes||[];track x.solicitudRecursoId){@if(x.estado==='ENTREGADO'){<tr>
+      <td>{{x.nombre}}</td><td><select class="admin-select" [ngModel]="resultadoDeclarado()[x.solicitudRecursoId]" (ngModelChange)="changeDeclarado(x.solicitudRecursoId,$event)">
+       <option value="CONFORME">Conforme</option><option value="DANADO">Dañado</option><option value="FALTANTE">Faltante</option>
+       @if(x.suministroId){<option value="CONSUMIDO">Consumido</option>}</select></td>
+      <td>@if(x.suministroId){<input class="admin-input e2-qty" type="number" min="0" [max]="x.cantidadSolicitada" [ngModel]="cantidadesDevueltas()[x.solicitudRecursoId]" (ngModelChange)="changeCantidad(x.solicitudRecursoId,$event)"/>}@else{—}</td>
+      <td><input class="admin-input" [ngModel]="observacionesBien()[x.solicitudRecursoId]" (ngModelChange)="changeObservacionBien(x.solicitudRecursoId,$event)" maxlength="500"/></td>
+     </tr>}}</tbody></table></div>
+    <footer class="e2-modal-actions"><button type="button" class="admin-primary-button" [disabled]="saving()||!observacionGeneral.trim()" (click)="retornar()">Registrar retorno</button></footer>
+   }
+   @if(operation()==='inspeccion'){
+    <div class="admin-table-wrap e2-scroll"><table class="admin-table e2-table"><thead><tr><th>Recurso</th><th>Resultado</th><th>Devuelto</th></tr></thead><tbody>
+     @for(x of detail()?.bienes||[];track x.solicitudRecursoId){@if(x.estado==='ENTREGADO'){<tr><td>{{x.nombre}}</td>
+      <td><select class="admin-select" [ngModel]="resultadoInspeccion()[x.solicitudRecursoId]" (ngModelChange)="changeInspeccion(x.solicitudRecursoId,$event)">
+       <option value="CONFORME">Conforme</option><option value="DANADO">Dañado</option><option value="FALTANTE">Faltante</option>
+       @if(x.suministroId){<option value="CONSUMIDO">Consumido</option>}</select></td>
+      <td>@if(x.suministroId){<input class="admin-input e2-qty" type="number" min="0" [max]="x.cantidadSolicitada" [ngModel]="cantidadesDevueltas()[x.solicitudRecursoId]" (ngModelChange)="changeCantidad(x.solicitudRecursoId,$event)"/>}@else{—}</td>
+     </tr>}}</tbody></table></div>
+    <label class="admin-field">Observación<textarea class="admin-textarea" [(ngModel)]="observacionInspeccion" maxlength="1200" rows="2"></textarea></label>
+    <footer class="e2-modal-actions"><button type="button" class="admin-primary-button" [disabled]="saving()" (click)="inspeccionar()">Registrar inspección</button></footer>
+   }
+   @if(operation()==='fecha'){
+     <label class="admin-field">Fin previsto<input class="admin-input" type="datetime-local" [(ngModel)]="fechaFinRegularizada"/></label>
+     <footer class="e2-modal-actions"><button type="button" class="admin-primary-button" [disabled]="saving()||!fechaFinRegularizada" (click)="regularizarFin()">Guardar</button></footer>
+   }
+  </div>
+ </div>
+</dialog>
+<app-action-confirm-dialog />

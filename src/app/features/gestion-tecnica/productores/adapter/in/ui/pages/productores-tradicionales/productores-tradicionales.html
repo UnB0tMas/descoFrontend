@@ -1,0 +1,62 @@
+<div class="desco-page">
+  <app-page-header title="Productores tradicionales" subtitle="Reutiliza la identidad de la persona y accede a todos sus predios sin exigir afiliación." eyebrow="Gestión técnica" [icon]="icon">
+    <div pageActions>
+      <a class="admin-secondary-button" routerLink="/gestion-tecnica/productores/socios">Socios APAPPSS</a>
+      <a *appPermission="'PREDIOS_CREAR'" class="admin-primary-button" routerLink="/gestion-tecnica/predios/alta-rapida">Nuevo productor y predio</a>
+    </div>
+  </app-page-header>
+
+  <section class="admin-surface mt-5 producer-search">
+    <form class="producer-search__form" (submit)="$event.preventDefault(); find()">
+      <label class="admin-field producer-search__input">Documento o nombre
+        <input class="admin-input" type="search" [(ngModel)]="search" name="search" placeholder="DNI, CE o nombre del productor" autocomplete="off" />
+      </label>
+      <button type="submit" class="admin-primary-button" [disabled]="loading() || search.trim().length < 3">
+        {{ loading() ? 'Buscando…' : 'Buscar' }}
+      </button>
+    </form>
+    <p class="producer-search__hint">La búsqueda consulta la identidad única de DESCO; una persona puede ser productora, titular y también socia sin duplicarse.</p>
+  </section>
+
+  @if (error()) { <app-error-state [message]="error() || 'No se pudo completar la consulta.'" (retry)="find()" /> }
+  @if (loading()) { <app-loading-state title="Buscando productores" message="Consultando identidades registradas." /> }
+
+  @if (!loading() && people().length > 0) {
+    <div class="producer-layout mt-4">
+      <section class="admin-surface producer-results">
+        <h2>Coincidencias</h2>
+        @for (person of people(); track person.personaId) {
+          <button type="button" class="producer-person" [class.producer-person--selected]="selected()?.personaId === person.personaId" (click)="select(person)">
+            <span class="producer-person__icon"><fa-icon [icon]="icon" /></span>
+            <span><strong>{{ person.nombreCompleto }}</strong><small>{{ person.tipoDocumento }} {{ person.numeroDocumento }}</small></span>
+          </button>
+        }
+      </section>
+
+      <section class="admin-surface producer-properties">
+        @if (selected(); as person) {
+          <div class="producer-properties__header">
+            <div><span>Expediente del productor</span><h2>{{ person.nombreCompleto }}</h2></div>
+            <a *appPermission="'PREDIOS_CREAR'" class="admin-secondary-button" routerLink="/gestion-tecnica/predios/alta-rapida" [queryParams]="{buscar: person.numeroDocumento}">Agregar predio</a>
+          </div>
+          @if (loadingProperties()) {
+            <app-loading-state title="Cargando predios" message="Recuperando predios y titularidad." />
+          } @else {
+            <div class="producer-property-grid">
+              @for (property of properties(); track property.predioId) {
+                <a class="producer-property" [routerLink]="['/gestion-tecnica/predios', property.predioId, 'expediente']">
+                  <fa-icon [icon]="predioIcon" />
+                  <span><strong>{{ property.nombre }}</strong><small>{{ property.codigo }} · {{ property.distritoCodigo }}</small><em>{{ property.referencia || 'Sin referencia' }}</em></span>
+                </a>
+              } @empty {
+                <app-empty-state title="Sin predios vinculados" message="Registra el primer predio sin crear una membresía de asociación." />
+              }
+            </div>
+          }
+        } @else {
+          <app-empty-state title="Selecciona una persona" message="Verás sus predios y podrás continuar en el expediente productivo." />
+        }
+      </section>
+    </div>
+  }
+</div>

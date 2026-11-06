@@ -1,0 +1,138 @@
+<div class="desco-page">
+  <app-page-header [title]="titulo()" subtitle="Cultivos, crianzas, actuaciones y datos del fundo en una sola ficha." eyebrow="Expediente productivo" [icon]="icon">
+    <div pageActions class="e1-row"><a class="admin-secondary-button" [routerLink]="backRoute">Volver</a>
+      <button type="button" class="admin-secondary-button" [disabled]="loading()" (click)="cargar()">Actualizar</button></div>
+  </app-page-header>
+  @if (loading()) { <app-loading-state title="Cargando expediente" message="Consultando datos e historial." /> }
+  @else if (error() && !detalle()) { <app-error-state [message]="error() || 'No disponible'" (retry)="cargar()"/> }
+  @else if (detalle(); as e) {
+    @if (error()) { <p class="e1-error" role="alert">{{error()}}</p> }
+    <div class="admin-detail-grid mt-5">
+      <article class="admin-detail-card"><span>Código</span><strong>{{e.codigo}}</strong></article>
+      <article class="admin-detail-card"><span>Distrito</span><strong>{{e.distritoCodigo}}</strong></article>
+      <article class="admin-detail-card"><span>Ficha</span><strong>{{e.fichaCompleta ? 'Completa' : 'Por completar'}}</strong></article>
+      <article class="admin-detail-card"><span>Área</span><strong>{{e.areaTotalHa == null ? 'Sin registrar' : (e.areaTotalHa | number:'1.2-4') + ' ha'}}</strong></article>
+    </div>
+    <section class="admin-surface mt-4 e1-section">
+      <h2>Titularidad</h2>
+      @for (t of e.titulares; track t.personaId) {
+        <div class="e1-selected"><strong>{{t.nombreCompleto}}</strong><span>{{t.numeroDocumento}}</span>
+          <span>{{t.socioId ? 'Socio y titular' : 'Titular no socio'}}</span></div>
+      }
+      @if (e.referencia) { <p>Referencia: {{e.referencia}}</p> }
+      @if (e.latitud != null && e.longitud != null) {
+        <app-predio-map [latitude]="e.latitud" [longitude]="e.longitud" />
+      }
+    </section>
+    <section class="admin-surface mt-4 e1-section">
+      <nav class="e1-tabs" aria-label="Secciones del expediente">
+        <button type="button" [attr.aria-selected]="seccion()==='cultivos'" (click)="cambiar('cultivos')">Cultivos ({{e.cultivos.length}})</button>
+        <button type="button" [attr.aria-selected]="seccion()==='crianzas'" (click)="cambiar('crianzas')">Crianza ({{e.crianzas.length}})</button>
+        <button type="button" [attr.aria-selected]="seccion()==='historial'" (click)="cambiar('historial')">Historial ({{e.historial.length}})</button>
+        <button type="button" [attr.aria-selected]="seccion()==='ficha'" (click)="cambiar('ficha')">Completar ficha</button>
+        <button type="button" [attr.aria-selected]="seccion()==='evidencias'" (click)="cambiar('evidencias')">Evidencias</button>
+      </nav>
+      @switch (seccion()) {
+        @case ('cultivos') {
+          <h2>Cultivos del fundo</h2>
+          <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Cultivo</th><th>Variedad</th><th>Parcela</th><th>Inicio</th></tr></thead><tbody>
+            @for (c of e.cultivos; track c.id) { <tr><td>{{c.cultivo}}</td><td>{{c.variedad || 'No indicada'}}</td><td>{{c.parcela}}</td><td>{{c.fechaInicio | date:'dd/MM/yyyy'}}</td></tr> }
+            @empty { <tr><td colspan="4">Sin cultivos aún.</td></tr> }
+          </tbody></table></div>
+          <h3>Censos históricos de plantas</h3>
+          <ul class="e1-timeline">@for (c of e.censos; track c.id) {
+            <li><strong>{{c.fecha | date:'dd/MM/yyyy'}} · {{c.cultivo || 'Cultivo'}}</strong>
+              <p>Total: {{c.total}} · Productivas: {{c.productivas}}. {{c.observacion || ''}}</p></li>
+          } @empty { <li>Sin censos de plantas.</li> }</ul>
+          <details class="e1-details" *appPermission="'CULTIVOS_CREAR'"><summary>Agregar cultivo</summary>
+            <div class="e1-grid">
+              <label class="admin-field">Cultivo
+                <select class="admin-select" [(ngModel)]="cultivoId" (ngModelChange)="variedadId=0">
+                  <option [ngValue]="0">Seleccionar</option>
+                  @for (x of catalogos().cultivos; track x.id) { <option [ngValue]="x.id">{{x.nombre}}</option> }
+                </select></label>
+              <label class="admin-field">Variedad (opcional)
+                <select class="admin-select" [(ngModel)]="variedadId"><option [ngValue]="0">Desconocida</option>
+                  @for (x of variedades(); track x.id) { <option [ngValue]="x.id">{{x.nombre}}</option> }
+                </select></label>
+              <label class="admin-field">Parcela o zona (opcional)<input class="admin-input" [(ngModel)]="parcelaNombre" /></label>
+            </div><button class="admin-primary-button" type="button" [disabled]="busy() || !cultivoId" (click)="agregarCultivo()">Guardar cultivo</button>
+          </details>
+        }
+        @case ('crianzas') {
+          <h2>Actividades pecuarias</h2>
+          <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Especie</th><th>Lote</th><th>Último conteo</th></tr></thead><tbody>
+            @for (c of e.crianzas; track c.id) { <tr><td>{{c.especie}}</td><td>{{c.lote || 'General'}}</td><td>{{c.cantidadActual == null ? 'Sin observar' : c.cantidadActual}}</td></tr> }
+            @empty { <tr><td colspan="3">Sin crianzas registradas.</td></tr> }
+          </tbody></table></div>
+          <details class="e1-details" *appPermission="'PREDIOS_EDITAR'"><summary>Agregar crianza</summary>
+            <div class="e1-grid"><label class="admin-field">Especie
+              <select class="admin-select" [(ngModel)]="especieId"><option [ngValue]="0">Seleccionar</option>
+                @for (x of catalogos().especies; track x.id) { <option [ngValue]="x.id">{{x.nombre}}</option> }
+              </select></label><label class="admin-field">Lote (opcional)<input class="admin-input" [(ngModel)]="loteNombre" /></label>
+              <label class="admin-field">Cantidad observada (opcional)<input type="number" min="0" class="admin-input" [(ngModel)]="cantidad" /></label>
+            </div><button class="admin-primary-button" type="button" [disabled]="busy() || !especieId" (click)="agregarCrianza()">Guardar crianza</button>
+          </details>
+          <details class="e1-details" *appPermission="'PREDIOS_EDITAR'"><summary>Registrar nuevo conteo</summary>
+            <div class="e1-grid"><label class="admin-field">Crianza
+              <select class="admin-select" [(ngModel)]="loteId"><option [ngValue]="0">Seleccionar</option>
+                @for (c of e.crianzas; track c.id) { <option [ngValue]="c.id">{{c.especie}} · {{c.lote || 'General'}}</option> }
+              </select></label><label class="admin-field">Cantidad (opcional)<input type="number" min="0" class="admin-input" [(ngModel)]="cantidadConteo" /></label>
+              <label class="admin-field">Observación (opcional)<input class="admin-input" [(ngModel)]="conteoNota" /></label>
+            </div><button class="admin-primary-button" type="button" [disabled]="busy() || !loteId" (click)="agregarConteo()">Guardar conteo</button>
+          </details>
+          <h2>Historial de conteos</h2>
+          <ul class="e1-timeline">@for (c of e.conteos; track c.id) {
+            <li><strong>{{c.fechaHecho | date:'dd/MM/yyyy'}} · {{c.cantidad == null ? 'Cantidad no indicada' : c.cantidad}}</strong>
+              <p>{{c.observacion || 'Sin observaciones'}}</p></li>
+          } @empty { <li>No hay conteos previos.</li> }</ul>
+        }
+        @case ('historial') {
+          <h2>Actuaciones y seguimiento</h2>
+          <ul class="e1-timeline">@for (h of e.historial; track h.id) {
+            <li><strong>{{h.fechaHecho | date:'dd/MM/yyyy HH:mm'}} · {{h.tipo}}</strong>
+              <p>{{h.observacion}}</p><small>{{h.autor}} · Registrado {{h.fechaRegistro | date:'dd/MM/yyyy HH:mm'}}</small>
+              @if (h.visitaId) { <span>Visita #{{h.visitaId}}</span> }</li>
+          } @empty { <li>Aún no se registraron actuaciones.</li> }</ul>
+          <details class="e1-details" *appPermission="'PREDIOS_EDITAR'"><summary>Registrar actuación</summary>
+            <div class="e1-grid"><label class="admin-field">Tipo
+              <select class="admin-select" [(ngModel)]="tipoNota" (ngModelChange)="notaCultivoId=0; notaCrianzaId=0">
+                <option value="GENERAL">General</option><option value="CULTIVO">Cultivo</option>
+                <option value="CRIANZA">Crianza</option><option value="SANIDAD">Sanidad</option>
+                <option value="NECESIDAD">Necesidad</option><option value="SEGUIMIENTO">Seguimiento</option>
+              </select></label>
+              @if (tipoNota === 'CULTIVO') {
+                <label class="admin-field">Cultivo relacionado (opcional)
+                  <select class="admin-select" [(ngModel)]="notaCultivoId"><option [ngValue]="0">General del predio</option>
+                    @for (c of e.cultivos; track c.id) { <option [ngValue]="c.id">{{c.cultivo}} · {{c.parcela}}</option> }
+                  </select></label>
+              }
+              @if (tipoNota === 'CRIANZA' || tipoNota === 'SANIDAD') {
+                <label class="admin-field">Crianza relacionada (opcional)
+                  <select class="admin-select" [(ngModel)]="notaCrianzaId"><option [ngValue]="0">General del predio</option>
+                    @for (c of e.crianzas; track c.id) { <option [ngValue]="c.id">{{c.especie}} · {{c.lote || 'General'}}</option> }
+                  </select></label>
+              }
+            </div>
+            <label class="admin-field">Hallazgo, acción o recomendación<textarea class="admin-textarea" rows="3" [(ngModel)]="nota" maxlength="2000"></textarea></label>
+            <button type="button" class="admin-primary-button" [disabled]="busy() || nota.trim().length<3" (click)="guardarNota()">Registrar actuación</button>
+          </details>
+        }
+        @case ('ficha') {
+          <h2>Información complementaria</h2>
+          <p>Los datos desconocidos pueden permanecer vacíos.</p>
+          <div class="e1-grid"><label class="admin-field">Área total (ha)
+            <input class="admin-input" type="number" step="0.0001" min="0" [(ngModel)]="fichaArea" /></label>
+            <label class="admin-field">Área cultivable (ha)
+              <input class="admin-input" type="number" step="0.0001" min="0" [(ngModel)]="fichaCultivable" /></label>
+            <label class="admin-field">Riego
+              <input class="admin-input" [(ngModel)]="fichaRiego" maxlength="30" placeholder="Si se conoce" /></label></div>
+          <div *appPermission="'PREDIOS_EDITAR'"><button type="button" class="admin-primary-button" [disabled]="busy()" (click)="completar()">Guardar versión de ficha</button></div>
+        }
+        @case ('evidencias') {
+          <app-evidence-panel [context]="{tipo:'PREDIO', id:e.predioId}" />
+        }
+      }
+    </section>
+  }
+</div>

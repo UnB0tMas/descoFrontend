@@ -1,0 +1,20 @@
+<section class="space-y-4 p-4 sm:p-6">
+  <header>
+    <h1 class="text-xl font-semibold">APAPPSS</h1>
+    <p class="text-sm text-gray-500">Gestión de socios, predios y operaciones autorizadas para esta UOT.</p>
+  </header>
+  @if (showSocios() || showPredios()) {
+    <nav class="flex flex-wrap gap-2 border-b pb-3" aria-label="Gestión de socios y predios">
+      @if (showSocios()) {
+        <button type="button" class="admin-secondary-button" [class.admin-primary-button]="current()==='socios'" (click)="select('socios')">Socios</button>
+      }
+      @if (showPredios()) {
+        <button type="button" class="admin-secondary-button" [class.admin-primary-button]="current()==='predios'" (click)="select('predios')">Predios</button>
+      }
+    </nav>
+    @if (current() === 'socios') { <app-productores-list-page [apappss]="true" /> }
+    @if (current() === 'predios') { <app-predios-list-page [apappss]="true" /> }
+  } @else {
+    <p class="text-sm text-gray-500">No tiene permisos para socios ni predios. Consulte las demás opciones APAPPSS habilitadas.</p>
+  }
+</section>

@@ -10,6 +10,7 @@ import { mapOpenApiError } from '../../../../../../../../infrastructure/openapi/
 import { POSVentasService } from '../../../../../../../../infrastructure/openapi/generated/api/pOSVentas.service';
 import { unwrapApiResponse } from '../../../../../../../../infrastructure/openapi/api-response-unwrapper';
 import { ResourceWarehouseResponse } from '../../../../../../../../infrastructure/openapi/generated/model/resourceWarehouseResponse';
+import { ResourceStockResponse } from '../../../../../../../../infrastructure/openapi/generated/model/resourceStockResponse';
 import { ToastService } from '../../../../../../../../shared/feedback/toast-center/toast.service';
 import { PageHeaderComponent } from '../../../../../../../../shared/layout/page-header/page-header';
 import { PaginatorComponent } from '../../../../../../../../shared/data-display/paginator/paginator';
@@ -38,6 +39,11 @@ export class ProgramacionProductosPage implements OnInit {
   readonly programs = signal<readonly TechnicalProductProgram[]>([]);
   readonly policies = signal<readonly ProductUotPolicy[]>([]);
   readonly warehouses = signal<readonly ResourceWarehouseResponse[]>([]);
+  readonly stock = signal<readonly ResourceStockResponse[]>([]);
+  readonly warehouseProducts = computed(() => {
+    const ids = new Set(this.stock().filter(s => s.almacenId === this.warehouseId() && s.estado !== false).map(s => s.productoId));
+    return this.policies().filter(p => ids.has(p.productoId));
+  });
   readonly employees = signal<readonly { id: number; name: string }[]>([]);
   readonly estado = signal('');
   readonly search = signal('');
@@ -113,12 +119,15 @@ export class ProgramacionProductosPage implements OnInit {
       programs: this.operations.listPrograms(uotId, this.estado() || undefined),
       policies: this.operations.listPolicies(uotId),
       warehouses: this.resources.listWarehouses(uotId),
+      stock: this.resources.listStock(uotId),
     }).pipe(finalize(() => this.loading.set(false))).subscribe({
-      next: ({ programs, policies, warehouses }) => {
+      next: ({ programs, policies, warehouses, stock }) => {
         if (this.uotId() !== uotId) return;
         this.programs.set(programs);
         this.page.set(Math.min(this.page(), Math.max(1, Math.ceil(this.filteredPrograms().length / this.pageSize()))));
         this.policies.set(policies.filter((p) => p.configurado && p.permiteUsoInterno));
+        this.stock.set(stock);
+        if (!this.warehouseProducts().some(p => p.productoId === this.productId())) this.productId.set(0);
         this.warehouses.set(warehouses.filter((w) => w.estado !== false
           && Number(w.uotPropietariaId) === uotId));
         if (!this.warehouses().some((w) => Number(w.almacenId) === this.warehouseId())) this.warehouseId.set(0);
@@ -142,6 +151,7 @@ export class ProgramacionProductosPage implements OnInit {
     const uotId = this.uotId();
     const quantity = Number(this.amount());
     if (!this.canCreate() || this.saving() || !uotId || !this.warehouseId() || !this.productId()
+      || !this.warehouseProducts().some(p => p.productoId === this.productId())
       || !this.employeeId() || !this.activity().trim() || !this.place().trim() || !this.start()
       || !Number.isFinite(quantity) || quantity <= 0 || Math.abs(quantity * 1000 - Math.round(quantity * 1000)) > 0.000001
       || this.activity().length > 250 || this.place().length > 300

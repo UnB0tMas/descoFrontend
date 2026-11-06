@@ -1,0 +1,56 @@
+/* Tarjeta institucional de listados. Reutilizable, sin dependencias de dominio. */
+app-record-card { display:block; min-width:0; height:100%; }
+.desco-record-grid {display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,285px),1fr));gap:1rem;align-items:stretch;min-width:0}
+.desco-record-card {display:flex;flex-direction:column;gap:.85rem;box-sizing:border-box;min-width:0;height:100%;padding:1.1rem;border:1px solid var(--desco-border,#334155);border-radius:1rem;background:var(--desco-surface,#fff);color:var(--desco-text,#0f172a);box-shadow:0 2px 10px color-mix(in srgb,var(--desco-text,#0f172a) 4%,transparent);transition:border-color .16s ease,box-shadow .16s ease,transform .16s ease}
+.desco-record-card:hover {border-color:color-mix(in srgb,var(--desco-primary,#3b82f6) 45%,var(--desco-border,#334155));box-shadow:0 7px 22px color-mix(in srgb,var(--desco-text,#0f172a) 8%,transparent);transform:translateY(-2px)}
+.desco-record-card:focus-within {border-color:var(--desco-primary,#3b82f6)}
+/* Ficha y código sin forzar una altura fija o truncar el nombre. */
+.desco-record-card > header,.desco-record-card > .gp-card-top {display:flex;justify-content:space-between;align-items:center;gap:.6rem;min-width:0;flex-wrap:wrap}
+.desco-record-card > header > strong {font-size:.94rem;font-weight:760;line-height:1.35;overflow-wrap:anywhere;min-width:0;flex:1 1 160px}
+.desco-record-card > header > span,.desco-record-card .gp-code {font-size:.7rem;letter-spacing:.03em;color:var(--desco-text-muted,#64748b);font-weight:700;overflow-wrap:anywhere}
+.desco-record-card .gp-card-icon {width:2.55rem;height:2.55rem;flex-shrink:0;border-radius:.8rem;background:color-mix(in srgb,var(--desco-primary,#3b82f6) 11%,transparent);color:var(--desco-primary,#3b82f6);display:grid;place-items:center}
+.desco-record-card > h2,.desco-record-card > h3 {font-size:1rem;line-height:1.35;font-weight:760;margin:0;overflow-wrap:anywhere;color:var(--desco-text,#0f172a)}
+.desco-record-card > .gp-meta {display:flex;flex-wrap:wrap;gap:.4rem .75rem;color:var(--desco-text-muted,#64748b);font-size:.77rem}
+.desco-record-card > .gp-meta span+span:before {content:none}
+.desco-record-card > .gp-subtle {font-size:.8rem;line-height:1.5;color:var(--desco-text-muted,#64748b);overflow-wrap:anywhere;margin:0}
+/* Filas de atributos de cualquier módulo. */
+.desco-record-card > dl,.desco-record-card > .technical-record-data {margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem .8rem;min-width:0}
+.desco-record-card dl > div {min-width:0}
+.desco-record-card dt {font-size:.68rem;font-weight:650;color:var(--desco-text-muted,#64748b);margin:0 0 .2rem}
+.desco-record-card dd {font-size:.8rem;font-weight:650;line-height:1.4;color:var(--desco-text,#0f172a);margin:0;overflow-wrap:anywhere}
+.desco-record-card .gp-record-heading {display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem;flex-wrap:wrap}
+.desco-record-card .gp-record-label {color:var(--desco-text-muted,#64748b);font-size:.73rem}
+.desco-record-card .gp-record-value {font-size:.96rem;line-height:1.35;overflow-wrap:anywhere}
+/* Todas las acciones quedan abajo; no se amontonan en la esquina. */
+.desco-record-card > footer,.desco-record-card > .gp-card-actions {display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin-top:auto;padding-top:.85rem;border-top:1px solid var(--desco-border,#334155);min-width:0}
+.desco-record-card > footer > .admin-row-actions,.desco-record-card > .gp-card-actions {display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;justify-content:flex-end;width:100%;margin-left:auto}
+.desco-record-card > footer a,.desco-record-card > footer button,.desco-record-card > .gp-card-actions a,.desco-record-card > .gp-card-actions button {min-height:2.2rem;max-width:100%;font-size:.75rem;white-space:normal;overflow-wrap:anywhere;display:inline-flex;align-items:center;justify-content:center;gap:.4rem}
+.desco-record-card > footer .admin-icon-button {min-width:2.35rem;padding:.45rem}
+.desco-record-card > .gp-card-actions > a:first-child {flex:1 1 115px}
+.desco-record-card > .gp-card-actions > button {flex:1 1 90px}
+.desco-record-card > .gp-card-actions > button:last-child {flex:0 1 auto}
+/* Listados principales: Detalles ocupa una fila y Editar/Eliminar quedan alineados. */
+.gp-cards--institutional .desco-record-card > .gp-card-actions,
+.gp-cards--activities .desco-record-card > .gp-card-actions {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem;width:100%}
+.gp-cards--institutional .desco-record-card > .gp-card-actions > a:first-child,
+.gp-cards--activities .desco-record-card > .gp-card-actions > a:first-child {grid-column:1/-1;width:100%}
+.gp-cards--institutional .desco-record-card > .gp-card-actions > button,
+.gp-cards--activities .desco-record-card > .gp-card-actions > button {width:100%;min-width:0;padding:.48rem .5rem;flex:auto}
+.gp-cards--activities .desco-record-card > .gp-card-actions:has(> :nth-child(4)) {grid-template-columns:repeat(3,minmax(0,1fr))}
+.desco-record-card > footer .admin-row-actions {margin-left:auto}
+/* Tarjetas de socios APAPPSS: estructura existente proyectada en la misma superficie. */
+.desco-record-card > .apappss-socio-card__header {display:flex;align-items:flex-start;gap:.65rem}
+.desco-record-card > .apappss-socio-card__data {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.65rem}
+.desco-record-card > .apappss-socio-card__footer {display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.6rem}
+.desco-record-card > .apappss-socio-card__footer .admin-row-actions {width:auto;flex:1;justify-content:flex-end}
+@media(max-width:600px){.desco-record-grid {grid-template-columns:minmax(0,1fr);gap:.75rem}.desco-record-card{padding:.95rem}.desco-record-card > .gp-card-actions > a:first-child{flex-basis:100%}.desco-record-card > .gp-card-actions > button{flex:1 1 90px}}
+@media(prefers-reduced-motion:reduce){.desco-record-card{transition:none}.desco-record-card:hover{transform:none}}
+
+/* POS: variaciones de densidad sobre la tarjeta institucional, sin afectar otros módulos. */
+.pos-product-grid app-record-card .desco-record-card { gap:.7rem; }
+.pos-product-grid app-record-card .desco-record-card > header { align-items:flex-start; }
+.pos-product-grid app-record-card .desco-record-card > header > strong { white-space:normal; }
+.pos-product-grid app-record-card .desco-record-card > footer { justify-content:flex-end; }
+.pos-product-grid app-record-card .desco-record-card > footer > button { flex:1 1 auto; min-width:0; padding:.55rem .7rem; }
+.pos-sales-grid app-record-card .desco-record-card > footer.pos-sales-card-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
+.pos-sales-grid app-record-card .desco-record-card > footer.pos-sales-card-actions > button { width:100%; min-width:0; white-space:normal; }

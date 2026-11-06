@@ -1,0 +1,90 @@
+<div class="person-data-fields" [formGroup]="form">
+  @if (showIdentity()) {
+  <h3 class="person-data-fields__heading person-data-fields__full">Identificación</h3>
+  <div class="admin-field">
+    <label [for]="idPrefix + '-document-type'">Tipo de documento</label>
+    <select class="admin-select" [id]="idPrefix + '-document-type'" formControlName="tipoDocumento"
+      [attr.aria-readonly]="documentLocked" (change)="documentTypeChanged.emit()">
+      @for (type of documentTypes; track type.value) { <option [value]="type.value">{{type.label}}</option> }
+    </select>
+  </div>
+  <div class="admin-field">
+    <label [for]="idPrefix + '-document'">Número de documento</label>
+    <input class="admin-input" [id]="idPrefix + '-document'" formControlName="numeroDocumento" type="text"
+      [attr.maxlength]="documentMaxLength" [attr.inputmode]="documentInputMode"
+      [readOnly]="documentLocked || disabled" (input)="documentChanged.emit()" autocomplete="off" />
+    @if (invalid('numeroDocumento')) { <small>Verifique el número de documento.</small> }
+  </div>
+  }
+  @if (showPersonal()) { <h3 class="person-data-fields__heading person-data-fields__full">Datos personales</h3> }
+  @if (show('names')) {
+  <div class="admin-field">
+    <label [for]="idPrefix + '-names'">Nombres</label>
+    <input class="admin-input" [id]="idPrefix + '-names'" formControlName="nombres" maxlength="100"
+      autocomplete="given-name" [readOnly]="locks.names || disabled" (input)="nameChanged.emit('nombres')" />
+    @if (invalid('nombres')) { <small>Ingrese los nombres.</small> }
+  </div>
+  }
+  @if (show('paternalSurname')) {
+  <div class="admin-field">
+    <label [for]="idPrefix + '-last-name'">Apellido paterno</label>
+    <input class="admin-input" [id]="idPrefix + '-last-name'" formControlName="apellidoPaterno" maxlength="80"
+      autocomplete="family-name" [readOnly]="locks.paternalSurname || disabled" (input)="nameChanged.emit('apellidoPaterno')" />
+    @if (invalid('apellidoPaterno')) { <small>Ingrese el apellido paterno.</small> }
+  </div>
+  }
+  @if (show('maternalSurname')) {
+  <div class="admin-field">
+    <label [for]="idPrefix + '-second-last-name'">Apellido materno</label>
+    <input class="admin-input" [id]="idPrefix + '-second-last-name'" formControlName="apellidoMaterno" maxlength="80"
+      autocomplete="additional-name" [readOnly]="locks.maternalSurname || disabled" (input)="nameChanged.emit('apellidoMaterno')" />
+    @if (invalid('apellidoMaterno')) { <small>Verifique el apellido materno.</small> }
+  </div>
+  }
+  @if (birthDateVisible && show('birthDate')) {
+  <div class="admin-field">
+    <label [for]="idPrefix + '-birth'">Fecha de nacimiento</label>
+    <input class="admin-input" [id]="idPrefix + '-birth'" formControlName="fechaNacimiento" type="date"
+      [attr.min]="minBirthDate || null" [attr.max]="maxBirthDate || null" [readOnly]="locks.birthDate || disabled" />
+    @if (invalid('fechaNacimiento')) { <small>Verifique la fecha de nacimiento.</small> }
+  </div>
+  }
+  @if (sex && !missingOnly) {
+    <div class="admin-field">
+      <label [for]="idPrefix + '-sex'">Sexo</label>
+      <input class="admin-input" [id]="idPrefix + '-sex'" type="text" [value]="sex" readonly />
+    </div>
+  }
+  @if (show('phone')) {
+  <div class="admin-field">
+    <label [for]="idPrefix + '-phone'">Teléfono</label>
+    <input class="admin-input" [id]="idPrefix + '-phone'" formControlName="telefono" type="tel" maxlength="30"
+      [readOnly]="locks.phone || disabled" (input)="phoneChanged.emit()" autocomplete="tel" inputmode="tel" />
+    @if (invalid('telefono')) { <small>Verifique el teléfono.</small> }
+  </div>
+  }
+  @if (show('email')) {
+  <div class="admin-field">
+    <label [for]="idPrefix + '-email'">Correo electrónico</label>
+    <input class="admin-input" [id]="idPrefix + '-email'" formControlName="correo" type="email" maxlength="180"
+      [readOnly]="locks.email || disabled" autocomplete="email" />
+    @if (invalid('correo')) { <small>Ingrese un correo válido.</small> }
+  </div>
+  }
+  @if (showLocation()) { <h3 class="person-data-fields__heading person-data-fields__full">Ubicación de la persona</h3> }
+  @if (showGeography()) {
+  <app-geography-cascade class="person-data-fields__full"
+    [districtCode]="districtCode" [populationCenterId]="populationCenterId"
+    [disabled]="disabled" [locationLocked]="locks.geography"
+    [populationCenterLocked]="locks.populationCenter" [populationCenterOnly]="missingOnly && locks.geography" (selectionChange)="geographyChanged.emit($event)" />
+  }
+  @if (invalid('distritoCodigo') && showGeography()) { <small class="person-data-fields__full">Seleccione un distrito.</small> }
+  @if (locationVisible && show('reference')) {
+  <div class="admin-field person-data-fields__full">
+    <label [for]="idPrefix + '-reference'">{{referenceLabel}}</label>
+    <input class="admin-input" [id]="idPrefix + '-reference'" formControlName="referencia" maxlength="300"
+      [readOnly]="locks.reference || disabled" autocomplete="street-address" />
+    @if (invalid('referencia')) { <small>Verifique la referencia.</small> }
+  </div>
+  }
+</div>

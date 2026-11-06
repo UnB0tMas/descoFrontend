@@ -1,5 +1,5 @@
 <dialog #dialog class="modal desco-modal" (cancel)="$event.preventDefault(); close()">
-  <div class="modal-box admin-modal-box admin-modal-box--wide predio-modal-box">
+  <div class="modal-box admin-modal-box admin-modal-box--wide predio-modal-box desco-fixed-form-modal">
     <header class="admin-modal-header">
       <div class="admin-modal-title-group">
         <span class="admin-modal-icon">
@@ -25,7 +25,8 @@
       <div class="admin-inline-error" role="alert">{{ error() }}</div>
     }
 
-    <form class="admin-form-grid predio-form-grid" [formGroup]="form" (ngSubmit)="save()">
+    <form class="desco-fixed-form-layout" [formGroup]="form" (ngSubmit)="save()">
+      <div class="desco-fixed-form-body admin-form-grid predio-form-grid">
       <div class="admin-field">
         <label for="propertyName">Nombre</label>
         <input
@@ -58,7 +59,7 @@
       </div>
 
       <div class="admin-field">
-        <label for="propertyReference">Referencia <span class="optional-label">*Opcional</span></label>
+        <label for="propertyReference">Referencia <span class="optional-label">(opcional)</span></label>
         <input
           id="propertyReference"
           class="admin-input"
@@ -70,7 +71,7 @@
       </div>
 
       <div class="admin-field">
-        <label for="propertyAltitude">Altitud (m) <span class="optional-label">*Opcional</span></label>
+        <label for="propertyAltitude">Altitud (m) <span class="optional-label">(opcional)</span></label>
         <input
           id="propertyAltitude"
           type="number"
@@ -146,7 +147,7 @@
       </div>
 
       <div class="admin-field">
-        <label for="propertyWaterSource">Fuente de agua <span class="optional-label">*Opcional</span></label>
+        <label for="propertyWaterSource">Fuente de agua <span class="optional-label">(opcional)</span></label>
         <input
           id="propertyWaterSource"
           class="admin-input"
@@ -157,7 +158,7 @@
       </div>
 
       <div class="admin-field admin-field-span-2">
-        <label for="propertyInfrastructure">Infraestructura <span class="optional-label">*Opcional</span></label>
+        <label for="propertyInfrastructure">Infraestructura <span class="optional-label">(opcional)</span></label>
         <textarea
           id="propertyInfrastructure"
           class="admin-textarea"
@@ -184,7 +185,7 @@
       </div>
 
       <div class="admin-field admin-field-span-2">
-        <label>Ubicación en mapa <span class="optional-label">*Opcional</span></label>
+        <label>Ubicación en mapa <span class="optional-label">(opcional)</span></label>
         <app-predio-map
           [latitude]="latitude()"
           [longitude]="longitude()"
@@ -196,70 +197,61 @@
 
       <div class="admin-field admin-field-span-2">
         <label>Titulares</label>
-        <div class="owner-editor">
-          <select class="admin-select" formControlName="ownerSocioId" aria-label="Socio titular">
-            <option [value]="0">Seleccionar socio</option>
-            @for (producer of producers(); track producer.id) {
-              <option [value]="producer.id">{{ producer.label }} · {{ producer.document }}</option>
-            }
-          </select>
-          <select class="admin-select" formControlName="ownerTipo" aria-label="Tipo de titularidad">
-            @for (type of ownershipTypes; track type) {
-              <option [value]="type">{{ type }}</option>
-            }
-          </select>
-          <input
-            type="number"
-            min="0.01"
-            max="100"
-            step="0.01"
-            class="admin-input"
-            formControlName="ownerPorcentaje"
-            aria-label="Porcentaje de titularidad"
-          />
-          <button
-            type="button"
-            class="admin-secondary-button"
-            [disabled]="referencesLoading()"
-            (click)="addOwner()"
-          >
-            @if (referencesLoading()) {
-              <span class="loading loading-spinner loading-xs"></span>
-            } @else {
-              <fa-icon [icon]="addIcon" />
-            }
-            Agregar
-          </button>
-        </div>
-
-        <div class="owner-list">
-          @for (owner of owners(); track owner.socioId; let index = $index) {
-            <article>
-              <div>
-                <strong>{{ producerLabel(owner.socioId) }}</strong>
-                <span>{{ owner.tipoTitularidad }} · {{ owner.porcentaje }}%</span>
-              </div>
-              <button
-                type="button"
-                class="admin-icon-button admin-icon-button--danger"
-                aria-label="Quitar titular"
-                (click)="removeOwner(index)"
-              >
-                <fa-icon [icon]="deleteIcon" />
+        <div class="predio-owner-editor">
+          @if (!ownerPerson()) {
+            <app-person-lookup idPrefix="predio-titular" [documentTypes]="documentTypes"
+              [documentType]="personDocumentType" [documentNumber]="personDocument"
+              [maxLength]="personMaxLength()" [inputMode]="personDocumentType==='DNI'?'numeric':'text'"
+              [canSearch]="canSearchPerson()" [searching]="personLoading()" [disabled]="saving()"
+              (documentTypeChange)="changePersonType($event)" (documentNumberChange)="changePersonNumber($event)"
+              (searchRequested)="searchPerson()" (manualRequested)="manualPerson()" />
+            @for (person of persons(); track person.personaId) {
+              <button type="button" class="predio-owner-result" (click)="selectPerson(person)">
+                <strong>{{person.nombreCompleto}}</strong><span>{{person.tipoDocumento}} · {{person.numeroDocumento}}</span>
               </button>
-            </article>
-          } @empty {
-            <p>Agrega al menos un titular.</p>
+            }
+          } @else {
+            <div class="predio-owner-selected">
+              <div><strong>{{ownerPerson()?.nombreCompleto}}</strong>
+                <span>{{ownerPerson()?.tipoDocumento}} · {{ownerPerson()?.numeroDocumento}}</span></div>
+              <button type="button" class="admin-secondary-button" (click)="ownerPerson.set(null)">Cambiar</button>
+            </div>
           }
+          <div class="predio-owner-fields">
+            <label class="admin-field">Tipo de titularidad
+              <select class="admin-select" formControlName="ownerTipo" [disabled]="referencesLoading()">
+                @for (type of ownershipTypes(); track type.code) {
+                  <option [value]="type.code">{{type.label}}</option>
+                }
+              </select>
+            </label>
+            <label class="admin-field">Participación (%)
+              <input type="number" min="0.01" max="100" step="0.01" class="admin-input"
+                formControlName="ownerPorcentaje" />
+            </label>
+            <button type="button" class="admin-secondary-button" [disabled]="referencesLoading() || personLoading() || !ownerPerson()"
+              (click)="addOwner()"><fa-icon [icon]="addIcon" /> Agregar titular</button>
+          </div>
         </div>
-
-        <div class="owner-total">
-          Total: <strong>{{ totalOwnership() | number:'1.0-2' }}%</strong>
+        <div class="owner-list">
+          @for (owner of owners(); track owner.personaId; let index = $index) {
+            <article>
+              <div><strong>{{personLabel(owner.personaId)}}</strong>
+                <span>{{index===0?'Principal':'Adicional'}} · {{owner.tipoTitularidad}}</span></div>
+              <label class="predio-owner-percentage">Participación (%)
+                <input type="number" class="admin-input" min="0.01" max="100" step="0.01"
+                  [value]="owner.porcentaje" [disabled]="saving()" (change)="updateOwnerPercentage(index,$any($event.target).value)" />
+              </label>
+              <button type="button" class="admin-icon-button admin-icon-button--danger" aria-label="Quitar titular"
+                [disabled]="saving()" (click)="removeOwner(index)"><fa-icon [icon]="deleteIcon" /></button>
+            </article>
+          } @empty { <p>No hay titulares agregados.</p> }
         </div>
+        <div class="owner-total">Total: <strong>{{totalOwnership() | number:'1.0-2'}}%</strong></div>
       </div>
 
       <div class="admin-field admin-field-span-2">
-        <label for="propertyObservation">Observación <span class="optional-label">*Opcional</span></label>
+        <label for="propertyObservation">Observación <span class="optional-label">(opcional)</span></label>
         <textarea
           id="propertyObservation"
           class="admin-textarea"
@@ -270,7 +262,8 @@
         <app-form-error [control]="form.controls.observacion" fieldLabel="La observación" />
       </div>
 
-      <footer class="admin-modal-actions admin-field-span-2">
+      </div>
+      <footer class="admin-modal-actions desco-fixed-form-footer">
         <button
           type="button"
           class="admin-secondary-button"
@@ -292,3 +285,4 @@
     </form>
   </div>
 </dialog>
+<app-person-registration-modal [findPerson]="findPersonForModal" [savePerson]="savePersonForModal" />

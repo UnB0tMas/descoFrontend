@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { EMPTY, expand, map, reduce, throwError } from 'rxjs';
 
 import { IdempotencyKeyService } from '../../../core/http/services/idempotency-key.service';
+import { ResourceWarehouseProductManageRequest } from '../../../infrastructure/openapi/generated/model/resourceWarehouseProductManageRequest';
 import { RecursosService } from '../../../infrastructure/openapi/generated/api/recursos.service';
 import { PageResponseResourceAssetListItemResponse } from '../../../infrastructure/openapi/generated/model/pageResponseResourceAssetListItemResponse';
 import { PageResponseResourceProductListItemResponse } from '../../../infrastructure/openapi/generated/model/pageResponseResourceProductListItemResponse';
@@ -31,6 +32,8 @@ import { unwrapApiResponse } from '../../../infrastructure/openapi/api-response-
 import { PageResult } from '../../../shared/models/page-result.model';
 
 export type ResourceCodeKind = 'BIEN' | 'PRODUCTO' | 'ALMACEN' | 'SUMINISTRO';
+
+export type WarehouseProductOperation = 'EDITAR' | 'DESACTIVAR' | 'REACTIVAR' | 'RETIRAR';
 
 export interface ResourceAssetListQuery {
   uotId?: number;
@@ -73,6 +76,12 @@ export interface ResourceProductPriceHistory {
 
 @Injectable({ providedIn: 'root' })
 export class ResourceApiService {
+  manageWarehouseProduct(id:number,productoId:number,body:ResourceWarehouseProductManageRequest){
+    return this.idempotency.idempotent(`recursos:almacen:producto:gestion:${id}:${productoId}`,body,key=>
+      this.api.recursosAlmacenesGestionarProducto({id,productoId,xIdempotencyKey:key,resourceWarehouseProductManageRequest:body},'body',false,{transferCache:false})
+        .pipe(map(response=>unwrapApiResponse(response))));
+  }
+
   private readonly api = inject(RecursosService);
   private readonly idempotency = inject(IdempotencyKeyService);
 

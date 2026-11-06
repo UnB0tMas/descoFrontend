@@ -1,0 +1,41 @@
+{
+  "proyecto": "D:\\FrancoSystem\\desco_frontend",
+  "fecha": "2026-10-28T21:46:35",
+  "cambios": [
+    {
+      "ruta": "src/app/features/convenios/plantas/domain/planta-paltera.model.ts",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/convenios/plantas/application/port/plantas-e3.gateway.ts",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/convenios/plantas/application/use-case/plantas-e3.use-case.ts",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/convenios/plantas/adapter/out/http/plantas-e3-http.adapter.ts",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/convenios/plantas/adapter/in/ui/plantas-e3.ts",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/convenios/plantas/adapter/in/ui/plantas-e3.html",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/convenios/plantas/adapter/in/ui/plantas-e3.css",
+      "accion": "escribir",
+      "existia": true
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+<div class="desco-page e2-create">
+ <app-page-header title="Nueva salida" eyebrow="Gestión técnica · Salidas operativas" [icon]="icon">
+   <a pageActions class="admin-secondary-button" routerLink="/gestion-tecnica/salidas/operativas" [queryParams]="convenioId?{convenioId}:undefined"><fa-icon [icon]="backIcon" /> Volver</a>
+ </app-page-header>
+ <section class="admin-surface mt-4 e2-create-panel">
+   <div class="admin-section-header"><h2>Datos de la salida</h2></div>
+   <form class="admin-form-grid" (ngSubmit)="create()">
+     <div class="admin-field admin-field-span-2"><label for="e2name">Nombre</label><input id="e2name" class="admin-input" name="nombre" [(ngModel)]="nombre" maxlength="180" required /></div>
+     <div class="admin-field"><label for="e2motivo">Motivo</label><select id="e2motivo" class="admin-select" name="motivo" [(ngModel)]="motivoId" required>
+       <option [ngValue]="0">Seleccione</option>@for(m of catalogos().motivos;track m.id){<option [ngValue]="m.id">{{m.nombre}}</option>}</select></div>
+     <div class="admin-field"><label for="e2inicio">Inicio previsto</label><input id="e2inicio" type="datetime-local" class="admin-input" name="inicio" [(ngModel)]="inicio" required /></div>
+     <div class="admin-field"><label for="e2fin">Fin previsto</label><input id="e2fin" type="datetime-local" class="admin-input" name="fin" [(ngModel)]="fin" /></div>
+     <div class="admin-field admin-field-span-2"><label for="e2desc">Descripción</label><textarea id="e2desc" class="admin-textarea" name="desc" [(ngModel)]="descripcion" maxlength="400" rows="3"></textarea></div>
+     <div class="admin-field-span-2 e2-create-actions"><button type="submit" class="admin-primary-button" [disabled]="loading()||saving()||!nombre.trim()||!motivoId">{{saving()?'Guardando…':'Crear salida'}}</button></div>
+   </form>
+ </section>
+</div>

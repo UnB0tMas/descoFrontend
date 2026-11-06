@@ -1,4 +1,4 @@
-<dialog #dialog class="modal desco-modal" (cancel)="$event.preventDefault(); close()">
+<dialog appDialogBackdrop #dialog class="modal desco-modal" (cancel)="$event.preventDefault(); close()">
   <div class="modal-box admin-modal-box admin-modal-box--wide">
     <header class="admin-modal-header">
       <div class="admin-modal-title-group">
@@ -23,8 +23,8 @@
         </div>
         <div class="admin-field">
           <label>Código</label>
-          <input class="admin-input" formControlName="codigo" maxlength="50" autocomplete="off" />
-          @if (mode() === 'create') { <small>{{ codeLoading() ? 'Generando código sugerido...' : 'DESCO propone un código; puede modificarlo antes de guardar.' }}</small> }
+          <input class="admin-input" formControlName="codigo" maxlength="50" autocomplete="off" [readonly]="mode() === 'edit'" />
+          @if (mode() === 'create') { <small>{{ codeLoading() ? 'Generando código sugerido...' : 'DESCO sugiere un código; puedes editarlo o dejarlo vacío para generar uno al guardar.' }}</small> }
           <app-form-error [control]="productForm.controls.codigo" fieldLabel="El código" [messages]="{ blank: 'El código no puede contener solo espacios.' }" />
         </div>
         <div class="admin-field admin-field-span-2">
@@ -53,8 +53,7 @@
           <textarea class="admin-textarea" rows="3" maxlength="700" formControlName="descripcion"></textarea>
         </div>
 
-        @if (mode() === 'edit') {
-          <div class="product-form-section admin-field-span-2"><span>Trazabilidad de inventario</span></div>
+        <div class="product-form-section admin-field-span-2"><span>Trazabilidad de inventario</span></div>
           <label class="product-switch-card">
             <input type="checkbox" class="toggle toggle-primary toggle-sm" formControlName="requiereLote" />
             <span><strong>Control por lote</strong><small>Solicita el lote en entradas y movimientos para poder rastrear partidas del producto.</small></span>
@@ -64,7 +63,6 @@
             <span><strong>Control de vencimiento</strong><small>Solicita fecha de vencimiento y evita registrar fechas ya vencidas.</small></span>
           </label>
           <div class="admin-info-note admin-field-span-2">La unidad y las reglas de trazabilidad no podrán cambiarse si el producto ya mantiene stock actual o reservado en algún almacén.</div>
-        }
 
         <div class="product-form-section admin-field-span-2"><span>Uso permitido</span></div>
         <label class="product-switch-card admin-field-span-2">
@@ -78,7 +76,7 @@
     } @else if (mode() === 'price') {
       <form class="admin-form-grid" [formGroup]="priceForm" (ngSubmit)="save()">
         <div class="admin-field admin-field-span-2 product-current"><span>Producto</span><strong>{{ current()?.nombre }}</strong><small>{{ current()?.codigo }}</small></div>
-        <div class="admin-field admin-field-span-2"><label>Precio de venta de esta UOT</label><input class="admin-input" type="number" min="0.01" step="0.01" formControlName="precioVenta" /><app-form-error [control]="priceForm.controls.precioVenta" fieldLabel="El precio de venta" /></div>
+        <div class="admin-field admin-field-span-2"><label>Precio de venta de esta UOT</label><input class="admin-input" type="number" min="0.0001" step="0.0001" formControlName="precioVenta" /><app-form-error [control]="priceForm.controls.precioVenta" fieldLabel="El precio de venta" /></div>
         <div class="admin-field admin-field-span-2"><label>Moneda</label><select class="admin-select" formControlName="moneda" [disabled]="referencesLoading()">@for (currency of currencies(); track currency.code) { <option [value]="currency.code">{{ currency.code }} · {{ currency.label }}</option> }</select></div>
         <ng-container *ngTemplateOutlet="actions"></ng-container>
       </form>

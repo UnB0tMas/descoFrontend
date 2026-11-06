@@ -37,6 +37,7 @@ export class GeographyCascadeComponent implements OnInit, OnChanges {
   @Input() disabled = false;
   @Input() locationLocked = false;
   @Input() populationCenterLocked = false;
+  @Input() populationCenterOnly = false;
 
   @Output() readonly selectionChange =
     new EventEmitter<GeographySelection>();

@@ -1,0 +1,86 @@
+{
+  "proyecto": "D:\\FrancoSystem\\desco_frontend",
+  "fecha": "2026-10-27T23:48:15",
+  "cambios": [
+    {
+      "ruta": "src/app/features/gestion-tecnica/predios/expediente/domain/expediente-e1.model.ts",
+      "accion": "escribir",
+      "existia": false
+    },
+    {
+      "ruta": "src/app/features/gestion-tecnica/predios/expediente/application/expediente-e1.gateway.ts",
+      "accion": "escribir",
+      "existia": false
+    },
+    {
+      "ruta": "src/app/features/gestion-tecnica/predios/expediente/application/expediente-e1.use-case.ts",
+      "accion": "escribir",
+      "existia": false
+    },
+    {
+      "ruta": "src/app/features/gestion-tecnica/predios/expediente/adapter/expediente-e1-http.adapter.ts",
+      "accion": "escribir",
+      "existia": false
+    },
+    {
+      "ruta": "src/app/features/gestion-tecnica/predios/expediente/expediente-e1.providers.ts",
+      "accion": "escribir",
+      "existia": false
+    },
+    {
+      "ruta": "src/app/features/gestion-tecnica/predios/expediente/pages/alta-rapida.ts",
+      "accion": "escribir",
+      "existia": false
+    },
+    {
+      "ruta": "src/app/features/gestion-tecnica/predios/expediente/pages/alta-rapida.html",
+      "accion": "escribir",
+      "existia": false
+    },
+    {
+      "ruta": "src/app/features/gestion-tecnica/predios/expediente/pages/expediente.ts",
+      "accion": "escribir",
+      "existia": false
+    },
+    {
+      "ruta": "src/app/features/gestion-tecnica/predios/expediente/pages/expediente.html",
+      "accion": "escribir",
+      "existia": false
+    },
+    {
+      "ruta": "src/app/features/gestion-tecnica/predios/expediente/pages/expediente-e1.css",
+      "accion": "escribir",
+      "existia": false
+    },
+    {
+      "ruta": "src/app/features/gestion-tecnica/predios/predios.routes.ts",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/gestion-tecnica/predios/adapter/in/ui/pages/predios-list/predios-list.ts",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/gestion-tecnica/predios/adapter/in/ui/pages/predios-list/predios-list.html",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/gestion-tecnica/predios/adapter/in/ui/pages/predio-detail/predio-detail.html",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/convenios/adapter/in/ui/pages/apappss-workspace/apappss-workspace.ts",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/convenios/adapter/in/ui/pages/apappss-workspace/apappss-workspace.html",
+      "accion": "escribir",
+      "existia": true
+    }
+  ]
+}

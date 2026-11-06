@@ -20,8 +20,6 @@ export enum ResourceAssetStateChangeRequestEstadoEnum {
     Averiado = 'AVERIADO',
     Inactivo = 'INACTIVO',
     Baja = 'BAJA',
-    NoDisponible = 'NO_DISPONIBLE'
+    NoDisponible = 'NO_DISPONIBLE',
+    PendientePlaca = 'PENDIENTE_PLACA'
 };
-
-
-

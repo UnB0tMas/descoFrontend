@@ -1,3 +1,5 @@
+import { DialogBackdropDirective } from '../../../../../../../../shared/feedback/dialog-lifecycle/dialog-backdrop.directive';
+import { decimalPrecisionValidator } from '../../../../../../../../shared/forms/validators/desco-input.validators';
 import { DatePipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
@@ -54,7 +56,7 @@ export type RecursoProgramadoFormMode =
 @Component({
   selector: 'app-recurso-programado-form',
   standalone: true,
-  imports: [DatePipe, ReactiveFormsModule, FaIconComponent, FormErrorComponent],
+  imports: [DialogBackdropDirective, DatePipe, ReactiveFormsModule, FaIconComponent, FormErrorComponent],
   templateUrl: './recurso-programado-form.html',
   styleUrl: './recurso-programado-form.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -105,22 +107,22 @@ export class RecursoProgramadoFormComponent {
     destinoId: [0, [Validators.required, Validators.min(1)]],
     recursoTipo: ['BIEN' as TipoRecursoProgramable, [Validators.required]],
     recursoId: [0, [Validators.required, Validators.min(1)]],
-    cantidadProgramada: [1, [Validators.required, Validators.min(0.001)]],
+    cantidadProgramada: [1, [Validators.required, Validators.min(0.001), decimalPrecisionValidator(11, 3)]],
     observacion: ['', [Validators.maxLength(300)]],
   });
 
   readonly editForm = this.fb.nonNullable.group({
-    cantidadProgramada: [1, [Validators.required, Validators.min(0.001)]],
+    cantidadProgramada: [1, [Validators.required, Validators.min(0.001), decimalPrecisionValidator(11, 3)]],
     observacion: ['', [Validators.maxLength(300)]],
   });
 
   readonly returnForm = this.fb.nonNullable.group({
-    cantidadDevuelta: [1, [Validators.required, Validators.min(0.001)]],
+    cantidadDevuelta: [1, [Validators.required, Validators.min(0.001), decimalPrecisionValidator(11, 3)]],
     observacion: ['', [Validators.maxLength(300)]],
   });
 
   readonly consumeForm = this.fb.nonNullable.group({
-    cantidadConsumida: [0, [Validators.min(0.001)]],
+    cantidadConsumida: [0, [Validators.min(0.001), decimalPrecisionValidator(11, 3)]],
     observacion: ['', [Validators.maxLength(300)]],
   });
 

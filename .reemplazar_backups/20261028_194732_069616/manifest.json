@@ -1,0 +1,81 @@
+{
+  "proyecto": "D:\\FrancoSystem\\desco_frontend",
+  "fecha": "2026-10-28T19:47:32",
+  "cambios": [
+    {
+      "ruta": "src/app/features/gestion-tecnica/salidas/e2/domain/salida-operativa.model.ts",
+      "accion": "escribir",
+      "existia": false
+    },
+    {
+      "ruta": "src/app/features/gestion-tecnica/salidas/e2/application/port/salidas-e2.gateway.ts",
+      "accion": "escribir",
+      "existia": false
+    },
+    {
+      "ruta": "src/app/features/gestion-tecnica/salidas/e2/application/use-case/salidas-e2.use-case.ts",
+      "accion": "escribir",
+      "existia": false
+    },
+    {
+      "ruta": "src/app/features/gestion-tecnica/salidas/e2/adapter/out/http/salidas-e2-http.adapter.ts",
+      "accion": "escribir",
+      "existia": false
+    },
+    {
+      "ruta": "src/app/features/gestion-tecnica/salidas/e2/salidas-e2.providers.ts",
+      "accion": "escribir",
+      "existia": false
+    },
+    {
+      "ruta": "src/app/features/gestion-tecnica/salidas/e2/adapter/in/ui/pages/operativas-list/operativas-list.ts",
+      "accion": "escribir",
+      "existia": false
+    },
+    {
+      "ruta": "src/app/features/gestion-tecnica/salidas/e2/adapter/in/ui/pages/operativas-list/operativas-list.html",
+      "accion": "escribir",
+      "existia": false
+    },
+    {
+      "ruta": "src/app/features/gestion-tecnica/salidas/e2/adapter/in/ui/pages/operativas-list/operativas-list.css",
+      "accion": "escribir",
+      "existia": false
+    },
+    {
+      "ruta": "src/app/features/gestion-tecnica/salidas/e2/adapter/in/ui/pages/operativa-detail/operativa-detail.ts",
+      "accion": "escribir",
+      "existia": false
+    },
+    {
+      "ruta": "src/app/features/gestion-tecnica/salidas/e2/adapter/in/ui/pages/operativa-detail/operativa-detail.html",
+      "accion": "escribir",
+      "existia": false
+    },
+    {
+      "ruta": "src/app/features/gestion-tecnica/salidas/e2/adapter/in/ui/pages/operativa-detail/operativa-detail.css",
+      "accion": "escribir",
+      "existia": false
+    },
+    {
+      "ruta": "src/app/features/gestion-tecnica/salidas/salidas.routes.ts",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/gestion-tecnica/salidas/adapter/in/ui/pages/salidas-list/salidas-list.html",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/convenios/adapter/in/ui/pages/apappss-workspace/apappss-workspace.ts",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/convenios/adapter/in/ui/pages/apappss-workspace/apappss-workspace.html",
+      "accion": "escribir",
+      "existia": true
+    }
+  ]
+}

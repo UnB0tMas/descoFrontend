@@ -33,6 +33,7 @@ const SPECIAL_ENTRIES: readonly FrontendEntry[] = [
   { id: -7103, code: 'OPERATIVOS', label: 'Operativos', route: '/gestion-comercial/operativos', icon: 'truck', order: 30, permission: 'OPERATIVOS_LISTAR', group: 'COMERCIAL' },
   { id: -7104, code: 'ENTREGAS', label: 'Acopio y entregas', route: '/gestion-comercial/entregas', icon: 'boxes', order: 40, permission: 'ENTREGAS_LISTAR', group: 'COMERCIAL' },
   { id: -7105, code: 'JABAS', label: 'Jabas', route: '/gestion-comercial/jabas', icon: 'box', order: 50, permission: 'JABAS_LISTAR', group: 'COMERCIAL' },
+  { id: -7113, code: 'ACOPIO_APAPPSS_E4', label: 'Acopio por jaba', route: '/gestion-comercial/acopio-rapido', icon: 'scale', order: 55, permission: 'JABAS_LISTAR', group: 'COMERCIAL' },
   { id: -7106, code: 'PRECIOS', label: 'Precios', route: '/gestion-comercial/precios', icon: 'coins', order: 60, permission: 'PRECIOS_LISTAR', group: 'COMERCIAL' },
   { id: -7107, code: 'INCIDENCIAS', label: 'Incidencias', route: '/gestion-comercial/incidencias', icon: 'triangle-exclamation', order: 70, permission: 'INCIDENCIAS_LISTAR', group: 'COMERCIAL' },
   { id: -7108, code: 'AJUSTES', label: 'Ajustes de precios', route: '/gestion-comercial/ajustes', icon: 'scale-balanced', order: 80, permission: 'AJUSTES_LISTAR', group: 'COMERCIAL' },
@@ -74,6 +75,7 @@ const ROUTES: Readonly<Record<string, string>> = {
   OPERATIVOS: '/gestion-comercial/operativos',
   ENTREGAS: '/gestion-comercial/entregas',
   JABAS: '/gestion-comercial/jabas',
+  ACOPIO_APAPPSS_E4: '/gestion-comercial/acopio-rapido',
   PRECIOS: '/gestion-comercial/precios',
   POS: '/pos',
   VENTAS: '/pos',
@@ -118,7 +120,7 @@ export class NavigationService {
       .filter((node) => !isSpecial(node.code))
       .map((node) => ({ ...node, children: strip(node.children) }))
       .filter((node) => node.route !== null || node.children.length > 0);
-    const ordinary = strip(all);
+    const ordinary = this.groupProductiveNavigation(strip(all));
     // Convenios son funciones opcionales; nunca se muestran solo por el rol.
     if (this.uot.isSpecific() && this.convenios.has('COMERCIALIZACION_ASOCIATIVA')) {
       const granted = SPECIAL_ENTRIES.filter((entry) =>
@@ -147,6 +149,26 @@ export class NavigationService {
     }
     return ordinary.sort((a, b) => a.order - b.order || a.label.localeCompare(b.label));
   });
+
+  /** The standard production records share one entry; convention-specific menus remain untouched. */
+  private groupProductiveNavigation(nodes: readonly NavigationItem[]): NavigationItem[] {
+    const codes = new Set(['PREDIOS', 'CULTIVOS', 'PARCELAS_CULTIVOS', 'CENSOS', 'SANIDAD', 'EVALUACIONES']);
+    const visit = (items: readonly NavigationItem[]): NavigationItem[] => items.map((item) => {
+      const children = visit(item.children);
+      const isTechnical = ['GRP_TECNICA', 'GESTION_TECNICA'].includes(item.code.trim().toUpperCase());
+      if (!isTechnical) return { ...item, children };
+      const production = children.filter(child => codes.has(child.code.trim().toUpperCase()));
+      if (production.length === 0) return { ...item, children };
+      const remaining = children.filter(child => !codes.has(child.code.trim().toUpperCase()));
+      remaining.push({
+        id: -7201, code: 'GESTION_PRODUCTIVA', label: 'Gestión productiva',
+        route: '/gestion-tecnica/gestion-productiva', icon: 'seedling',
+        order: Math.min(...production.map(child => child.order)), children: [],
+      });
+      return { ...item, children: remaining.sort((a, b) => a.order - b.order || a.label.localeCompare(b.label)) };
+    });
+    return visit(nodes);
+  }
 
   private buildTree(modules: readonly AccessModule[]): readonly NavigationItem[] {
     const moduleById = new Map(modules.map((module) => [module.moduloId, module] as const));

@@ -1,0 +1,16 @@
+{
+  "proyecto": "D:\\FrancoSystem\\desco_frontend",
+  "fecha": "2026-10-28T19:54:05",
+  "cambios": [
+    {
+      "ruta": "src/app/features/gestion-tecnica/salidas/e2/adapter/in/ui/pages/operativa-detail/operativa-detail.ts",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/gestion-tecnica/salidas/e2/adapter/in/ui/pages/operativa-detail/operativa-detail.html",
+      "accion": "escribir",
+      "existia": true
+    }
+  ]
+}

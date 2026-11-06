@@ -1,3 +1,4 @@
+import { DialogBackdropDirective } from '../dialog-lifecycle/dialog-backdrop.directive';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -28,7 +29,7 @@ import {
 @Component({
   selector: 'app-action-confirm-dialog',
   standalone: true,
-  imports: [FormsModule, FaIconComponent],
+  imports: [DialogBackdropDirective, FormsModule, FaIconComponent],
   templateUrl: './action-confirm-dialog.html',
   styleUrl: './action-confirm-dialog.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

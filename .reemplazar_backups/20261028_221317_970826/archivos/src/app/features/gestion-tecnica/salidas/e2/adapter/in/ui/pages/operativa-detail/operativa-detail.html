@@ -1,0 +1,156 @@
+<div class="desco-page">
+  <app-page-header title="Expediente de salida" eyebrow="Etapa 2" [icon]="icon"
+    subtitle="Autorización, recorridos, préstamo y validación física.">
+    <div pageActions class="flex gap-2"><a class="admin-secondary-button" routerLink="/gestion-tecnica/salidas/operativas"
+      [queryParams]="convenioId?{convenioId}:undefined">Volver a salidas</a>
+      <button type="button" class="admin-secondary-button" (click)="load()">Actualizar</button></div>
+  </app-page-header>
+  @if(loading()){<app-loading-state title="Consultando salida" message="Cargando el expediente autorizado."/>}
+  @else if(error()){<app-error-state [message]="error()||'No disponible'" (retry)="load()"/>}
+  @else if(detail();as d){
+    <section class="admin-detail-grid mt-4">
+      <article class="admin-detail-card"><span>Nombre</span><strong>{{d.nombre}}</strong></article>
+      <article class="admin-detail-card"><span>Estado</span><strong>{{d.estado}}</strong></article>
+      <article class="admin-detail-card"><span>Inicio previsto</span><strong>{{d.fechaInicioPrevista|date:'dd/MM/yyyy HH:mm'}}</strong></article>
+      <article class="admin-detail-card"><span>Fin previsto</span><strong>{{d.fechaFinPrevista?(d.fechaFinPrevista|date:'dd/MM/yyyy HH:mm'):'Pendiente'}}</strong></article>
+    </section>
+    @if(d.estado==='SOLICITADA'){
+    <section *appPermission="'SALIDAS_CONFIRMAR'" class="admin-surface mt-4">
+      <div class="admin-section-header"><div><p>Bandeja del superior</p><h2>Decidir solicitud</h2></div></div>
+      <div class="e2-grid"><div class="admin-field"><label>Decisión</label>
+        <select class="admin-select" [(ngModel)]="decision"><option value="APROBADA">Aprobar</option>
+        <option value="OBSERVADA">Solicitar corrección</option><option value="RECHAZADA">Rechazar</option></select></div>
+        @if(decision!=='APROBADA'){<div class="admin-field"><label>Motivo obligatorio</label>
+         <textarea class="admin-textarea" [(ngModel)]="motivoDecision" maxlength="1200"></textarea></div>}
+      </div>
+      <button class="admin-primary-button mt-3" type="button" [disabled]="saving()" (click)="decidir()">Registrar decisión</button>
+    </section>}
+    @if(d.estado==='OBSERVADA'){
+      <section *appPermission="'SALIDAS_EDITAR'" class="admin-surface mt-4">
+        <div class="admin-section-header"><div><p>Solicitante</p><h2>Corregir y reenviar</h2></div></div>
+        <div class="admin-field"><label>Nombre</label><input class="admin-input" [(ngModel)]="nombreCorreccion" maxlength="180"/></div>
+        <div class="admin-field"><label>Propósito</label><textarea class="admin-textarea" [(ngModel)]="descripcionCorreccion" maxlength="400"></textarea></div>
+        <button class="admin-primary-button mt-3" type="button" [disabled]="saving()" (click)="corregir()">Reenviar solicitud</button>
+      </section>
+    }
+    @if(['SOLICITADA','OBSERVADA','RECHAZADA'].includes(d.estado)){
+      <section *appPermission="'SALIDAS_RETIRAR'" class="admin-surface mt-4">
+        <div class="admin-section-header"><div><p>Solicitud</p><h2>Cancelación con motivo</h2></div></div>
+        <div class="admin-field"><label>Motivo</label><input class="admin-input" [(ngModel)]="motivoCancelar" maxlength="1200"/></div>
+        <button type="button" class="admin-danger-button mt-3" [disabled]="saving()" (click)="cancelar()">Cancelar solicitud</button>
+      </section>
+    }
+    <div class="e2-grid mt-4">
+      <section class="admin-surface"><div class="admin-section-header"><div><p>Plan</p><h2>Destinos</h2></div></div>
+        @for(l of d.destinos;track l.destinoId){<p class="e2-line">{{l.orden}} ·
+          {{l.predioId?'Predio #'+l.predioId:l.referencia}}</p>}
+      </section>
+      <section class="admin-surface"><div class="admin-section-header"><div><p>Logística</p><h2>Bienes solicitados</h2></div></div>
+        @for(b of d.bienes;track b.solicitudRecursoId){<p class="e2-line"><strong>{{b.nombre}}</strong>
+          · {{b.estado}} @if(b.resultadoValidado){· {{b.resultadoValidado}}}</p>}
+        @empty{<p class="admin-empty-copy">Sin bienes físicos solicitados.</p>}
+      </section>
+    </div>
+    @if(['APROBADA','EN_EJECUCION'].includes(d.estado) && hasPendingDestinations(d)){
+      <section *appPermission="'SALIDAS_EDITAR'" class="admin-surface mt-4">
+        <div class="admin-section-header"><div><p>Destino encontrado en campo</p><h2>Vincular predio sin repetir la solicitud</h2></div></div>
+        <div class="e2-grid"><div class="admin-field"><label>Destino pendiente</label>
+          <select class="admin-select" [(ngModel)]="destinoVincular"><option [ngValue]="0">Seleccione</option>
+            @for(l of d.destinos;track l.destinoId){@if(!l.predioId){<option [ngValue]="l.destinoId">{{l.referencia}}</option>}}
+          </select></div><div class="admin-field"><label>Buscar predio</label>
+          <div class="flex gap-2"><input class="admin-input" [(ngModel)]="buscarPredio"/>
+             <button type="button" class="admin-secondary-button" (click)="buscarPredios()">Buscar</button></div></div>
+          <div class="admin-field"><label>Predio registrado</label>
+            <select class="admin-select" [(ngModel)]="predioVincular"><option [ngValue]="0">Seleccione</option>
+              @for(p of candidatos();track p.predioId){<option [ngValue]="p.predioId">{{p.nombre}}</option>}
+            </select></div></div>
+        <button type="button" class="admin-primary-button mt-3" [disabled]="saving()" (click)="vincular()">Vincular destino</button>
+        <p class="admin-empty-copy">Si aún no existe, regístrelo desde el módulo Predios.</p>
+      </section>
+    }
+    @if(d.estado==='APROBADA'){
+      <section class="admin-surface mt-4"><div class="admin-section-header"><div><p>Almacén y campo</p><h2>Entrega e inicio</h2></div></div>
+        <div class="flex gap-2 flex-wrap"><button *appPermission="'RECURSOS_CREAR'" class="admin-secondary-button"
+          type="button" [disabled]="saving()" (click)="entregar()">Confirmar entrega física</button>
+        <button *appPermission="'SALIDAS_EDITAR'" class="admin-primary-button" type="button"
+          [disabled]="saving()" (click)="iniciar()">Iniciar salida</button></div>
+        <p class="admin-empty-copy">Se impide iniciar mientras existan bienes solicitados aún no entregados.</p>
+      </section>
+    }
+    @if(d.estado==='EN_EJECUCION'){
+      <section *appPermission="'VISITAS_EDITAR'" class="admin-surface mt-4">
+        <div class="admin-section-header"><div><p>Trabajo de campo</p><h2>Registrar visita</h2></div></div>
+        <div class="e2-grid"><div class="admin-field"><label>Destino con predio</label>
+          <select class="admin-select" [(ngModel)]="destinoId"><option [ngValue]="0">Seleccione</option>
+            @for(l of d.destinos;track l.destinoId){@if(l.predioId){<option [ngValue]="l.destinoId">Predio #{{l.predioId}}</option>}}
+          </select></div><div class="admin-field"><label>Tipo de visita</label>
+          <select class="admin-select" [(ngModel)]="tipoVisitaId"><option [ngValue]="0">Seleccione</option>
+            @for(t of catalogos().tiposVisita;track t.id){<option [ngValue]="t.id">{{t.nombre}}</option>}
+          </select></div><div class="admin-field"><label>Objetivo (opcional)</label>
+          <input class="admin-input" [(ngModel)]="objetivo" maxlength="250"/></div></div>
+        <button class="admin-primary-button mt-3" type="button" [disabled]="saving()" (click)="visitar()">Iniciar visita</button>
+        <p class="admin-empty-copy">Si el lugar no tenía predio, créelo desde Predios antes de iniciar una visita.</p>
+      </section>
+    }
+    <section class="admin-surface mt-4">
+      <div class="admin-section-header"><div><p>Actuaciones</p><h2>Visitas registradas</h2></div></div>
+      @for(v of d.visitas;track v.visitaId){<article class="e2-line">
+         <strong>Visita #{{v.visitaId}} · {{v.tipoVisita}}</strong> — {{v.estado}}
+         <span> · Predio #{{v.predioId}}</span>
+         @if(v.resumen){<p>{{v.resumen}}</p>}
+         <a [routerLink]="['/gestion-tecnica/visitas',v.visitaId]">Ver detalle y fotos</a>
+         @if(convenioId && v.predioId){<a class="admin-secondary-button" [routerLink]="['/convenios/apappss/plantas',v.predioId]"
+         [queryParams]="{convenioId:convenioId,visitaId:v.visitaId}">Plantas de esta visita</a>}
+      </article>}
+      @empty{<app-empty-state title="Sin visitas" message="Las actuaciones aparecerán cuando se inicie una visita."/>}
+      @if(d.estado==='EN_EJECUCION'){
+        <div *appPermission="'VISITAS_CONFIRMAR'" class="e2-grid mt-3">
+          <div class="admin-field"><label>Visita por finalizar</label><select class="admin-select" [(ngModel)]="visitaFinalizar">
+            <option [ngValue]="0">Seleccione</option>
+            @for(v of d.visitas;track v.visitaId){@if(v.estado==='INICIADA'){<option [ngValue]="v.visitaId">Visita #{{v.visitaId}}</option>}}
+          </select></div><div class="admin-field"><label>Qué se hizo</label>
+            <textarea class="admin-textarea" [(ngModel)]="resumen" maxlength="600"></textarea></div>
+          <div class="flex items-end"><button class="admin-primary-button" type="button" [disabled]="saving()"
+            (click)="finalizarVisita()">Finalizar visita</button></div></div>}
+    </section>
+    @if(d.estado==='EN_EJECUCION'){
+      <section *appPermission="'SALIDAS_EDITAR'" class="admin-surface mt-4">
+        <div class="admin-section-header"><div><p>Retorno</p><h2>Una observación general para todos los bienes</h2></div></div>
+        <div class="admin-field"><label>Descripción del retorno</label>
+          <textarea class="admin-textarea" [(ngModel)]="observacionGeneral" maxlength="1500"></textarea></div>
+        @for(b of d.bienes;track b.solicitudRecursoId){
+          <div class="e2-line"><strong>{{b.nombre}}</strong><select class="admin-select e2-select"
+            [ngModel]="resultadoDeclarado()[b.solicitudRecursoId]" (ngModelChange)="changeDeclarado(b.solicitudRecursoId,$event)">
+            <option value="CONFORME">Conforme</option><option value="DANADO">Dañado</option><option value="FALTANTE">No devuelto</option>
+          </select></div>}
+        <button type="button" class="admin-primary-button mt-3" [disabled]="saving()" (click)="retornar()">Presentar retorno</button>
+      </section>
+    }
+    @if(d.estado==='EN_RETORNO'){
+      <section *appPermission="'SALIDAS_CONFIRMAR'" class="admin-surface mt-4">
+        <div class="admin-section-header"><div><p>Inspección</p><h2>Validar bienes físicamente</h2></div></div>
+        @if(d.observacionRetorno){<p class="e2-line">Declaración general: {{d.observacionRetorno}}</p>}
+        @for(b of d.bienes;track b.solicitudRecursoId){@if(b.estado==='ENTREGADO'){
+          <div class="e2-line"><strong>{{b.nombre}}</strong> · Declarado: {{b.resultadoDeclarado}}
+            <select class="admin-select e2-select" [ngModel]="resultadoInspeccion()[b.solicitudRecursoId]"
+              (ngModelChange)="changeInspeccion(b.solicitudRecursoId,$event)">
+              <option value="CONFORME">Conforme</option><option value="DANADO">Dañado</option><option value="FALTANTE">Faltante</option>
+            </select></div>}}
+        <div class="admin-field mt-3"><label>Observación de la inspección (opcional)</label>
+          <textarea class="admin-textarea" [(ngModel)]="observacionInspeccion" maxlength="1200"></textarea></div>
+        <div class="flex flex-wrap gap-2 mt-3"><button type="button" class="admin-primary-button" [disabled]="saving()"
+           (click)="inspeccionar()">Registrar visto bueno</button>
+          <button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="cerrar()">Cerrar salida inspeccionada</button></div>
+      </section>
+    }
+    <section class="admin-surface mt-4"><div class="admin-section-header"><div><p>Seguimiento</p><h2>Historial cronológico</h2></div></div>
+      @for(h of d.historial;track h.eventoId){<article class="e2-line">
+        <strong>{{h.tipo}}</strong> · {{h.fechaHora|date:'dd/MM/yyyy HH:mm'}} · Usuario #{{h.usuarioId}}
+        @if(h.detalle){<p>{{h.detalle}}</p>}
+      </article>}
+    </section>
+    <section class="mt-4"><app-evidence-panel title="Documentos y fotografías de la salida y del retorno"
+       [context]="{tipo:'SALIDA',id:d.salidaId}"/></section>
+  }
+</div>
+<app-action-confirm-dialog />

@@ -50,10 +50,10 @@ export class RecursoDetailPage implements OnInit {
       finalize(()=>this.loading.set(false)),
     ).subscribe({next:({detail,summary,vehicle})=>{if(!detail?.bien){this.errorMessage.set('No se encontró el bien solicitado.');return;}this.detail.set(detail);this.summary.set(summary);this.vehicle.set(vehicle);},error:(error)=>this.errorMessage.set(mapOpenApiError(error).message)});
   }
-  async edit():Promise<void>{const item=this.detail()?.bien;if(!item)return;const result=await this.form.openEdit(item);if(result.saved)this.load();}
+  async edit():Promise<void>{const item=this.detail()?.bien;if(!item)return;const result=await this.form.openEdit(item,this.vehicle());if(result.saved)this.load();}
   async changeState():Promise<void>{const item=this.detail()?.bien;if(!item)return;const result=await this.form.openState(item);if(result.saved)this.load();}
   async reportIncident():Promise<void>{const item=this.detail()?.bien;if(!item)return;const result=await this.form.openIncident(item);if(result.saved)this.load();}
-  async registerVehicle():Promise<void>{const item=this.detail()?.bien;if(!item||!this.isVehicleAsset())return;const result=await this.form.openVehicle(item);if(result.saved)this.load();}
+  async registerVehicle():Promise<void>{const item=this.detail()?.bien;if(!item||!this.isVehicleAsset())return;const result=await this.form.openVehicle(item,this.vehicle());if(result.saved)this.load();}
   async updateMileage():Promise<void>{const item=this.detail()?.bien,vehicle=this.vehicle();if(!item||!vehicle)return;const result=await this.form.openMileage(item,vehicle);if(result.saved)this.load();}
   canUploadImages():boolean{return this.permissions.has('INVENTARIO_EDITAR')&&this.permissions.has('ARCHIVOS_CREAR');}
   fileIds():readonly number[]{return this.detail()?.archivosImagen??[];}

@@ -1,0 +1,86 @@
+<dialog #dialog class="modal desco-modal gp-modal apappss-dialog" aria-labelledby="apappssPredioTitle"
+  (cancel)="$event.preventDefault(); close()">
+  <div class="modal-box admin-modal-box admin-modal-box--wide gp-dialog-box apappss-dialog-box">
+    <header class="admin-modal-header">
+      <div class="admin-modal-title-group">
+        <span class="admin-modal-icon"><fa-icon [icon]="icon" /></span>
+        <div>
+          <p>Convenios · APAPPSS</p>
+          <h2 id="apappssPredioTitle">Registrar predio del socio</h2>
+        </div>
+      </div>
+      <button type="button" class="admin-icon-button" aria-label="Cerrar" [disabled]="guardando()"
+        (click)="close()"><fa-icon [icon]="closeIcon" /></button>
+    </header>
+
+    <div class="gp-modal-section apappss-alta-content">
+      @if (loading()) {
+        <p class="gp-inline-note" role="status">Consultando datos del socio...</p>
+      }
+      @if (error()) {
+        <div class="admin-inline-error" role="alert">{{ error() }}</div>
+      }
+      @if (socio(); as s) {
+        <div class="apappss-socio-summary">
+          <span>Socio responsable</span>
+          <strong>{{ s.nombres }} {{ s.apellidoPaterno }} {{ s.apellidoMaterno || '' }}</strong>
+          <small>Documento: {{ s.numeroDocumento }}</small>
+        </div>
+        <form id="apappss-predio-form" class="apappss-alta-form" (ngSubmit)="guardar()">
+          <div class="apappss-alta-heading">
+            <h3>Información del fundo</h3>
+            <p>El predio queda vinculado automáticamente al socio y al convenio.</p>
+          </div>
+          <div class="apappss-alta-grid">
+            <label class="admin-field">
+              <span>Nombre del predio</span>
+              <input class="admin-input" name="nombre" [(ngModel)]="nombre" maxlength="150"
+                autocomplete="off" required />
+            </label>
+            <label class="admin-field">
+              <span>Superficie total (hectáreas)</span>
+              <input class="admin-input" name="superficieHa" type="number" inputmode="decimal"
+                min="0.0001" max="999999.9999" step="0.0001" [(ngModel)]="superficieHa" required />
+              <small class="apappss-field-help">
+                @if (superficieHa !== null) { Equivale a {{ superficieHa * 10000 | number:'1.0-0' }} m² }
+                @else { Indique la superficie en hectáreas (ha). }
+              </small>
+            </label>
+          </div>
+
+          <div class="apappss-alta-heading">
+            <h3>Ubicación geográfica</h3>
+            <p>Seleccione el departamento, la provincia y el distrito del predio.</p>
+          </div>
+          <app-geography-cascade (selectionChange)="ubicacion($event)" />
+
+          <label class="admin-field apappss-full-width">
+            <span>Referencia de acceso <small>(opcional)</small></span>
+            <input class="admin-input" name="referencia" [(ngModel)]="referencia" maxlength="300"
+              placeholder="Sector, vía o referencia para llegar al predio" />
+          </label>
+
+          <div class="apappss-alta-heading">
+            <h3>Ubicación GPS</h3>
+            <p>El mapa solicita la ubicación actual al abrirse. Puede arrastrar el marcador o elegir otro punto para precisar el predio.</p>
+          </div>
+          <div class="apappss-map-wrapper">
+            <app-predio-map [latitude]="latitud" [longitude]="longitud" [editable]="true"
+              [autoLocateOnCreate]="true" height="18rem" (locationChange)="punto($event)" />
+          </div>
+          @if (!loading() && !guardando() && motivoInvalido(); as motivo) {
+            <p class="apappss-validacion" role="status">{{ motivo }}</p>
+          }
+        </form>
+      }
+    </div>
+
+    <footer class="gp-modal-footer admin-modal-actions apappss-alta-footer">
+      <button type="button" class="admin-secondary-button" [disabled]="guardando()" (click)="close()">Cancelar</button>
+      <button type="submit" form="apappss-predio-form" class="admin-primary-button"
+        [disabled]="loading() || guardando() || !formularioValido()">
+        {{ guardando() ? 'Guardando...' : 'Registrar predio' }}
+      </button>
+    </footer>
+  </div>
+</dialog>

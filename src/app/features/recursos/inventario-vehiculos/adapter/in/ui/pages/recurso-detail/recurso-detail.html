@@ -129,7 +129,7 @@
             <p>Identificación</p>
             <h2>{{ item.nombre || 'Bien sin nombre' }}</h2>
           </div>
-          <span class="resource-state">{{ item.estadoBien || '—' }}</span>
+          <span class="resource-state">{{ item.estadoBien === 'PENDIENTE_PLACA' ? 'Pendiente de placa' : (item.estadoBien || '—') }}</span>
         </header>
 
         <dl class="resource-data-grid">
@@ -173,11 +173,12 @@
 
           @if (vehicle(); as v) {
             <div class="resource-vehicle-grid">
-              <div><span>Placa</span><strong>{{ v.placa }}</strong></div>
+              <div><span>Placa</span><strong>{{ v.placa || 'Pendiente de registro' }}</strong></div>
               <div><span>Tipo</span><strong>{{ v.tipoVehiculo }}</strong></div>
+              <div><span>Color</span><strong>{{ v.color || 'Sin registrar' }}</strong></div>
               <div>
                 <span>Kilometraje</span>
-                <strong>{{ v.kilometrajeKm | number:'1.0-1' }} km</strong>
+                <strong>{{ v.kilometrajeKm == null ? 'Sin registrar' : ((v.kilometrajeKm | number:'1.0-1') + ' km') }}</strong>
               </div>
             </div>
           } @else {

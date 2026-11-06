@@ -1,3 +1,4 @@
+import { DialogBackdropDirective } from '../../../../../../../shared/feedback/dialog-lifecycle/dialog-backdrop.directive';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -43,7 +44,7 @@ import {
 @Component({
   selector: 'app-uot-deactivation-form',
   standalone: true,
-  imports: [ReactiveFormsModule, FaIconComponent, FormErrorComponent],
+  imports: [DialogBackdropDirective, ReactiveFormsModule, FaIconComponent, FormErrorComponent],
   templateUrl: './uot-deactivation-form.html',
   styleUrl: './uot-deactivation-form.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -1,1 +1,48 @@
-import {Routes} from '@angular/router';import {moduleAccessGuard} from '../../../core/access/module-access.guard';import {permissionGuard} from '../../../core/access/permission.guard';export const salidasRoutes:Routes=[{path:'salidas',data:{breadcrumb:'Salidas de campo',module:'SALIDAS',permission:'SALIDAS_LISTAR'},canActivate:[moduleAccessGuard,permissionGuard],loadComponent:()=>import('./adapter/in/ui/pages/salidas-list/salidas-list').then(m=>m.SalidasListPage)},{path:'salidas/:id',data:{breadcrumb:'Detalle de salida',module:'SALIDAS',permission:'SALIDAS_VER'},canActivate:[moduleAccessGuard,permissionGuard],loadComponent:()=>import('./adapter/in/ui/pages/salida-detail/salida-detail').then(m=>m.SalidaDetailPage)}];
+import { Routes } from '@angular/router';
+import { moduleAccessGuard } from '../../../core/access/module-access.guard';
+import { permissionGuard } from '../../../core/access/permission.guard';
+
+export const salidasRoutes: Routes = [
+  {
+    path: 'salidas',
+    data: {breadcrumb: 'Salidas de campo', module: 'SALIDAS', permission: 'SALIDAS_LISTAR'},
+    canActivate: [moduleAccessGuard, permissionGuard],
+    loadComponent: () => import('./e2/adapter/in/ui/pages/operativas-list/operativas-list')
+      .then(m => m.OperativasListPage),
+  },
+  {
+    path: 'salidas/historico',
+    data: {breadcrumb: 'Histórico de salidas', module: 'SALIDAS', permission: 'SALIDAS_LISTAR'},
+    canActivate: [moduleAccessGuard, permissionGuard],
+    loadComponent: () => import('./adapter/in/ui/pages/salidas-list/salidas-list')
+      .then(m => m.SalidasListPage),
+  },
+  {
+    path: 'salidas/operativas',
+    data: {breadcrumb: 'Salidas operativas', module: 'SALIDAS', permission: 'SALIDAS_LISTAR'},
+    canActivate: [moduleAccessGuard, permissionGuard],
+    loadComponent: () => import('./e2/adapter/in/ui/pages/operativas-list/operativas-list')
+      .then(m => m.OperativasListPage),
+  },
+  {
+    path: 'salidas/operativas/nueva',
+    data: {breadcrumb: 'Nueva salida', module: 'SALIDAS', permission: 'SALIDAS_CREAR'},
+    canActivate: [moduleAccessGuard, permissionGuard],
+    loadComponent: () => import('./e2/adapter/in/ui/pages/operativa-create/operativa-create')
+      .then(m => m.OperativaCreatePage),
+  },
+  {
+    path: 'salidas/operativas/:id',
+    data: {breadcrumb: 'Expediente de salida', module: 'SALIDAS', permission: 'SALIDAS_VER'},
+    canActivate: [moduleAccessGuard, permissionGuard],
+    loadComponent: () => import('./e2/adapter/in/ui/pages/operativa-detail/operativa-detail')
+      .then(m => m.OperativaDetailPage),
+  },
+  {
+    path: 'salidas/:id',
+    data: {breadcrumb: 'Detalle de salida histórica', module: 'SALIDAS', permission: 'SALIDAS_VER'},
+    canActivate: [moduleAccessGuard, permissionGuard],
+    loadComponent: () => import('./adapter/in/ui/pages/salida-detail/salida-detail')
+      .then(m => m.SalidaDetailPage),
+  },
+];

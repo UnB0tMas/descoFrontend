@@ -1,0 +1,28 @@
+<div class="desco-page gp-page apappss-detail">
+ <app-page-header [title]="nombre()" subtitle="Datos del socio, asociación y predios vinculados al convenio." eyebrow="Convenios · APAPPSS" [icon]="icon">
+  <div pageActions class="flex flex-wrap gap-2">
+   <a class="admin-secondary-button" routerLink="/convenios/apappss" [queryParams]="{convenioId:convenioId,seccion:'socios'}"><fa-icon [icon]="backIcon"/> Socios</a>
+   <button type="button" class="admin-secondary-button" [disabled]="loading()" (click)="cargar()"><fa-icon [icon]="refreshIcon"/> Actualizar</button>
+   @if (puedeCrear()) {<button type="button" class="admin-primary-button" (click)="crearPredio()"><fa-icon [icon]="plusIcon"/> Nuevo predio</button>}
+  </div>
+ </app-page-header>
+ @if(loading()){<app-loading-state title="Cargando socio" message="Consultando predios del convenio."/>}
+ @else if(error()){<app-error-state [message]="error()||'No se pudo consultar el socio.'" (retry)="cargar()"/>}
+ @else if(socio();as s){
+  <div class="admin-detail-grid">
+   <article class="admin-detail-card"><span>Documento</span><strong>{{s.tipoDocumento}} {{s.numeroDocumento}}</strong></article>
+   <article class="admin-detail-card"><span>Código de socio</span><strong>{{s.codigoSocio||'Sin código'}}</strong></article>
+   <article class="admin-detail-card"><span>Asociación</span><strong>{{s.asociacionNombre||'No registrada'}}</strong></article>
+   <article class="admin-detail-card"><span>Situación</span><strong>{{s.situacionMembresia||'Sin especificar'}}</strong></article>
+  </div>
+  <section class="admin-surface apappss-detail-section">
+    <div class="gp-section-title"><div><h2>Predios del socio</h2><p>Un socio puede tener varios predios dentro del convenio.</p></div></div>
+    <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Predio</th><th>Titularidad</th><th>Desde</th><th class="text-right">Acciones</th></tr></thead><tbody>
+     @for(p of predios();track p.predioId){<tr><td><div class="admin-stack-copy"><strong>{{p.nombre}}</strong><span>{{p.codigo}}</span></div></td><td>{{p.tipoTitularidad||'—'}}</td><td>{{p.fechaDesde?(p.fechaDesde|date:'dd/MM/yyyy'):'—'}}</td><td class="text-right"><a class="admin-secondary-button" [routerLink]="['/convenios/apappss/predios',p.predioId]" [queryParams]="{convenioId:convenioId,socioId:socioId}">Detalles</a></td></tr>}
+     @empty{<tr><td colspan="4" class="admin-table-empty">El socio aún no tiene predios vinculados a este convenio.</td></tr>}
+    </tbody></table></div>
+
+  </section>
+ }
+ <app-apappss-predio-alta/>
+</div>

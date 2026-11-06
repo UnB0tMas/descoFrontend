@@ -21,5 +21,5 @@ export interface ResourceWarehouseProductConfigureRequest {
     fechaVencimiento?: string;
     archivoSustentoId?: number;
     observacion?: string;
+    monedaVenta?: string;
 }
-

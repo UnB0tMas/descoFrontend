@@ -28,6 +28,7 @@ import { PaginatorComponent } from '../../../../../../../../shared/data-display/
 import { ActionConfirmDialogComponent } from '../../../../../../../../shared/feedback/action-confirm-dialog/action-confirm-dialog';
 import { ToastService } from '../../../../../../../../shared/feedback/toast-center/toast.service';
 import { PageHeaderComponent } from '../../../../../../../../shared/layout/page-header/page-header';
+import { CatalogosProductivos, PRODUCTIVE_CATALOG_TABS, ProductiveCatalogType } from '../../../../../catalogos-productivos';
 import { loadAllAdminPages } from '../../../../../../shared/admin-reference.util';
 import { PageResult } from '../../../../../../../../shared/models/page-result.model';
 import { DeshabilitarItemCatalogoUseCase } from '../../../../../application/use-case/deshabilitar-item-catalogo.use-case';
@@ -55,6 +56,7 @@ type CatalogStatusView = 'ACTIVE' | 'INACTIVE';
     ActionConfirmDialogComponent,
     PageHeaderComponent,
     CatalogoDetailComponent,
+    CatalogosProductivos,
   ],
   templateUrl: './catalogos-list.html',
   styleUrl: './catalogos-list.css',
@@ -66,6 +68,9 @@ export class CatalogosListPage implements OnInit {
 
   @ViewChild(ActionConfirmDialogComponent)
   private confirmDialog!: ActionConfirmDialogComponent;
+
+  @ViewChild(CatalogosProductivos)
+  productivos?: CatalogosProductivos;
 
   private readonly route = inject(ActivatedRoute);
   private readonly listUseCase = inject(ListarCatalogosUseCase);
@@ -85,6 +90,9 @@ export class CatalogosListPage implements OnInit {
   readonly emptyMessage =
     this.readRouteText('emptyMessage') ?? 'No hay valores registrados en este catálogo.';
 
+  readonly productivosVisible = signal(false);
+  readonly productiveType = signal<ProductiveCatalogType>('CULTIVO');
+  readonly productiveTabs = PRODUCTIVE_CATALOG_TABS;
   readonly loading = signal(true);
   readonly disablingId = signal<number | null>(null);
   readonly errorMessage = signal<string | null>(null);
@@ -93,6 +101,7 @@ export class CatalogosListPage implements OnInit {
   );
   readonly allItems = signal<readonly CatalogoItem[]>([]);
   readonly statusView = signal<CatalogStatusView>('ACTIVE');
+  readonly search = signal('');
   readonly currentPage = signal(1);
   readonly pageSize = signal(20);
 
@@ -125,11 +134,20 @@ export class CatalogosListPage implements OnInit {
     () => this.allItems().filter((item) => !item.estado).length,
   );
 
-  readonly filteredItems = computed<readonly CatalogoItem[]>(() =>
-    this.allItems().filter((item) =>
-      this.statusView() === 'ACTIVE' ? item.estado : !item.estado,
-    ),
-  );
+  readonly filteredItems = computed<readonly CatalogoItem[]>(() => {
+    const text = this.search().trim().toLocaleLowerCase('es');
+    return this.allItems().filter((item) => {
+      if (this.statusView() === 'ACTIVE' ? !item.estado : item.estado) {
+        return false;
+      }
+      if (!text) {
+        return true;
+      }
+      return [item.nombre, item.codigo, item.descripcion ?? ''].some((value) =>
+        value.toLocaleLowerCase('es').includes(text),
+      );
+    });
+  });
 
   readonly result = computed<PageResult<CatalogoItem>>(() => {
     const items = this.filteredItems();
@@ -155,7 +173,8 @@ export class CatalogosListPage implements OnInit {
   });
 
   ngOnInit(): void {
-    this.load();
+    this.productivosVisible.set(this.route.snapshot.queryParamMap.get('seccion') === 'productivos');
+    if (!this.productivosVisible()) this.load();
   }
 
   load(): void {
@@ -182,6 +201,23 @@ export class CatalogosListPage implements OnInit {
       });
   }
 
+  goCatalogRoot(): void {
+    if (this.productivosVisible()) this.changeGroup(this.catalogGroups[0].codigo);
+    else if (this.catalogGroups[0].catalogos[0]) this.changeCatalog(this.catalogGroups[0].catalogos[0].codigo);
+  }
+
+  refresh(): void {
+    if (this.productivosVisible()) {
+      this.productivos?.load();
+    } else {
+      this.load();
+    }
+  }
+
+  changeProductiveType(type: ProductiveCatalogType): void {
+    this.productiveType.set(type);
+  }
+
   changeCatalog(value: string): void {
     if (this.fixedCatalogCode) {
       return;
@@ -192,13 +228,27 @@ export class CatalogosListPage implements OnInit {
       return;
     }
 
+    this.productivosVisible.set(false);
     this.catalogCode.set(next);
     this.statusView.set('ACTIVE');
+    this.search.set('');
     this.currentPage.set(1);
     this.load();
   }
 
   changeGroup(groupCode: string): void {
+    if (groupCode === 'PRODUCTIVOS') {
+      this.search.set('');
+      this.currentPage.set(1);
+      this.productivosVisible.set(true);
+      return;
+    }
+    const wasProductivos = this.productivosVisible();
+    if (wasProductivos) {
+      this.productivosVisible.set(false);
+      this.search.set('');
+      this.currentPage.set(1);
+    }
     if (this.fixedCatalogCode) {
       return;
     }
@@ -206,10 +256,11 @@ export class CatalogosListPage implements OnInit {
     const group = this.catalogGroups.find((item) => item.codigo === groupCode);
     const firstCatalog = group?.catalogos[0];
 
-    if (!firstCatalog || group?.codigo === this.selectedGroup().codigo) {
+    if (!firstCatalog || (!wasProductivos && group?.codigo === this.selectedGroup().codigo)) {
       return;
     }
 
+    if (wasProductivos && firstCatalog.codigo === this.catalogCode()) { this.load(); return; }
     this.changeCatalog(firstCatalog.codigo);
   }
 
@@ -219,6 +270,11 @@ export class CatalogosListPage implements OnInit {
     }
 
     this.statusView.set(view);
+    this.currentPage.set(1);
+  }
+
+  setSearch(value: string): void {
+    this.search.set(value);
     this.currentPage.set(1);
   }
 
@@ -232,6 +288,10 @@ export class CatalogosListPage implements OnInit {
   }
 
   async create(): Promise<void> {
+    if (this.productivosVisible()) {
+      this.productivos?.create();
+      return;
+    }
     const result = await this.detailModal.open(this.selectedCatalog());
 
     if (result.saved) {

@@ -1,0 +1,19 @@
+<div class="desco-image-upload" [class.is-disabled]="disabled" (dragover)="$event.preventDefault()" (drop)="drop($event)">
+ @if(previews().length){
+  <div class="desco-image-upload__gallery">
+   @for(p of previews(); track p.url;let i=$index){
+    <div class="desco-image-upload__item">
+     <img [src]="p.url" [alt]="'Imagen '+(i+1)" />
+     <button type="button" [disabled]="disabled" (click)="remove(i)" [attr.aria-label]="'Quitar imagen '+(i+1)"><fa-icon [icon]="trashIcon" /></button>
+    </div>
+   }
+  </div>
+ }@else{
+  <div class="desco-image-upload__empty"><fa-icon [icon]="imageIcon" size="lg" /><strong>Fotografías</strong><span>JPG · PNG · WebP</span></div>
+ }
+ <label class="desco-image-upload__select" [class.is-disabled]="disabled">
+  <fa-icon [icon]="uploadIcon" /> {{previews().length?'Añadir fotografías':'Seleccionar fotografías'}}
+  <input type="file" accept="image/jpeg,image/png,image/webp" [multiple]="multiple" [disabled]="disabled" (change)="choose(fileInput)" #fileInput />
+ </label>
+</div>
+@if(error()){<p class="desco-image-upload__error" role="alert">{{error()}}</p>}

@@ -1,0 +1,74 @@
+<div class="desco-page gp-page gp-predios-page">
+  <app-page-header title="Predios y fundos" eyebrow="Gestión técnica · Gestión productiva"
+    [icon]="pageIcon">
+    <div pageActions class="flex flex-wrap gap-2">
+      <button type="button" class="admin-secondary-button" [disabled]="loading()" (click)="load()"><fa-icon [icon]="refreshIcon" /> Actualizar</button>
+      <button *appPermission="'PREDIOS_CREAR'" type="button" class="admin-primary-button" [disabled]="requiereUot()" (click)="create()"><fa-icon [icon]="addIcon" /> Nuevo predio / fundo</button>
+    </div>
+  </app-page-header>
+
+  @if (requiereUot()) {
+    <p class="gp-inline-note">Vista general de consulta. <a routerLink="/seleccionar-uot">Selecciona una UOT</a> para crear o editar registros.</p>
+  }
+  <section class="admin-surface mt-5" aria-label="Listado de predios">
+    <div class="admin-toolbar gp-filter-toolbar gp-predios-toolbar">
+      <div class="admin-field gp-search">
+        <label for="gpBuscarPredio">Nombre o código</label>
+        <input id="gpBuscarPredio" class="admin-input" type="search" [(ngModel)]="buscar" (keyup.enter)="applySearch()" placeholder="Buscar predios" autocomplete="off" />
+      </div>
+      <div class="admin-field gp-status-filter">
+        <label for="gpActivosPredio">Estado</label>
+        <select id="gpActivosPredio" class="admin-select" [ngModel]="soloActivos" (ngModelChange)="changeActive($event)">
+          <option [ngValue]="true">Solo activos</option><option [ngValue]="false">Todos los predios</option>
+        </select>
+      </div>
+      <button class="admin-secondary-button gp-search-button" type="button" (click)="applySearch()" [disabled]="loading()"><fa-icon [icon]="searchIcon" /> Buscar</button>
+      <div class="gp-view-toggle" role="group" aria-label="Presentación de predios">
+        <button type="button" [class.active]="vista()==='tabla'" [attr.aria-pressed]="vista()==='tabla'" (click)="changeView('tabla')"><fa-icon [icon]="tableIcon" /> Tabla</button>
+        <button type="button" [class.active]="vista()==='tarjetas'" [attr.aria-pressed]="vista()==='tarjetas'" (click)="changeView('tarjetas')"><fa-icon [icon]="cardsIcon" /> Tarjetas</button>
+      </div>
+    </div>
+
+    @if (loading()) { <app-loading-state title="Cargando predios" message="Cargando registros." /> }
+    @else if (error()) { <app-error-state [message]="error() || 'No se pudo consultar el listado.'" (retry)="load()" /> }
+    @else if (!hasRows()) {
+      <app-empty-state title="No hay predios para mostrar" message="Modifica los filtros o registra un nuevo predio." actionLabel="Limpiar filtros" (action)="clear()" />
+    } @else {
+      @if (vista() === 'tabla') {
+        <ng-template #predioCell let-p><div class="admin-stack-copy"><strong>{{p.nombre}}</strong><span>{{p.codigo}}</span></div></ng-template>
+        <ng-template #estadoCell let-p><span class="admin-status" [class.admin-status--active]="p.estado" [class.admin-status--inactive]="!p.estado">{{p.estado ? 'Activo' : 'Retirado'}}</span></ng-template>
+        <ng-template #accionesCell let-p>
+          <div class="admin-row-actions gp-activity-actions">
+            <a *appPermission="'CULTIVOS_LISTAR'" class="admin-icon-button" [routerLink]="['/gestion-tecnica/gestion-productiva/predios',p.predioId,'parcelas']" title="Detalles del predio" [attr.aria-label]="'Ver parcelas de ' + p.nombre"><fa-icon [icon]="viewIcon" /></a>
+            <button *appPermission="'PREDIOS_EDITAR'" type="button" class="admin-icon-button" title="Editar predio" [attr.aria-label]="'Editar ' + p.nombre" [disabled]="!p.estado || editingId() !== null || requiereUot()" (click)="edit(p)"><fa-icon [icon]="editIcon" /></button>
+            <button *appPermission="'PREDIOS_RETIRAR'" type="button" class="admin-icon-button admin-icon-button--danger" title="Eliminar predio" [attr.aria-label]="'Eliminar '+p.nombre" [disabled]="!p.estado||editingId()!==null||requiereUot()" (click)="eliminar(p)"><fa-icon [icon]="deleteIcon" /></button>
+          </div>
+        </ng-template>
+        <app-data-table appearance="admin" [columns]="columns" [rows]="result().items" trackByKey="predioId"
+          [cellTemplates]="{ nombre: predioCell, estado: estadoCell, acciones: accionesCell }" />
+      } @else {
+        <div class="desco-record-grid gp-cards gp-cards--institutional">
+          @for (p of result().items; track p.predioId) {
+            <app-record-card>
+              <div class="gp-card-top"><span class="gp-code">{{p.codigo}}</span><span class="admin-status" [class.admin-status--active]="p.estado" [class.admin-status--inactive]="!p.estado">{{p.estado ? 'Activo' : 'Retirado'}}</span></div>
+              <div class="gp-card-icon"><fa-icon [icon]="pageIcon" /></div>
+              <h2>{{p.nombre}}</h2>
+              <div class="gp-meta"><span>{{p.distritoCodigo}}</span><span>{{p.areaTotalHa > 0 ? (p.areaTotalHa | number:'1.2-2') + ' ha' : 'Área no indicada'}}</span></div>
+              <p class="gp-subtle">{{p.titulares || 'Sin titular indicado'}}</p>
+              <div class="gp-card-actions gp-activity-actions">
+                <a *appPermission="'CULTIVOS_LISTAR'" class="admin-primary-button admin-primary-button--small" [routerLink]="['/gestion-tecnica/gestion-productiva/predios',p.predioId,'parcelas']"><fa-icon [icon]="parcelIcon" /> Detalles</a>
+                <button *appPermission="'PREDIOS_EDITAR'" type="button" class="admin-secondary-button" title="Editar predio" [disabled]="!p.estado || editingId() !== null || requiereUot()" (click)="edit(p)"><fa-icon [icon]="editIcon" /> Editar</button>
+            <button *appPermission="'PREDIOS_RETIRAR'" type="button" class="admin-secondary-button" title="Eliminar predio" [disabled]="!p.estado||editingId()!==null||requiereUot()" (click)="eliminar(p)"><fa-icon [icon]="deleteIcon" /> Eliminar</button>
+              </div>
+            </app-record-card>
+          }
+        </div>
+      }
+      <app-paginator [page]="result().page" [size]="result().size" [totalRecords]="result().totalRecords" [totalPages]="result().totalPages"
+        (pageChange)="load($event, result().size)" (sizeChange)="load(1, $event)" />
+    }
+  </section>
+  <app-gestion-productiva-alta-predio />
+  <app-predio-form />
+  <app-action-confirm-dialog />
+</div>

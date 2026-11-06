@@ -5,6 +5,13 @@ import { permissionGuard } from '../../core/access/permission.guard';
 
 export const documentosEvidenciasRoutes: Routes = [
   {
+    path: 'documentos-evidencias/salidas',
+    data: {breadcrumb:'Mis documentos de salidas',module:'SALIDAS',permission:'SALIDAS_VER'},
+    canActivate: [moduleAccessGuard,permissionGuard],
+    loadComponent: () => import('./adapter/in/ui/pages/documentos-salidas/documentos-salidas')
+      .then(m => m.DocumentosSalidasPage),
+  },
+  {
     path: 'documentos-evidencias',
     data: {
       breadcrumb: 'Documentos y evidencias',

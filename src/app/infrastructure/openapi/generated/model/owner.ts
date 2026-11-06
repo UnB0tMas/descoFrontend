@@ -9,7 +9,9 @@
  */
 
 
-export interface Owner { 
+export interface Owner {
+    personaId?: number;
+    rolTitularidad?: string; 
     predioTitularidadId?: number;
     socioId?: number;
     tipoDocumento?: string;
@@ -23,4 +25,3 @@ export interface Owner {
     fechaHasta?: string;
     estado?: boolean;
 }
-

@@ -1,0 +1,21 @@
+<div class="desco-page gp-page gp-sanitary-page">
+  <nav class="gp-breadcrumb" aria-label="Ruta de navegación">
+    <a routerLink="/gestion-tecnica/gestion-productiva">Predios</a><span>/</span>
+    <a [routerLink]="['/gestion-tecnica/gestion-productiva/predios',predioId,'parcelas',parcelaId]">Parcela</a><span>/</span>
+    <a [routerLink]="['/gestion-tecnica/gestion-productiva/predios',predioId,'parcelas',parcelaId,'actividades',actividadId]" [queryParams]="{seccion:'incidencias'}">Actividad</a><span>/</span>
+    <span aria-current="page">Incidencia #{{incidenciaId}}</span>
+  </nav>
+  <app-page-header [title]="'Incidencia #'+incidenciaId" eyebrow="Gestión productiva · Sanidad" [icon]="pageIcon">
+    <div pageActions class="flex flex-wrap gap-2">
+      <a class="admin-secondary-button" [routerLink]="['/gestion-tecnica/gestion-productiva/predios',predioId,'parcelas',parcelaId,'actividades',actividadId]" [queryParams]="{seccion:'incidencias'}"><fa-icon [icon]="backIcon" /> Incidencias</a>
+      <button type="button" class="admin-secondary-button" [disabled]="loading()" (click)="load()"><fa-icon [icon]="refreshIcon" /> Actualizar</button>
+    </div>
+  </app-page-header>
+  @if(loading()){<app-loading-state title="Cargando incidencia" message="Consultando el expediente." />}
+  @else if(error()){<app-error-state [message]="error()||'No se pudo cargar la incidencia.'" (retry)="load()" />}
+  @else if(actividad();as a){
+    <section class="admin-surface gp-panel" aria-label="Tratamientos de la incidencia">
+      <app-gp-incidencias-panel modo="detalle" [incidenciaSeleccionadaId]="incidenciaId" [actividad]="a" [catalogos]="catalogos()" (changed)="load()" />
+    </section>
+  }@else{<app-empty-state title="Actividad no disponible" message="No se encontró en esta parcela." />}
+</div>

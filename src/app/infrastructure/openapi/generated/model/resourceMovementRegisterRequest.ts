@@ -30,7 +30,6 @@ export enum ResourceMovementRegisterRequestTipoEnum {
     Devolucion = 'DEVOLUCION',
     Venta = 'VENTA',
     Consumo = 'CONSUMO',
-    Transferencia = 'TRANSFERENCIA',
     Ajuste = 'AJUSTE',
     Merma = 'MERMA',
     Otro = 'OTRO'
@@ -39,6 +38,3 @@ export enum ResourceMovementRegisterRequestNaturalezaEnum {
     E = 'E',
     S = 'S'
 };
-
-
-

@@ -33,9 +33,9 @@ export interface ResourceAssetListItemResponse {
     placa?: string;
     tipoVehiculo?: string;
     kilometrajeKm?: number;
+    color?: string;
     archivoPrincipalId?: number;
     imagenPrincipalUrl?: string;
     incidentesAbiertos?: number;
     estado?: boolean;
 }
-

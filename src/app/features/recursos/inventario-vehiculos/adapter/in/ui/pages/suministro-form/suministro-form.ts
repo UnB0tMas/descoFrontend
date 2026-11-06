@@ -1,3 +1,5 @@
+import { DialogBackdropDirective } from '../../../../../../../../shared/feedback/dialog-lifecycle/dialog-backdrop.directive';
+import { decimalPrecisionValidator } from '../../../../../../../../shared/forms/validators/desco-input.validators';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -36,7 +38,7 @@ type SupplyFormMode = 'create' | 'edit' | 'movement';
 @Component({
   selector: 'app-suministro-form',
   standalone: true,
-  imports: [ReactiveFormsModule, FaIconComponent, FormErrorComponent],
+  imports: [DialogBackdropDirective, ReactiveFormsModule, FaIconComponent, FormErrorComponent],
   templateUrl: './suministro-form.html',
   styleUrl: './suministro-form.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -71,14 +73,14 @@ export class SuministroFormComponent {
     codigo: ['', [Validators.maxLength(40)]],
     nombre: ['', [Validators.required, notBlankValidator, Validators.maxLength(150)]],
     unidadMedida: ['', [Validators.required, notBlankValidator, Validators.maxLength(20)]],
-    stockInicial: [0, [Validators.required, Validators.min(0)]],
-    stockMinimo: [0, [Validators.min(0)]],
+    stockInicial: [0, [Validators.required, Validators.min(0), decimalPrecisionValidator(11, 3)]],
+    stockMinimo: [0, [Validators.min(0), decimalPrecisionValidator(11, 3)]],
   });
 
   readonly movementForm = this.fb.nonNullable.group({
     uotId: [0, [Validators.required, Validators.min(1)]],
     tipoMovimiento: ['ENTRADA', [Validators.required]],
-    cantidad: [0, [Validators.required, Validators.min(0.001)]],
+    cantidad: [0, [Validators.required, Validators.min(0.001), decimalPrecisionValidator(11, 3)]],
     documentoReferencia: ['', [Validators.maxLength(120)]],
     observacion: ['', [Validators.maxLength(300)]],
   });

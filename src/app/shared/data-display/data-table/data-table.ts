@@ -4,7 +4,9 @@ import {
   EventEmitter,
   Input,
   Output,
+  TemplateRef,
 } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
 import {
   faArrowDown,
@@ -17,7 +19,7 @@ import { DataTableColumn, DataTableSort } from './data-table.types';
 @Component({
   selector: 'app-data-table',
   standalone: true,
-  imports: [FaIconComponent],
+  imports: [FaIconComponent, NgTemplateOutlet],
   templateUrl: './data-table.html',
   styleUrl: './data-table.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -28,6 +30,10 @@ export class DataTableComponent<T extends object> {
   @Input() sort: DataTableSort | null = null;
   @Input() loading = false;
   @Input() rowClickable = false;
+  /** Apariencia institucional de Administración y Recursos. Sin cambios para otros consumidores. */
+  @Input() appearance: 'default' | 'admin' = 'default';
+  /** Celdas personalizadas, por ejemplo entidad, estado y acciones. */
+  @Input() cellTemplates: Readonly<Record<string, TemplateRef<{$implicit: T}>>> = {};
   @Input() trackByKey: string | null = null;
   @Input() emptyMessage = 'No hay registros disponibles.';
 
@@ -62,6 +68,12 @@ export class DataTableComponent<T extends object> {
     }
 
     return String(value);
+  }
+
+  onRowKeydown(event: Event, row: T): void {
+    if (!this.rowClickable || event.target !== event.currentTarget) return;
+    event.preventDefault();
+    this.rowClick.emit(row);
   }
 
   sortBy(column: DataTableColumn<T>): void {

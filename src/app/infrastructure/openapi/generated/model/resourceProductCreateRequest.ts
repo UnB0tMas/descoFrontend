@@ -12,7 +12,7 @@
 export interface ResourceProductCreateRequest { 
     uotContextoId: number;
     /**
-     * Código del producto. Si se omite o queda vacío, DESCO genera uno sugerido para la UOT.
+     * Campo conservado por compatibilidad. El sistema genera el código del producto y no utiliza códigos enviados por el usuario.
      */
     codigo?: string;
     nombre: string;
@@ -25,6 +25,9 @@ export interface ResourceProductCreateRequest {
      * Código del catálogo CATEGORIA_PRODUCTO.
      */
     categoria?: string;
-    permiteVenta?: boolean;
+    requiereLote: boolean;
+    controlaVencimiento: boolean;
+    permiteVenta: boolean;
+    precioVenta?: number;
+    monedaVenta?: string;
 }
-

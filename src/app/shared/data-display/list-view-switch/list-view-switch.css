@@ -1,0 +1,6 @@
+/* Mismo patrón de vista que Recursos/Inventario. */
+:host { display:inline-flex; min-width:0; }
+.desco-list-view-switch { display:flex; align-items:center; gap:.3rem; }
+.desco-list-view-switch .admin-icon-button { display:inline-flex; align-items:center; justify-content:center; min-width:2.65rem; min-height:2.65rem; padding:.5rem; }
+.desco-list-view-switch .admin-icon-button.active { border-color:var(--desco-primary); background:var(--desco-primary-soft); color:var(--desco-primary-text); }
+.desco-list-view-switch .admin-icon-button:focus-visible { outline:2px solid var(--desco-primary); outline-offset:2px; }

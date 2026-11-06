@@ -1,20 +1,32 @@
-<section class="space-y-4 p-4 sm:p-6">
-  <header>
-    <h1 class="text-xl font-semibold">APAPPSS</h1>
-    <p class="text-sm text-gray-500">Gestión de socios, predios y operaciones autorizadas para esta UOT.</p>
-  </header>
-  @if (showSocios() || showPredios()) {
-    <nav class="flex flex-wrap gap-2 border-b pb-3" aria-label="Gestión de socios y predios">
-      @if (showSocios()) {
-        <button type="button" class="admin-secondary-button" [class.admin-primary-button]="current()==='socios'" (click)="select('socios')">Socios</button>
+<div class="desco-page apappss-page gp-page">
+  <app-page-header title="Convenio APAPPSS" eyebrow="Convenios · Gestión productiva"
+    subtitle="Socios, predios y expedientes individuales de plantas de palta." [icon]="icon">
+    <div pageActions class="flex flex-wrap gap-2">
+      <button type="button" class="admin-secondary-button" [disabled]="loading()" (click)="cargarConvenios()">Actualizar convenios</button>
+    </div>
+  </app-page-header>
+
+  @if (error()) { <p role="alert" class="gp-inline-error">{{ error() }}</p> }
+  @if (current()) {
+    <section class="admin-surface apappss-context" aria-label="Ámbito de trabajo">
+      <div class="admin-field apappss-convenio">
+        <label for="apappssConvenio">Convenio vigente</label>
+        <select id="apappssConvenio" class="admin-select" [ngModel]="convenioId" (ngModelChange)="cambiarConvenio($event)" [disabled]="loading()">
+          <option [ngValue]="0">Seleccione convenio</option>
+          @for (c of convenios(); track c.id) { <option [ngValue]="c.id">{{ c.nombre }}</option> }
+        </select>
+      </div>
+      <p class="apappss-context-help">La asociación y los registros se resuelven desde el convenio seleccionado.</p>
+    </section>
+    @if (convenioId > 0) {
+      <nav class="apappss-tabs gp-sections" aria-label="Secciones APAPPSS">
+        @if (showSocios()) { <button type="button" [class.selected]="current()==='socios'" [attr.aria-current]="current()==='socios' ? 'page' : null" (click)="select('socios')"><fa-icon [icon]="sociosIcon" /> Socios</button> }
+        @if (showPredios()) { <button type="button" [class.selected]="current()==='predios'" [attr.aria-current]="current()==='predios' ? 'page' : null" (click)="select('predios')"><fa-icon [icon]="prediosIcon" /> Predios</button> }
+      </nav>
+      @switch (current()) {
+        @case ('socios') { <app-productores-list-page [apappss]="true" [convenioId]="convenioId" /> }
+        @case ('predios') { <app-predios-list-page [apappss]="true" [convenioId]="convenioId" /> }
       }
-      @if (showPredios()) {
-        <button type="button" class="admin-secondary-button" [class.admin-primary-button]="current()==='predios'" (click)="select('predios')">Predios</button>
-      }
-    </nav>
-    @if (current() === 'socios') { <app-productores-list-page [apappss]="true" /> }
-    @if (current() === 'predios') { <app-predios-list-page [apappss]="true" /> }
-  } @else {
-    <p class="text-sm text-gray-500">No tiene permisos para socios ni predios. Consulte las demás opciones APAPPSS habilitadas.</p>
-  }
-</section>
+    } @else if (!loading()) { <div class="admin-surface apappss-empty">No hay un convenio activo seleccionado para la UOT.</div> }
+  } @else { <section class="admin-surface apappss-empty">No tiene permisos de consulta APAPPSS.</section> }
+</div>

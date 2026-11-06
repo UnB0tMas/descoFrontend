@@ -1,84 +1,52 @@
-<div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-  <div class="overflow-x-auto desco-scrollbar">
-    <table class="table w-full">
-      <thead class="bg-slate-50">
-        <tr class="border-b border-slate-200">
+<div [class]="appearance === 'admin' ? 'admin-table-wrap' : 'desco-table-scroll desco-scrollbar rounded-2xl border border-slate-200 bg-white shadow-sm'">
+    <table [class]="appearance === 'admin' ? 'admin-table desco-data-table' : 'table desco-data-table'">
+      <thead [class]="appearance === 'admin' ? '' : 'bg-slate-50'">
+        <tr [class]="appearance === 'admin' ? '' : 'border-b border-slate-200'">
           @for (column of columns; track column.key) {
-            <th
-              class="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500"
-              [class]="alignClass(column.align) + ' ' + (column.headerClass ?? '')"
-              [style.width]="column.width ?? null"
-            >
+            <th [class]="(appearance === 'admin' ? '' : 'whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 ') + alignClass(column.align) + ' ' + (column.headerClass ?? '')" [style.width]="column.width ?? null">
               @if (column.sortable) {
-                <button
-                  type="button"
-                  class="inline-flex items-center gap-2 rounded-lg px-1 py-1 transition hover:text-blue-700"
-                  (click)="sortBy(column)"
-                >
-                  <span>{{ column.label }}</span>
-
-                  @if (sort?.field === column.key) {
-                    <fa-icon
-                      class="text-blue-600"
-                      [icon]="sort?.direction === 'asc' ? ascendingIcon : descendingIcon"
-                    />
-                  }
+                <button type="button" class="inline-flex items-center gap-2 rounded-lg px-1 py-1 transition hover:text-blue-700" (click)="sortBy(column)">
+                  {{ column.label }}
+                  @if (sort?.field === column.key) { <fa-icon [icon]="sort?.direction === 'asc' ? ascendingIcon : descendingIcon" /> }
                 </button>
-              } @else {
-                {{ column.label }}
-              }
+              } @else { {{ column.label }} }
             </th>
           }
         </tr>
       </thead>
-
       <tbody>
         @if (loading) {
-          @for (row of [1, 2, 3, 4, 5]; track row) {
-            <tr class="border-b border-slate-100 last:border-0">
+          @for (skeleton of [1, 2, 3, 4, 5]; track skeleton) {
+            <tr>
               @for (column of columns; track column.key) {
-                <td class="px-4 py-4">
-                  <div class="skeleton h-4 w-full max-w-36 rounded-md"></div>
-                </td>
+                <td class="px-4 py-4"><div class="skeleton h-4 w-full max-w-36 rounded-md"></div></td>
               }
             </tr>
           }
         } @else {
           @for (row of rows; track rowIdentity($index, row)) {
-            <tr
-              class="border-b border-slate-100 transition last:border-0 hover:bg-blue-50"
-              [class.cursor-pointer]="rowClickable"
-              [class.bg-white]="!rowClickable"
+            <tr [class]="appearance === 'admin' ? '' : 'border-b border-slate-100 transition last:border-0 hover:bg-blue-50'" [class.cursor-pointer]="rowClickable" [class.bg-white]="appearance === 'default' && !rowClickable"
+              [attr.tabindex]="rowClickable ? 0 : null"
               (click)="rowClickable && rowClick.emit(row)"
-            >
+              (keydown.enter)="onRowKeydown($event, row)"
+              (keydown.space)="onRowKeydown($event, row)">
               @for (column of columns; track column.key) {
-                <td
-                  class="px-4 py-3.5 text-sm text-slate-700"
-                  [class]="alignClass(column.align) + ' ' + (column.cellClass ?? '')"
-                >
-                  {{ display(row, column) }}
+                <td [class]="(appearance === 'admin' ? '' : 'px-4 py-3.5 text-sm text-slate-700 ') + alignClass(column.align) + ' ' + (column.cellClass ?? '')">
+                  @if (cellTemplates[column.key]; as customCell) {
+                    <ng-container [ngTemplateOutlet]="customCell" [ngTemplateOutletContext]="{ $implicit: row }"></ng-container>
+                  } @else { {{ display(row, column) }} }
                 </td>
               }
             </tr>
           } @empty {
             <tr>
-              <td
-                class="px-6 py-14 text-center text-sm text-slate-500"
-                [attr.colspan]="columns.length"
-              >
-                <div class="mx-auto flex max-w-sm flex-col items-center">
-                  <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
-                    <fa-icon [icon]="tableIcon" />
-                  </div>
-                  <p class="mt-3 font-medium text-slate-700">
-                    {{ emptyMessage }}
-                  </p>
-                </div>
+              <td [attr.colspan]="columns.length" class="px-6 py-14 text-center text-sm text-slate-500">
+                <fa-icon [icon]="tableIcon" />
+                <span class="ml-2">{{ emptyMessage }}</span>
               </td>
             </tr>
           }
         }
       </tbody>
     </table>
-  </div>
 </div>

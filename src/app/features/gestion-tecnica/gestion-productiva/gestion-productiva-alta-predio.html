@@ -1,0 +1,158 @@
+<dialog #dialog class="modal desco-modal gp-modal gp-fundo-dialog" (cancel)="$event.preventDefault(); close()">
+  <div class="modal-box admin-modal-box gp-dialog-box gp-fundo-box">
+    <header class="admin-modal-header">
+      <div class="admin-modal-title-group">
+        <span class="admin-modal-icon"><fa-icon [icon]="addIcon" /></span>
+        <div><p>GESTIÓN PRODUCTIVA</p><h2>Nuevo predio / fundo</h2></div>
+      </div>
+      <button type="button" class="admin-icon-button" [disabled]="saving()" aria-label="Cerrar" (click)="close()"><fa-icon [icon]="closeIcon" /></button>
+    </header>
+
+    <div class="gp-fundo-scroll">
+      @if (error()) { <div class="admin-inline-error" role="alert">{{error()}}</div> }
+
+      <section class="gp-fundo-section" aria-labelledby="fundo-persona-title">
+        <div class="gp-fundo-section-title"><span class="gp-fundo-step">1</span><div><h3 id="fundo-persona-title">Titular principal</h3></div></div>
+        @if (selected(); as p) {
+          <div class="gp-person-selected gp-fundo-selected">
+            <div><strong>{{p.nombreCompleto}}</strong><small>{{p.tipoDocumento}} · {{p.numeroDocumento}}</small></div>
+            <button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="changePerson()">Cambiar persona</button>
+          </div>
+        } @else {
+          <app-person-lookup idPrefix="fundo-buscar" [documentTypes]="documentTypes"
+            [documentType]="personForm.controls.tipoDocumento.value" [documentNumber]="personForm.controls.numeroDocumento.value"
+            [maxLength]="documentMaxLength()" [inputMode]="personForm.controls.tipoDocumento.value === 'DNI' ? 'numeric' : 'text'"
+            [canSearch]="canSearchPerson()" [searching]="loading() || identityLoading()" [disabled]="saving()"
+            [message]="identityMessage()"
+            (documentTypeChange)="changeLookupType($event)" (documentNumberChange)="changeLookupNumber($event)"
+            (searchRequested)="search()" (manualRequested)="openPersonaModal('principal','manual')" />
+          @if (persons().length > 0) {
+            <div class="gp-fundo-results" role="list" aria-label="Personas encontradas">
+              @for (p of persons(); track p.personaId) {
+                <button type="button" class="gp-person-row" role="listitem" (click)="select(p)"><strong>{{p.nombreCompleto}}</strong><span>{{p.tipoDocumento}} · {{p.numeroDocumento}}</span></button>
+              }
+            </div>
+          }
+          @if (searched() && persons().length === 0) { <p class="gp-subtle">No se encontró la persona.</p> }
+        }
+      </section>
+
+      @if (selected()) {
+        <section class="gp-fundo-section" aria-labelledby="fundo-datos-title">
+          <div class="gp-fundo-section-title"><span class="gp-fundo-step">2</span><div><h3 id="fundo-datos-title">Datos del fundo o predio</h3></div></div>
+          <div class="gp-form-grid">
+            <div class="admin-field">
+              <label for="fundoNombre">Nombre del fundo o predio</label>
+              <input id="fundoNombre" class="admin-input" [(ngModel)]="nombre" (blur)="buscarFundos()" maxlength="140" placeholder="Ej. Fundo Santa Rosa" />
+            </div>
+            <div class="admin-field">
+              <label for="fundoReferencia">Referencia <span class="gp-fundo-optional">(opcional)</span></label>
+              <input id="fundoReferencia" class="admin-input" [(ngModel)]="referencia" maxlength="250" placeholder="Sector, camino o punto de referencia" />
+            </div>
+          </div>
+          @if (buscandoPredios()) { <p class="gp-subtle" role="status">Comprobando fundos registrados…</p> }
+          @if (prediosExistentes().length > 0) {
+            <div class="gp-existentes" aria-label="Fundos registrados de la persona">
+              <strong>Fundos que ya tiene registrados esta persona</strong>
+              @for (p of prediosExistentes(); track p.predioId) { <div class="gp-inline-note">{{p.nombre}} · {{p.distritoCodigo}}</div> }
+            </div>
+          }
+          <div class="gp-fundo-subtitle">Características productivas</div>
+          <div class="gp-form-grid gp-fundo-characteristics">
+            <label class="admin-field" for="fundoAreaTotal">Superficie total (ha) *
+              <input id="fundoAreaTotal" name="areaTotalHa" type="number" inputmode="decimal" min="0.0001" max="999999.9999" step="0.0001"
+                class="admin-input" [(ngModel)]="areaTotalHa" required />
+            </label>
+            <label class="admin-field" for="fundoAreaCultivable">Superficie cultivable (ha) *
+              <input id="fundoAreaCultivable" name="areaCultivableHa" type="number" inputmode="decimal" min="0" max="999999.9999" step="0.0001"
+                class="admin-input" [(ngModel)]="areaCultivableHa" required />
+            </label>
+            <label class="admin-field gp-fundo-wide" for="fundoTipoRiego">Tipo de riego *
+              <input id="fundoTipoRiego" name="tipoRiego" class="admin-input" maxlength="30" [(ngModel)]="tipoRiego"
+                placeholder="Ej. Gravedad, goteo o sin riego" required />
+            </label>
+          </div>
+          <div class="gp-form-grid gp-fundo-characteristics">
+            <label class="admin-field" for="fundoAltitud">Altitud (m) <span class="gp-fundo-optional">Opcional</span>
+              <input id="fundoAltitud" type="number" min="-500" max="7000" step="0.01" class="admin-input" [(ngModel)]="altitudM" />
+            </label>
+            <label class="admin-field" for="fundoFuente">Fuente de agua <span class="gp-fundo-optional">Opcional</span>
+              <input id="fundoFuente" maxlength="150" class="admin-input" [(ngModel)]="fuenteAgua" />
+            </label>
+            <label class="admin-field gp-fundo-wide" for="fundoInfraestructura">Infraestructura <span class="gp-fundo-optional">Opcional</span>
+              <textarea id="fundoInfraestructura" rows="2" maxlength="300" class="admin-textarea" [(ngModel)]="infraestructura"></textarea>
+            </label>
+            <label class="admin-field gp-fundo-wide" for="fundoObservacion">Observaciones <span class="gp-fundo-optional">Opcional</span>
+              <textarea id="fundoObservacion" rows="2" maxlength="500" class="admin-textarea" [(ngModel)]="observacion"></textarea>
+            </label>
+            <label class="admin-field" for="fundoFechaRegistro">Fecha de registro
+              <input id="fundoFechaRegistro" type="date" class="admin-input" [(ngModel)]="fechaRegistro" [max]="today" />
+            </label>
+            <label class="admin-field" for="fundoVigencia">Vigencia de características
+              <input id="fundoVigencia" type="date" class="admin-input" [(ngModel)]="fechaDesde" [min]="fechaRegistro" [max]="today" />
+            </label>
+          </div>
+          @if (areaTotalHa !== null && areaCultivableHa !== null && areaCultivableHa > areaTotalHa) {
+            <p class="gp-fundo-validation" role="alert">La superficie cultivable no puede superar la superficie total.</p>
+          }
+          <div class="gp-fundo-subtitle">Titularidad</div>
+          <div class="gp-fundo-owners">
+            <label class="admin-field">Tipo de titularidad del principal
+              <select class="admin-select" [(ngModel)]="titularidadPrincipal" [disabled]="tiposLoading()">
+                @for (tipo of tiposTitularidad(); track tipo.code) { <option [value]="tipo.code">{{tipo.label}}</option> }
+              </select>
+            </label>
+            @if (selected(); as principal) {
+              <div class="gp-fundo-owner-row"><div><strong>{{principal.nombreCompleto}}</strong>
+                <small>Principal · {{restanteTitularidad() | number:'1.0-2'}}%</small></div></div>
+            }
+            @for (titular of adicionales(); track titular.persona.personaId) {
+              <div class="gp-fundo-owner-row"><div><strong>{{titular.persona.nombreCompleto}}</strong>
+                <small>Adicional · {{titular.porcentaje | number:'1.0-2'}}%</small></div>
+                <button type="button" class="admin-secondary-button" [disabled]="saving()"
+                  (click)="quitarAdicional(titular.persona.personaId)">Quitar</button>
+              </div>
+            }
+            @if (anadirTitular() && personaAdicional(); as persona) {
+              <div class="gp-fundo-add-owner">
+                <div class="gp-fundo-owner-row"><strong>{{persona.nombreCompleto}}</strong><span>{{persona.tipoDocumento}} · {{persona.numeroDocumento}}</span></div>
+                <div class="gp-form-grid gp-fundo-owner-fields">
+                  <label class="admin-field">Tipo de titularidad
+                    <select class="admin-select" [(ngModel)]="adicionalTipo">
+                      @for (tipo of tiposTitularidad(); track tipo.code) { <option [value]="tipo.code">{{tipo.label}}</option> }
+                    </select>
+                  </label>
+                  <label class="admin-field">Participación (%)
+                    <input class="admin-input" type="number" min="0.01" [max]="restanteTitularidad()-0.01" step="0.01" [(ngModel)]="adicionalPorcentaje" />
+                  </label>
+                </div>
+                <div class="gp-fundo-owner-actions">
+                  <button type="button" class="admin-secondary-button" (click)="anadirTitular.set(false); personaAdicional.set(null)">Cancelar</button>
+                  <button type="button" class="admin-primary-button" [disabled]="saving()" (click)="agregarAdicional()">Añadir titular</button>
+                </div>
+              </div>
+            } @else {
+              <button type="button" class="admin-secondary-button gp-fundo-add-button" [disabled]="saving() || restanteTitularidad() <= .01"
+                (click)="openPersonaModal('adicional','lookup')">Agregar otro titular</button>
+            }
+          </div>
+          <div class="gp-fundo-subtitle">Ubicación geográfica</div>
+          <app-geography-cascade (selectionChange)="geography($event)" />
+          <div class="gp-fundo-map-block">
+            <div class="gp-map-heading">Ubicación en mapa *</div>
+            <p class="gp-subtle">Marque el lugar donde se encuentra el fundo.</p>
+            <app-predio-map [editable]="true" [autoLocateOnCreate]="true" (locationChange)="point($event)" />
+          </div>
+        </section>
+      }
+    </div>
+
+    <footer class="gp-modal-footer gp-fundo-footer">
+      <button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="close()">Cancelar</button>
+      <button type="button" class="admin-primary-button" [disabled]="!puedeGuardar()" (click)="save()">
+        <fa-icon [icon]="saveIcon" /> {{saving() ? 'Guardando…' : 'Guardar fundo / predio'}}
+      </button>
+    </footer>
+  </div>
+</dialog>
+<app-person-registration-modal [findPerson]="findPersonForModal" [savePerson]="savePersonForModal" />

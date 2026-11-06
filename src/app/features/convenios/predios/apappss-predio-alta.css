@@ -1,0 +1,241 @@
+/* Modal APAPPSS construido con la estructura institucional de Gestión Productiva.
+   Cabecera y pie permanecen visibles; solo el cuerpo se desplaza. */
+:host { display: contents; }
+:host .apappss-dialog.gp-modal {
+  box-sizing: border-box;
+  width: min(880px, calc(100vw - 1.5rem)) !important;
+  max-width: 880px !important;
+  max-height: calc(100dvh - 1.5rem) !important;
+  overflow: hidden !important;
+}
+:host .apappss-dialog .apappss-dialog-box.gp-dialog-box {
+  box-sizing: border-box;
+  width: 100% !important;
+  max-width: none !important;
+  max-height: calc(100dvh - 1.5rem) !important;
+  padding: 0 !important;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden !important;
+}
+:host .apappss-dialog .apappss-dialog-box > .admin-modal-header {
+  flex: none;
+  padding: 1rem 1.35rem;
+}
+:host .apappss-dialog .apappss-dialog-box > .gp-modal-section.apappss-alta-content {
+  box-sizing: border-box;
+  display: block;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 1.25rem 1.35rem 1.5rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+:host .apappss-dialog .apappss-alta-content > .admin-inline-error {
+  margin: 0 0 1rem;
+}
+:host .apappss-dialog .apappss-socio-summary {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.25rem 1rem;
+  min-width: 0;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--desco-border);
+  border-radius: 0.85rem;
+  background: var(--desco-surface-soft);
+}
+:host .apappss-socio-summary > span {
+  grid-column: 1 / -1;
+  color: var(--desco-text-muted);
+  font-size: 0.7rem;
+  font-weight: 650;
+}
+:host .apappss-socio-summary strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+:host .apappss-socio-summary small {
+  font-size: 0.72rem;
+  color: var(--desco-text-muted);
+  text-align: right;
+}
+:host .apappss-alta-form {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+  padding: 1rem 0 0;
+}
+:host .apappss-alta-heading {
+  min-width: 0;
+  padding-top: 0.4rem;
+}
+:host .apappss-alta-heading:not(:first-child) {
+  margin-top: 0.4rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--desco-border-subtle);
+}
+:host .apappss-alta-heading h3 {
+  margin: 0 0 0.32rem;
+  color: var(--desco-text);
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+:host .apappss-alta-heading p {
+  margin: 0;
+  color: var(--desco-text-muted);
+  font-size: 0.73rem;
+  line-height: 1.5;
+}
+:host .apappss-alta-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 0.85rem 1rem;
+  min-width: 0;
+}
+:host .apappss-alta-grid > *,
+:host .apappss-alta-form > *,
+:host .apappss-alta-content > * {
+  min-width: 0;
+}
+:host .apappss-dialog .apappss-alta-form label.admin-field {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.42rem;
+  min-width: 0;
+  color: var(--desco-text-soft);
+  font-size: 0.73rem;
+  font-weight: 780;
+  line-height: 1.35;
+}
+:host .apappss-dialog .apappss-alta-form label.admin-field > span {
+  display: block;
+  margin: 0;
+}
+:host .apappss-dialog .apappss-alta-form .admin-input,
+:host .apappss-dialog .apappss-alta-form .admin-select {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  font-weight: 400;
+}
+:host .apappss-dialog .apappss-alta-form .apappss-field-help {
+  font-size: 0.7rem;
+  font-weight: 450;
+  line-height: 1.3;
+  color: var(--desco-text-muted);
+}
+:host .apappss-dialog .apappss-alta-form .apappss-full-width small {
+  color: var(--desco-text-muted);
+  font-size: 0.67rem;
+  font-weight: 450;
+}
+:host .apappss-map-wrapper,
+:host .apappss-map-wrapper app-predio-map {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+:host .apappss-dialog .apappss-dialog-box > .gp-modal-footer.apappss-alta-footer {
+  box-sizing: border-box;
+  flex: none;
+  width: 100%;
+  margin: 0;
+  padding: 0.9rem 1.35rem;
+  border-top: 1px solid var(--desco-border);
+  background: var(--desco-surface);
+}
+@media (max-width: 640px) {
+  :host .apappss-dialog.gp-modal,
+  :host .apappss-dialog .apappss-dialog-box.gp-dialog-box {
+    max-height: calc(100dvh - 0.75rem) !important;
+  }
+  :host .apappss-dialog .apappss-dialog-box > .admin-modal-header,
+  :host .apappss-dialog .apappss-dialog-box > .gp-modal-section.apappss-alta-content,
+  :host .apappss-dialog .apappss-dialog-box > .gp-modal-footer.apappss-alta-footer {
+    padding-left: 0.95rem;
+    padding-right: 0.95rem;
+  }
+  :host .apappss-alta-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  :host .apappss-socio-summary {
+    grid-template-columns: 1fr;
+  }
+  :host .apappss-socio-summary small {
+    text-align: left;
+  }
+}
+
+
+/* APAPPSS: neutralizar el flex-basis 135px de la hoja GP en pantallas pequeñas.
+   El pie no debe ocupar gran parte de la altura del diálogo. */
+:host .apappss-dialog .apappss-dialog-box > .gp-modal-footer.apappss-alta-footer {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: .6rem;
+}
+:host .apappss-dialog .apappss-alta-footer button {
+  box-sizing: border-box;
+  flex: 0 0 auto !important;
+  min-height: 2.65rem;
+  height: 2.65rem !important;
+  max-height: 2.65rem;
+  padding: .48rem 1rem;
+  line-height: 1.25;
+  white-space: normal;
+}
+:host .apappss-validacion {
+  margin: 0;
+  padding: .6rem .75rem;
+  border: 1px solid var(--desco-border);
+  border-radius: .6rem;
+  background: var(--desco-surface-soft);
+  font-size: .76rem;
+  color: var(--desco-text-muted);
+  line-height: 1.4;
+}
+@media (max-width: 640px) {
+  :host .apappss-dialog.gp-modal,
+  :host .apappss-dialog .apappss-dialog-box.gp-dialog-box {
+    width: calc(100vw - 1rem) !important;
+    max-width: calc(100vw - 1rem) !important;
+    max-height: calc(100dvh - 1rem) !important;
+  }
+  :host .apappss-dialog .apappss-dialog-box > .gp-modal-footer.apappss-alta-footer {
+    flex-direction: row !important;
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+    align-items: center;
+    padding: .7rem .85rem;
+    gap: .5rem;
+  }
+  :host .apappss-dialog .apappss-alta-footer button {
+    flex: 0 1 auto !important;
+    width: auto !important;
+    min-width: 0;
+    max-width: 100%;
+    height: 2.65rem !important;
+    min-height: 2.65rem;
+    font-size: .77rem;
+    padding: .5rem .75rem;
+  }
+  :host .apappss-dialog .apappss-alta-footer button[type="submit"] { flex-grow: 1 !important; }
+}
+@media (max-width: 340px) {
+  :host .apappss-dialog .apappss-dialog-box > .gp-modal-footer.apappss-alta-footer {
+    flex-direction: column-reverse !important;
+    align-items: stretch;
+  }
+  :host .apappss-dialog .apappss-alta-footer button { width: 100% !important; flex: 0 0 2.65rem !important; }
+}

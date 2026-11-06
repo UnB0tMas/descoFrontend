@@ -1,3 +1,4 @@
+import { DialogBackdropDirective } from '../../../../../../../../shared/feedback/dialog-lifecycle/dialog-backdrop.directive';
 import { NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
@@ -48,6 +49,7 @@ import {
   GeographySelection,
 } from '../../../../../../../../shared/forms/geography-cascade/geography-cascade';
 import {
+  decimalPrecisionValidator,
   normalizeOptionalText,
   normalizeText,
   todayLocalIsoDate,
@@ -67,7 +69,7 @@ export interface WarehouseOperationOptions {
 @Component({
   selector: 'app-almacen-operation-form',
   standalone: true,
-  imports: [
+  imports: [DialogBackdropDirective, 
     ReactiveFormsModule,
     FaIconComponent,
     FormErrorComponent,
@@ -130,7 +132,6 @@ export class AlmacenOperationFormComponent {
     { value: ResourceMovementRegisterRequestTipoEnum.Donacion, label: 'Donación' },
     { value: ResourceMovementRegisterRequestTipoEnum.Devolucion, label: 'Devolución' },
     { value: ResourceMovementRegisterRequestTipoEnum.Consumo, label: 'Consumo' },
-    { value: ResourceMovementRegisterRequestTipoEnum.Transferencia, label: 'Transferencia' },
     { value: ResourceMovementRegisterRequestTipoEnum.Ajuste, label: 'Ajuste' },
     { value: ResourceMovementRegisterRequestTipoEnum.Merma, label: 'Merma' },
     { value: ResourceMovementRegisterRequestTipoEnum.Otro, label: 'Otro' },
@@ -150,7 +151,6 @@ export class AlmacenOperationFormComponent {
         ] as readonly ResourceMovementRegisterRequestTipoEnum[]).includes(value)
       : ([
           ResourceMovementRegisterRequestTipoEnum.Consumo,
-          ResourceMovementRegisterRequestTipoEnum.Transferencia,
           ResourceMovementRegisterRequestTipoEnum.Merma,
           ResourceMovementRegisterRequestTipoEnum.Ajuste,
           ResourceMovementRegisterRequestTipoEnum.Otro,
@@ -173,6 +173,23 @@ export class AlmacenOperationFormComponent {
         !configured.has(Number(item.productoId)),
     );
   });
+
+  movementProducts():readonly ResourceProductListItemResponse[]{
+    const id=Number(this.movementForm.getRawValue().almacenId);
+    return this.products().filter(product => product.estado !== false && this.stock().some(row => row.almacenId === id && row.productoId === product.productoId && row.estado !== false));
+  }
+
+  movementProduct(index: number): ResourceProductListItemResponse | undefined {
+    return this.products().find(p => p.productoId === Number(this.lines.at(index).get('productoId')?.value));
+  }
+
+  onMovementWarehouseChange(): void {
+    const allowed = new Set(this.movementProducts().map(p => p.productoId));
+    for (const line of this.lines.controls) {
+      const control = line.get('productoId');
+      if (!allowed.has(Number(control?.value))) control?.setValue(0);
+    }
+  }
 
   selectedConfigureProduct(): ResourceProductListItemResponse | null {
     const productId = Number(this.configureForm.controls.productoId.value);
@@ -207,10 +224,11 @@ export class AlmacenOperationFormComponent {
   readonly configureForm = this.fb.nonNullable.group({
     uotId: [0, [Validators.required, Validators.min(1)]],
     productoId: [0, [Validators.required, Validators.min(1)]],
-    stockInicial: [0, [Validators.required, Validators.min(0)]],
-    stockMinimo: [0, [Validators.min(0)]],
-    costoUnitario: [0, [Validators.min(0)]],
-    precioVenta: [0, [Validators.min(0)]],
+    stockInicial: [0, [Validators.required, Validators.min(0), decimalPrecisionValidator(16, 3)]],
+    stockMinimo: [0, [Validators.min(0), decimalPrecisionValidator(16, 3)]],
+    costoUnitario: [0, [Validators.min(0), decimalPrecisionValidator(15, 4)]],
+    precioVenta: [0, [Validators.min(0), decimalPrecisionValidator(15, 4)]],
+    monedaVenta: ['PEN', [Validators.required, Validators.pattern(/^[A-Z]{3}$/)]],
     moneda: ['PEN', [Validators.maxLength(3)]],
     lote: ['', [Validators.maxLength(80)]],
     fechaVencimiento: [''],
@@ -287,6 +305,7 @@ export class AlmacenOperationFormComponent {
       stockMinimo: 0,
       costoUnitario: 0,
       precioVenta: 0,
+      monedaVenta: 'PEN',
       moneda: 'PEN',
       lote: '',
       fechaVencimiento: '',
@@ -368,6 +387,8 @@ export class AlmacenOperationFormComponent {
   }
 
   onConfigureProductChange(): void {
+    const product=this.selectedConfigureProduct();
+    this.configureForm.patchValue({precioVenta:product?.precioVigente??0,monedaVenta:product?.moneda??'PEN'});
     this.syncConfigureProductRules();
   }
 
@@ -494,6 +515,7 @@ export class AlmacenOperationFormComponent {
         this.warehousesForUnit()[0]?.almacenId ?? 0,
       );
     }
+    this.onMovementWarehouseChange();
   }
 
   private saveWarehouse(): void {
@@ -611,8 +633,9 @@ export class AlmacenOperationFormComponent {
             stockMinimo: Number(raw.stockMinimo),
             costoUnitario: cost > 0 ? cost : undefined,
             precioVenta: salePrice > 0 ? salePrice : undefined,
+            monedaVenta: salePrice > 0 ? raw.monedaVenta : undefined,
             moneda:
-              cost > 0 || salePrice > 0
+              cost > 0
                 ? raw.moneda.trim().toUpperCase() || 'PEN'
                 : undefined,
             lote: normalizeOptionalText(raw.lote),
@@ -671,7 +694,21 @@ export class AlmacenOperationFormComponent {
       return;
     }
 
+    if (movementNature === 'E' && raw.detalle.some(line => {
+      const product = this.products().find(p => p.productoId === Number(line.productoId));
+      return (product?.requiereLote && !line.lote.trim()) || (product?.controlaVencimiento && !line.fechaVencimiento);
+    })) {
+      this.errorMessage.set('Complete el lote y el vencimiento exigidos por los productos de entrada.');
+      return;
+    }
+
     const productIds = raw.detalle.map((line) => Number(line.productoId));
+
+    const allowed = new Set(this.movementProducts().map(p => p.productoId));
+    if (productIds.some(id => !allowed.has(id))) {
+      this.errorMessage.set('Primero agregue el producto al almacén seleccionado y verifique que esté activo.');
+      return;
+    }
 
     if (new Set(productIds).size !== productIds.length) {
       this.errorMessage.set('No repitas un producto dentro del mismo movimiento.');
@@ -766,6 +803,8 @@ export class AlmacenOperationFormComponent {
     const lot = this.configureForm.controls.lote;
     const expiration = this.configureForm.controls.fechaVencimiento;
 
+    this.configureForm.controls.precioVenta.setValidators(product?.permiteVenta ? [Validators.required,Validators.min(0.0001)] : [Validators.min(0)]);
+    this.configureForm.controls.precioVenta.updateValueAndValidity({emitEvent});
     lot.setValidators(
       product?.requiereLote
         ? [Validators.required, Validators.maxLength(80)]
@@ -803,8 +842,8 @@ export class AlmacenOperationFormComponent {
   private createLine() {
     return this.fb.nonNullable.group({
       productoId: [0, [Validators.required, Validators.min(1)]],
-      cantidad: [1, [Validators.required, Validators.min(0.001)]],
-      costoUnitario: [0, [Validators.min(0)]],
+      cantidad: [1, [Validators.required, Validators.min(0.001), decimalPrecisionValidator(16, 3)]],
+      costoUnitario: [0, [Validators.min(0), decimalPrecisionValidator(15, 4)]],
       moneda: ['PEN', [Validators.maxLength(3)]],
       lote: ['', [Validators.maxLength(80)]],
       fechaVencimiento: [''],

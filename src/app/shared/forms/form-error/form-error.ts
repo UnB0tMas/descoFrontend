@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Input, OnChanges, OnDestroy, SimpleChanges, inject } from '@angular/core';
 import { AbstractControl } from '@angular/forms';
+import { Subscription } from 'rxjs';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
 import { faCircleExclamation } from '@fortawesome/free-solid-svg-icons';
 
@@ -11,12 +12,23 @@ import { faCircleExclamation } from '@fortawesome/free-solid-svg-icons';
   styleUrl: './form-error.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class FormErrorComponent {
+export class FormErrorComponent implements OnChanges, OnDestroy {
   @Input({ required: true }) control: AbstractControl | null = null;
   @Input() fieldLabel = 'Este campo';
   @Input() messages: Readonly<Record<string, string>> = {};
 
   readonly errorIcon = faCircleExclamation;
+  private readonly changeDetector = inject(ChangeDetectorRef);
+  private controlEvents?: Subscription;
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['control']) {
+      this.controlEvents?.unsubscribe();
+      this.controlEvents = this.control?.events.subscribe(() => this.changeDetector.markForCheck());
+    }
+  }
+
+  ngOnDestroy(): void { this.controlEvents?.unsubscribe(); }
 
   get message(): string | null {
     const control = this.control;

@@ -1,0 +1,57 @@
+<div class="desco-page gp-page apappss-predio">
+ <app-page-header [title]="detalle()?.nombre||'Detalle del predio'" subtitle="Ficha territorial y plantas de palta identificadas en el fundo." eyebrow="Convenios · APAPPSS" [icon]="icon">
+  <div pageActions class="flex flex-wrap gap-2">
+   @if(socioId){<a class="admin-secondary-button" [routerLink]="['/convenios/apappss/socios',socioId]" [queryParams]="{convenioId:convenioId}"><fa-icon [icon]="backIcon"/> Volver al socio</a>}
+   @else{<a class="admin-secondary-button" routerLink="/convenios/apappss" [queryParams]="{convenioId:convenioId,seccion:'predios'}"><fa-icon [icon]="backIcon"/> Predios</a>}
+   <button type="button" class="admin-secondary-button" [disabled]="loading()" (click)="cargar()"><fa-icon [icon]="refreshIcon"/> Actualizar</button>
+  </div>
+ </app-page-header>
+ @if(loading()){<app-loading-state title="Cargando fundo" message="Consultando la ficha técnica del predio."/>}
+ @else if(error()&&!detalle()){<app-error-state [message]="error()||'Error al consultar el predio.'" (retry)="cargar()"/>}
+ @else if(detalle();as d){
+  @if(error()){<p class="gp-inline-error" role="alert">{{error()}}</p>}
+  <div class="admin-detail-grid">
+   <article class="admin-detail-card"><span>Código</span><strong>{{d.codigo}}</strong></article>
+   <article class="admin-detail-card"><span>Superficie total</span><strong>{{d.areaTotalHa==null?'Pendiente':(d.areaTotalHa|number:'1.2-4')+' ha'}}</strong></article>
+   <article class="admin-detail-card"><span>Distrito</span><strong>{{d.distritoCodigo}}</strong></article>
+   <article class="admin-detail-card"><span>GPS</span><strong>{{d.latitud!=null&&d.longitud!=null?'Registrado':'Pendiente'}}</strong></article>
+  </div>
+  <section class="admin-surface apappss-predio-body">
+   <nav class="gp-sections" aria-label="Información del fundo">
+    <button type="button" [class.selected]="tabPredio()==='ficha'" (click)="cambiarTab('ficha')">Ficha y ubicación</button>
+    <button type="button" [class.selected]="tabPredio()==='plantas'" (click)="cambiarTab('plantas')">Plantas y expedientes</button>
+   </nav>
+   @if(tabPredio()==='ficha'){
+    <div class="gp-section-title"><div><h2>Ubicación del predio</h2><p>Departamento, provincia, distrito y centro poblado desde el catálogo geográfico.</p></div></div>
+    <app-geography-cascade [districtCode]="d.distritoCodigo" [disabled]="true" />
+    @if(d.referencia){<p class="gp-inline-note">Referencia: {{d.referencia}}</p>}
+    @if(d.latitud!=null&&d.longitud!=null){
+     <div class="apappss-gps"><span>Latitud: {{d.latitud}}</span><span>Longitud: {{d.longitud}}</span></div>
+     <app-predio-map [latitude]="d.latitud" [longitude]="d.longitud" />
+    }@else{<p class="gp-inline-note">Este fundo aún no tiene coordenadas GPS registradas.</p>}
+    <div class="gp-section-title apappss-top-gap"><div><h2>Características del fundo</h2><p>Superficie total: {{d.areaTotalHa==null?'Pendiente':(d.areaTotalHa|number:'1.2-4')+' ha'}} · Riego: {{d.tipoRiego||'Sin especificar'}}</p></div></div>
+    @if(puedeEditar()){<div class="apappss-save"><button type="button" class="admin-primary-button" (click)="abrirEdicion()">Editar ficha técnica</button></div>}
+   }@else{
+    <app-plantas-e3-page [convenioId]="convenioId" [predioInicial]="predioId" [predioFijo]="true" [vistaIntegrada]="true" />
+   }
+  </section>
+ }
+ <dialog #fichaDialog class="modal desco-modal gp-modal apappss-ficha-dialog" (cancel)="$event.preventDefault();cerrarEdicion()">
+  <div class="modal-box admin-modal-box admin-modal-box--wide gp-dialog-box desco-fixed-form-modal">
+   <header class="admin-modal-header"><div class="admin-modal-title-group"><span class="admin-modal-icon"><fa-icon [icon]="icon"/></span><div><p>Convenios · APAPPSS</p><h2>Editar ficha del predio</h2></div></div>
+   <button type="button" class="admin-icon-button" [disabled]="saving()" aria-label="Cerrar" (click)="cerrarEdicion()"><fa-icon [icon]="closeIcon"/></button></header>
+   @if(error()){<div class="admin-inline-error" role="alert">{{error()}}</div>}
+   <form (ngSubmit)="guardarFicha()" class="apappss-ficha-form desco-fixed-form-layout">
+    <div class="desco-fixed-form-body">
+    <div class="apappss-ficha-grid">
+     <label class="admin-field">Área total (hectáreas)<input class="admin-input" name="superficieHa" type="number" min="0.0001" step="0.0001" [ngModel]="superficieM2===null?null:superficieM2/10000" (ngModelChange)="setSuperficieHa($event,'total')"/></label>
+     <label class="admin-field">Área cultivable (hectáreas) · opcional<input class="admin-input" name="areaCultivableHa" type="number" min="0" step="0.0001" [ngModel]="superficieCultivableM2===null?null:superficieCultivableM2/10000" (ngModelChange)="setSuperficieHa($event,'cultivable')"/></label>
+     <label class="admin-field">Tipo de riego · opcional<input class="admin-input" name="riego" [(ngModel)]="tipoRiego" maxlength="30"/></label>
+    </div>
+    </div>
+    <footer class="admin-modal-actions desco-fixed-form-footer"><button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="cerrarEdicion()">Cancelar</button>
+    <button type="submit" class="admin-primary-button" [disabled]="saving()||superficieM2===null||superficieM2<=0">{{saving()?'Guardando...':'Guardar ficha'}}</button></footer>
+   </form>
+  </div>
+ </dialog>
+</div>

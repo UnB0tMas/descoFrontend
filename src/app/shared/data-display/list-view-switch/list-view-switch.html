@@ -1,0 +1,8 @@
+<div class="desco-list-view-switch" role="group" [attr.aria-label]="label">
+  <button type="button" class="admin-icon-button" [class.active]="view === 'table'"
+    [attr.aria-pressed]="view === 'table'" [disabled]="disabled" aria-label="Vista tabla"
+    title="Vista tabla" (click)="change('table')"><fa-icon [icon]="tableIcon" /></button>
+  <button type="button" class="admin-icon-button" [class.active]="view === 'cards'"
+    [attr.aria-pressed]="view === 'cards'" [disabled]="disabled" aria-label="Vista tarjetas"
+    title="Vista tarjetas" (click)="change('cards')"><fa-icon [icon]="cardsIcon" /></button>
+</div>

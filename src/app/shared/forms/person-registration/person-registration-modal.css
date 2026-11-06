@@ -1,0 +1,132 @@
+/* Dialogo nativo: no utiliza la clase modal de daisyUI, que situaba el panel en una esquina. */
+:host { display: contents; }
+.person-registration-modal:not([open]) { display: none !important; }
+.person-registration-modal[open] {
+  display: block !important;
+  position: fixed !important;
+  inset: 0 !important;
+  margin: auto !important;
+  width: min(44rem, calc(100vw - 2rem)) !important;
+  max-width: 44rem !important;
+  height: fit-content !important;
+  max-height: calc(100dvh - 2rem) !important;
+  min-width: 0;
+  padding: 0 !important;
+  overflow: hidden !important;
+  border: 1px solid var(--desco-border) !important;
+  border-radius: 1rem;
+  background: var(--desco-surface) !important;
+  color: var(--desco-text);
+  box-shadow: 0 22px 70px rgb(0 0 0 / 28%);
+  font: 400 .875rem/1.45 var(--font-sans, Inter, ui-sans-serif, system-ui, sans-serif);
+}
+.person-registration-modal__box {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  max-width: 100% !important;
+  max-height: calc(100dvh - 2rem) !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  box-sizing: border-box;
+  border: 0;
+  border-radius: inherit;
+  background: var(--desco-surface);
+}
+.person-registration-modal__header {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .8rem;
+  padding: 1rem 1.25rem;
+  margin: 0 !important;
+  border-bottom: 1px solid var(--desco-border);
+  background: var(--desco-surface);
+}
+.person-registration-modal__header h2 {
+  margin: .1rem 0 0;
+  font-size: 1.0625rem;
+  line-height: 1.3;
+  font-weight: 700;
+  color: var(--desco-text);
+}
+.person-registration-modal__eyebrow {
+  margin: 0;
+  color: var(--desco-primary);
+  font-size: .75rem;
+  font-weight: 700;
+  line-height: 1.35;
+  text-transform: none;
+  letter-spacing: .02em;
+}
+.person-registration-modal__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: calc(100dvh - 11rem);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 1rem 1.25rem 1.2rem;
+  scrollbar-gutter: stable;
+}
+.person-registration-modal__footer {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: .65rem;
+  padding: .9rem 1.25rem;
+  margin: 0 !important;
+  border-top: 1px solid var(--desco-border);
+  background: var(--desco-surface);
+}
+.person-registration-modal :is(input, select, textarea, button) { font: inherit; }
+.person-registration-modal :is(.admin-field, .admin-field label, .admin-input, .admin-select,
+  .admin-secondary-button, .admin-primary-button, .person-owner-picker__heading strong,
+  .person-owner-picker__hint, .person-data-fields label) { font-size: .875rem; line-height: 1.45; }
+.person-registration-modal .admin-field label { font-weight: 600; }
+.person-registration-modal :is(.admin-input, .admin-select) {
+  box-sizing: border-box;
+  min-width: 0;
+  width: 100%;
+  min-height: 2.65rem;
+}
+.person-registration-modal .person-data-fields__heading {
+  font-size: .875rem;
+  line-height: 1.45;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.person-registration-modal .person-lookup__heading { display: none; }
+.person-registration-modal .person-owner-picker__heading--back { justify-content: flex-end; }
+.person-registration-modal[open] .person-registration-modal__box {
+  animation: persona-modal-enter 200ms cubic-bezier(.2,.75,.2,1) both;
+}
+.person-registration-modal--leave .person-registration-modal__box {
+  animation: persona-modal-leave 150ms ease-in both !important;
+}
+@keyframes persona-modal-enter {
+  from { opacity: 0; transform: translateY(9px) scale(.99); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes persona-modal-leave {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(6px) scale(.992); }
+}
+@media (max-width: 560px) {
+  .person-registration-modal[open] { width: calc(100vw - 1rem) !important; max-height: calc(100dvh - 1rem) !important; }
+  .person-registration-modal__box { max-height: calc(100dvh - 1rem) !important; }
+  .person-registration-modal__body { max-height: calc(100dvh - 9rem); padding: .85rem; scrollbar-gutter: auto; }
+  .person-registration-modal__header { padding: .85rem; }
+  .person-registration-modal__footer { padding: .75rem .85rem; }
+  .person-registration-modal__footer button { flex: 1 1 auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .person-registration-modal[open] .person-registration-modal__box,
+  .person-registration-modal--leave .person-registration-modal__box { animation: none !important; }
+}

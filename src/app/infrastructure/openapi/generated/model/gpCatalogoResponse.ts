@@ -1,0 +1,1 @@
+export interface GpCatalogoResponse { tipo: 'CULTIVO'|'CRIANZA'|'RAZA'|'VARIEDAD'|'PROBLEMA_CULTIVO'|'PROBLEMA_CRIANZA'|'TRATAMIENTO'|'RELACION'; id: number; padreId?: number | null; nombre?: string | null; descripcion?: string | null; codigo?: string | null; }

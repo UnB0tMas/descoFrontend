@@ -20,5 +20,6 @@ export interface ResourceStockResponse {
     stockDisponible?: number;
     stockMinimo?: number;
     fechaActualizacion?: string;
+    estado?: boolean;
+    tieneHistorial?: boolean;
 }
-

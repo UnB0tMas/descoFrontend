@@ -21,8 +21,9 @@ export interface ResourceProductUpdateRequest {
      * Código del catálogo CATEGORIA_PRODUCTO.
      */
     categoria?: string;
-    requiereLote?: boolean;
-    controlaVencimiento?: boolean;
-    permiteVenta?: boolean;
+    requiereLote: boolean;
+    controlaVencimiento: boolean;
+    permiteVenta: boolean;
+    precioVenta?: number;
+    monedaVenta?: string;
 }
-

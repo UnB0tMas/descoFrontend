@@ -1,0 +1,46 @@
+<dialog #dialog class="modal desco-modal gp-modal" (cancel)="$event.preventDefault(); close()">
+  <div class="modal-box admin-modal-box gp-dialog-box">
+    <div class="admin-modal-header">
+      <div class="admin-modal-title-group"><span class="admin-modal-icon"><fa-icon [icon]="modalIcon" /></span><div>
+        <p>GESTIÓN PRODUCTIVA</p>
+        <h2>{{ editing() ? 'Editar parcela' : 'Nueva parcela' }}</h2>
+      </div></div>
+      <button type="button" class="admin-icon-button" [disabled]="saving()" (click)="close()" aria-label="Cerrar"><fa-icon [icon]="closeIcon" /></button>
+    </div>
+    @if (error()) { <p class="gp-inline-error" role="alert">{{ error() }}</p> }
+    @if (opened()) {
+      <div class="gp-modal-section">
+        <p class="gp-subtle">Predio: {{ predioNombre }}</p>
+        <div class="gp-form-grid">
+          <label class="admin-field">Nombre de parcela
+            <input class="admin-input" [(ngModel)]="nombre" maxlength="120" autocomplete="off" />
+          </label>
+          <label class="admin-field">Superficie (ha)
+            <input class="admin-input" type="number" min="0.0001" max="999999.9999" step="0.0001" [(ngModel)]="areaHa" />
+          </label>
+        </div>
+        <h3>Ubicación administrativa</h3>
+        <p class="gp-subtle">El distrito es obligatorio; el centro poblado es opcional y puede ser diferente del predio.</p>
+        <div class="gp-form-geography">
+          <app-geography-cascade [districtCode]="distrito" [populationCenterId]="centroPoblado"
+            [disabled]="saving()" (selectionChange)="geography($event)" />
+        </div>
+        <div class="gp-map-heading"><strong>Ubicación en mapa (opcional)</strong>
+          <small>Se solicita el GPS del dispositivo al crear la parcela. Puedes mover el marcador o seleccionar otro punto.</small>
+        </div>
+        <app-predio-map [editable]="!saving()" [autoLocateOnCreate]="!editing()"
+          [latitude]="latitud" [longitude]="longitud" [height]="'19rem'"
+          (locationChange)="point($event)" />
+        @if (latitud !== null && longitud !== null) {
+          <button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="clearPoint()">Quitar ubicación GPS</button>
+        }
+      </div>
+    }
+    <footer class="gp-modal-footer">
+      <button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="close()">Cancelar</button>
+      <button type="button" class="admin-primary-button" [disabled]="saving() || !nombre.trim() || !distrito || areaHa == null || areaHa <= 0" (click)="save()">
+        {{ saving() ? 'Guardando…' : 'Guardar parcela' }}
+      </button>
+    </footer>
+  </div>
+</dialog>

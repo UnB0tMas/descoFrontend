@@ -165,6 +165,7 @@ export class InventarioVehiculosListPage implements OnInit {
   stateLabel(value?: string): string {
     const labels: Record<string, string> = {
       DISPONIBLE: 'Disponible',
+      PENDIENTE_PLACA: 'Pendiente de placa',
       ASIGNADO: 'Asignado',
       MANTENIMIENTO: 'Mantenimiento',
       AVERIADO: 'Averiado',
@@ -183,11 +184,11 @@ export class InventarioVehiculosListPage implements OnInit {
 
   vehicleSummary(item: ResourceAssetListItemResponse): string | null {
     if (!this.isVehicle(item)) return null;
-    if (!item.placa) return 'Vehículo sin datos registrados';
+    if (!item.placa) return 'Placa pendiente de registro';
 
     const type = item.tipoVehiculo?.trim() || 'Vehículo';
-    const km = item.kilometrajeKm ?? 0;
-    return `${item.placa} · ${type} · ${km} km`;
+    const km = item.kilometrajeKm == null ? 'Kilometraje sin registrar' : `${item.kilometrajeKm} km`;
+    return `${item.placa} · ${type} · ${km}`;
   }
 
   private normalizeText(value?: string | null): string {

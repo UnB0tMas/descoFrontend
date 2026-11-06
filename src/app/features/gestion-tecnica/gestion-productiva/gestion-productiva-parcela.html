@@ -1,0 +1,89 @@
+<div class="desco-page gp-page gp-actividades-page">
+  <nav class="gp-breadcrumb" aria-label="Ruta de navegación">
+    <a routerLink="/gestion-tecnica/gestion-productiva">Predios</a><span aria-hidden="true">/</span>
+    <a [routerLink]="['/gestion-tecnica/gestion-productiva/predios',predioId,'parcelas']">Parcelas</a><span aria-hidden="true">/</span>
+    <span aria-current="page">{{parcelaNombre()}}</span>
+  </nav>
+  <app-page-header [title]="parcelaNombre()" eyebrow="Gestión productiva · Expediente de parcela"
+    
+    [icon]="pageIcon">
+    <div pageActions class="flex flex-wrap gap-2">
+      <a class="admin-secondary-button" [routerLink]="['/gestion-tecnica/gestion-productiva/predios',predioId,'parcelas']"><fa-icon [icon]="backIcon" /> Parcelas</a>
+      <button type="button" class="admin-secondary-button" [disabled]="loading()" (click)="refresh()"><fa-icon [icon]="refreshIcon" /> Actualizar</button>
+      <button *appPermission="'CULTIVOS_CREAR'" type="button" class="admin-primary-button" (click)="createActivity()"><fa-icon [icon]="addIcon" /> Nueva actividad</button>
+    </div>
+  </app-page-header>
+
+  @if (loading()) { <app-loading-state title="Cargando expediente" message="Consultando la parcela y sus actividades." /> }
+  @else if (error()) { <app-error-state [message]="error() || 'No se pudo consultar el expediente.'" (retry)="refresh()" /> }
+  @else {
+    <section class="admin-surface mt-5 gp-panel" aria-label="Actividades de la parcela">
+      <div class="gp-section-title"><div><h2>Actividades productivas</h2></div></div>
+      <div class="admin-toolbar gp-filter-toolbar gp-actividades-toolbar">
+        <div class="admin-field gp-search">
+          <label for="gpBuscarActividad">Buscar actividad</label>
+          <input id="gpBuscarActividad" type="search" class="admin-input" [ngModel]="activitySearch()" (ngModelChange)="changeSearch($event)" placeholder="Nombre del cultivo o crianza" />
+        </div>
+        <div class="admin-field gp-status-filter">
+          <label for="gpRubroFiltro">Rubro</label>
+          <select id="gpRubroFiltro" class="admin-select" [ngModel]="category()" (ngModelChange)="changeCategory($event)">
+            <option value="TODOS">Todos</option><option value="CULTIVO">Cultivos</option><option value="CRIANZA">Crianzas</option>
+          </select>
+        </div>
+        <div class="admin-field gp-status-filter"><label for="gpEstadoActividad">Estado</label>
+         <select id="gpEstadoActividad" class="admin-select" [ngModel]="estadoFiltro()" (ngModelChange)="changeEstado($event)">
+           <option value="TODOS">Todos</option><option value="ACTIVA">Activas</option><option value="FINALIZADA">Finalizadas</option>
+         </select></div>
+        <div class="gp-view-toggle" role="group" aria-label="Presentación de actividades">
+          <button type="button" [class.active]="activityView()==='tabla'" [attr.aria-pressed]="activityView()==='tabla'" (click)="setView('tabla')"><fa-icon [icon]="tableIcon" /> Tabla</button>
+          <button type="button" [class.active]="activityView()==='tarjetas'" [attr.aria-pressed]="activityView()==='tarjetas'" (click)="setView('tarjetas')"><fa-icon [icon]="cardsIcon" /> Tarjetas</button>
+        </div>
+      </div>
+      @if (!actividades().length) {
+        <app-empty-state title="Parcela sin actividades" message="Registra primero un cultivo o una crianza para realizar los censos y controles." />
+      } @else if (!filteredActivities().length) {
+        <app-empty-state title="Sin coincidencias" message="Modifica la búsqueda o selecciona otro rubro." />
+      } @else {
+        @if(activityView()==='tabla'){
+          <ng-template #nombreActividad let-a><div class="admin-stack-copy"><strong>{{a.nombre}}</strong><span>#{{a.actividadId}}</span></div></ng-template>
+          <ng-template #rubroActividad let-a><span>{{a.rubro==='CULTIVO'?'Agricultura':'Crianza animal'}}</span></ng-template>
+          <ng-template #estadoActividad let-a><span class="admin-status" [class.admin-status--active]="a.estadoProceso!=='FINALIZADA'">{{a.estadoProceso==='FINALIZADA'?'Finalizada':'Activa'}}</span></ng-template>
+          <ng-template #accionesActividad let-a><div class="admin-row-actions gp-activity-actions">
+            <a class="admin-icon-button" [routerLink]="['/gestion-tecnica/gestion-productiva/predios',predioId,'parcelas',parcelaId,'actividades',a.actividadId]" title="Ver detalle" aria-label="Ver detalle de actividad"><fa-icon [icon]="detailsIcon" /></a>
+            @if(a.estado && a.estadoProceso!=='FINALIZADA'){
+              <button *appPermission="'CULTIVOS_EDITAR'" type="button" class="admin-icon-button" [disabled]="busy()" title="Editar actividad" aria-label="Editar actividad" (click)="editActivity(a)"><fa-icon [icon]="editIcon" /></button>
+              <button *appPermission="'PREDIOS_EDITAR'" type="button" class="admin-icon-button" [disabled]="busy()" title="Comentario general" aria-label="Comentario general" (click)="comment(a)"><fa-icon [icon]="commentIcon" /></button>
+            }
+            <button *appPermission="'CULTIVOS_RETIRAR'" type="button" class="admin-icon-button admin-icon-button--danger" [disabled]="busy() || !a.estado" title="Eliminar actividad" aria-label="Eliminar actividad" (click)="removeActivity(a)"><fa-icon [icon]="deleteIcon" /></button>
+          </div></ng-template>
+          <app-data-table appearance="admin" [columns]="activityColumns" [rows]="visibleActivities()" trackByKey="actividadId"
+             [cellTemplates]="{nombre:nombreActividad,rubro:rubroActividad,estadoProceso:estadoActividad,acciones:accionesActividad}" />
+        }@else{
+        <div class="desco-record-grid gp-cards gp-cards--activities">
+          @for (a of visibleActivities(); track a.actividadId) {
+            <app-record-card>
+              <span class="gp-code">{{a.rubro==='CULTIVO' ? 'Cultivo' : 'Crianza animal'}}</span>
+              <h3>{{a.nombre}}</h3>
+              <span class="gp-subtle">{{medidaResumen(a)}}</span>
+              <span class="admin-status" [class.admin-status--active]="a.estadoProceso!=='FINALIZADA'" [class.admin-status--inactive]="a.estadoProceso==='FINALIZADA'">{{a.estadoProceso==='FINALIZADA'?'Finalizada':'Activa'}}</span>
+              <div class="gp-card-actions gp-activity-actions">
+                <a class="admin-secondary-button gp-card-detail-action" [routerLink]="['/gestion-tecnica/gestion-productiva/predios',predioId,'parcelas',parcelaId,'actividades',a.actividadId]"><fa-icon [icon]="detailsIcon" /> Detalles</a>
+                @if(a.estado && a.estadoProceso!=='FINALIZADA'){
+                  <button *appPermission="'CULTIVOS_EDITAR'" type="button" class="admin-secondary-button" [disabled]="busy()" (click)="editActivity(a)"><fa-icon [icon]="editIcon" /> Editar</button>
+                  <button *appPermission="'PREDIOS_EDITAR'" type="button" class="admin-secondary-button" [disabled]="busy()" (click)="comment(a)"><fa-icon [icon]="commentIcon" /> Comentario general</button>
+                }
+                <button *appPermission="'CULTIVOS_RETIRAR'" type="button" class="admin-secondary-button" [disabled]="busy() || !a.estado" (click)="removeActivity(a)"><fa-icon [icon]="deleteIcon" /> Eliminar</button>
+              </div>
+            </app-record-card>
+          }
+        </div>
+        }
+        <app-paginator [page]="activityPage()" [size]="activitySize()" [totalRecords]="filteredActivities().length" [totalPages]="activityPages()"
+          (pageChange)="setActivityPage($event)" (sizeChange)="setActivitySize($event)" />
+      }
+    </section>
+
+  }
+  <app-gp-accion-modal />
+  <app-action-confirm-dialog />
+</div>

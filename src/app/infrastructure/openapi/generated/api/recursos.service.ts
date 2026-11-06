@@ -77,6 +77,8 @@ import { ResourceWarehouseCreateRequest } from '../model/resourceWarehouseCreate
 // @ts-ignore
 import { ResourceWarehouseProductConfigureRequest } from '../model/resourceWarehouseProductConfigureRequest';
 // @ts-ignore
+import { ResourceWarehouseProductManageRequest } from '../model/resourceWarehouseProductManageRequest';
+// @ts-ignore
 import { ResourceWarehouseShareRequest } from '../model/resourceWarehouseShareRequest';
 
 // @ts-ignore
@@ -111,6 +113,18 @@ export interface RecursosAlmacenesCrearRequestParams {
     /** UUID que identifica de forma idempotente esta escritura. Reutilice la misma clave únicamente al reintentar exactamente la misma solicitud. */
     xIdempotencyKey: string;
     resourceWarehouseCreateRequest: ResourceWarehouseCreateRequest;
+    /** Identificador UUID de correlación. Si no se envía, el backend genera uno y lo devuelve en la respuesta. */
+    xCorrelationId?: string;
+    /** Identificador lógico estable del dispositivo generado por el frontend. Se utiliza para sesiones y seguridad de cuenta. */
+    xDeviceId?: string;
+}
+
+export interface RecursosAlmacenesGestionarProductoRequestParams {
+    id: number;
+    productoId: number;
+    /** UUID que identifica de forma idempotente esta escritura. Reutilice la misma clave únicamente al reintentar exactamente la misma solicitud. */
+    xIdempotencyKey: string;
+    resourceWarehouseProductManageRequest: ResourceWarehouseProductManageRequest;
     /** Identificador UUID de correlación. Si no se envía, el backend genera uno y lo devuelve en la respuesta. */
     xCorrelationId?: string;
     /** Identificador lógico estable del dispositivo generado por el frontend. Se utiliza para sesiones y seguridad de cuenta. */
@@ -584,6 +598,99 @@ export class RecursosService extends BaseService {
             {
                 context: localVarHttpContext,
                 body: resourceWarehouseCreateRequest,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Editar, desactivar, reactivar o retirar un producto del almacén
+     * @endpoint post /api/v1/recursos/almacenes/{id}/productos/{productoId}/configuracion
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public recursosAlmacenesGestionarProducto(requestParameters: RecursosAlmacenesGestionarProductoRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<ApiResponseVoid>;
+    public recursosAlmacenesGestionarProducto(requestParameters: RecursosAlmacenesGestionarProductoRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<ApiResponseVoid>>;
+    public recursosAlmacenesGestionarProducto(requestParameters: RecursosAlmacenesGestionarProductoRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<ApiResponseVoid>>;
+    public recursosAlmacenesGestionarProducto(requestParameters: RecursosAlmacenesGestionarProductoRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const id = requestParameters?.id;
+        if (id === null || id === undefined) {
+            throw new Error('Required parameter id was null or undefined when calling recursosAlmacenesGestionarProducto.');
+        }
+        const productoId = requestParameters?.productoId;
+        if (productoId === null || productoId === undefined) {
+            throw new Error('Required parameter productoId was null or undefined when calling recursosAlmacenesGestionarProducto.');
+        }
+        const xIdempotencyKey = requestParameters?.xIdempotencyKey;
+        if (xIdempotencyKey === null || xIdempotencyKey === undefined) {
+            throw new Error('Required parameter xIdempotencyKey was null or undefined when calling recursosAlmacenesGestionarProducto.');
+        }
+        const resourceWarehouseProductManageRequest = requestParameters?.resourceWarehouseProductManageRequest;
+        if (resourceWarehouseProductManageRequest === null || resourceWarehouseProductManageRequest === undefined) {
+            throw new Error('Required parameter resourceWarehouseProductManageRequest was null or undefined when calling recursosAlmacenesGestionarProducto.');
+        }
+        const xCorrelationId = requestParameters?.xCorrelationId;
+        const xDeviceId = requestParameters?.xDeviceId;
+
+        let localVarHeaders = this.defaultHeaders;
+        if (xCorrelationId !== undefined && xCorrelationId !== null) {
+            localVarHeaders = localVarHeaders.set('X-Correlation-Id', String(xCorrelationId));
+        }
+        if (xDeviceId !== undefined && xDeviceId !== null) {
+            localVarHeaders = localVarHeaders.set('X-Device-Id', String(xDeviceId));
+        }
+        if (xIdempotencyKey !== undefined && xIdempotencyKey !== null) {
+            localVarHeaders = localVarHeaders.set('X-Idempotency-Key', String(xIdempotencyKey));
+        }
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/recursos/almacenes/${this.configuration.encodeParam({name: "id", value: id, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/productos/${this.configuration.encodeParam({name: "productoId", value: productoId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/configuracion`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<ApiResponseVoid>('post', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: resourceWarehouseProductManageRequest,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,

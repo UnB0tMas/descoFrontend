@@ -1,0 +1,18 @@
+<dialog appDialogBackdrop #dialog class="modal desco-modal" (cancel)="$event.preventDefault();close()">
+  <div class="modal-box admin-modal-box">
+    <header class="admin-modal-header">
+      <div class="admin-modal-title-group"><span class="admin-modal-icon"><fa-icon [icon]="icon" /></span><div><p>Almacén</p><h2>{{title()}}</h2></div></div>
+      <button type="button" class="admin-icon-button" aria-label="Cerrar" [disabled]="saving()" (click)="close()"><fa-icon [icon]="closeIcon" /></button>
+    </header>
+    @if(error()){<div class="admin-inline-error" role="alert">{{error()}}</div>}
+    <form class="admin-form-grid" [formGroup]="form" (ngSubmit)="save()">
+      <div class="warehouse-product-summary"><strong>{{item()?.producto}}</strong><small>{{item()?.almacen}}</small></div>
+      @if(operation()==='EDITAR'){
+        <div class="admin-field admin-field-span-2"><label for="warehouseProductMinimum">Stock mínimo</label><input id="warehouseProductMinimum" class="admin-input" type="number" min="0" step="0.001" formControlName="stockMinimo" /><app-form-error [control]="form.controls.stockMinimo" fieldLabel="El stock mínimo" /></div>
+      }
+      @if(operation()==='RETIRAR'){<p class="admin-field-span-2">Se retirará únicamente la asociación con este almacén. El producto del catálogo se conserva.</p>}
+      <div class="admin-field admin-field-span-2"><label for="warehouseProductReason">Motivo</label><textarea id="warehouseProductReason" class="admin-textarea" rows="3" maxlength="500" formControlName="motivo"></textarea><app-form-error [control]="form.controls.motivo" fieldLabel="El motivo" /></div>
+      <footer class="admin-modal-actions admin-field-span-2"><button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="close()">Cancelar</button><button type="submit" class="admin-primary-button" [disabled]="saving()">{{saving()?'Guardando...':actionLabel()}}</button></footer>
+    </form>
+  </div>
+</dialog>

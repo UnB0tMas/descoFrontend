@@ -1,0 +1,27 @@
+<section class="person-owner-picker" aria-label="Identificar o registrar persona">
+  @if (error()) { <p class="person-owner-picker__error" role="alert">{{error()}}</p> }
+  @if (stage() === 'lookup') {
+    <app-person-lookup [idPrefix]="idPrefix" [documentTypes]="types"
+      [documentType]="form.controls.tipoDocumento.value" [documentNumber]="form.controls.numeroDocumento.value"
+      [maxLength]="documentLength" [inputMode]="form.controls.tipoDocumento.value === 'DNI' ? 'numeric' : 'text'"
+      [canSearch]="canSearch()" [searching]="busy()" [disabled]="disabled"
+      (documentTypeChange)="setType($event)" (documentNumberChange)="setNumber($event)"
+      (searchRequested)="search()" (manualRequested)="manual()" />
+  } @else {
+    <div class="person-owner-picker__heading person-owner-picker__heading--back">
+      <button class="admin-secondary-button" type="button" [disabled]="busy() || disabled" (click)="back()">Volver</button>
+    </div>
+    <app-person-data-fields [idPrefix]="idPrefix + '-fields'" [form]="form" [documentTypes]="types"
+      [documentMaxLength]="documentLength" [documentInputMode]="form.controls.tipoDocumento.value === 'DNI' ? 'numeric' : 'text'"
+      [disabled]="busy() || disabled" [districtCode]="districtCode()" [populationCenterId]="populationCenterId()"
+      [minBirthDate]="minBirthDate" [maxBirthDate]="maxBirthDate"
+      (documentTypeChanged)="setType(form.controls.tipoDocumento.value)"
+      (nameChanged)="sanitizeName($event)" (phoneChanged)="sanitizePhone()" (geographyChanged)="geography($event)" />
+    @if (!actionsInFooter) {
+      <div class="person-owner-picker__actions">
+        <button type="button" class="admin-primary-button" [disabled]="busy() || disabled"
+          (click)="save()">{{saving() ? 'Guardando…' : 'Guardar persona'}}</button>
+      </div>
+    }
+  }
+</section>

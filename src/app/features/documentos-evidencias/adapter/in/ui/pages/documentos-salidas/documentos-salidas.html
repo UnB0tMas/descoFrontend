@@ -1,0 +1,23 @@
+<div class="desco-page">
+ <app-page-header title="Mis documentos de salidas" subtitle="Solicitudes Word, documentos firmados y evidencias cargadas por ti." [icon]="icon">
+  <button class="admin-secondary-button" type="button" (click)="load()" [disabled]="loading()">Actualizar</button>
+ </app-page-header>
+ @if(loading()){<app-loading-state title="Consultando archivos" message="Buscando documentos de tus salidas"/>}
+ @else if(error()){<app-error-state [message]="error()||'No fue posible consultar archivos'" (retry)="load()"/>}
+ @else if(!items().length){<app-empty-state title="Sin documentos" message="Confirma una salida para generar el primer Word."/>}
+ @else{
+  <section class="admin-surface local-salida-docs">
+   <div class="admin-table-wrap"><table class="admin-table"><thead><tr>
+    <th>Salida</th><th>Archivo</th><th>Tipo</th><th>Fecha</th><th>Acciones</th></tr></thead><tbody>
+    @for(item of items();track item.archivoId){<tr>
+      <td>{{item.salidaNombre}} (#{{item.salidaId}})</td>
+      <td><strong>{{item.nombreOriginal}}</strong></td>
+      <td>{{item.tipo}}</td>
+      <td>{{item.fechaCarga|date:'dd/MM/yyyy HH:mm'}}</td>
+      <td><div class="admin-row-actions"><button class="admin-secondary-button" type="button" (click)="docs.descargar(item)">Descargar</button>
+       <a class="admin-secondary-button" [routerLink]="['/gestion-tecnica/salidas/operativas',item.salidaId]">Ver salida</a></div></td>
+    </tr>}
+   </tbody></table></div>
+  </section>
+ }
+</div>

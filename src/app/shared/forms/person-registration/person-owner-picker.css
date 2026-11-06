@@ -1,0 +1,10 @@
+/* Panel sin tarjetas anidadas; mismo tipo y altura de campo que DESCO. */
+:host { display: block; min-width: 0; font-family: inherit; }
+.person-owner-picker { display: grid; gap: 1rem; width: 100%; min-width: 0; }
+.person-owner-picker__heading { display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap; }
+.person-owner-picker__heading strong { font-size: .875rem; line-height: 1.4; font-weight: 700; }
+.person-owner-picker__hint { margin: 0; font-size: .875rem; line-height: 1.45; color: var(--desco-text-muted); }
+.person-owner-picker__actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: .65rem; }
+.person-owner-picker__actions > button { min-height: 2.65rem; }
+.person-owner-picker__error { border: 1px solid var(--desco-border); border-radius: .65rem; padding: .7rem .85rem; color: var(--desco-danger); background: var(--desco-surface-soft); font-size: .875rem; margin: 0; }
+@media(max-width: 640px) { .person-owner-picker__actions > * { flex: 1 1 auto; } }

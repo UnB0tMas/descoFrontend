@@ -3,152 +3,74 @@
     <header class="admin-modal-header">
       <div class="admin-modal-title-group">
         <span class="admin-modal-icon"><fa-icon [icon]="current() ? editIcon : addIcon" /></span>
-        <div><p>Productores</p><h2>{{ current() ? 'Editar productor' : 'Registrar productor' }}</h2></div>
+        <div><p>{{ apappss ? 'Convenios · APAPPSS' : 'Productores' }}</p><h2>{{ current() ? (apappss ? 'Editar socio' : 'Editar productor') : (apappss ? 'Nuevo socio' : 'Registrar productor') }}</h2></div>
       </div>
       <button type="button" class="admin-icon-button" aria-label="Cerrar" [disabled]="saving() || identityLoading()" (click)="close()"><fa-icon [icon]="closeIcon" /></button>
     </header>
 
     @if (errorMessage()) { <div class="admin-inline-error" role="alert">{{ errorMessage() }}</div> }
 
-    <form class="admin-form-grid" [formGroup]="form" (ngSubmit)="save()">
-      <div class="producer-form-section admin-field-span-2"><span>Identificación</span></div>
-
-      <div class="admin-field">
-        <label for="producerDocumentType">Tipo de documento</label>
-        <select id="producerDocumentType" class="admin-select" formControlName="tipoDocumento" [disabled]="!!current()" (change)="onDocumentTypeChange()">
-          @for (type of documentTypes; track type.value) { <option [value]="type.value">{{ type.label }}</option> }
-        </select>
-      </div>
-
-      <div class="admin-field">
-        <label for="producerDocument">Número de documento</label>
-        <div class="identity-document-control">
-          <input
-            id="producerDocument"
-            class="admin-input"
-            type="text"
-            formControlName="numeroDocumento"
-            [attr.maxlength]="documentMaxLength()"
-            [attr.inputmode]="documentInputMode()"
-            autocomplete="off"
-            autocapitalize="characters"
-            spellcheck="false"
-            [readOnly]="saving() || identityLoading() || !!current()"
-            (input)="onDocumentInput()"
-          />
-          @if (shouldResolveIdentity()) {
-            <button type="button" class="identity-search-button" [disabled]="!canResolveIdentity()" [attr.aria-busy]="identityLoading()" (click)="resolveIdentity()">
-              @if (identityLoading()) {
-                <span class="loading loading-spinner loading-xs"></span> Buscando...
-              } @else {
-                <fa-icon [icon]="searchIcon" /> Buscar
-              }
-            </button>
-          }
-        </div>
-        <app-form-error
-          [control]="form.controls.numeroDocumento"
-          fieldLabel="El documento"
-          [messages]="{
-            dni: 'El DNI debe contener exactamente 8 dígitos.',
-            ruc: 'El RUC no es válido. Verifique los 11 dígitos y el dígito verificador.',
-            rucNature: 'Para una persona se requiere un RUC personal válido.',
-            blank: 'El documento no puede contener solo espacios.'
-          }"
-        />
-        @if (!shouldResolveIdentity()) {
-          <small class="identity-help">Los documentos distintos de DNI o RUC se completan manualmente.</small>
-        }
-      </div>
-
-      @if (identityMessage()) {
-        <div
-          class="identity-feedback admin-field-span-2"
-          [class.identity-feedback--success]="identityTone() === 'success'"
-          [class.identity-feedback--warning]="identityTone() === 'warning'"
-          [class.identity-feedback--error]="identityTone() === 'error'"
-          role="status"
-        >
-          {{ identityMessage() }}
+    @if (!current() && registrationStep() === 'lookup') {
+      <app-person-lookup idPrefix="socio-buscar" [documentTypes]="documentTypes"
+        [documentType]="form.controls.tipoDocumento.value" [documentNumber]="form.controls.numeroDocumento.value"
+        [maxLength]="documentMaxLength()" [inputMode]="documentInputMode()" [canSearch]="canResolveIdentity()"
+        [searching]="identityLoading()" [disabled]="saving()" [message]="identityMessage()"
+        (documentTypeChange)="form.controls.tipoDocumento.setValue($any($event)); onDocumentTypeChange()"
+        (documentNumberChange)="form.controls.numeroDocumento.setValue($event); onDocumentInput()"
+        (searchRequested)="resolveIdentity()" (manualRequested)="startManualEntry()" />
+    } @else {
+      @if (!current()) {
+        <div class="producer-form-mode">
+          <span><strong>{{manualEntry() ? 'Registro de persona' : 'Datos de la persona'}}</strong></span>
+          <button class="admin-secondary-button" type="button" [disabled]="saving()" (click)="backToLookup()">Volver a búsqueda</button>
         </div>
       }
-
+    <form class="admin-form-grid producer-person-form" [formGroup]="form" (ngSubmit)="current() || registrationStep() === 'membership' ? save() : continueToMembership()">
+      @if (registrationStep() === 'form' || !!current()) {
       @if (canToggleIdentityEditing()) {
-        <div class="admin-field admin-field-span-2">
-          <label>
-            <input
-              type="checkbox"
-              [checked]="identityEditingEnabled()"
-              (change)="toggleIdentityEditing($any($event.target).checked)"
-            />
-            Editar datos de la persona
+        <div class="admin-field-span-2 producer-identity-choice">
+          <label class="admin-check-option producer-identity-toggle">
+            <input class="producer-identity-checkbox" type="checkbox" [checked]="identityEditingEnabled()"
+              (change)="toggleIdentityEditing($any($event.target).checked)" />
+            <span class="producer-identity-toggle-copy"><strong>Editar datos de la persona</strong></span>
           </label>
-          <small>El número de documento no se puede modificar.</small>
         </div>
       }
+      @if (identityMessage()) { <p class="identity-feedback admin-field-span-2" role="status">{{identityMessage()}}</p> }
+      <app-person-data-fields class="admin-field-span-2" idPrefix="socio-persona" [form]="form"
+        [documentTypes]="documentTypes" [documentMaxLength]="documentMaxLength()" [documentInputMode]="documentInputMode()"
+        [documentLocked]="!!current() || identityDocumentLocked()" [missingOnly]="!current() && identityRecordLoaded()" [disabled]="saving() || identityLoading()"
+        [locks]="effectiveIdentityLocks()" [districtCode]="initialDistrictCode()"
+        [populationCenterId]="initialPopulationCenterId()" [sex]="resolvedSex()"
+        [minBirthDate]="minBirthDate" [maxBirthDate]="maxBirthDate"
+        [referenceLabel]="'Dirección o referencia'"
+        (documentTypeChanged)="onDocumentTypeChange()" (documentChanged)="onDocumentInput()"
+        (nameChanged)="sanitizePersonInput($event)" (phoneChanged)="sanitizePhoneInput()"
+        (geographyChanged)="setGeography($event)" />
 
-      <div class="admin-field">
-        <label for="producerNames">Nombres</label>
-        <input id="producerNames" class="admin-input" type="text" maxlength="100" formControlName="nombres" autocomplete="given-name" [readOnly]="isIdentityFieldReadOnly('names')"  (input)="sanitizePersonInput('nombres')" />
-        <app-form-error [control]="form.controls.nombres" fieldLabel="Los nombres" [messages]="{ blank: 'Los nombres no pueden contener solo espacios.' }" />
-      </div>
-      <div class="admin-field">
-        <label for="producerLastName">Apellido paterno</label>
-        <input id="producerLastName" class="admin-input" type="text" maxlength="80" formControlName="apellidoPaterno" autocomplete="family-name" [readOnly]="isIdentityFieldReadOnly('paternalSurname')"  (input)="sanitizePersonInput('apellidoPaterno')" />
-        <app-form-error [control]="form.controls.apellidoPaterno" fieldLabel="El apellido paterno" [messages]="{ blank: 'El apellido paterno no puede contener solo espacios.' }" />
-      </div>
-      <div class="admin-field">
-        <label for="producerSecondLastName">Apellido materno</label>
-        <input id="producerSecondLastName" class="admin-input" type="text" maxlength="80" formControlName="apellidoMaterno" autocomplete="additional-name" [readOnly]="isIdentityFieldReadOnly('maternalSurname')"  (input)="sanitizePersonInput('apellidoMaterno')" />
-        <app-form-error [control]="form.controls.apellidoMaterno" fieldLabel="El apellido materno" />
-      </div>
-      <div class="admin-field">
-        <label for="producerBirthDate">Fecha de nacimiento</label>
-        <input id="producerBirthDate" class="admin-input" type="date" formControlName="fechaNacimiento" autocomplete="bday" [readOnly]="isIdentityFieldReadOnly('birthDate')"  [min]="minBirthDate"  [max]="maxBirthDate" />
-        <app-form-error [control]="form.controls.fechaNacimiento" fieldLabel="La fecha de nacimiento" [messages]="{ futureDate: 'La fecha de nacimiento no puede ser futura.' }" />
-      </div>
-      @if (resolvedSex()) {
-        <div class="admin-field">
-          <label for="producerSex">Sexo</label>
-          <input id="producerSex" class="admin-input" type="text" [value]="resolvedSex()" readonly aria-readonly="true" />
-        </div>
+      @if (!current()) {
+      <footer class="admin-modal-actions admin-field-span-2">
+        <button type="button" class="admin-secondary-button" (click)="close()">Cancelar</button>
+        <button type="submit" class="admin-primary-button" [disabled]="saving() || identityLoading() || identityBlocked()">Continuar</button>
+      </footer>
       }
-
-
-      <div class="admin-field">
-        <label for="producerPhone">Teléfono</label>
-        <input id="producerPhone" class="admin-input" type="tel" maxlength="30" formControlName="telefono" autocomplete="tel" [readOnly]="isIdentityFieldReadOnly('phone')"  (input)="sanitizePhoneInput()"  inputmode="tel" />
-        <app-form-error [control]="form.controls.telefono" fieldLabel="El teléfono" />
-      </div>
-      <div class="admin-field">
-        <label for="producerEmail">Correo</label>
-        <input id="producerEmail" class="admin-input" type="email" maxlength="180" formControlName="correo" autocomplete="email" [readOnly]="isIdentityFieldReadOnly('email')" />
-        <app-form-error [control]="form.controls.correo" fieldLabel="El correo" />
-      </div>
-
-      <div class="producer-form-section admin-field-span-2"><span>Ubicación</span></div>
-      <app-geography-cascade
-        [districtCode]="initialDistrictCode()"
-        [populationCenterId]="initialPopulationCenterId()"
-        [disabled]="saving() || identityLoading()"
-        [locationLocked]="isIdentityFieldReadOnly('geography')"
-        (selectionChange)="setGeography($event)"
-      />
-      <div class="admin-field admin-field-span-2">
-        <app-form-error [control]="form.controls.distritoCodigo" fieldLabel="El distrito" />
-      </div>
-      <div class="admin-field admin-field-span-2">
-        <label for="producerReference">Referencia de ubicación</label>
-        <input id="producerReference" class="admin-input" maxlength="300" formControlName="referencia" autocomplete="street-address" placeholder="Sector, calle, referencia u otra indicación" [readOnly]="isIdentityFieldReadOnly('reference')" />
-        <app-form-error [control]="form.controls.referencia" fieldLabel="La referencia" />
-      </div>
-
-      <div class="producer-form-section admin-field-span-2"><span>Afiliación</span></div>
-      <div class="admin-field">
+      }
+      @if (registrationStep() === 'membership' || !!current()) {
+        @if (!current()) {
+          <div class="producer-form-mode admin-field-span-2"><strong>Datos del socio</strong>
+            <button type="button" class="admin-secondary-button" (click)="backToPersonalData()">Volver</button>
+          </div>
+        }
+      @if (apappss) {
+        <div class="producer-form-section admin-field-span-2"><span>Registro del socio</span></div>
+      }
+      <div class="admin-field producer-registration-field" [class.admin-field-span-2]="apappss">
         <label for="producerRegistrationDate">Fecha de alta</label>
-        <input id="producerRegistrationDate" class="admin-input" type="date" formControlName="fechaAlta"  [max]="today" />
+        <input id="producerRegistrationDate" class="admin-input" type="date" formControlName="fechaAlta" [max]="today" />
         <app-form-error [control]="form.controls.fechaAlta" fieldLabel="La fecha de alta" />
       </div>
+      @if (!apappss) {
+      <div class="producer-form-section admin-field-span-2"><span>Afiliación</span></div>
       <div class="admin-field">
         <label for="producerAssociation">Asociación</label>
         <select id="producerAssociation" class="admin-select" formControlName="asociacionId">
@@ -162,7 +84,7 @@
           <small class="identity-help">Código de socio asignado: {{ partnerCode }}</small>
         } @else {
           <small class="identity-help">
-            El código de socio lo genera DESCO automáticamente al registrar la afiliación.
+            El código se asignará al guardar.
           </small>
         }
       </div>
@@ -181,6 +103,7 @@
         </select>
       </div>
 
+      }
       <footer class="admin-modal-actions admin-field-span-2">
         <button type="button" class="admin-secondary-button" [disabled]="saving() || identityLoading()" (click)="close()">Cancelar</button>
         <button type="submit" class="admin-primary-button" [disabled]="saving() || identityLoading() || identityBlocked()">
@@ -188,6 +111,8 @@
           @else { <fa-icon [icon]="saveIcon" /> Guardar }
         </button>
       </footer>
+      }
     </form>
+    }
   </div>
 </dialog>

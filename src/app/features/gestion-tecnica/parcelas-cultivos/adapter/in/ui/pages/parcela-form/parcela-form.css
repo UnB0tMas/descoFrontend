@@ -1,1 +1,12 @@
 :host{display:contents}
+
+/* Modal de parcelas: evitar controles pegados al borde y desbordes laterales. */
+:host .admin-modal-box{box-sizing:border-box;padding:clamp(1rem,2.8vw,1.65rem)!important;max-width:min(100%,650px);overflow-x:hidden;}
+:host .admin-form-grid{min-width:0;gap:.9rem;}
+:host .admin-form-grid>*{min-width:0;}
+:host .admin-field .admin-input,:host .admin-field .admin-select{width:100%;min-width:0;max-width:100%;box-sizing:border-box;}
+:host .admin-modal-actions{padding-top:1rem;}
+@media(max-width:620px){:host .admin-modal-box{padding:1rem!important;}}
+
+:host .admin-modal-box.desco-fixed-form-modal{padding:0!important;overflow:hidden!important;max-width:min(100%,650px)}
+:host .admin-modal-box.desco-fixed-form-modal .desco-fixed-form-body{gap:.9rem}

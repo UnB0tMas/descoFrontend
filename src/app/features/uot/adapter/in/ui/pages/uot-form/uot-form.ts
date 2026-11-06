@@ -1,3 +1,4 @@
+import { DialogBackdropDirective } from '../../../../../../../shared/feedback/dialog-lifecycle/dialog-backdrop.directive';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -43,7 +44,7 @@ export interface UotFormOptions {
 @Component({
   selector: 'app-uot-form',
   standalone: true,
-  imports: [ReactiveFormsModule, FaIconComponent, FormErrorComponent],
+  imports: [DialogBackdropDirective, ReactiveFormsModule, FaIconComponent, FormErrorComponent],
   templateUrl: './uot-form.html',
   styleUrl: './uot-form.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

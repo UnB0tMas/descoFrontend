@@ -16,7 +16,7 @@
 
 .catalog-group-tabs {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 0.5rem;
 }
 
@@ -197,6 +197,21 @@
   font-weight: 850;
 }
 
+/* Buscador normalizado: mismo patron visual que Gestion Productiva. */
+.catalog-search-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem;
+  border-bottom: 1px solid var(--desco-border);
+  background: var(--desco-surface);
+  padding: 0.75rem 1rem;
+}
+
+.catalog-search-field {
+  width: min(100%, 320px);
+}
+
 .catalog-table-wrap {
   border-radius: 0;
 }
@@ -270,6 +285,10 @@
     padding: 0.75rem;
   }
 
+  .catalog-search-filter {
+    padding: 0.75rem;
+  }
+
   .catalog-group-tabs {
     display: flex;
     overflow-x: auto;
@@ -313,3 +332,11 @@
   }
 
 }
+
+@media (max-width: 1050px){.catalog-group-tabs{grid-template-columns:repeat(auto-fit,minmax(145px,1fr))}}
+
+/* Breadcrumb sobre el título, igual al seguimiento operativo. */
+.catalog-page-breadcrumb{display:flex;align-items:center;flex-wrap:wrap;gap:.65rem;margin-bottom:.65rem;color:var(--desco-text-muted);font-size:.8rem}
+.catalog-page-breadcrumb a,.catalog-page-breadcrumb button{border:0;background:none;padding:0;color:var(--desco-primary);font:inherit;cursor:pointer;text-decoration:none}
+.catalog-page-breadcrumb a:hover,.catalog-page-breadcrumb button:hover{text-decoration:underline}
+.catalog-page-breadcrumb [aria-current="page"]{font-weight:600;color:var(--desco-text)}

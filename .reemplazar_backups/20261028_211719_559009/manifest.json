@@ -1,0 +1,41 @@
+{
+  "proyecto": "D:\\FrancoSystem\\desco_frontend",
+  "fecha": "2026-10-28T21:17:19",
+  "cambios": [
+    {
+      "ruta": "src/app/features/gestion-comercial/e4/domain/e4.model.ts",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/gestion-comercial/e4/application/port/e4.gateway.ts",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/gestion-comercial/e4/application/use-case/e4.use-case.ts",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/gestion-comercial/e4/adapter/out/http/e4-http.adapter.ts",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/gestion-comercial/e4/adapter/in/ui/e4-page.ts",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/features/gestion-comercial/e4/adapter/in/ui/e4-page.html",
+      "accion": "escribir",
+      "existia": true
+    },
+    {
+      "ruta": "src/app/core/navigation/navigation.service.ts",
+      "accion": "escribir",
+      "existia": true
+    }
+  ]
+}

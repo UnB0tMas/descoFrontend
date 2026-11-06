@@ -1,0 +1,66 @@
+<div class="desco-page">
+  <app-page-header title="Alta rápida de fundo" subtitle="Registre la persona y los datos esenciales del fundo." eyebrow="Gestión técnica" [icon]="icon">
+    <div pageActions><a class="admin-secondary-button" routerLink="/gestion-tecnica/predios">Volver</a></div>
+  </app-page-header>
+  @if (error()) { <p class="e1-error" role="alert">{{error()}}</p> }
+  <section class="admin-surface mt-5 e1-section">
+    <h2>1. Persona o productor</h2>
+    @if (seleccionado(); as persona) {
+      <div class="e1-selected"><strong>{{persona.nombreCompleto}}</strong><span>{{persona.numeroDocumento}}</span>
+        <button class="admin-secondary-button" type="button" (click)="cambiarPersona()">Cambiar</button></div>
+    } @else {
+      <div class="e1-row"><label class="admin-field e1-grow">Buscar por documento o nombre
+        <input class="admin-input" [(ngModel)]="busqueda" name="buscar" (keyup.enter)="buscar()" placeholder="Documento o nombre" />
+      </label><button class="admin-secondary-button" [disabled]="buscando() || busqueda.trim().length<3" (click)="buscar()">Buscar</button></div>
+      @if (buscando()) { <p>Buscando identidades registradas...</p> }
+      @for (persona of encontrados(); track persona.personaId) {
+        <button class="e1-result" type="button" (click)="seleccionar(persona)">{{persona.nombreCompleto}} · {{persona.numeroDocumento}}</button>
+      }
+      @if (busquedaRealizada() && encontrados().length === 0) {
+        <p class="text-sm">No se encontró una identidad. Regístrala una sola vez para continuar.</p>
+      }
+      <details class="e1-details"><summary>Registrar persona nueva</summary>
+        <div class="e1-person-complete" style="max-width: 680px; margin: 1rem auto;">
+          <app-person-data-fields [form]="personForm" idPrefix="e1-persona" [documentTypes]="documentTypes"
+            [documentMaxLength]="personDocumentLength()" [documentInputMode]="personForm.controls.tipoDocumento.value === 'DNI' ? 'numeric' : 'text'"
+            [districtCode]="personDistrict()" [populationCenterId]="personCenter()"
+            [minBirthDate]="minBirthDate" [maxBirthDate]="maxBirthDate"
+            [referenceLabel]="'Dirección o referencia'"
+            (documentTypeChanged)="onPersonDocumentChange()" (documentChanged)="onPersonNumberChange()"
+            (nameChanged)="onPersonNameChange($event)" (phoneChanged)="onPersonPhoneChange()"
+            (geographyChanged)="onPersonDistrictChange($event)" />
+        </div>
+        <div class="e1-actions"><button class="admin-primary-button" type="button"
+          [disabled]="guardando() || personForm.invalid" (click)="registrarPersona()">Guardar y seleccionar persona</button></div>
+      </details>
+    }
+  </section>
+  @if (seleccionado()) {
+    <section class="admin-surface mt-4 e1-section">
+      <h2>2. Identificar el fundo</h2>
+      <div class="e1-row"><label class="admin-field e1-grow">Nombre del fundo
+        <input class="admin-input" [(ngModel)]="nombre" (blur)="buscarPredios()" placeholder="Nombre o referencia conocida" />
+      </label><button class="admin-secondary-button" type="button" (click)="buscarPredios()">Comprobar existentes</button></div>
+      @if (predios().length) {
+        <p class="text-sm">Antes de crear, revisa si ya existe este predio:</p>
+        @for (predio of predios(); track predio.predioId) {
+          <a class="e1-result" [routerLink]="['/gestion-tecnica/predios',predio.predioId,'expediente']" [queryParams]="convenioId ? {convenioId: convenioId} : null">{{predio.nombre}} · {{predio.titular}} · {{predio.distritoCodigo}}</a>
+        }
+      }
+      <app-geography-cascade (selectionChange)="ubicacion($event)" />
+      <label class="admin-field">Referencia (opcional)<input class="admin-input" [(ngModel)]="referencia" /></label>
+      <div class="e1-row">
+        <label class="admin-field e1-grow">Superficie total (ha) *
+          <input class="admin-input" type="number" name="areaTotal" [(ngModel)]="areaTotalHa" min="0.0001" max="999999.9999" step="0.0001" required /></label>
+        <label class="admin-field e1-grow">Superficie cultivable (ha) *
+          <input class="admin-input" type="number" name="areaCultivable" [(ngModel)]="areaCultivableHa" min="0" max="999999.9999" step="0.0001" required /></label>
+      </div>
+      <label class="admin-field">Tipo de riego *<input class="admin-input" name="tipoRiego" maxlength="30" [(ngModel)]="tipoRiego" placeholder="Ej. Goteo, gravedad o sin riego" required /></label>
+      <div class="admin-field"><label>Ubicación en mapa *</label>
+        <app-predio-map [latitude]="latitud ?? null" [longitude]="longitud ?? null" [editable]="true" [autoLocateOnCreate]="true" (locationChange)="punto($event)" />
+      </div>
+      <div class="e1-actions"><button class="admin-primary-button" type="button" [disabled]="guardando() || !predioCompleto()" (click)="crear()">
+        {{guardando() ? 'Guardando...' : 'Guardar fundo'}}</button></div>
+    </section>
+  }
+</div>

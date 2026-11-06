@@ -1,0 +1,119 @@
+:host{display:block;min-width:0}.apappss-predio{display:grid;gap:1rem}.apappss-predio-body{min-width:0;padding:1.1rem}.apappss-predio .admin-detail-grid{margin-top:.25rem}.apappss-ficha-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:1rem}.apappss-top-gap{margin-top:1.2rem}.apappss-gps{display:flex;flex-wrap:wrap;gap:1.2rem;color:var(--desco-text-muted);font-size:.83rem;margin-bottom:.8rem}.apappss-save{display:flex;justify-content:flex-end;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--desco-border)}.apappss-predio app-plantas-e3-page{display:block;min-width:0}
+
+/* Edición de ficha: estructura de modal consistente con Gestión Productiva. */
+:host .apappss-ficha-dialog.gp-modal {
+  width: min(740px, calc(100vw - 1.5rem)) !important;
+  max-width: 740px !important;
+}
+:host .apappss-ficha-dialog .gp-dialog-box > .gp-modal-section.apappss-ficha-content {
+  display: block;
+  padding: 1.2rem 1.35rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+:host .apappss-ficha-dialog .gp-dialog-box > .gp-modal-footer.apappss-ficha-footer {
+  flex: none;
+  margin: 0;
+  padding: 0.9rem 1.35rem;
+  background: var(--desco-surface);
+}
+:host .apappss-ficha-content > .admin-inline-error {
+  margin: 0 0 1rem;
+}
+:host .apappss-ficha-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  min-width: 0;
+}
+:host .apappss-ficha-grid > * { min-width: 0; }
+:host .apappss-ficha-grid label.admin-field {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.44rem;
+  color: var(--desco-text-soft);
+  font-size: 0.73rem;
+  font-weight: 780;
+}
+:host .apappss-ficha-grid .admin-input {
+  box-sizing: border-box;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  font-weight: 400;
+}
+:host .apappss-ficha-grid small {
+  color: var(--desco-text-muted);
+  font-size: 0.67rem;
+  font-weight: 450;
+}
+@media (max-width: 640px) {
+  :host .apappss-ficha-grid { grid-template-columns: minmax(0, 1fr); }
+  :host .apappss-ficha-dialog .gp-dialog-box > .gp-modal-section.apappss-ficha-content,
+  :host .apappss-ficha-dialog .gp-dialog-box > .gp-modal-footer.apappss-ficha-footer {
+    padding-left: 0.95rem;
+    padding-right: 0.95rem;
+  }
+}
+
+
+/* Modal de edición: el selector ahora coincide con la clase HTML real. */
+:host .apappss-ficha-dialog .gp-dialog-box {
+  box-sizing: border-box;
+  width: 100%;
+  max-height: calc(100dvh - 1rem);
+  overflow-y: auto;
+}
+:host .apappss-ficha-dialog .apappss-ficha-form {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  min-width: 0;
+}
+:host .apappss-ficha-dialog .apappss-ficha-form > .admin-modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: .6rem;
+  flex-wrap: wrap;
+  margin: 0;
+}
+:host .apappss-ficha-dialog .apappss-ficha-form > .admin-modal-actions button {
+  flex: 0 0 auto !important;
+  min-height: 2.65rem;
+  height: 2.65rem !important;
+  max-height: 2.65rem;
+}
+@media (max-width: 640px) {
+  :host .apappss-ficha-dialog.gp-modal {
+    width: calc(100vw - 1rem) !important;
+    max-width: calc(100vw - 1rem) !important;
+    max-height: calc(100dvh - 1rem) !important;
+  }
+  :host .apappss-ficha-dialog .apappss-ficha-form {
+    padding: .9rem;
+  }
+  :host .apappss-ficha-dialog .apappss-ficha-form > .admin-modal-actions {
+    display: flex;
+    flex-direction: row !important;
+    align-items: center;
+    justify-content: stretch;
+    flex-wrap: nowrap;
+  }
+  :host .apappss-ficha-dialog .apappss-ficha-form > .admin-modal-actions button {
+    width: auto !important;
+    flex: 1 1 0 !important;
+    min-width: 0;
+    height: 2.65rem !important;
+    font-size: .8rem;
+  }
+}
+
+/* La ficha APAPPSS usa el mismo marco fijo que la edición de predios y parcelas. */
+:host .apappss-ficha-dialog .gp-dialog-box.desco-fixed-form-modal{overflow:hidden!important;padding:0!important}
+:host .apappss-ficha-dialog .apappss-ficha-form.desco-fixed-form-layout{padding:0;gap:0;min-height:0;overflow:hidden}
+:host .apappss-ficha-dialog .apappss-ficha-form .desco-fixed-form-body{display:block;min-height:0;padding:1rem 1.35rem}
+:host .apappss-ficha-dialog .apappss-ficha-form>.desco-fixed-form-footer{padding:.85rem 1.35rem;margin:0}

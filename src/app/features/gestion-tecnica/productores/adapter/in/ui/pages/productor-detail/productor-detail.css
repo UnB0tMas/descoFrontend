@@ -1,9 +1,11 @@
 :host { display: block; }
 .producer-detail-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
 .producer-mini-list { display: grid; }
-.producer-mini-list article { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: .8rem; border-top: 1px solid #f1f5f9; padding: .75rem 1rem; }
-.producer-mini-list article:first-child { border-top: 0; }
-.producer-mini-list article > div { min-width: 0; }
+.producer-mini-list article, .producer-mini-list a { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: .8rem; border-top: 1px solid #f1f5f9; padding: .75rem 1rem; }
+.producer-mini-list article:first-child, .producer-mini-list a:first-child { border-top: 0; }
+.producer-mini-list article > div, .producer-mini-list a > div { min-width: 0; }
+.producer-property-link { color: inherit; text-decoration: none; }
+.producer-property-link:hover { background: #f8fafc; }
 .producer-mini-list strong, .producer-mini-list span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .producer-mini-list strong { color: var(--desco-text); font-size: .74rem; }
 .producer-mini-list span { margin-top: .15rem; color: var(--desco-text-muted); font-size: .63rem; }

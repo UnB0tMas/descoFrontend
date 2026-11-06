@@ -1,1314 +1,959 @@
-# DESCO Frontend — corrección de visibilidad de consumo
+# DESCO — ETAPA 2 — actividad.md (frontend)
 
-Parche incremental para `reemplazar_angular.py`. Reemplaza exclusivamente los 4 archivos completos indicados; conserva la tabla, filtros, paginación, asignaciones y devoluciones.
+## Resumen de propósito
+Etapa 2 DESCO/APAPPSS: flujo de solicitud, aprobación, entrega física, visitas, retorno, inspección y cierre.
+Se conserva la información histórica y el kardex existente.
 
-El listado ya recibe `cantidadPendiente` desde `logistica.PA_RecursoProgramado_Sel_Listado`, pero el mapeador anterior no lo exponía. Se agrega ese campo y se muestra "Registrar consumo" solo para suministros con entrega pendiente, sin bien patrimonial asociado. Se utiliza el icono de caja (`faBoxOpen`) en lugar del icono de comida.
+## Pasos de validación
+1. Ejecutar `--simular` con el reemplazador de cada proyecto.
+2. Aplicar backend, resolver previamente colisiones Flyway existentes y ejecutar las nuevas migraciones.
+3. Levantar el backend, regenerar OpenAPI Angular con la configuración del proyecto y aplicar frontend.
+4. Compilar y ejecutar pruebas; verificar T05, T06, T07, 3 destinos, permisos y reintentos contra SQL Server real.
 
-## `src/app/features/recursos/programados/domain/recurso-programado.model.ts`
+## Mapa de archivos afectados
+`src/app/features/gestion-tecnica/salidas/e2/domain/salida-operativa.model.ts`, `src/app/features/gestion-tecnica/salidas/e2/application/port/salidas-e2.gateway.ts`, `src/app/features/gestion-tecnica/salidas/e2/application/use-case/salidas-e2.use-case.ts`, `src/app/features/gestion-tecnica/salidas/e2/adapter/out/http/salidas-e2-http.adapter.ts`, `src/app/features/gestion-tecnica/salidas/salidas.routes.ts`, `src/app/features/gestion-tecnica/salidas/e2/adapter/in/ui/pages/operativas-list/operativas-list.ts`, `src/app/features/gestion-tecnica/salidas/e2/adapter/in/ui/pages/operativas-list/operativas-list.html`, `src/app/features/gestion-tecnica/salidas/e2/adapter/in/ui/pages/operativa-detail/operativa-detail.ts`, `src/app/features/gestion-tecnica/salidas/e2/adapter/in/ui/pages/operativa-detail/operativa-detail.html`
 
-Ruta: `src/app/features/recursos/programados/domain/recurso-programado.model.ts`
+## Contratos OpenAPI y sincronización
+
+| Backend controlador / esquema | operationId | Angular generado | Adaptador consumidor |
+|---|---|---|---|
+| `E2Controller.solicitar / E2SolicitudRequest` | `salidasOperativasSolicitar` | `SalidasOperativasService.salidasOperativasSolicitar / E2SolicitudRequest` | `salidas-e2-http.adapter.ts` |
+| `E2Controller.corregir / E2CorreccionRequest` | `salidasOperativasCorregir` | `SalidasOperativasService.salidasOperativasCorregir / E2CorreccionRequest` | mismo adaptador |
+| `E2Controller.regularizarFin / E2FechaFinRequest` | `salidasOperativasRegularizarFin` | `SalidasOperativasService.salidasOperativasRegularizarFin / E2FechaFinRequest` | mismo adaptador |
+| `E2Controller.listar/ver/catalogos / E2SalidasResponse, E2SalidaDetalleResponse, E2CatalogosResponse` | `salidasOperativasListar`, `salidasOperativasVer`, `salidasOperativasCatalogos` | `SalidasOperativasService`, modelos E2 existentes | mismo adaptador |
+| `E2Controller.decidir, entregar, iniciar, visitar, finalizarVisita, retornar, inspeccionar, cerrar, vincularDestino, cancelar` | `salidasOperativasDecidir`, `salidasOperativasEntregar`, `salidasOperativasIniciar`, `salidasOperativasVisitar`, `salidasOperativasVisitaFinalizar`, `salidasOperativasRetornar`, `salidasOperativasInspeccionar`, `salidasOperativasCerrar`, `salidasOperativasVincularDestino`, `salidasOperativasCancelar` | `SalidasOperativasService` y los modelos E2 vigentes | mismo adaptador |
+
+## Operaciones completas
+
+Ruta: `src/app/features/gestion-tecnica/salidas/e2/domain/salida-operativa.model.ts`
 Contenido: completo
-
 ```typescript
-export type EstadoProcesoRecurso =
-  | 'PROGRAMADO'
-  | 'EN_EJECUCION'
-  | 'COMPLETADO'
-  | 'CANCELADO'
-  | string;
+export interface OpcionE2 { id: number; nombre: string; codigo?: string; }
+export interface CatalogosE2 { motivos: OpcionE2[]; tiposVisita: OpcionE2[]; bienes: OpcionE2[]; }
+export interface DestinoE2 { destinoId: number; predioId?: number; referencia?: string; orden: number; }
+export interface BienE2 { solicitudRecursoId: number; bienId: number; nombre: string;
+  estado: string; resultadoDeclarado?: string; resultadoValidado?: string; observacion?: string; }
+export interface VisitaE2 { visitaId: number; predioId: number; fechaInicio?: string; fechaFin?: string;
+  estado: string; objetivo?: string; resumen?: string; tipoVisita?: string; }
+export interface EventoE2 { eventoId: number; tipo: string; detalle?: string; usuarioId: number; fechaHora?: string; }
+export interface ResumenE2 { salidaId: number; nombre: string; estado: string; fechaSolicitud?: string;
+  fechaInicioPrevista?: string; fechaFinPrevista?: string; solicitanteEmpleadoId: number; }
+export interface DetalleE2 extends ResumenE2 { uotId: number; convenioId?: number; motivoSalidaId: number;
+  descripcion?: string; fechaInicioReal?: string; fechaFinReal?: string; fechaAprobacion?: string;
+  destinos: DestinoE2[]; bienes: BienE2[]; visitas: VisitaE2[]; historial: EventoE2[];
+  observacionRetorno?: string; }
+export interface SolicitudE2 { nombre: string; motivoSalidaId: number; fechaInicioPrevista: string;
+  fechaFinPrevista?: string; descripcion?: string; destinos: { predioId?: number; referencia?: string }[];
+  bienes: { bienId: number }[]; }
+export interface EstadoBienE2 { solicitudRecursoId: number; resultado: 'CONFORME'|'DANADO'|'FALTANTE'; observacion?: string; }
+export type ResultadoE2 = { salidaId: number; visitaId?: number; estado: string };
+export type ListaE2 = { total: number; items: ResumenE2[] };
 
-export type TipoDestinoRecurso = 'CAMPANIA' | 'OPERATIVO' | 'SALIDA';
-export type TipoRecursoProgramable = 'BIEN' | 'SUMINISTRO';
-
-export interface DestinoRecursoProgramado {
-  tipo: TipoDestinoRecurso;
-  destinoId: number;
-  uotId: number;
-  uotCodigo: string | null;
-  uotNombre: string | null;
-  codigo: string | null;
+export interface CorreccionE2 {
   nombre: string;
-  estadoProceso: string | null;
-  fechaReferencia: string | null;
-  descripcion: string | null;
+  descripcion?: string;
+  motivoSalidaId?: number;
+  fechaInicioPrevista?: string;
+  fechaFinPrevista?: string;
+  destinos?: {predioId?: number; referencia?: string}[];
+  bienes?: {bienId: number}[];
 }
-
-export interface RecursoProgramado {
-  recursoProgramadoId: number;
-  campaniaVentaId: number | null;
-  operativoVentaId: number | null;
-  salidaCampoId: number | null;
-  bienInventarioId: number | null;
-  bien: string | null;
-  suministroId: number | null;
-  suministro: string | null;
-  cantidadProgramada: number;
-  estadoProceso: EstadoProcesoRecurso;
-  fechaProgramacion: string | null;
-  observacion: string | null;
-  cantidadEjecutada: number;
-  cantidadDevuelta: number;
-  /** Saldo entregado pendiente de devolución o consumo, calculado en SQL Server. */
-  cantidadPendiente: number;
-}
-
-export interface RecursoProgramadoMovimiento {
-  recursoMovimientoId: number;
-  tipoMovimiento: string;
-  cantidad: number;
-  fechaHora: string | null;
-  observacion: string | null;
-  usuario: string | null;
-}
-
-export interface RecursoProgramadoDetalle {
-  recursoProgramadoId: number;
-  campaniaVentaId: number | null;
-  operativoVentaId: number | null;
-  salidaCampoId: number | null;
-  bienInventarioId: number | null;
-  bien: string | null;
-  estadoBien: string | null;
-  suministroId: number | null;
-  suministro: string | null;
-  unidadMedida: string | null;
-  cantidadProgramada: number;
-  observacion: string | null;
-  estado: boolean;
-  estadoProceso: EstadoProcesoRecurso;
-  usuarioProgramacionId: number | null;
-  fechaProgramacion: string | null;
-  usuarioCancelacionId: number | null;
-  fechaCancelacion: string | null;
-  motivoCancelacion: string | null;
-  movimientos: readonly RecursoProgramadoMovimiento[];
-}
-
-export interface RecursoProgramadoCreate {
-  campaniaVentaId?: number;
-  operativoVentaId?: number;
-  salidaCampoId?: number;
-  bienInventarioId?: number;
-  suministroId?: number;
-  cantidadProgramada: number;
-  observacion?: string;
-}
-
-export interface RecursoProgramadoUpdate {
-  cantidadProgramada: number;
-  observacion?: string;
-}
-
-export interface RecursoProgramadoDevolucion {
-  cantidadDevuelta: number;
-  observacion?: string;
-}
-
-export interface RecursoProgramadoConsumo { cantidadConsumida?: number; observacion?: string; }
 ```
 
-## `src/app/features/recursos/programados/adapter/out/http/programados-http.mapper.ts`
-
-Ruta: `src/app/features/recursos/programados/adapter/out/http/programados-http.mapper.ts`
+Ruta: `src/app/features/gestion-tecnica/salidas/e2/application/port/salidas-e2.gateway.ts`
 Contenido: completo
-
 ```typescript
-import { inject, Injectable } from '@angular/core';
+import { InjectionToken } from '@angular/core';
+import { Observable } from 'rxjs';
+import { CatalogosE2, CorreccionE2, DetalleE2, EstadoBienE2, ListaE2, ResultadoE2, SolicitudE2 } from '../../domain/salida-operativa.model';
+export interface SalidasE2Gateway {
+  catalogos(uotId: number, convenioId?: number): Observable<CatalogosE2>;
+  listar(uotId: number, convenioId?: number, estado?: string, pagina?: number, tamano?: number): Observable<ListaE2>;
+  ver(uotId: number, id: number, convenioId?: number): Observable<DetalleE2>;
+  solicitar(uotId: number, entrada: SolicitudE2, convenioId?: number): Observable<ResultadoE2>;
+  corregir(uotId: number, id: number, correccion: CorreccionE2, convenioId?: number): Observable<ResultadoE2>;
+  decidir(uotId: number, id: number, decision: 'APROBADA'|'OBSERVADA'|'RECHAZADA', motivo?: string, convenioId?: number): Observable<ResultadoE2>;
+  entregar(uotId: number, id: number, convenioId?: number): Observable<ResultadoE2>;
+  iniciar(uotId: number, id: number, convenioId?: number): Observable<ResultadoE2>;
+  visitar(uotId: number, id: number, destinoId: number, tipoVisitaId: number, objetivo?: string, convenioId?: number): Observable<ResultadoE2>;
+  finalizarVisita(uotId: number, id: number, visitaId: number, resumen: string, convenioId?: number): Observable<ResultadoE2>;
+  retornar(uotId: number, id: number, observacionGeneral: string, bienes: EstadoBienE2[], convenioId?: number): Observable<ResultadoE2>;
+  inspeccionar(uotId: number, id: number, bienes: EstadoBienE2[], observacion?: string, convenioId?: number): Observable<ResultadoE2>;
+  vincularDestino(uotId:number,id:number,destinoId:number,predioId:number,convenioId?:number): Observable<ResultadoE2>;
+  cancelar(uotId:number,id:number,motivo:string,convenioId?:number): Observable<ResultadoE2>;
+  regularizarFin(uotId: number, id: number, fechaFinPrevista: string, convenioId?: number): Observable<ResultadoE2>;
+  cerrar(uotId: number, id: number, convenioId?: number): Observable<ResultadoE2>;
+}
+export const SALIDAS_E2_GATEWAY = new InjectionToken<SalidasE2Gateway>('SalidasE2Gateway');
+```
 
-import { AdminApiMapper } from '../../../../../administracion/shared/admin-api.mapper';
-import { DisponibilidadRecurso } from '../../../domain/disponibilidad-recurso.model';
-import {
-  DestinoRecursoProgramado,
-  RecursoProgramado,
-  RecursoProgramadoDetalle,
-  RecursoProgramadoMovimiento,
-} from '../../../domain/recurso-programado.model';
-
+Ruta: `src/app/features/gestion-tecnica/salidas/e2/application/use-case/salidas-e2.use-case.ts`
+Contenido: completo
+```typescript
+import { Injectable, inject } from '@angular/core';
+import { SALIDAS_E2_GATEWAY } from '../port/salidas-e2.gateway';
+import { CorreccionE2, EstadoBienE2, SolicitudE2 } from '../../domain/salida-operativa.model';
 @Injectable()
-export class ProgramadosHttpMapper {
-  private readonly api = inject(AdminApiMapper);
-
-  page(response: unknown, size: number) {
-    return this.api.page(response, (row) => this.summary(row), size);
+export class SalidasE2UseCase {
+  private readonly data = inject(SALIDAS_E2_GATEWAY);
+  catalogos(uot: number, convenio?: number) { return this.data.catalogos(uot, convenio); }
+  listar(uot: number, convenio?: number, estado?: string, pagina=1, tamano=20) { return this.data.listar(uot, convenio, estado, pagina, tamano); }
+  ver(uot: number, id: number, convenio?: number) { return this.data.ver(uot, id, convenio); }
+  solicitar(uot: number, datos: SolicitudE2, convenio?: number) { return this.data.solicitar(uot, datos, convenio); }
+  corregir(uot: number, id: number, correccion: CorreccionE2, convenio?: number) { return this.data.corregir(uot,id,correccion,convenio); }
+  decidir(uot: number, id: number, decision: 'APROBADA'|'OBSERVADA'|'RECHAZADA', motivo?: string, convenio?: number) { return this.data.decidir(uot,id,decision,motivo,convenio); }
+  entregar(uot: number, id: number, convenio?: number) { return this.data.entregar(uot,id,convenio); }
+  iniciar(uot: number, id: number, convenio?: number) { return this.data.iniciar(uot,id,convenio); }
+  visitar(uot: number, id: number, destinoId: number, tipo: number, objetivo?: string, convenio?: number) { return this.data.visitar(uot,id,destinoId,tipo,objetivo,convenio); }
+  finalizarVisita(uot: number, id: number, visitaId: number, resumen: string, convenio?: number) { return this.data.finalizarVisita(uot,id,visitaId,resumen,convenio); }
+  retornar(uot: number, id: number, obs: string, bienes: EstadoBienE2[], convenio?: number) { return this.data.retornar(uot,id,obs,bienes,convenio); }
+  inspeccionar(uot: number, id: number, bienes: EstadoBienE2[], obs?: string, convenio?: number) { return this.data.inspeccionar(uot,id,bienes,obs,convenio); }
+  vincularDestino(uot:number,id:number,destinoId:number,predioId:number,convenio?:number){return this.data.vincularDestino(uot,id,destinoId,predioId,convenio);}
+  cancelar(uot:number,id:number,motivo:string,convenio?:number){return this.data.cancelar(uot,id,motivo,convenio);}
+  regularizarFin(uot: number, id: number, fechaFinPrevista: string, convenio?: number) {
+    return this.data.regularizarFin(uot,id,fechaFinPrevista,convenio);
   }
+  cerrar(uot: number, id: number, convenio?: number) { return this.data.cerrar(uot,id,convenio); }
+}
+```
 
-  detail(response: unknown): RecursoProgramadoDetalle {
-    const row = this.api.record(this.api.data<unknown>(response));
-    return {
-      recursoProgramadoId: this.api.number(row['recursoProgramadoId']),
-      campaniaVentaId: this.api.nullableNumber(row['campaniaVentaId']),
-      operativoVentaId: this.api.nullableNumber(row['operativoVentaId']),
-      salidaCampoId: this.api.nullableNumber(row['salidaCampoId']),
-      bienInventarioId: this.api.nullableNumber(row['bienInventarioId']),
-      bien: this.api.nullableString(row['bien']),
-      estadoBien: this.api.nullableString(row['estadoBien']),
-      suministroId: this.api.nullableNumber(row['suministroId']),
-      suministro: this.api.nullableString(row['suministro']),
-      unidadMedida: this.api.nullableString(row['unidadMedida']),
-      cantidadProgramada: this.api.number(row['cantidadProgramada']),
-      observacion: this.api.nullableString(row['observacion']),
-      estado: this.api.boolean(row['estado']),
-      estadoProceso: this.api.string(row['estadoProceso']),
-      usuarioProgramacionId: this.api.nullableNumber(row['usuarioProgramacionId']),
-      fechaProgramacion: this.api.nullableString(row['fechaProgramacion']),
-      usuarioCancelacionId: this.api.nullableNumber(row['usuarioCancelacionId']),
-      fechaCancelacion: this.api.nullableString(row['fechaCancelacion']),
-      motivoCancelacion: this.api.nullableString(row['motivoCancelacion']),
-      movimientos: this.api
-        .array(row['movimientos'])
-        .map((item) => this.movement(this.api.record(item))),
-    };
+Ruta: `src/app/features/gestion-tecnica/salidas/e2/adapter/out/http/salidas-e2-http.adapter.ts`
+Contenido: completo
+```typescript
+import { Injectable, inject } from '@angular/core';
+import { map } from 'rxjs';
+import {
+  SalidasOperativasService, E2SolicitudRequest, E2DecisionRequest,
+  E2CorreccionRequest, E2FechaFinRequest, E2VisitaRequest, E2VisitaCierreRequest,
+  E2RetornoRequest, E2InspeccionRequest, E2VincularDestinoRequest, E2CancelarRequest,
+  E2SalidasResponse, E2SalidaDetalleResponse, E2CatalogosResponse, E2OperacionResponse,
+} from '../../../../../../../infrastructure/openapi/generated';
+import { IdempotencyKeyService } from '../../../../../../../core/http/services/idempotency-key.service';
+import { SalidasE2Gateway } from '../../../application/port/salidas-e2.gateway';
+import {
+  CatalogosE2, CorreccionE2, DetalleE2, EstadoBienE2, ListaE2, ResultadoE2, SolicitudE2,
+} from '../../../domain/salida-operativa.model';
+
+function required<T>(value: T | undefined | null, nombre: string): T {
+  if (value === undefined || value === null) throw new Error(`Respuesta incompleta: ${nombre}`);
+  return value;
+}
+function operation(data?: E2OperacionResponse): ResultadoE2 {
+  return {salidaId: required(data?.salidaId,'salidaId'), visitaId:data?.visitaId,
+    estado: data?.estado ?? ''};
+}
+function detail(data?: E2SalidaDetalleResponse): DetalleE2 {
+  const d = required(data,'detalle');
+  return {
+    salidaId: required(d.salidaId,'salidaId'), nombre:d.nombre ?? '', estado:d.estado ?? '',
+    uotId: required(d.uotId,'uotId'), convenioId:d.convenioId,
+    solicitanteEmpleadoId:required(d.solicitanteEmpleadoId,'solicitanteEmpleadoId'),
+    motivoSalidaId: required(d.motivoSalidaId,'motivoSalidaId'),
+    fechaSolicitud:d.fechaSolicitud, descripcion:d.descripcion,
+    fechaInicioPrevista:d.fechaInicioPrevista,fechaFinPrevista:d.fechaFinPrevista,
+    fechaInicioReal:d.fechaInicioReal,fechaFinReal:d.fechaFinReal,fechaAprobacion:d.fechaAprobacion,
+    destinos:(d.destinos ?? []).map(x=>({destinoId:required(x.destinoId,'destinoId'),
+      predioId:x.predioId,referencia:x.referencia,orden:x.orden ?? 0})),
+    bienes:(d.bienes ?? []).map(x=>({solicitudRecursoId:required(x.solicitudRecursoId,'solicitudRecursoId'),
+      bienId:required(x.bienId,'bienId'),nombre:x.nombre ?? '',estado:x.estado ?? '',
+      resultadoDeclarado:x.resultadoDeclarado,resultadoValidado:x.resultadoValidado,observacion:x.observacion})),
+    visitas:(d.visitas ?? []).map(x=>({visitaId:required(x.visitaId,'visitaId'),predioId:required(x.predioId,'predioId'),
+      fechaInicio:x.fechaInicio,fechaFin:x.fechaFin,estado:x.estado ?? '',
+      objetivo:x.objetivo,resumen:x.resumen,tipoVisita:x.tipoVisita})),
+    historial:(d.historial ?? []).map(x=>({eventoId:required(x.eventoId,'eventoId'),
+      tipo:x.tipo ?? '',detalle:x.detalle,usuarioId:required(x.usuarioId,'usuarioId'),fechaHora:x.fechaHora})),
+    observacionRetorno:d.observacionRetorno,
+  };
+}
+@Injectable()
+export class SalidasE2HttpAdapter implements SalidasE2Gateway {
+  private readonly api = inject(SalidasOperativasService);
+  private readonly keys = inject(IdempotencyKeyService);
+  private readonly options = {transferCache:false};
+  catalogos(uotId:number,convenioId?:number) {
+    return this.api.salidasOperativasCatalogos({uotId,convenioId},'body',false,this.options)
+      .pipe(map(r=>this.mapCatalogs(r.datos)));
   }
-
-  destinations(response: unknown): readonly DestinoRecursoProgramado[] {
-    const rows = this.api.array(this.api.data<unknown>(response));
-
-    return rows.map((item) => {
-      const row = this.api.record(item);
-      const type = this.api.string(row['tipo']);
-
-      return {
-        tipo:
-          type === 'CAMPANIA' || type === 'OPERATIVO' || type === 'SALIDA'
-            ? type
-            : 'SALIDA',
-        destinoId: this.api.number(row['destinoId']),
-        uotId: this.api.number(row['uotId']),
-        uotCodigo: this.api.nullableString(row['uotCodigo']),
-        uotNombre: this.api.nullableString(row['uotNombre']),
-        codigo: this.api.nullableString(row['codigo']),
-        nombre: this.api.string(row['nombre']),
-        estadoProceso: this.api.nullableString(row['estadoProceso']),
-        fechaReferencia: this.api.nullableString(row['fechaReferencia']),
-        descripcion: this.api.nullableString(row['descripcion']),
-      };
-    });
+  listar(uotId:number,convenioId?:number,estado?:string,pagina=1,tamano=20) {
+    return this.api.salidasOperativasListar({uotId,convenioId,estado,pagina,tamano},'body',false,this.options)
+      .pipe(map(r=>this.mapList(r.datos)));
   }
-
-  availability(response: unknown): DisponibilidadRecurso {
-    const row = this.api.record(this.api.data<unknown>(response));
-    return {
-      bienes: this.api.array(row['bienes']).map((item) => {
-        const value = this.api.record(item);
-        return {
-          bienInventarioId: this.api.number(value['bienInventarioId']),
-          uotId: this.api.number(value['uotId']),
-          uotCodigo: this.api.nullableString(value['uotCodigo']),
-          uotNombre: this.api.nullableString(value['uotNombre']),
-          codigoPatrimonial: this.api.string(value['codigoPatrimonial']),
-          nombre: this.api.string(value['nombre']),
-          estadoBien: this.api.string(value['estadoBien']),
-          disponible: this.api.boolean(value['disponible']),
-        };
-      }),
-      suministros: this.api.array(row['suministros']).map((item) => {
-        const value = this.api.record(item);
-        return {
-          suministroId: this.api.number(value['suministroId']),
-          uotId: this.api.number(value['uotId']),
-          uotCodigo: this.api.nullableString(value['uotCodigo']),
-          uotNombre: this.api.nullableString(value['uotNombre']),
-          codigo: this.api.string(value['codigo']),
-          nombre: this.api.string(value['nombre']),
-          unidadMedida: this.api.string(value['unidadMedida']),
-          stockActual: this.api.number(value['stockActual']),
-          stockReservado: this.api.number(value['stockReservado']),
-          stockDisponible: this.api.number(value['stockDisponible']),
-          stockMinimo: this.api.number(value['stockMinimo']),
-          requiereReposicion: this.api.boolean(value['requiereReposicion']),
-        };
-      }),
-    };
+  ver(uotId:number,id:number,convenioId?:number) {
+    return this.api.salidasOperativasVer({id,uotId,convenioId},'body',false,this.options)
+      .pipe(map(r=>detail(r.datos)));
   }
-
-  createdId(response: unknown): number {
-    const row = this.api.record(this.api.data<unknown>(response));
-    return this.api.number(row['recursoProgramadoId']);
+  solicitar(uotId:number,data:SolicitudE2,convenioId?:number) {
+    const e2SolicitudRequest:E2SolicitudRequest={...data};
+    return this.keys.idempotent(`E2:solicitar:${uotId}:${convenioId??0}`,e2SolicitudRequest,key=>
+      this.api.salidasOperativasSolicitar({uotId,convenioId,xIdempotencyKey:key,e2SolicitudRequest},
+        'body',false,this.options).pipe(map(r=>operation(r.datos))));
   }
-
-  void(response: unknown): void {
-    this.api.void(response);
+  corregir(uotId:number,id:number,correccion:CorreccionE2,convenioId?:number) {
+    const e2CorreccionRequest:E2CorreccionRequest={...correccion};
+    return this.keys.idempotent(`E2:corregir:${id}`,e2CorreccionRequest,key=>
+      this.api.salidasOperativasCorregir({id,uotId,convenioId,xIdempotencyKey:key,e2CorreccionRequest},
+      'body',false,this.options).pipe(map(r=>operation(r.datos))));
   }
-
-  private summary(row: Record<string, unknown>): RecursoProgramado {
-    return {
-      recursoProgramadoId: this.api.number(row['recursoProgramadoId']),
-      campaniaVentaId: this.api.nullableNumber(row['campaniaVentaId']),
-      operativoVentaId: this.api.nullableNumber(row['operativoVentaId']),
-      salidaCampoId: this.api.nullableNumber(row['salidaCampoId']),
-      bienInventarioId: this.api.nullableNumber(row['bienInventarioId']),
-      bien: this.api.nullableString(row['bien']),
-      suministroId: this.api.nullableNumber(row['suministroId']),
-      suministro: this.api.nullableString(row['suministro']),
-      cantidadProgramada: this.api.number(row['cantidadProgramada']),
-      estadoProceso: this.api.string(row['estadoProceso']),
-      fechaProgramacion: this.api.nullableString(row['fechaProgramacion']),
-      observacion: this.api.nullableString(row['observacion']),
-      cantidadEjecutada: this.api.number(row['cantidadEjecutada']),
-      cantidadDevuelta: this.api.number(row['cantidadDevuelta']),
-      cantidadPendiente: this.api.number(row['cantidadPendiente']),
-    };
+  decidir(uotId:number,id:number,decision:'APROBADA'|'OBSERVADA'|'RECHAZADA',motivo?:string,convenioId?:number) {
+    const e2DecisionRequest:E2DecisionRequest={decision,motivo};
+    return this.keys.idempotent(`E2:decidir:${id}`,e2DecisionRequest,key=>
+      this.api.salidasOperativasDecidir({id,uotId,convenioId,xIdempotencyKey:key,e2DecisionRequest},
+      'body',false,this.options).pipe(map(r=>operation(r.datos))));
   }
-
-  private movement(row: Record<string, unknown>): RecursoProgramadoMovimiento {
-    return {
-      recursoMovimientoId: this.api.number(row['recursoMovimientoId']),
-      tipoMovimiento: this.api.string(row['tipoMovimiento']),
-      cantidad: this.api.number(row['cantidad']),
-      fechaHora: this.api.nullableString(row['fechaHora']),
-      observacion: this.api.nullableString(row['observacion']),
-      usuario: this.api.nullableString(row['usuario']),
-    };
+  entregar(uotId:number,id:number,convenioId?:number) {
+    return this.keys.idempotent(`E2:entregar:${id}`,{},key=>
+      this.api.salidasOperativasEntregar({id,uotId,convenioId,xIdempotencyKey:key},
+      'body',false,this.options).pipe(map(r=>operation(r.datos))));
+  }
+  iniciar(uotId:number,id:number,convenioId?:number) {
+    return this.keys.idempotent(`E2:iniciar:${id}`,{},key=>
+      this.api.salidasOperativasIniciar({id,uotId,convenioId,xIdempotencyKey:key},
+      'body',false,this.options).pipe(map(r=>operation(r.datos))));
+  }
+  visitar(uotId:number,id:number,destinoId:number,tipoVisitaId:number,objetivo?:string,convenioId?:number) {
+    const e2VisitaRequest:E2VisitaRequest={destinoId,tipoVisitaId,objetivo};
+    return this.keys.idempotent(`E2:visitar:${id}`,e2VisitaRequest,key=>
+      this.api.salidasOperativasVisitar({id,uotId,convenioId,xIdempotencyKey:key,e2VisitaRequest},
+      'body',false,this.options).pipe(map(r=>operation(r.datos))));
+  }
+  finalizarVisita(uotId:number,id:number,visitaId:number,resumen:string,convenioId?:number) {
+    const e2VisitaCierreRequest:E2VisitaCierreRequest={resumen};
+    return this.keys.idempotent(`E2:visita-fin:${visitaId}`,e2VisitaCierreRequest,key=>
+      this.api.salidasOperativasVisitaFinalizar({id,visitaId,uotId,convenioId,
+      xIdempotencyKey:key,e2VisitaCierreRequest},'body',false,this.options)
+      .pipe(map(r=>operation(r.datos))));
+  }
+  retornar(uotId:number,id:number,observacionGeneral:string,bienes:EstadoBienE2[],convenioId?:number) {
+    const e2RetornoRequest:E2RetornoRequest={observacionGeneral,bienes};
+    return this.keys.idempotent(`E2:retorno:${id}`,e2RetornoRequest,key=>
+      this.api.salidasOperativasRetornar({id,uotId,convenioId,xIdempotencyKey:key,e2RetornoRequest},
+      'body',false,this.options).pipe(map(r=>operation(r.datos))));
+  }
+  inspeccionar(uotId:number,id:number,bienes:EstadoBienE2[],observacion?:string,convenioId?:number) {
+    const e2InspeccionRequest:E2InspeccionRequest={observacion,bienes};
+    return this.keys.idempotent(`E2:inspeccion:${id}`,e2InspeccionRequest,key=>
+      this.api.salidasOperativasInspeccionar({id,uotId,convenioId,xIdempotencyKey:key,e2InspeccionRequest},
+      'body',false,this.options).pipe(map(r=>operation(r.datos))));
+  }
+  vincularDestino(uotId:number,id:number,destinoId:number,predioId:number,convenioId?:number) {
+    const e2VincularDestinoRequest:E2VincularDestinoRequest={destinoId,predioId};
+    return this.keys.idempotent(`E2:vincular:${id}:${destinoId}`,e2VincularDestinoRequest,key=>
+      this.api.salidasOperativasVincularDestino({id,uotId,convenioId,xIdempotencyKey:key,e2VincularDestinoRequest},
+      'body',false,this.options).pipe(map(r=>operation(r.datos))));
+  }
+  cancelar(uotId:number,id:number,motivo:string,convenioId?:number) {
+    const e2CancelarRequest:E2CancelarRequest={motivo};
+    return this.keys.idempotent(`E2:cancelar:${id}`,e2CancelarRequest,key=>
+      this.api.salidasOperativasCancelar({id,uotId,convenioId,xIdempotencyKey:key,e2CancelarRequest},
+      'body',false,this.options).pipe(map(r=>operation(r.datos))));
+  }
+  regularizarFin(uotId:number,id:number,fechaFinPrevista:string,convenioId?:number) {
+    const e2FechaFinRequest:E2FechaFinRequest={fechaFinPrevista};
+    return this.keys.idempotent(`E2:fecha-fin:${id}`,e2FechaFinRequest,key=>
+      this.api.salidasOperativasRegularizarFin({id,uotId,convenioId,xIdempotencyKey:key,e2FechaFinRequest},
+      'body',false,this.options).pipe(map(r=>operation(r.datos))));
+  }
+  cerrar(uotId:number,id:number,convenioId?:number) {
+    return this.keys.idempotent(`E2:cerrar:${id}`,{},key=>
+      this.api.salidasOperativasCerrar({id,uotId,convenioId,xIdempotencyKey:key},
+      'body',false,this.options).pipe(map(r=>operation(r.datos))));
+  }
+  private mapList(d?: E2SalidasResponse): ListaE2 {
+    return {total:d?.total ?? 0,items:(d?.items ?? []).map(x=>({
+      salidaId:required(x.salidaId,'salidaId'),nombre:x.nombre ?? '',estado:x.estado ?? '',
+      fechaSolicitud:x.fechaSolicitud,fechaInicioPrevista:x.fechaInicioPrevista,
+      fechaFinPrevista:x.fechaFinPrevista,
+      solicitanteEmpleadoId:required(x.solicitanteEmpleadoId,'solicitanteEmpleadoId'),
+    }))};
+  }
+  private mapCatalogs(d?: E2CatalogosResponse): CatalogosE2 {
+    const mapOption=(x:{id?:number;nombre?:string;codigo?:string})=>({id:required(x.id,'opcionId'),nombre:x.nombre ?? '',codigo:x.codigo});
+    return {motivos:(d?.motivos ?? []).map(mapOption),tiposVisita:(d?.tiposVisita ?? []).map(mapOption),
+      bienes:(d?.bienes ?? []).map(mapOption)};
   }
 }
 ```
 
-## `src/app/features/recursos/programados/adapter/in/ui/pages/recursos-programados-list/recursos-programados-list.ts`
-
-Ruta: `src/app/features/recursos/programados/adapter/in/ui/pages/recursos-programados-list/recursos-programados-list.ts`
+Ruta: `src/app/features/gestion-tecnica/salidas/salidas.routes.ts`
 Contenido: completo
-
 ```typescript
+import { Routes } from '@angular/router';
+import { moduleAccessGuard } from '../../../core/access/module-access.guard';
+import { permissionGuard } from '../../../core/access/permission.guard';
+
+export const salidasRoutes: Routes = [
+  {
+    path: 'salidas',
+    data: {breadcrumb: 'Salidas de campo', module: 'SALIDAS', permission: 'SALIDAS_LISTAR'},
+    canActivate: [moduleAccessGuard, permissionGuard],
+    loadComponent: () => import('./e2/adapter/in/ui/pages/operativas-list/operativas-list')
+      .then(m => m.OperativasListPage),
+  },
+  {
+    path: 'salidas/historico',
+    data: {breadcrumb: 'Histórico de salidas', module: 'SALIDAS', permission: 'SALIDAS_LISTAR'},
+    canActivate: [moduleAccessGuard, permissionGuard],
+    loadComponent: () => import('./adapter/in/ui/pages/salidas-list/salidas-list')
+      .then(m => m.SalidasListPage),
+  },
+  {
+    path: 'salidas/operativas',
+    data: {breadcrumb: 'Salidas operativas', module: 'SALIDAS', permission: 'SALIDAS_LISTAR'},
+    canActivate: [moduleAccessGuard, permissionGuard],
+    loadComponent: () => import('./e2/adapter/in/ui/pages/operativas-list/operativas-list')
+      .then(m => m.OperativasListPage),
+  },
+  {
+    path: 'salidas/operativas/:id',
+    data: {breadcrumb: 'Expediente de salida', module: 'SALIDAS', permission: 'SALIDAS_VER'},
+    canActivate: [moduleAccessGuard, permissionGuard],
+    loadComponent: () => import('./e2/adapter/in/ui/pages/operativa-detail/operativa-detail')
+      .then(m => m.OperativaDetailPage),
+  },
+  {
+    path: 'salidas/:id',
+    data: {breadcrumb: 'Detalle de salida histórica', module: 'SALIDAS', permission: 'SALIDAS_VER'},
+    canActivate: [moduleAccessGuard, permissionGuard],
+    loadComponent: () => import('./adapter/in/ui/pages/salida-detail/salida-detail')
+      .then(m => m.SalidaDetailPage),
+  },
+];
+```
+
+Ruta: `src/app/features/gestion-tecnica/salidas/e2/adapter/in/ui/pages/operativas-list/operativas-list.ts`
+Contenido: completo
+```typescript
+import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { RouterLink } from '@angular/router';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  OnInit,
-  ViewChild,
-  inject,
-  signal,
-} from '@angular/core';
-import { FaIconComponent } from '@fortawesome/angular-fontawesome';
-import {
-  faArrowRotateLeft,
-  faBan,
-  faBoxesStacked,
-  faCheck,
-  faEye,
-  faPen,
-  faPlus,
-  faRotate,
-  faBoxOpen,
-} from '@fortawesome/free-solid-svg-icons';
+import { FormsModule } from '@angular/forms';
+import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { finalize } from 'rxjs';
+import { faRoute } from '@fortawesome/free-solid-svg-icons';
+import { UotContextStore } from '../../../../../../../../uot/state/uot-context.store';
+import { ExpedienteE1UseCase } from '../../../../../../../predios/expediente/application/expediente-e1.use-case';
+import { provideExpedienteE1 } from '../../../../../../../predios/expediente/expediente-e1.providers';
+import { mapOpenApiError } from '../../../../../../../../../infrastructure/openapi/openapi-http-error.mapper';
+import { PageHeaderComponent } from '../../../../../../../../../shared/layout/page-header/page-header';
+import { PaginatorComponent } from '../../../../../../../../../shared/data-display/paginator/paginator';
+import { LoadingStateComponent } from '../../../../../../../../../shared/data-display/loading-state/loading-state';
+import { ErrorStateComponent } from '../../../../../../../../../shared/data-display/error-state/error-state';
+import { EmptyStateComponent } from '../../../../../../../../../shared/data-display/empty-state/empty-state';
+import { ToastService } from '../../../../../../../../../shared/feedback/toast-center/toast.service';
+import { PermissionDirective } from '../../../../../../../../../core/access/permission.directive';
+import { CatalogosE2, ResumenE2, SolicitudE2 } from '../../../../../domain/salida-operativa.model';
+import { SalidasE2UseCase } from '../../../../../application/use-case/salidas-e2.use-case';
+import { provideSalidasE2 } from '../../../../../salidas-e2.providers';
 
-import { PermissionDirective } from '../../../../../../../../core/access/permission.directive';
-import { mapOpenApiError } from '../../../../../../../../infrastructure/openapi/openapi-http-error.mapper';
-import { EmptyStateComponent } from '../../../../../../../../shared/data-display/empty-state/empty-state';
-import { ErrorStateComponent } from '../../../../../../../../shared/data-display/error-state/error-state';
-import { LoadingStateComponent } from '../../../../../../../../shared/data-display/loading-state/loading-state';
-import { PaginatorComponent } from '../../../../../../../../shared/data-display/paginator/paginator';
-import { ActionConfirmDialogComponent } from '../../../../../../../../shared/feedback/action-confirm-dialog/action-confirm-dialog';
-import { ToastService } from '../../../../../../../../shared/feedback/toast-center/toast.service';
-import { PageHeaderComponent } from '../../../../../../../../shared/layout/page-header/page-header';
-import {
-  PageResult,
-  emptyPageResult,
-} from '../../../../../../../../shared/models/page-result.model';
-import { UotContextStore } from '../../../../../../../uot/state/uot-context.store';
-import { AsignarRecursoUseCase } from '../../../../../application/use-case/asignar-recurso.use-case';
-import { CancelarRecursoProgramadoUseCase } from '../../../../../application/use-case/cancelar-recurso-programado.use-case';
-import { ListarDestinosRecursosUseCase } from '../../../../../application/use-case/listar-destinos-recursos.use-case';
-import { ListarRecursosProgramadosUseCase } from '../../../../../application/use-case/listar-recursos-programados.use-case';
-import {
-  DestinoRecursoProgramado,
-  RecursoProgramado,
-  TipoDestinoRecurso,
-} from '../../../../../domain/recurso-programado.model';
-import { RecursoProgramadoFormComponent } from '../recurso-programado-form/recurso-programado-form';
-
-@Component({
-  selector: 'app-recursos-programados-list-page',
-  standalone: true,
-  imports: [
-    DatePipe,
-    FaIconComponent,
-    RouterLink,
-    PermissionDirective,
-    LoadingStateComponent,
-    ErrorStateComponent,
-    EmptyStateComponent,
-    PaginatorComponent,
-    ActionConfirmDialogComponent,
-    PageHeaderComponent,
-    RecursoProgramadoFormComponent,
-  ],
-  templateUrl: './recursos-programados-list.html',
-  styleUrl: './recursos-programados-list.css',
-  changeDetection: ChangeDetectionStrategy.OnPush,
-})
-export class RecursosProgramadosListPage implements OnInit {
-  @ViewChild(RecursoProgramadoFormComponent)
-  private form!: RecursoProgramadoFormComponent;
-
-  @ViewChild(ActionConfirmDialogComponent)
-  private confirm!: ActionConfirmDialogComponent;
-
-  private readonly listUseCase = inject(ListarRecursosProgramadosUseCase);
-  private readonly destinationsUseCase = inject(ListarDestinosRecursosUseCase);
-  private readonly assignUseCase = inject(AsignarRecursoUseCase);
-  private readonly cancelUseCase = inject(CancelarRecursoProgramadoUseCase);
-  private readonly toast = inject(ToastService);
-  readonly uot = inject(UotContextStore);
-
-  readonly loading = signal(true);
-  readonly destinationsLoading = signal(false);
-  readonly errorMessage = signal<string | null>(null);
-  readonly actionId = signal<number | null>(null);
-  readonly result = signal<PageResult<RecursoProgramado>>(emptyPageResult(20));
-  readonly destinations = signal<readonly DestinoRecursoProgramado[]>([]);
-
-  readonly stateFilter = signal('');
-  readonly destinationFilter = signal('');
-
-  readonly pageIcon = faBoxesStacked;
-  readonly addIcon = faPlus;
-  readonly viewIcon = faEye;
-  readonly editIcon = faPen;
-  readonly assignIcon = faCheck;
-  readonly returnIcon = faArrowRotateLeft;
-  readonly consumeIcon = faBoxOpen;
-  readonly cancelIcon = faBan;
-  readonly refreshIcon = faRotate;
-
-  ngOnInit(): void {
-    this.loadDestinations();
-    this.load(1);
-  }
-
-  load(page = this.result().page, size = this.result().size): void {
-    this.loading.set(true);
-    this.errorMessage.set(null);
-
-    const destination = this.selectedFilterDestination();
-
-    this.listUseCase
-      .execute({
-        estadoProceso: this.stateFilter() || undefined,
-        campaniaVentaId:
-          destination?.tipo === 'CAMPANIA'
-            ? destination.destinoId
-            : undefined,
-        operativoVentaId:
-          destination?.tipo === 'OPERATIVO'
-            ? destination.destinoId
-            : undefined,
-        salidaCampoId:
-          destination?.tipo === 'SALIDA'
-            ? destination.destinoId
-            : undefined,
-        page,
-        size,
-      })
-      .pipe(finalize(() => this.loading.set(false)))
-      .subscribe({
-        next: (result) => this.result.set(result),
-        error: (error) =>
-          this.errorMessage.set(mapOpenApiError(error).message),
+function localInput(): string {
+  const now=new Date();return new Date(now.getTime()-now.getTimezoneOffset()*60000).toISOString().slice(0,16);
+}
+@Component({selector:'app-operativas-list',standalone:true,
+  imports:[DatePipe,FormsModule,RouterLink,PageHeaderComponent,PaginatorComponent,LoadingStateComponent,
+           ErrorStateComponent,EmptyStateComponent,PermissionDirective],
+  providers:[...provideSalidasE2(),...provideExpedienteE1()],
+  templateUrl:'./operativas-list.html',styleUrl:'./operativas-list.css',changeDetection:ChangeDetectionStrategy.OnPush})
+export class OperativasListPage implements OnInit {
+  private readonly api=inject(SalidasE2UseCase);
+  private readonly e1=inject(ExpedienteE1UseCase);
+  private readonly uot=inject(UotContextStore);
+  private readonly route=inject(ActivatedRoute);
+  private readonly router=inject(Router);
+  private readonly toast=inject(ToastService);
+  readonly icon=faRoute;
+  readonly items=signal<ResumenE2[]>([]);
+  readonly total=signal(0);
+  readonly pendingCount=signal(0);
+  readonly loading=signal(false);
+  readonly saving=signal(false);
+  readonly error=signal<string|null>(null);
+  readonly catalogos=signal<CatalogosE2>({motivos:[],tiposVisita:[],bienes:[]});
+  readonly candidates=signal<{predioId:number;nombre:string;codigo:string}[]>([]);
+  readonly destinos=signal<{predioId?:number;referencia?:string}[]>([]);
+  readonly bienes=signal<{bienId:number;nombre:string}[]>([]);
+  readonly showForm=signal(false);
+  readonly convenioId=Number(this.route.snapshot.queryParamMap.get('convenioId')) || undefined;
+  readonly uotId=this.uot.selectedId;
+  estado='';page=1;size=20;
+  nombre='';motivoId=0;inicio=localInput();fin='';descripcion='';
+  destinoBuscar='';predioSeleccionado=0;referencia='';bienSeleccionado=0;
+  ngOnInit():void {this.load();this.loadCatalogs();this.refreshPending();}
+  private context():number|null {const id=this.uotId();if(!id)this.error.set('Seleccione primero la unidad territorial.');return id;}
+  load():void {
+    const uot=this.context();if(!uot)return;
+    this.loading.set(true);this.error.set(null);
+    this.refreshPending();
+    this.api.listar(uot,this.convenioId,this.estado||undefined,this.page,this.size)
+      .pipe(finalize(()=>this.loading.set(false))).subscribe({
+        next:r=>{this.items.set(r.items);this.total.set(r.total);},
+        error:e=>this.error.set(mapOpenApiError(e).message),
       });
   }
-
-  loadDestinations(): void {
-    if (this.destinationsLoading()) return;
-
-    const uotId =
-      this.uot.isSpecific()
-        ? this.uot.selectedId() ?? undefined
-        : undefined;
-
-    this.destinationsLoading.set(true);
-    this.destinationsUseCase
-      .execute(uotId)
-      .pipe(finalize(() => this.destinationsLoading.set(false)))
-      .subscribe({
-        next: (items) => this.destinations.set(items),
-        error: (error) =>
-          this.errorMessage.set(mapOpenApiError(error).message),
-      });
-  }
-
-  onDestinationFilter(value: string): void {
-    this.destinationFilter.set(value);
-    this.load(1);
-  }
-
-  destinationKey(destination: DestinoRecursoProgramado): string {
-    return `${destination.tipo}:${destination.destinoId}`;
-  }
-
-  destinationOptionLabel(destination: DestinoRecursoProgramado): string {
-    const type = this.destinationTypeLabel(destination.tipo);
-    const code = destination.codigo ? `${destination.codigo} · ` : '';
-    const unit = destination.uotNombre ? ` · ${destination.uotNombre}` : '';
-    return `${type} · ${code}${destination.nombre}${unit}`;
-  }
-
-  async create(): Promise<void> {
-    const result = await this.form.openCreate(
-      this.uot.isSpecific() ? this.uot.selectedId() ?? undefined : undefined,
-    );
-    if (result.saved) {
-      this.loadDestinations();
-      this.load(1);
-    }
-  }
-
-  async view(item: RecursoProgramado): Promise<void> {
-    await this.form.openDetail(item, 'view');
-  }
-
-  async edit(item: RecursoProgramado): Promise<void> {
-    if (item.estadoProceso !== 'PROGRAMADO') return;
-    const result = await this.form.openDetail(item, 'edit');
-    if (result.saved) this.load();
-  }
-
-  async returnResource(item: RecursoProgramado): Promise<void> {
-    if (item.estadoProceso !== 'EN_EJECUCION') return;
-    const result = await this.form.openDetail(item, 'return');
-    if (result.saved) this.load();
-  }
-
-  // Solo hay acción cuando existe suministro real y saldo entregado pendiente.
-  // No depender únicamente de los IDs: el backend también devuelve el nombre del bien.
-  canRegisterConsumption(item: RecursoProgramado): boolean {
-    return (
-      item.estadoProceso === 'EN_EJECUCION' &&
-      (item.bienInventarioId == null || item.bienInventarioId <= 0) &&
-      !item.bien?.trim() &&
-      item.suministroId != null &&
-      item.suministroId > 0 &&
-      !!item.suministro?.trim() &&
-      Number.isFinite(item.cantidadPendiente) &&
-      item.cantidadPendiente > 0
-    );
-  }
-
-  async consume(item: RecursoProgramado): Promise<void> {
-    if (!this.canRegisterConsumption(item)) return;
-    const result = await this.form.openDetail(item, 'consume');
-    if (result.saved) this.load();
-  }
-
-  async assign(item: RecursoProgramado): Promise<void> {
-    if (item.estadoProceso !== 'PROGRAMADO' || this.actionId()) return;
-
-    const confirmation = await this.confirm.show({
-      title: 'Asignar recurso',
-      message: `El recurso ${this.resourceName(item)} pasará a ejecución y quedará asignado a ${this.destination(item)}.`,
-      tone: 'primary',
-      confirmLabel: 'Asignar',
-      cancelLabel: 'Cancelar',
-      requiresReason: false,
+  refreshPending():void {
+    const uot=this.uotId();if(!uot)return;
+    this.api.listar(uot,this.convenioId,'SOLICITADA',1,1).subscribe({
+      next:r=>this.pendingCount.set(r.total),error:()=>this.pendingCount.set(0),
     });
-    if (!confirmation.confirmed) return;
-
-    this.actionId.set(item.recursoProgramadoId);
-    this.assignUseCase
-      .execute(item.recursoProgramadoId)
-      .pipe(finalize(() => this.actionId.set(null)))
-      .subscribe({
-        next: () => {
-          this.toast.success('Recurso asignado');
-          this.load();
-        },
-        error: (error) =>
-          this.toast.error(
-            'No se pudo asignar el recurso',
-            mapOpenApiError(error).message,
-          ),
-      });
   }
-
-  async cancel(item: RecursoProgramado): Promise<void> {
-    if (item.estadoProceso !== 'PROGRAMADO' || this.actionId()) return;
-
-    const confirmation = await this.confirm.show({
-      title: 'Cancelar programación',
-      message: `La programación de ${this.resourceName(item)} para ${this.destination(item)} quedará cancelada.`,
-      tone: 'danger',
-      confirmLabel: 'Cancelar programación',
-      cancelLabel: 'Volver',
-      requiresReason: true,
-      reasonLabel: 'Motivo',
-      reasonPlaceholder: 'Indica el motivo de la cancelación.',
-      minimumReasonLength: 5,
+  showPending():void {this.estado='SOLICITADA';this.page=1;this.load();}
+  loadCatalogs():void {
+    const uot=this.context();if(!uot)return;
+    this.api.catalogos(uot,this.convenioId).subscribe({next:c=>this.catalogos.set(c),
+      error:e=>this.error.set(mapOpenApiError(e).message)});
+  }
+  searchPredios():void {
+    const uot=this.context();if(!uot || !this.destinoBuscar.trim())return;
+    this.e1.buscarPredios(uot,this.destinoBuscar.trim(),this.convenioId).subscribe({
+      next:items=>this.candidates.set(items.map(x=>({predioId:x.predioId,nombre:x.nombre,codigo:x.codigo}))),
+      error:e=>this.toast.error('No se pudo buscar predios',mapOpenApiError(e).message),
     });
-    if (!confirmation.confirmed || !confirmation.reason) return;
-
-    this.actionId.set(item.recursoProgramadoId);
-    this.cancelUseCase
-      .execute(item.recursoProgramadoId, confirmation.reason)
-      .pipe(finalize(() => this.actionId.set(null)))
-      .subscribe({
-        next: () => {
-          this.toast.success('Programación cancelada');
-          this.load();
-        },
-        error: (error) =>
-          this.toast.error(
-            'No se pudo cancelar',
-            mapOpenApiError(error).message,
-          ),
-      });
   }
-
-  resourceName(item: RecursoProgramado): string {
-    return item.bien ?? item.suministro ?? 'Recurso';
-  }
-
-  resourceKind(item: RecursoProgramado): string {
-    return (item.bienInventarioId != null && item.bienInventarioId > 0) || !!item.bien?.trim()
-      ? 'Bien / vehículo'
-      : 'Suministro';
-  }
-
-  resourceUot(item: RecursoProgramado): string {
-    const identity = this.destinationIdentity(item);
-    if (!identity) return '—';
-
-    const destination = this.destinations().find(
-      (candidate) =>
-        candidate.tipo === identity.tipo &&
-        candidate.destinoId === identity.id,
-    );
-
-    if (!destination) return '—';
-
-    const code = destination.uotCodigo ? `${destination.uotCodigo} · ` : '';
-    return `${code}${destination.uotNombre ?? 'UOT'}`;
-  }
-
-  destination(item: RecursoProgramado): string {
-    const identity = this.destinationIdentity(item);
-    if (!identity) return '—';
-
-    const destination = this.destinations().find(
-      (candidate) =>
-        candidate.tipo === identity.tipo &&
-        candidate.destinoId === identity.id,
-    );
-
-    if (destination) {
-      const code = destination.codigo ? `${destination.codigo} · ` : '';
-      return `${code}${destination.nombre}`;
+  addDestino():void {
+    if(this.predioSeleccionado>0){
+      if(this.destinos().some(x=>x.predioId===this.predioSeleccionado))return;
+      this.destinos.update(x=>[...x,{predioId:this.predioSeleccionado}]);
+      this.predioSeleccionado=0;this.referencia='';return;
     }
-
-    if (identity.tipo === 'CAMPANIA') return `Campaña #${identity.id}`;
-    if (identity.tipo === 'OPERATIVO') return `Operativo #${identity.id}`;
-    return `Salida de campo #${identity.id}`;
+    if(this.referencia.trim()) {this.destinos.update(x=>[...x,{referencia:this.referencia.trim()}]);this.referencia='';}
   }
-
-  destinationType(item: RecursoProgramado): string {
-    const identity = this.destinationIdentity(item);
-    return identity ? this.destinationTypeLabel(identity.tipo) : 'Sin destino';
+  removeDestino(index:number):void {this.destinos.update(items=>items.filter((_,i)=>i!==index));}
+  addBien():void {
+    const bien=this.catalogos().bienes.find(x=>x.id===this.bienSeleccionado);
+    if(bien && !this.bienes().some(x=>x.bienId===bien.id))this.bienes.update(x=>[...x,{bienId:bien.id,nombre:bien.nombre}]);
+    this.bienSeleccionado=0;
   }
-
-  private selectedFilterDestination(): DestinoRecursoProgramado | null {
-    const key = this.destinationFilter();
-    if (!key) return null;
-    return this.destinations().find((item) => this.destinationKey(item) === key) ?? null;
-  }
-
-  private destinationIdentity(
-    item: RecursoProgramado,
-  ): { tipo: TipoDestinoRecurso; id: number } | null {
-    if (item.campaniaVentaId) {
-      return { tipo: 'CAMPANIA', id: item.campaniaVentaId };
+  removeBien(id:number):void {this.bienes.update(x=>x.filter(b=>b.bienId!==id));}
+  solicitar():void {
+    const uot=this.context();if(!uot||this.saving())return;
+    if(!this.nombre.trim()||!this.motivoId||!this.inicio||!this.destinos().length){
+      this.toast.error('Ingrese nombre, motivo, fecha inicial y al menos un destino.');return;
     }
-    if (item.operativoVentaId) {
-      return { tipo: 'OPERATIVO', id: item.operativoVentaId };
+    const entrada:SolicitudE2={nombre:this.nombre.trim(),motivoSalidaId:this.motivoId,
+      fechaInicioPrevista:new Date(this.inicio).toISOString(),
+      fechaFinPrevista:this.fin?new Date(this.fin).toISOString():undefined,
+      descripcion:this.descripcion.trim()||undefined,destinos:this.destinos(),
+      bienes:this.bienes().map(x=>({bienId:x.bienId}))};
+    if(entrada.fechaFinPrevista && entrada.fechaFinPrevista<entrada.fechaInicioPrevista){
+      this.toast.error('La fecha final no puede ser anterior a la inicial.');return;
     }
-    if (item.salidaCampoId) {
-      return { tipo: 'SALIDA', id: item.salidaCampoId };
-    }
-    return null;
+    this.saving.set(true);
+    this.api.solicitar(uot,entrada,this.convenioId).pipe(finalize(()=>this.saving.set(false))).subscribe({
+      next:r=>{this.toast.success('Solicitud enviada para aprobación');
+        this.router.navigate(['/gestion-tecnica/salidas/operativas',r.salidaId],
+          {queryParams:this.convenioId?{convenioId:this.convenioId}:undefined});},
+      error:e=>this.toast.error('No se pudo enviar la solicitud',mapOpenApiError(e).message),
+    });
   }
-
-  private destinationTypeLabel(type: TipoDestinoRecurso): string {
-    if (type === 'CAMPANIA') return 'Campaña';
-    if (type === 'OPERATIVO') return 'Operativo';
-    return 'Salida';
-  }
+  totalPages():number {return Math.ceil(this.total()/this.size);}
+  changePage(page:number):void {this.page=page;this.load();}
+  changeSize(size:number):void {this.size=size;this.page=1;this.load();}
+  open(id:number):void {this.router.navigate(['/gestion-tecnica/salidas/operativas',id],
+    {queryParams:this.convenioId?{convenioId:this.convenioId}:undefined});}
 }
 ```
 
-## `src/app/features/recursos/programados/adapter/in/ui/pages/recurso-programado-form/recurso-programado-form.ts`
-
-Ruta: `src/app/features/recursos/programados/adapter/in/ui/pages/recurso-programado-form/recurso-programado-form.ts`
+Ruta: `src/app/features/gestion-tecnica/salidas/e2/adapter/in/ui/pages/operativas-list/operativas-list.html`
 Contenido: completo
+```html
+<div class="desco-page">
+  <app-page-header title="Salidas operativas" eyebrow="Gestión técnica" [icon]="icon"
+      subtitle="Solicitudes, autorizaciones, visitas y control de bienes.">
+    <div pageActions class="flex gap-2 flex-wrap">
+      <a class="admin-secondary-button" routerLink="/gestion-tecnica/salidas/historico">Histórico de salidas</a>
+      <button *appPermission="'SALIDAS_CREAR'" type="button" class="admin-primary-button"
+        (click)="showForm.set(!showForm())">{{showForm()?'Ocultar formulario':'Solicitar salida'}}</button>
+    </div>
+  </app-page-header>
+  @if(showForm()){
+  <section class="admin-surface mt-4">
+    <div class="admin-section-header"><div><p>Solicitud única</p><h2>Datos principales</h2></div></div>
+    <form class="admin-form-grid" (ngSubmit)="solicitar()">
+      <div class="admin-field"><label for="e2nombre">Nombre de salida</label>
+        <input id="e2nombre" class="admin-input" name="nombre" [(ngModel)]="nombre" required maxlength="180"/></div>
+      <div class="admin-field"><label for="e2motivo">Motivo</label>
+        <select id="e2motivo" class="admin-select" name="motivo" [(ngModel)]="motivoId" required>
+          <option [ngValue]="0">Seleccione</option>
+          @for(m of catalogos().motivos;track m.id){<option [ngValue]="m.id">{{m.nombre}}</option>}
+        </select></div>
+      <div class="admin-field"><label for="e2inicio">Inicio previsto</label>
+        <input id="e2inicio" class="admin-input" type="datetime-local" name="inicio" [(ngModel)]="inicio" required/></div>
+      <div class="admin-field"><label for="e2fin">Fin previsto (opcional)</label>
+        <input id="e2fin" class="admin-input" type="datetime-local" name="fin" [(ngModel)]="fin"/></div>
+      <div class="admin-field admin-field-span-2"><label for="e2descripcion">Propósito (opcional)</label>
+        <textarea id="e2descripcion" class="admin-textarea" name="descripcion" [(ngModel)]="descripcion" maxlength="400"></textarea></div>
+    </form>
+    <div class="admin-section-header mt-4"><div><p>Lugares</p><h2>Destinos de la salida</h2></div></div>
+    <div class="e2-grid">
+      <div class="admin-field"><label>Buscar predio existente</label>
+        <div class="flex gap-2"><input class="admin-input" [(ngModel)]="destinoBuscar" placeholder="Nombre o código"/>
+          <button type="button" class="admin-secondary-button" (click)="searchPredios()">Buscar</button></div></div>
+      <div class="admin-field"><label>Predio encontrado</label>
+        <select class="admin-select" [(ngModel)]="predioSeleccionado"><option [ngValue]="0">Otro destino</option>
+        @for(p of candidates();track p.predioId){<option [ngValue]="p.predioId">{{p.codigo}} — {{p.nombre}}</option>}
+        </select></div>
+      <div class="admin-field"><label>O referencia de lugar no registrado</label>
+        <input class="admin-input" [(ngModel)]="referencia" placeholder="Nombre del lugar, sector, referencia"/></div>
+      <div class="flex items-end"><button type="button" class="admin-secondary-button" (click)="addDestino()">Añadir destino</button></div>
+    </div>
+    <div class="e2-chips">@for(d of destinos();track $index){
+      <span class="e2-chip">{{d.predioId?'Predio #'+d.predioId:d.referencia}}
+        <button type="button" [attr.aria-label]="'Quitar destino'" (click)="removeDestino($index)">×</button></span>
+    }</div>
+    <div class="admin-section-header mt-4"><div><p>Opcional</p><h2>Bienes a solicitar</h2></div></div>
+    <div class="flex flex-wrap gap-2">
+      <select class="admin-select" [(ngModel)]="bienSeleccionado"><option [ngValue]="0">Seleccione bien disponible</option>
+        @for(b of catalogos().bienes;track b.id){<option [ngValue]="b.id">{{b.nombre}}</option>}
+      </select><button type="button" class="admin-secondary-button" (click)="addBien()">Añadir bien</button>
+    </div>
+    <div class="e2-chips">@for(b of bienes();track b.bienId){<span class="e2-chip">{{b.nombre}}
+      <button type="button" (click)="removeBien(b.bienId)" aria-label="Quitar bien">×</button></span>}</div>
+    <div class="admin-modal-actions mt-4"><button type="button" class="admin-primary-button"
+      [disabled]="saving()||!destinos().length" (click)="solicitar()">{{saving()?'Enviando...':'Enviar a aprobación'}}</button></div>
+  </section>}
+  <section class="admin-surface mt-5">
+    <div class="admin-toolbar flex flex-wrap gap-2">
+      <button type="button" class="admin-secondary-button" (click)="showPending()">
+        Por aprobar ({{pendingCount()}})
+      </button>
+      <div class="admin-field"><label>Estado</label><select class="admin-select" [(ngModel)]="estado" (change)="page=1;load()">
+        <option value="">Todos</option><option value="SOLICITADA">Por aprobar</option><option value="OBSERVADA">Observada</option>
+        <option value="APROBADA">Aprobada</option><option value="EN_EJECUCION">En campo</option>
+        <option value="EN_RETORNO">Por inspeccionar</option><option value="CERRADA">Cerrada</option>
+        <option value="RECHAZADA">Rechazada</option></select></div>
+      <button type="button" class="admin-secondary-button" (click)="load()">Actualizar</button>
+    </div>
+    @if(loading()){<app-loading-state title="Cargando solicitudes" message="Consultando la UOT actual."/>}
+    @else if(error()){<app-error-state [message]="error()||'Error de consulta'" (retry)="load()"/>}
+    @else if(!items().length){<app-empty-state title="Sin solicitudes" message="No hay salidas con estos filtros."/>}
+    @else {<div class="admin-table-wrap"><table class="admin-table"><thead><tr>
+      <th>Salida</th><th>Solicitada</th><th>Inicio</th><th>Estado</th><th>Acción</th>
+    </tr></thead><tbody>@for(s of items();track s.salidaId){<tr>
+      <td><strong>{{s.nombre}}</strong></td><td>{{s.fechaSolicitud|date:'dd/MM/yyyy HH:mm'}}</td>
+      <td>{{s.fechaInicioPrevista|date:'dd/MM/yyyy HH:mm'}}</td><td>{{s.estado}}</td>
+      <td><button class="admin-secondary-button" type="button" (click)="open(s.salidaId)">Ver expediente</button></td>
+    </tr>}</tbody></table></div>}
+    <app-paginator [page]="page" [size]="size" [totalRecords]="total()"
+      [totalPages]="totalPages()" (pageChange)="changePage($event)" (sizeChange)="changeSize($event)"/>
+  </section>
+</div>
+```
 
+Ruta: `src/app/features/gestion-tecnica/salidas/e2/adapter/in/ui/pages/operativa-detail/operativa-detail.ts`
+Contenido: completo
 ```typescript
+import { ChangeDetectionStrategy, Component, OnInit, ViewChild, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  ElementRef,
-  ViewChild,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { FaIconComponent } from '@fortawesome/angular-fontawesome';
-import {
-  faArrowRotateLeft,
-  faBoxesStacked,
-  faEye,
-  faFloppyDisk,
-  faPen,
-  faPlus,
-  faRotate,
-  faBoxOpen,
-  faXmark,
-} from '@fortawesome/free-solid-svg-icons';
-import { finalize } from 'rxjs';
-
-import { mapOpenApiError } from '../../../../../../../../infrastructure/openapi/openapi-http-error.mapper';
-import { ToastService } from '../../../../../../../../shared/feedback/toast-center/toast.service';
-import { FormErrorComponent } from '../../../../../../../../shared/forms/form-error/form-error';
-import { AdminModalResult } from '../../../../../../../administracion/shared/admin-modal.types';
-import { UotContextStore } from '../../../../../../../uot/state/uot-context.store';
-import { ConsultarDisponibilidadRecursosUseCase } from '../../../../../application/use-case/consultar-disponibilidad-recursos.use-case';
-import { EditarRecursoProgramadoUseCase } from '../../../../../application/use-case/editar-recurso-programado.use-case';
-import { ListarDestinosRecursosUseCase } from '../../../../../application/use-case/listar-destinos-recursos.use-case';
-import { ObtenerRecursoProgramadoUseCase } from '../../../../../application/use-case/obtener-recurso-programado.use-case';
-import { ProgramarRecursoUseCase } from '../../../../../application/use-case/programar-recurso.use-case';
-import { RegistrarConsumoRecursoUseCase } from '../../../../../application/use-case/registrar-consumo-recurso.use-case';
-import { RegistrarDevolucionRecursoUseCase } from '../../../../../application/use-case/registrar-devolucion-recurso.use-case';
-import { DisponibilidadRecurso } from '../../../../../domain/disponibilidad-recurso.model';
-import {
-  DestinoRecursoProgramado,
-  RecursoProgramado,
-  RecursoProgramadoDetalle,
-  TipoDestinoRecurso,
-  TipoRecursoProgramable,
-} from '../../../../../domain/recurso-programado.model';
-
-export type RecursoProgramadoFormMode =
-  | 'create'
-  | 'edit'
-  | 'view'
-  | 'return'
-  | 'consume';
-
-@Component({
-  selector: 'app-recurso-programado-form',
-  standalone: true,
-  imports: [DatePipe, ReactiveFormsModule, FaIconComponent, FormErrorComponent],
-  templateUrl: './recurso-programado-form.html',
-  styleUrl: './recurso-programado-form.css',
-  changeDetection: ChangeDetectionStrategy.OnPush,
-})
-export class RecursoProgramadoFormComponent {
-  @ViewChild('dialog', { static: true })
-  private readonly dialogRef!: ElementRef<HTMLDialogElement>;
-
-  private readonly fb = inject(FormBuilder);
-  private readonly destinationsUseCase = inject(ListarDestinosRecursosUseCase);
-  private readonly availabilityUseCase = inject(ConsultarDisponibilidadRecursosUseCase);
-  private readonly getUseCase = inject(ObtenerRecursoProgramadoUseCase);
-  private readonly programUseCase = inject(ProgramarRecursoUseCase);
-  private readonly updateUseCase = inject(EditarRecursoProgramadoUseCase);
-  private readonly returnUseCase = inject(RegistrarDevolucionRecursoUseCase);
-  private readonly consumeUseCase = inject(RegistrarConsumoRecursoUseCase);
-  private readonly toast = inject(ToastService);
-  readonly uot = inject(UotContextStore);
-
-  readonly mode = signal<RecursoProgramadoFormMode>('create');
-  readonly loading = signal(false);
-  readonly loadingDestinations = signal(false);
-  readonly loadingAvailability = signal(false);
-  readonly saving = signal(false);
-  readonly errorMessage = signal<string | null>(null);
-  readonly current = signal<RecursoProgramadoDetalle | null>(null);
-  readonly destinations = signal<readonly DestinoRecursoProgramado[]>([]);
-  readonly availability = signal<DisponibilidadRecurso>({
-    bienes: [],
-    suministros: [],
-  });
-
-  readonly addIcon = faPlus;
-  readonly editIcon = faPen;
-  readonly viewIcon = faEye;
-  readonly resourceIcon = faBoxesStacked;
-  readonly returnIcon = faArrowRotateLeft;
-  readonly consumeIcon = faBoxOpen;
-  readonly closeIcon = faXmark;
-  readonly saveIcon = faFloppyDisk;
-  readonly refreshIcon = faRotate;
-
-  private resolver: ((result: AdminModalResult<number>) => void) | null = null;
-
-  readonly createForm = this.fb.nonNullable.group({
-    uotId: [0, [Validators.required, Validators.min(1)]],
-    destinoTipo: ['SALIDA' as TipoDestinoRecurso, [Validators.required]],
-    destinoId: [0, [Validators.required, Validators.min(1)]],
-    recursoTipo: ['BIEN' as TipoRecursoProgramable, [Validators.required]],
-    recursoId: [0, [Validators.required, Validators.min(1)]],
-    cantidadProgramada: [1, [Validators.required, Validators.min(0.001)]],
-    observacion: ['', [Validators.maxLength(300)]],
-  });
-
-  readonly editForm = this.fb.nonNullable.group({
-    cantidadProgramada: [1, [Validators.required, Validators.min(0.001)]],
-    observacion: ['', [Validators.maxLength(300)]],
-  });
-
-  readonly returnForm = this.fb.nonNullable.group({
-    cantidadDevuelta: [1, [Validators.required, Validators.min(0.001)]],
-    observacion: ['', [Validators.maxLength(300)]],
-  });
-
-  readonly consumeForm = this.fb.nonNullable.group({
-    cantidadConsumida: [0, [Validators.min(0.001)]],
-    observacion: ['', [Validators.maxLength(300)]],
-  });
-
-  readonly availableAssets = computed(() =>
-    this.availability().bienes.filter((item) => item.disponible),
-  );
-
-  selectedSupply() {
-    const id = Number(this.createForm.controls.recursoId.value);
-    return (
-      this.availability().suministros.find(
-        (item) => item.suministroId === id,
-      ) ?? null
-    );
-  }
-
-  async openCreate(preferredUotId?: number): Promise<AdminModalResult<number>> {
-    this.resetState('create');
-
-    const uotId = this.uot.isSpecific()
-      ? this.uot.selectedId() ?? 0
-      : preferredUotId && preferredUotId > 0
-        ? preferredUotId
-        : 0;
-
-    this.createForm.reset({
-      uotId,
-      destinoTipo: 'SALIDA',
-      destinoId: 0,
-      recursoTipo: 'BIEN',
-      recursoId: 0,
-      cantidadProgramada: 1,
-      observacion: '',
-    });
-    this.createForm.controls.uotId[
-      this.uot.isSpecific() ? 'disable' : 'enable'
-    ]({ emitEvent: false });
-    this.createForm.controls.cantidadProgramada.disable({ emitEvent: false });
-    this.dialogRef.nativeElement.showModal();
-
-    if (uotId > 0) {
-      this.loadDestinations();
-    }
-
-    return this.resultPromise();
-  }
-
-  async openDetail(
-    item: RecursoProgramado,
-    mode: Exclude<RecursoProgramadoFormMode, 'create'>,
-  ): Promise<AdminModalResult<number>> {
-    if (
-      mode === 'consume' &&
-      ((item.bienInventarioId != null && item.bienInventarioId > 0) ||
-       !!item.bien?.trim() || item.suministroId == null ||
-       item.suministroId <= 0 || !item.suministro?.trim() ||
-       !Number.isFinite(item.cantidadPendiente) || item.cantidadPendiente <= 0)
-    ) {
-      this.toast.error(
-        'Consumo no aplicable',
-        'Los bienes inventariables se devuelven. Solo se registra consumo de suministros.',
-      );
-      return { saved: false, value: null };
-    }
-
-    this.resetState(mode);
-    this.dialogRef.nativeElement.showModal();
-    this.loadDestinations(false);
-    this.loading.set(true);
-
-    this.getUseCase
-      .execute(item.recursoProgramadoId)
-      .pipe(finalize(() => this.loading.set(false)))
-      .subscribe({
-        next: (detail) => {
-          if (
-            mode === 'consume' &&
-            ((detail.bienInventarioId != null && detail.bienInventarioId > 0) ||
-             !!detail.bien?.trim() || detail.suministroId == null ||
-             detail.suministroId <= 0 || !detail.suministro?.trim() ||
-             this.pendingQuantity(detail) <= 0)
-          ) {
-            this.mode.set('view');
-            this.errorMessage.set(
-              'Este recurso es un bien inventariable: corresponde registrarle devolución, no consumo.',
-            );
-          }
-          this.current.set(detail);
-          this.editForm.reset({
-            cantidadProgramada: detail.cantidadProgramada,
-            observacion: detail.observacion ?? '',
-          });
-          this.returnForm.reset({
-            cantidadDevuelta: detail.bienInventarioId
-              ? 1
-              : Math.max(0.001, detail.cantidadProgramada),
-            observacion: '',
-          });
-          this.consumeForm.reset({
-            cantidadConsumida: this.pendingQuantity(detail),
-            observacion: '',
-          });
-        },
-        error: (error) =>
-          this.errorMessage.set(mapOpenApiError(error).message),
-      });
-
-    return this.resultPromise();
-  }
-
-  destinationsForSelectedType(): readonly DestinoRecursoProgramado[] {
-    const type = this.createForm.controls.destinoTipo.value;
-    const uotId = Number(this.createForm.getRawValue().uotId);
-
-    return this.destinations().filter(
-      (item) =>
-        item.tipo === type &&
-        (uotId <= 0 || item.uotId === uotId),
-    );
-  }
-
-  selectedDestination(): DestinoRecursoProgramado | null {
-    const type = this.createForm.controls.destinoTipo.value;
-    const id = Number(this.createForm.controls.destinoId.value);
-    return (
-      this.destinations().find(
-        (item) => item.tipo === type && item.destinoId === id,
-      ) ?? null
-    );
-  }
-
-  destinationOptionLabel(destination: DestinoRecursoProgramado): string {
-    const code = destination.codigo ? `${destination.codigo} · ` : '';
-    const unit = destination.uotNombre ? ` · ${destination.uotNombre}` : '';
-    return `${code}${destination.nombre}${unit}`;
-  }
-
-  changeUot(value: string): void {
-    const parsed = Number(value);
-    const uotId = Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
-
-    this.createForm.patchValue({
-      uotId,
-      destinoId: 0,
-      recursoId: 0,
-    });
-    this.destinations.set([]);
-    this.availability.set({ bienes: [], suministros: [] });
-    this.errorMessage.set(null);
-
-    if (uotId > 0) {
-      this.loadDestinations();
-    }
-  }
-
-  changeDestinationType(value: string): void {
-    const type = value as TipoDestinoRecurso;
-    this.createForm.patchValue({
-      destinoTipo: type,
-      destinoId: 0,
-      recursoId: 0,
-    });
-    this.availability.set({ bienes: [], suministros: [] });
-    this.errorMessage.set(null);
-  }
-
-  changeDestination(value: string): void {
-    const parsed = Number(value);
-    this.createForm.controls.destinoId.setValue(
-      Number.isFinite(parsed) && parsed > 0 ? parsed : 0,
-    );
-    this.createForm.controls.recursoId.setValue(0);
-    this.availability.set({ bienes: [], suministros: [] });
-    this.errorMessage.set(null);
-
-    if (this.selectedDestination()) {
-      this.loadAvailability();
-    }
-  }
-
-  changeResourceType(type: string): void {
-    const resourceType = type as TipoRecursoProgramable;
-    this.createForm.patchValue({ recursoTipo: resourceType, recursoId: 0 });
-
-    if (resourceType === 'BIEN') {
-      this.createForm.controls.cantidadProgramada.setValue(1);
-      this.createForm.controls.cantidadProgramada.disable({ emitEvent: false });
-    } else {
-      this.createForm.controls.cantidadProgramada.enable({ emitEvent: false });
-      this.createForm.controls.cantidadProgramada.setValue(1);
-    }
-  }
-
-  loadDestinations(reportError = true): void {
-    if (this.loadingDestinations()) return;
-
-    const createUotId = Number(this.createForm.getRawValue().uotId);
-    const uotId =
-      this.mode() === 'create'
-        ? createUotId > 0
-          ? createUotId
-          : undefined
-        : this.uot.isSpecific()
-          ? this.uot.selectedId() ?? undefined
-          : undefined;
-
-    if (this.mode() === 'create' && !uotId) {
-      this.destinations.set([]);
-      return;
-    }
-
-    this.loadingDestinations.set(true);
-    this.destinationsUseCase
-      .execute(uotId)
-      .pipe(finalize(() => this.loadingDestinations.set(false)))
-      .subscribe({
-        next: (destinations) => this.destinations.set(destinations),
-        error: (error) => {
-          if (reportError) {
-            this.errorMessage.set(mapOpenApiError(error).message);
-          }
-        },
-      });
-  }
-
-  loadAvailability(): void {
-    const destination = this.selectedDestination();
-
-    if (!destination) {
-      this.availability.set({ bienes: [], suministros: [] });
-      this.errorMessage.set('Seleccione un destino antes de consultar recursos.');
-      return;
-    }
-
-    if (this.loadingAvailability()) return;
-
-    this.loadingAvailability.set(true);
-    this.errorMessage.set(null);
-    this.availabilityUseCase
-      .execute(destination.uotId)
-      .pipe(finalize(() => this.loadingAvailability.set(false)))
-      .subscribe({
-        next: (availability) => this.availability.set(availability),
-        error: (error) =>
-          this.errorMessage.set(mapOpenApiError(error).message),
-      });
-  }
-
-  save(): void {
-    const mode = this.mode();
-    if (this.saving() || this.loading() || mode === 'view') return;
-
-    if (mode === 'create') {
-      this.saveCreate();
-    } else if (mode === 'edit') {
-      this.saveEdit();
-    } else if (mode === 'return') {
-      this.saveReturn();
-    } else {
-      this.saveConsume();
-    }
-  }
-
-  close(): void {
-    if (!this.saving()) this.finish({ saved: false, value: null });
-  }
-
-  title(): string {
-    switch (this.mode()) {
-      case 'create':
-        return 'Programar recurso';
-      case 'edit':
-        return 'Editar programación';
-      case 'return':
-        return 'Registrar devolución';
-      case 'consume':
-        return 'Registrar consumo';
-      default:
-        return 'Detalle del recurso programado';
-    }
-  }
-
-  icon() {
-    switch (this.mode()) {
-      case 'create':
-        return this.addIcon;
-      case 'edit':
-        return this.editIcon;
-      case 'return':
-        return this.returnIcon;
-      case 'consume':
-        return this.consumeIcon;
-      default:
-        return this.viewIcon;
-    }
-  }
-
-  destinationLabel(detail: RecursoProgramadoDetalle): string {
-    const identity = this.destinationIdentity(detail);
-
-    if (identity) {
-      const destination = this.destinations().find(
-        (item) =>
-          item.tipo === identity.tipo && item.destinoId === identity.id,
-      );
-      if (destination) return this.destinationOptionLabel(destination);
-
-      if (identity.tipo === 'CAMPANIA') return `Campaña #${identity.id}`;
-      if (identity.tipo === 'OPERATIVO') return `Operativo #${identity.id}`;
-      return `Salida de campo #${identity.id}`;
-    }
-
-    return 'Sin destino';
-  }
-
-  resourceLabel(detail: RecursoProgramadoDetalle): string {
-    return detail.bien ?? detail.suministro ?? 'Recurso';
-  }
-
-  pendingQuantity(detail: RecursoProgramadoDetalle): number {
-    const delivered = detail.movimientos
-      .filter((movement) => movement.tipoMovimiento === 'ENTREGA')
-      .reduce((sum, movement) => sum + movement.cantidad, 0);
-    const returned = detail.movimientos
-      .filter((movement) => movement.tipoMovimiento === 'DEVOLUCION')
-      .reduce((sum, movement) => sum + movement.cantidad, 0);
-    const consumed = detail.movimientos
-      .filter((movement) => movement.tipoMovimiento === 'CONSUMO')
-      .reduce((sum, movement) => sum + movement.cantidad, 0);
-
-    return Math.max(0, Number((delivered - returned - consumed).toFixed(3)));
-  }
-
-  private saveCreate(): void {
-    this.createForm.markAllAsTouched();
-
-    if (
-      this.createForm.invalid ||
-      this.loadingDestinations() ||
-      this.loadingAvailability()
-    ) {
-      return;
-    }
-
-    const destination = this.selectedDestination();
-    if (!destination) {
-      this.errorMessage.set('Seleccione un destino válido.');
-      return;
-    }
-
-    const raw = this.createForm.getRawValue();
-    const resourceType = raw.recursoTipo as TipoRecursoProgramable;
-    const quantity =
-      resourceType === 'BIEN' ? 1 : Number(raw.cantidadProgramada);
-    const selectedSupply = this.selectedSupply();
-
-    if (
-      resourceType === 'SUMINISTRO' &&
-      selectedSupply &&
-      quantity > selectedSupply.stockDisponible
-    ) {
-      this.errorMessage.set(
-        `La cantidad supera el stock disponible (${selectedSupply.stockDisponible} ${selectedSupply.unidadMedida}).`,
-      );
-      return;
-    }
-
-    const input = {
-      campaniaVentaId:
-        destination.tipo === 'CAMPANIA' ? destination.destinoId : undefined,
-      operativoVentaId:
-        destination.tipo === 'OPERATIVO' ? destination.destinoId : undefined,
-      salidaCampoId:
-        destination.tipo === 'SALIDA' ? destination.destinoId : undefined,
-      bienInventarioId:
-        resourceType === 'BIEN' ? Number(raw.recursoId) : undefined,
-      suministroId:
-        resourceType === 'SUMINISTRO' ? Number(raw.recursoId) : undefined,
-      cantidadProgramada: quantity,
-      observacion: raw.observacion.trim() || undefined,
-    };
-
-    this.saving.set(true);
-    this.errorMessage.set(null);
-    this.programUseCase
-      .execute(input)
-      .pipe(finalize(() => this.saving.set(false)))
-      .subscribe({
-        next: (id) => {
-          this.toast.success('Recurso programado');
-          this.finish({ saved: true, value: id });
-        },
-        error: (error) =>
-          this.errorMessage.set(mapOpenApiError(error).message),
-      });
-  }
-
-  private saveEdit(): void {
-    this.editForm.markAllAsTouched();
-    const detail = this.current();
-    if (!detail || this.editForm.invalid) return;
-
-    const raw = this.editForm.getRawValue();
-    const quantity = detail.bienInventarioId
-      ? 1
-      : Number(raw.cantidadProgramada);
-
-    this.saving.set(true);
-    this.errorMessage.set(null);
-    this.updateUseCase
-      .execute(detail.recursoProgramadoId, {
-        cantidadProgramada: quantity,
-        observacion: raw.observacion.trim() || undefined,
-      })
-      .pipe(finalize(() => this.saving.set(false)))
-      .subscribe({
-        next: () => {
-          this.toast.success('Programación actualizada');
-          this.finish({ saved: true, value: detail.recursoProgramadoId });
-        },
-        error: (error) =>
-          this.errorMessage.set(mapOpenApiError(error).message),
-      });
-  }
-
-  private saveReturn(): void {
-    this.returnForm.markAllAsTouched();
-    const detail = this.current();
-    if (!detail || this.returnForm.invalid) return;
-
-    const raw = this.returnForm.getRawValue();
-    const quantity = detail.bienInventarioId
-      ? 1
-      : Number(raw.cantidadDevuelta);
-    const alreadyReturned = detail.movimientos
-      .filter((movement) => movement.tipoMovimiento === 'DEVOLUCION')
-      .reduce((sum, movement) => sum + movement.cantidad, 0);
-
-    if (quantity + alreadyReturned > detail.cantidadProgramada) {
-      this.errorMessage.set(
-        'La devolución supera la cantidad programada pendiente.',
-      );
-      return;
-    }
-
-    this.saving.set(true);
-    this.errorMessage.set(null);
-    this.returnUseCase
-      .execute(detail.recursoProgramadoId, {
-        cantidadDevuelta: quantity,
-        observacion: raw.observacion.trim() || undefined,
-      })
-      .pipe(finalize(() => this.saving.set(false)))
-      .subscribe({
-        next: () => {
-          this.toast.success('Devolución registrada');
-          this.finish({ saved: true, value: detail.recursoProgramadoId });
-        },
-        error: (error) =>
-          this.errorMessage.set(mapOpenApiError(error).message),
-      });
-  }
-
-  private saveConsume(): void {
-    this.consumeForm.markAllAsTouched();
-    const detail = this.current();
-    if (
-      !detail ||
-      (detail.bienInventarioId != null && detail.bienInventarioId > 0) ||
-      !!detail.bien?.trim() ||
-      detail.suministroId == null ||
-      detail.suministroId <= 0 ||
-      !detail.suministro?.trim() ||
-      this.pendingQuantity(detail) <= 0 ||
-      this.consumeForm.invalid
-    ) return;
-
-    const raw = this.consumeForm.getRawValue();
-    const pending = this.pendingQuantity(detail);
-    const quantity = Number(raw.cantidadConsumida);
-
-    if (quantity > pending) {
-      this.errorMessage.set('La cantidad supera el pendiente por regularizar.');
-      return;
-    }
-
-    this.saving.set(true);
-    this.errorMessage.set(null);
-    this.consumeUseCase
-      .execute(detail.recursoProgramadoId, {
-        cantidadConsumida: quantity > 0 ? quantity : undefined,
-        observacion: raw.observacion.trim() || undefined,
-      })
-      .pipe(finalize(() => this.saving.set(false)))
-      .subscribe({
-        next: () => {
-          this.toast.success('Consumo registrado');
-          this.finish({ saved: true, value: detail.recursoProgramadoId });
-        },
-        error: (error) =>
-          this.errorMessage.set(mapOpenApiError(error).message),
-      });
-  }
-
-  private destinationIdentity(
-    detail: RecursoProgramadoDetalle,
-  ): { tipo: TipoDestinoRecurso; id: number } | null {
-    if (detail.campaniaVentaId) {
-      return { tipo: 'CAMPANIA', id: detail.campaniaVentaId };
-    }
-    if (detail.operativoVentaId) {
-      return { tipo: 'OPERATIVO', id: detail.operativoVentaId };
-    }
-    if (detail.salidaCampoId) {
-      return { tipo: 'SALIDA', id: detail.salidaCampoId };
-    }
-    return null;
-  }
-
-  private resetState(mode: RecursoProgramadoFormMode): void {
-    this.mode.set(mode);
-    this.loading.set(false);
-    this.loadingDestinations.set(false);
-    this.loadingAvailability.set(false);
-    this.current.set(null);
-    this.destinations.set([]);
-    this.errorMessage.set(null);
-    this.availability.set({ bienes: [], suministros: [] });
-    this.createForm.controls.cantidadProgramada.disable({ emitEvent: false });
-  }
-
-  private resultPromise(): Promise<AdminModalResult<number>> {
-    return new Promise((resolve) => {
-      this.resolver = resolve;
-    });
-  }
-
-  private finish(result: AdminModalResult<number>): void {
-    if (this.dialogRef.nativeElement.open) this.dialogRef.nativeElement.close();
-    this.resolver?.(result);
-    this.resolver = null;
-    this.current.set(null);
-    this.destinations.set([]);
-    this.availability.set({ bienes: [], suministros: [] });
-    this.errorMessage.set(null);
-  }
+import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { Observable, finalize } from 'rxjs';
+import { faRoute } from '@fortawesome/free-solid-svg-icons';
+import { UotContextStore } from '../../../../../../../../uot/state/uot-context.store';
+import { mapOpenApiError } from '../../../../../../../../../infrastructure/openapi/openapi-http-error.mapper';
+import { PageHeaderComponent } from '../../../../../../../../../shared/layout/page-header/page-header';
+import { LoadingStateComponent } from '../../../../../../../../../shared/data-display/loading-state/loading-state';
+import { ErrorStateComponent } from '../../../../../../../../../shared/data-display/error-state/error-state';
+import { EmptyStateComponent } from '../../../../../../../../../shared/data-display/empty-state/empty-state';
+import { ActionConfirmDialogComponent } from '../../../../../../../../../shared/feedback/action-confirm-dialog/action-confirm-dialog';
+import { ToastService } from '../../../../../../../../../shared/feedback/toast-center/toast.service';
+import { PermissionDirective } from '../../../../../../../../../core/access/permission.directive';
+import { EvidencePanelComponent } from '../../../../../../../../documentos-evidencias/adapter/in/ui/components/evidence-panel/evidence-panel';
+import { CatalogosE2, CorreccionE2, DetalleE2, EstadoBienE2, ResultadoE2 } from '../../../../../domain/salida-operativa.model';
+import { ExpedienteE1UseCase } from '../../../../../../../predios/expediente/application/expediente-e1.use-case';
+import { provideExpedienteE1 } from '../../../../../../../predios/expediente/expediente-e1.providers';
+import { SalidasE2UseCase } from '../../../../../application/use-case/salidas-e2.use-case';
+import { provideSalidasE2 } from '../../../../../salidas-e2.providers';
+
+function localDateInput(value?: string): string {
+  if (!value) return '';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? '' : new Date(date.getTime()-date.getTimezoneOffset()*60000)
+    .toISOString().slice(0,16);
 }
+
+@Component({selector:'app-operativa-detail',standalone:true,
+  imports:[DatePipe,FormsModule,RouterLink,PageHeaderComponent,LoadingStateComponent,ErrorStateComponent,
+    EmptyStateComponent,ActionConfirmDialogComponent,PermissionDirective,EvidencePanelComponent],
+  providers:[...provideSalidasE2(),...provideExpedienteE1()],
+  templateUrl:'./operativa-detail.html',styleUrl:'./operativa-detail.css',changeDetection:ChangeDetectionStrategy.OnPush})
+export class OperativaDetailPage implements OnInit {
+  private readonly api=inject(SalidasE2UseCase);
+  private readonly e1=inject(ExpedienteE1UseCase);
+  private readonly uot=inject(UotContextStore);
+  private readonly route=inject(ActivatedRoute);
+  private readonly toast=inject(ToastService);
+  @ViewChild(ActionConfirmDialogComponent) private confirm!: ActionConfirmDialogComponent;
+  readonly icon=faRoute;
+  readonly id=Number(this.route.snapshot.paramMap.get('id'));
+  readonly convenioId=Number(this.route.snapshot.queryParamMap.get('convenioId'))||undefined;
+  readonly uotId=this.uot.selectedId;
+  readonly loading=signal(true);
+  readonly saving=signal(false);
+  readonly error=signal<string|null>(null);
+  readonly detail=signal<DetalleE2|null>(null);
+  readonly catalogos=signal<CatalogosE2>({motivos:[],tiposVisita:[],bienes:[]});
+  decision:'APROBADA'|'OBSERVADA'|'RECHAZADA'='APROBADA';motivoDecision='';
+  nombreCorreccion='';descripcionCorreccion='';motivoCancelar='';
+  motivoCorreccion=0;inicioCorreccion='';finCorreccion='';
+  nuevoDestino='';nuevoBien=0;
+  readonly destinosCorreccion=signal<{predioId?:number;referencia?:string}[]>([]);
+  readonly bienesCorreccion=signal<{bienId:number}[]>([]);
+  fechaFinRegularizada='';
+  buscarPredio='';destinoVincular=0;predioVincular=0;
+  readonly candidatos=signal<{predioId:number;nombre:string}[]>([]);
+  destinoId=0;tipoVisitaId=0;objetivo='';
+  visitaFinalizar=0;resumen='';
+  observacionGeneral='';observacionInspeccion='';
+  readonly observacionesBien=signal<Record<number,string>>({});
+  readonly resultadoDeclarado=signal<Record<number,EstadoBienE2['resultado']>>({});
+  readonly resultadoInspeccion=signal<Record<number,EstadoBienE2['resultado']>>({});
+  ngOnInit():void {this.load();this.loadCatalogs();}
+  load():void {
+    const uot=this.uotId();if(!uot){this.error.set('Seleccione una UOT.');this.loading.set(false);return;}
+    this.loading.set(true);this.error.set(null);
+    this.api.ver(uot,this.id,this.convenioId).pipe(finalize(()=>this.loading.set(false))).subscribe({
+      next:d=>{this.detail.set(d);this.nombreCorreccion=d.nombre;this.descripcionCorreccion=d.descripcion??'';
+        this.motivoCorreccion=d.motivoSalidaId;
+        this.inicioCorreccion=localDateInput(d.fechaInicioPrevista);
+        this.finCorreccion=localDateInput(d.fechaFinPrevista);
+        this.fechaFinRegularizada=localDateInput(d.fechaFinPrevista ?? d.fechaFinReal);
+        this.destinosCorreccion.set(d.destinos.map(x=>({predioId:x.predioId,referencia:x.referencia})));
+        this.bienesCorreccion.set(d.bienes.map(x=>({bienId:x.bienId})));
+        this.observacionesBien.set(Object.fromEntries(d.bienes.map(x=>[x.solicitudRecursoId,x.observacion??''])));
+        this.resultadoDeclarado.set(Object.fromEntries(d.bienes.map(b=>[b.solicitudRecursoId,
+         (b.resultadoDeclarado??'CONFORME') as EstadoBienE2['resultado']])));
+        this.resultadoInspeccion.set(Object.fromEntries(d.bienes.map(b=>[b.solicitudRecursoId,
+         (b.resultadoValidado??b.resultadoDeclarado??'CONFORME') as EstadoBienE2['resultado']])));
+      },error:e=>this.error.set(mapOpenApiError(e).message)});
+  }
+  loadCatalogs():void {const uot=this.uotId();if(uot)this.api.catalogos(uot,this.convenioId).subscribe({
+    next:c=>this.catalogos.set(c),error:e=>this.toast.error('No se pudieron cargar los catálogos',mapOpenApiError(e).message)});}
+  run(action:Observable<ResultadoE2>,message:string):void {
+    if(this.saving())return;
+    this.saving.set(true);
+    action.pipe(finalize(()=>this.saving.set(false))).subscribe({
+      next:()=>{this.toast.success(message);this.load();},
+      error:e=>this.toast.error('No se pudo completar la acción',mapOpenApiError(e).message),
+    });
+  }
+  addCorrectionDestination():void {
+    const reference=this.nuevoDestino.trim();
+    if(!reference)return;
+    this.destinosCorreccion.update(x=>[...x,{referencia:reference}]);
+    this.nuevoDestino='';
+  }
+  addCorrectionBien():void {
+    if(!this.nuevoBien || this.bienesCorreccion().some(x=>x.bienId===this.nuevoBien))return;
+    this.bienesCorreccion.update(x=>[...x,{bienId:this.nuevoBien}]);this.nuevoBien=0;
+  }
+  removeCorrectionDestination(index:number):void {
+    this.destinosCorreccion.update(x=>x.filter((_,i)=>i!==index));
+  }
+  removeCorrectionBien(id:number):void {
+    this.bienesCorreccion.update(x=>x.filter(b=>b.bienId!==id));
+  }
+  corregir():void {
+    const u=this.uotId();if(!u||!this.nombreCorreccion.trim()||!this.inicioCorreccion||
+        !this.motivoCorreccion||!this.destinosCorreccion().length)return;
+    const correccion:CorreccionE2={
+      nombre:this.nombreCorreccion.trim(),descripcion:this.descripcionCorreccion.trim(),
+      motivoSalidaId:this.motivoCorreccion,
+      fechaInicioPrevista:new Date(this.inicioCorreccion).toISOString(),
+      fechaFinPrevista:this.finCorreccion?new Date(this.finCorreccion).toISOString():undefined,
+      destinos:this.destinosCorreccion(),bienes:this.bienesCorreccion(),
+    };
+    if(correccion.fechaFinPrevista && correccion.fechaFinPrevista<correccion.fechaInicioPrevista!){
+      this.toast.error('El fin previsto no puede ser anterior al inicio.');return;
+    }
+    this.run(this.api.corregir(u,this.id,correccion,this.convenioId),'Solicitud reenviada');
+  }
+  async decidir():Promise<void> {const u=this.uotId();if(!u||this.saving())return;
+    if(this.decision!=='APROBADA'&&!this.motivoDecision.trim()){
+      this.toast.error('Ingrese el motivo de la decisión.');return;}
+    const answer=await this.confirm.show({title:'Confirmar decisión',
+      message:this.decision==='APROBADA'?'Se autorizarán la salida y los recursos solicitados.':
+        'Se guardará la decisión y su motivo en el expediente.',confirmLabel:'Confirmar decisión',
+      tone:this.decision==='RECHAZADA'?'warning':'primary'});
+    if(!answer.confirmed||this.saving())return;
+    this.run(this.api.decidir(u,this.id,this.decision,this.motivoDecision.trim()||undefined,this.convenioId),'Decisión registrada');}
+  async entregar():Promise<void> {
+    const u=this.uotId();if(!u||this.saving())return;
+    const answer=await this.confirm.show({title:'Confirmar despacho físico',
+      message:'Confirme que el almacén está entregando los bienes al técnico. Quedarán ocupados.',
+      confirmLabel:'Confirmar entrega'});
+    if(answer.confirmed&&!this.saving())this.run(this.api.entregar(u,this.id,this.convenioId),'Entrega registrada');
+  }
+  iniciar():void {const u=this.uotId();if(u)this.run(this.api.iniciar(u,this.id,this.convenioId),'Salida iniciada');}
+  visitar():void {const u=this.uotId();if(!u||!this.destinoId||!this.tipoVisitaId){this.toast.error('Seleccione destino y tipo de visita.');return;}
+    this.run(this.api.visitar(u,this.id,this.destinoId,this.tipoVisitaId,this.objetivo.trim()||undefined,this.convenioId),'Visita iniciada');}
+  finalizarVisita():void {const u=this.uotId();if(!u||!this.visitaFinalizar||!this.resumen.trim()){
+    this.toast.error('Seleccione visita e indique qué se hizo.');return;}
+    this.run(this.api.finalizarVisita(u,this.id,this.visitaFinalizar,this.resumen.trim(),this.convenioId),'Visita finalizada');}
+  buscarPredios():void {const u=this.uotId();if(!u||!this.buscarPredio.trim())return;
+    this.e1.buscarPredios(u,this.buscarPredio.trim(),this.convenioId).subscribe({
+      next:r=>this.candidatos.set(r.map(p=>({predioId:p.predioId,nombre:p.nombre}))),
+      error:e=>this.toast.error('No se pudo buscar predios',mapOpenApiError(e).message),
+    });
+  }
+  vincular():void {const u=this.uotId();if(!u||!this.destinoVincular||!this.predioVincular)return;
+    this.run(this.api.vincularDestino(u,this.id,this.destinoVincular,this.predioVincular,this.convenioId),'Destino asociado al predio');}
+  async cancelar():Promise<void> {
+    const u=this.uotId();
+    const motivo=this.motivoCancelar.trim();
+    if(this.saving())return;
+    if(!u||!motivo){
+      this.toast.error('Ingrese un motivo para cancelar.');
+      return;
+    }
+    const confirmation=await this.confirm.show({
+      title:'Cancelar solicitud de salida',
+      message:'La solicitud quedará cancelada y conservará su historial de decisiones.',
+      confirmLabel:'Cancelar solicitud',
+      tone:'danger',
+    });
+    if(!confirmation.confirmed||this.saving())return;
+    this.run(this.api.cancelar(u,this.id,motivo,this.convenioId),'Solicitud cancelada');
+  }
+  hasPendingDestinations(detail:DetalleE2):boolean {return detail.destinos.some(x=>!x.predioId);}
+  changeDeclarado(id:number,value:EstadoBienE2['resultado']):void {this.resultadoDeclarado.update(s=>({...s,[id]:value}));}
+  changeObservacionBien(id:number,value:string):void {
+    this.observacionesBien.update(x=>({...x,[id]:value}));
+  }
+  regularizarFin():void {
+    const u=this.uotId();if(!u||!this.fechaFinRegularizada)return;
+    const planned=new Date(this.fechaFinRegularizada);
+    if(Number.isNaN(planned.getTime()))return;
+    this.run(this.api.regularizarFin(u,this.id,planned.toISOString(),this.convenioId),
+      'Fecha final prevista regularizada');
+  }
+  changeInspeccion(id:number,value:EstadoBienE2['resultado']):void {this.resultadoInspeccion.update(s=>({...s,[id]:value}));}
+  retornar():void {const u=this.uotId();const d=this.detail();if(!u||!d||!this.observacionGeneral.trim()){
+     this.toast.error('Escriba una observación general del retorno.');return;}
+     const bienes=d.bienes.filter(x=>x.estado==='ENTREGADO').map(b=>({
+       solicitudRecursoId:b.solicitudRecursoId,resultado:this.resultadoDeclarado()[b.solicitudRecursoId]??'CONFORME',
+       observacion:this.observacionesBien()[b.solicitudRecursoId]?.trim()||undefined}));
+     this.run(this.api.retornar(u,this.id,this.observacionGeneral.trim(),bienes,this.convenioId),'Retorno declarado');}
+  async inspeccionar():Promise<void> {const u=this.uotId();const d=this.detail();if(!u||!d||this.saving())return;
+     const bienes=d.bienes.filter(x=>x.estado==='ENTREGADO').map(b=>({
+       solicitudRecursoId:b.solicitudRecursoId,resultado:this.resultadoInspeccion()[b.solicitudRecursoId]??'FALTANTE'}));
+     const answer=await this.confirm.show({title:'Validar resultados físicos',
+       message:'Solo los bienes marcados como conformes volverán a estar disponibles.',
+       confirmLabel:'Registrar inspección'});
+     if(answer.confirmed&&!this.saving())this.run(this.api.inspeccionar(u,this.id,bienes,
+       this.observacionInspeccion.trim()||undefined,this.convenioId),'Inspección registrada');}
+  hasUndeliveredGoods(detail:DetalleE2):boolean {
+    return detail.bienes.some(b=>b.estado==='SOLICITADO');
+  }
+  hasPendingInspection(detail:DetalleE2):boolean {
+    return detail.bienes.some(b=>b.estado==='ENTREGADO');
+  }
+  cerrar():void {const u=this.uotId();if(u)this.run(this.api.cerrar(u,this.id,this.convenioId),'Salida cerrada');}
+}
+```
+
+Ruta: `src/app/features/gestion-tecnica/salidas/e2/adapter/in/ui/pages/operativa-detail/operativa-detail.html`
+Contenido: completo
+```html
+<div class="desco-page">
+  <app-page-header title="Expediente de salida" eyebrow="Etapa 2" [icon]="icon"
+    subtitle="Autorización, recorridos, préstamo y validación física.">
+    <div pageActions class="flex gap-2"><a class="admin-secondary-button" routerLink="/gestion-tecnica/salidas"
+      [queryParams]="convenioId?{convenioId}:undefined">Volver a salidas</a>
+      <button type="button" class="admin-secondary-button" (click)="load()">Actualizar</button></div>
+  </app-page-header>
+  @if(loading()){<app-loading-state title="Consultando salida" message="Cargando el expediente autorizado."/>}
+  @else if(error()){<app-error-state [message]="error()||'No disponible'" (retry)="load()"/>}
+  @else if(detail();as d){
+    <section class="admin-detail-grid mt-4">
+      <article class="admin-detail-card"><span>Nombre</span><strong>{{d.nombre}}</strong></article>
+      <article class="admin-detail-card"><span>Estado</span><strong>{{d.estado}}</strong></article>
+      <article class="admin-detail-card"><span>Inicio previsto</span><strong>{{d.fechaInicioPrevista|date:'dd/MM/yyyy HH:mm'}}</strong></article>
+      <article class="admin-detail-card"><span>Fin previsto</span><strong>{{d.fechaFinPrevista?(d.fechaFinPrevista|date:'dd/MM/yyyy HH:mm'):'Pendiente'}}</strong></article>
+    </section>
+    @if(d.estado==='SOLICITADA'){
+    <section *appPermission="'SALIDAS_CONFIRMAR'" class="admin-surface mt-4">
+      <div class="admin-section-header"><div><p>Bandeja del superior</p><h2>Decidir solicitud</h2></div></div>
+      <div class="e2-grid"><div class="admin-field"><label>Decisión</label>
+        <select class="admin-select" [(ngModel)]="decision"><option value="APROBADA">Aprobar</option>
+        <option value="OBSERVADA">Solicitar corrección</option><option value="RECHAZADA">Rechazar</option></select></div>
+        @if(decision!=='APROBADA'){<div class="admin-field"><label>Motivo obligatorio</label>
+         <textarea class="admin-textarea" [(ngModel)]="motivoDecision" maxlength="1200"></textarea></div>}
+      </div>
+      <button class="admin-primary-button mt-3" type="button" [disabled]="saving()" (click)="decidir()">Registrar decisión</button>
+    </section>}
+    @if(d.estado==='OBSERVADA'||d.estado==='RECHAZADA'){
+      <section *appPermission="'SALIDAS_EDITAR'" class="admin-surface mt-4">
+        <div class="admin-section-header"><div><p>Solicitante</p><h2>Corregir y reenviar</h2></div></div>
+        <div class="admin-field"><label>Nombre</label><input class="admin-input" [(ngModel)]="nombreCorreccion" maxlength="180"/></div>
+        <div class="admin-field"><label>Propósito</label><textarea class="admin-textarea" [(ngModel)]="descripcionCorreccion" maxlength="400"></textarea></div>
+        <div class="e2-grid mt-3">
+          <div class="admin-field"><label>Motivo</label>
+            <select class="admin-select" [(ngModel)]="motivoCorreccion">
+              @for(m of catalogos().motivos;track m.id){<option [ngValue]="m.id">{{m.nombre}}</option>}
+            </select></div>
+          <div class="admin-field"><label>Inicio programado</label>
+            <input type="datetime-local" class="admin-input" [(ngModel)]="inicioCorreccion"/></div>
+          <div class="admin-field"><label>Fin previsto (opcional)</label>
+            <input type="datetime-local" class="admin-input" [(ngModel)]="finCorreccion"/></div>
+        </div>
+        <div class="admin-section-header mt-3"><h3>Destinos</h3></div>
+        @for(destino of destinosCorreccion();track $index){
+          <p class="e2-line">{{destino.predioId?'Predio #'+destino.predioId:destino.referencia}}
+            <button type="button" class="admin-secondary-button" (click)="removeCorrectionDestination($index)">Quitar</button>
+          </p>
+        }
+        <div class="flex flex-wrap gap-2 mt-2"><input class="admin-input" [(ngModel)]="nuevoDestino" placeholder="Otro lugar o referencia"/>
+          <button type="button" class="admin-secondary-button" (click)="addCorrectionDestination()">Añadir</button></div>
+        <div class="admin-section-header mt-3"><h3>Bienes</h3></div>
+        @for(b of bienesCorreccion();track b.bienId){<p class="e2-line">Bien #{{b.bienId}}
+          <button type="button" class="admin-secondary-button" (click)="removeCorrectionBien(b.bienId)">Quitar</button>
+        </p>}
+        <div class="flex flex-wrap gap-2 mt-2">
+          <select class="admin-select" [(ngModel)]="nuevoBien"><option [ngValue]="0">Añadir bien</option>
+          @for(b of catalogos().bienes;track b.id){<option [ngValue]="b.id">{{b.nombre}}</option>}</select>
+          <button type="button" class="admin-secondary-button" (click)="addCorrectionBien()">Añadir</button>
+        </div>
+        <button class="admin-primary-button mt-3" type="button"
+          [disabled]="saving()||!destinosCorreccion().length" (click)="corregir()">Reenviar solicitud</button>
+      </section>
+    }
+    @if(['SOLICITADA','OBSERVADA','RECHAZADA'].includes(d.estado)){
+      <section *appPermission="'SALIDAS_RETIRAR'" class="admin-surface mt-4">
+        <div class="admin-section-header"><div><p>Solicitud</p><h2>Cancelación con motivo</h2></div></div>
+        <div class="admin-field"><label>Motivo</label><input class="admin-input" [(ngModel)]="motivoCancelar" maxlength="1200"/></div>
+        <button type="button" class="admin-danger-button mt-3" [disabled]="saving()" (click)="cancelar()">Cancelar solicitud</button>
+      </section>
+    }
+    <div class="e2-grid mt-4">
+      <section class="admin-surface"><div class="admin-section-header"><div><p>Plan</p><h2>Destinos</h2></div></div>
+        @for(l of d.destinos;track l.destinoId){<p class="e2-line">{{l.orden}} ·
+          {{l.predioId?'Predio #'+l.predioId:l.referencia}}</p>}
+      </section>
+      <section class="admin-surface"><div class="admin-section-header"><div><p>Logística</p><h2>Bienes solicitados</h2></div></div>
+        @for(b of d.bienes;track b.solicitudRecursoId){<p class="e2-line"><strong>{{b.nombre}}</strong>
+          · {{b.estado}} @if(b.resultadoValidado){· {{b.resultadoValidado}}}</p>}
+        @empty{<p class="admin-empty-copy">Sin bienes físicos solicitados.</p>}
+      </section>
+    </div>
+    @if(['APROBADA','EN_EJECUCION'].includes(d.estado) && hasPendingDestinations(d)){
+      <section *appPermission="'SALIDAS_EDITAR'" class="admin-surface mt-4">
+        <div class="admin-section-header"><div><p>Destino encontrado en campo</p><h2>Vincular predio sin repetir la solicitud</h2></div></div>
+        <div class="e2-grid"><div class="admin-field"><label>Destino pendiente</label>
+          <select class="admin-select" [(ngModel)]="destinoVincular"><option [ngValue]="0">Seleccione</option>
+            @for(l of d.destinos;track l.destinoId){@if(!l.predioId){<option [ngValue]="l.destinoId">{{l.referencia}}</option>}}
+          </select></div><div class="admin-field"><label>Buscar predio</label>
+          <div class="flex gap-2"><input class="admin-input" [(ngModel)]="buscarPredio"/>
+             <button type="button" class="admin-secondary-button" (click)="buscarPredios()">Buscar</button></div></div>
+          <div class="admin-field"><label>Predio registrado</label>
+            <select class="admin-select" [(ngModel)]="predioVincular"><option [ngValue]="0">Seleccione</option>
+              @for(p of candidatos();track p.predioId){<option [ngValue]="p.predioId">{{p.nombre}}</option>}
+            </select></div></div>
+        <button type="button" class="admin-primary-button mt-3" [disabled]="saving()" (click)="vincular()">Vincular destino</button>
+        <p class="admin-empty-copy">Si aún no existe, regístrelo desde el módulo Predios.</p>
+      </section>
+    }
+    @if(d.estado==='APROBADA'){
+      <section class="admin-surface mt-4"><div class="admin-section-header"><div><p>Almacén y campo</p><h2>Entrega e inicio</h2></div></div>
+        <div class="flex gap-2 flex-wrap">
+        @if(hasUndeliveredGoods(d)){
+          <button *appPermission="'RECURSOS_CREAR'" class="admin-secondary-button"
+            type="button" [disabled]="saving()" (click)="entregar()">Confirmar entrega física</button>}
+        <button *appPermission="'SALIDAS_EDITAR'" class="admin-primary-button" type="button"
+          [disabled]="saving()||hasUndeliveredGoods(d)" (click)="iniciar()">Iniciar salida</button></div>
+        <p class="admin-empty-copy">Se impide iniciar mientras existan bienes solicitados aún no entregados.</p>
+      </section>
+    }
+    @if(d.estado==='EN_EJECUCION'){
+      <section *appPermission="'VISITAS_EDITAR'" class="admin-surface mt-4">
+        <div class="admin-section-header"><div><p>Trabajo de campo</p><h2>Registrar visita</h2></div></div>
+        <div class="e2-grid"><div class="admin-field"><label>Destino con predio</label>
+          <select class="admin-select" [(ngModel)]="destinoId"><option [ngValue]="0">Seleccione</option>
+            @for(l of d.destinos;track l.destinoId){@if(l.predioId){<option [ngValue]="l.destinoId">Predio #{{l.predioId}}</option>}}
+          </select></div><div class="admin-field"><label>Tipo de visita</label>
+          <select class="admin-select" [(ngModel)]="tipoVisitaId"><option [ngValue]="0">Seleccione</option>
+            @for(t of catalogos().tiposVisita;track t.id){<option [ngValue]="t.id">{{t.nombre}}</option>}
+          </select></div><div class="admin-field"><label>Objetivo (opcional)</label>
+          <input class="admin-input" [(ngModel)]="objetivo" maxlength="250"/></div></div>
+        <button class="admin-primary-button mt-3" type="button" [disabled]="saving()" (click)="visitar()">Iniciar visita</button>
+        <p class="admin-empty-copy">Si el lugar no tenía predio, créelo desde Predios antes de iniciar una visita.</p>
+      </section>
+    }
+    <section class="admin-surface mt-4">
+      <div class="admin-section-header"><div><p>Actuaciones</p><h2>Visitas registradas</h2></div></div>
+      @for(v of d.visitas;track v.visitaId){<article class="e2-line">
+         <strong>Visita #{{v.visitaId}} · {{v.tipoVisita}}</strong> — {{v.estado}}
+         <span> · Predio #{{v.predioId}}</span>
+         @if(v.resumen){<p>{{v.resumen}}</p>}
+         <a [routerLink]="['/gestion-tecnica/visitas',v.visitaId]">Ver detalle y fotos</a>
+         @if(convenioId && v.predioId){<a class="admin-secondary-button" [routerLink]="['/convenios/apappss/plantas',v.predioId]"
+         [queryParams]="{convenioId:convenioId,visitaId:v.visitaId}">Plantas de esta visita</a>}
+      </article>}
+      @empty{<app-empty-state title="Sin visitas" message="Las actuaciones aparecerán cuando se inicie una visita."/>}
+      @if(d.estado==='EN_EJECUCION'){
+        <div *appPermission="'VISITAS_CONFIRMAR'" class="e2-grid mt-3">
+          <div class="admin-field"><label>Visita por finalizar</label><select class="admin-select" [(ngModel)]="visitaFinalizar">
+            <option [ngValue]="0">Seleccione</option>
+            @for(v of d.visitas;track v.visitaId){@if(v.estado==='INICIADA'){<option [ngValue]="v.visitaId">Visita #{{v.visitaId}}</option>}}
+          </select></div><div class="admin-field"><label>Qué se hizo</label>
+            <textarea class="admin-textarea" [(ngModel)]="resumen" maxlength="600"></textarea></div>
+          <div class="flex items-end"><button class="admin-primary-button" type="button" [disabled]="saving()"
+            (click)="finalizarVisita()">Finalizar visita</button></div></div>}
+    </section>
+    @if(d.estado==='EN_EJECUCION'){
+      <section *appPermission="'SALIDAS_EDITAR'" class="admin-surface mt-4">
+        <div class="admin-section-header"><div><p>Retorno</p><h2>Una observación general para todos los bienes</h2></div></div>
+        <div class="admin-field"><label>Descripción del retorno</label>
+          <textarea class="admin-textarea" [(ngModel)]="observacionGeneral" maxlength="1500"></textarea></div>
+        @for(b of d.bienes;track b.solicitudRecursoId){
+          <div class="e2-line"><strong>{{b.nombre}}</strong><select class="admin-select e2-select"
+            [ngModel]="resultadoDeclarado()[b.solicitudRecursoId]" (ngModelChange)="changeDeclarado(b.solicitudRecursoId,$event)">
+            <option value="CONFORME">Conforme</option><option value="DANADO">Dañado</option><option value="FALTANTE">No devuelto</option>
+          </select>
+          @if(resultadoDeclarado()[b.solicitudRecursoId]!=='CONFORME'){
+            <input class="admin-input" maxlength="500" placeholder="Detalle del daño o faltante (opcional)"
+              [ngModel]="observacionesBien()[b.solicitudRecursoId]"
+              (ngModelChange)="changeObservacionBien(b.solicitudRecursoId,$event)"/>
+          }</div>}
+        <button type="button" class="admin-primary-button mt-3" [disabled]="saving()" (click)="retornar()">Presentar retorno</button>
+      </section>
+    }
+    @if(d.estado==='EN_RETORNO' && !d.fechaFinPrevista){
+      <section *appPermission="'SALIDAS_EDITAR'" class="admin-surface mt-4">
+        <div class="admin-section-header"><h2>Regularizar fin previsto</h2></div>
+        <p class="admin-empty-copy">Antes del cierre, complete la fecha de término prevista que quedó pendiente.</p>
+        <div class="flex flex-wrap gap-2"><input type="datetime-local" class="admin-input"
+             [(ngModel)]="fechaFinRegularizada" />
+          <button type="button" class="admin-primary-button" [disabled]="saving()||!fechaFinRegularizada"
+             (click)="regularizarFin()">Guardar fecha</button></div>
+      </section>
+    }
+    @if(d.estado==='EN_RETORNO'){
+      <section *appPermission="'SALIDAS_CONFIRMAR'" class="admin-surface mt-4">
+        <div class="admin-section-header"><div><p>Inspección</p><h2>Validar bienes físicamente</h2></div></div>
+        @if(d.observacionRetorno){<p class="e2-line">Declaración general: {{d.observacionRetorno}}</p>}
+        @for(b of d.bienes;track b.solicitudRecursoId){@if(b.estado==='ENTREGADO'){
+          <div class="e2-line"><strong>{{b.nombre}}</strong> · Declarado: {{b.resultadoDeclarado}}
+            <select class="admin-select e2-select" [ngModel]="resultadoInspeccion()[b.solicitudRecursoId]"
+              (ngModelChange)="changeInspeccion(b.solicitudRecursoId,$event)">
+              <option value="CONFORME">Conforme</option><option value="DANADO">Dañado</option><option value="FALTANTE">Faltante</option>
+            </select></div>}}
+        <div class="admin-field mt-3"><label>Observación de la inspección (opcional)</label>
+          <textarea class="admin-textarea" [(ngModel)]="observacionInspeccion" maxlength="1200"></textarea></div>
+        <div class="flex flex-wrap gap-2 mt-3"><button type="button" class="admin-primary-button" [disabled]="saving()"
+           (click)="inspeccionar()">Registrar visto bueno</button>
+          <button type="button" class="admin-secondary-button"
+           [disabled]="saving()||!d.fechaFinPrevista||hasPendingInspection(d)"
+           (click)="cerrar()">Cerrar salida inspeccionada</button></div>
+      </section>
+    }
+    <section class="admin-surface mt-4"><div class="admin-section-header"><div><p>Seguimiento</p><h2>Historial cronológico</h2></div></div>
+      @for(h of d.historial;track h.eventoId){<article class="e2-line">
+        <strong>{{h.tipo}}</strong> · {{h.fechaHora|date:'dd/MM/yyyy HH:mm'}} · Usuario #{{h.usuarioId}}
+        @if(h.detalle){<p>{{h.detalle}}</p>}
+      </article>}
+    </section>
+    <section class="mt-4"><app-evidence-panel title="Documentos y fotografías de la salida y del retorno"
+       [context]="{tipo:'SALIDA',id:d.salidaId}"/></section>
+  }
+</div>
+<app-action-confirm-dialog />
 ```
 

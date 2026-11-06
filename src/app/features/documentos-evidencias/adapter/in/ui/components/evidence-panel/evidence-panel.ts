@@ -21,6 +21,7 @@ import { EvidenceUploaderComponent } from '../evidence-uploader/evidence-uploade
 export class EvidencePanelComponent implements OnChanges {
   @Input({ required: true }) context!: EvidenciaContexto;
   @Input() title = 'Documentos y evidencias';
+  @Input() readOnly = false;
   @ViewChild(EvidenceUploaderComponent) private uploader!: EvidenceUploaderComponent;
   @ViewChild(EvidenceCameraComponent) private camera!: EvidenceCameraComponent;
   @ViewChild(EvidencePreviewComponent) private preview!: EvidencePreviewComponent;
@@ -30,8 +31,8 @@ export class EvidencePanelComponent implements OnChanges {
   readonly folderIcon = faFolderOpen; readonly uploadIcon = faFileArrowUp; readonly cameraIcon = faCamera; readonly viewIcon = faEye; readonly refreshIcon = faRotate; readonly retireIcon = faTrashCan;
   ngOnChanges(): void { if (this.context?.id > 0) this.load(); }
   load(): void { if (!this.context?.id) return; this.loading.set(true); this.errorMessage.set(null); this.listUseCase.execute({ contextoTipo: this.context.tipo, contextoId: this.context.id, page: 1, size: 100 }).pipe(finalize(() => this.loading.set(false))).subscribe({ next: (result) => this.items.set(result.items), error: (error) => this.errorMessage.set(mapOpenApiError(error).message) }); }
-  async upload(): Promise<void> { const result = await this.uploader.open(this.context); if (result.saved) this.load(); }
-  async capture(): Promise<void> { const result = await this.camera.open(this.context); if (result.saved) this.load(); }
+  async upload(): Promise<void> { if (this.readOnly) return; const result = await this.uploader.open(this.context); if (result.saved) this.load(); }
+  async capture(): Promise<void> { if (this.readOnly) return; const result = await this.camera.open(this.context); if (result.saved) this.load(); }
   openPreview(item: DocumentoEvidencia): void { this.preview.open(item); }
-  async retire(item: DocumentoEvidencia): Promise<void> { const result = await this.confirm.show({ title: 'Retirar evidencia', message: `La evidencia “${item.nombreOriginal}” dejará de estar disponible en el sistema.`, tone: 'danger', confirmLabel: 'Retirar', requiresReason: true, reasonLabel: 'Motivo', minimumReasonLength: 5 }); if (!result.confirmed || !result.reason) return; this.retiringId.set(item.archivoId); this.retireUseCase.execute(item.archivoId, result.reason).pipe(finalize(() => this.retiringId.set(null))).subscribe({ next: () => { this.toast.success('Evidencia retirada'); this.load(); }, error: (error) => this.toast.error('No se pudo retirar la evidencia', mapOpenApiError(error).message) }); }
+  async retire(item: DocumentoEvidencia): Promise<void> { if (this.readOnly) return; const result = await this.confirm.show({ title: 'Retirar evidencia', message: `La evidencia “${item.nombreOriginal}” dejará de estar disponible en el sistema.`, tone: 'danger', confirmLabel: 'Retirar', requiresReason: true, reasonLabel: 'Motivo', minimumReasonLength: 5 }); if (!result.confirmed || !result.reason) return; this.retiringId.set(item.archivoId); this.retireUseCase.execute(item.archivoId, result.reason).pipe(finalize(() => this.retiringId.set(null))).subscribe({ next: () => { this.toast.success('Evidencia retirada'); this.load(); }, error: (error) => this.toast.error('No se pudo retirar la evidencia', mapOpenApiError(error).message) }); }
 }

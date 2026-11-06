@@ -1,3 +1,4 @@
+import { DialogBackdropDirective } from '../../../../../../../../shared/feedback/dialog-lifecycle/dialog-backdrop.directive';
 import { NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
@@ -33,7 +34,7 @@ type ProductTarget = ResourceProductListItemResponse | ResourceProductDetailResp
 @Component({
   selector: 'app-producto-form',
   standalone: true,
-  imports: [ReactiveFormsModule, FaIconComponent, FormErrorComponent, NgTemplateOutlet],
+  imports: [DialogBackdropDirective, ReactiveFormsModule, FaIconComponent, FormErrorComponent, NgTemplateOutlet],
   templateUrl: './producto-form.html',
   styleUrl: './producto-form.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -69,7 +70,7 @@ export class ProductoFormComponent {
 
   readonly productForm = this.fb.nonNullable.group({
     uotContextoId: [0, [Validators.required, Validators.min(1)]],
-    codigo: ['', [Validators.required, notBlankValidator, Validators.maxLength(50)]],
+    codigo: ['', [Validators.maxLength(50)]],
     nombre: ['', [Validators.required, notBlankValidator, Validators.maxLength(180)]],
     descripcion: ['', [Validators.maxLength(700)]],
     unidadMedida: ['', [Validators.required, notBlankValidator, Validators.maxLength(20)]],
@@ -81,7 +82,7 @@ export class ProductoFormComponent {
 
   readonly priceForm = this.fb.nonNullable.group({
     uotContextoId: [0, [Validators.required, Validators.min(1)]],
-    precioVenta: [0, [Validators.required, Validators.min(0.01)]],
+    precioVenta: [0, [Validators.required, Validators.min(0.0001), Validators.pattern(/^\d+(?:\.\d{1,4})?$/)]],
     moneda: ['PEN', [Validators.required, Validators.maxLength(3)]],
   });
 
@@ -181,7 +182,6 @@ export class ProductoFormComponent {
     this.saving.set(true); this.errorMessage.set(null);
     const common = {
       uotContextoId: uotId,
-      codigo: raw.codigo.trim().toUpperCase(),
       nombre: normalizeText(raw.nombre),
       descripcion: normalizeOptionalText(raw.descripcion),
       unidadMedida: raw.unidadMedida.trim().toUpperCase(),
@@ -198,6 +198,9 @@ export class ProductoFormComponent {
           })
         : this.api.createProduct({
             ...common,
+            codigo: raw.codigo.trim().toUpperCase() || undefined,
+            requiereLote: raw.requiereLote,
+            controlaVencimiento: raw.controlaVencimiento,
             permiteVenta: raw.permiteVenta,
           });
 
@@ -274,8 +277,18 @@ export class ProductoFormComponent {
     if (!force && control.dirty && control.value.trim()) return;
     this.codeLoading.set(true);
     this.api.suggestCode(uotId, 'PRODUCTO').pipe(finalize(() => this.codeLoading.set(false))).subscribe({
-      next: (code) => { if (code) { control.setValue(code, { emitEvent: false }); control.markAsPristine(); } },
-      error: () => { if (force) { control.setValue('', { emitEvent: false }); control.markAsPristine(); } },
+      next: (code) => {
+        // No sobrescribir un código personalizado mientras llega la sugerencia.
+        if (!code || control.dirty || Number(this.productForm.getRawValue().uotContextoId) !== uotId) return;
+        control.setValue(code, { emitEvent: false });
+        control.markAsPristine();
+      },
+      error: () => {
+        if (force && !control.dirty && Number(this.productForm.getRawValue().uotContextoId) === uotId) {
+          control.setValue('', { emitEvent: false });
+          control.markAsPristine();
+        }
+      },
     });
   }
 

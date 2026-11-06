@@ -3,6 +3,7 @@ import {
   Component,
   ElementRef,
   ViewChild,
+  Input,
   inject,
   signal,
 } from '@angular/core';
@@ -25,10 +26,9 @@ import { PermissionService } from '../../../../../../../../core/access/permissio
 import { mapOpenApiError } from '../../../../../../../../infrastructure/openapi/openapi-http-error.mapper';
 import { ToastService } from '../../../../../../../../shared/feedback/toast-center/toast.service';
 import { FormErrorComponent } from '../../../../../../../../shared/forms/form-error/form-error';
-import {
-  GeographyCascadeComponent,
-  GeographySelection,
-} from '../../../../../../../../shared/forms/geography-cascade/geography-cascade';
+import { PersonLookupComponent } from '../../../../../../../../shared/forms/person-registration/person-lookup';
+import { PersonDataFieldsComponent } from '../../../../../../../../shared/forms/person-registration/person-data-fields';
+import { GeographySelection } from '../../../../../../../../shared/forms/geography-cascade/geography-cascade';
 import {
   adultBirthDateValidator,
   dateOrderValidator,
@@ -52,6 +52,9 @@ import {
   IdentityResolverService,
 } from '../../../../../../../../shared/identity/identity-resolver.service';
 import {
+  type PersonIdentityLocks, emptyPersonIdentityLocks, personIdentityLocks,
+} from '../../../../../../../../shared/identity/person-identity-locks';
+import {
   AdminModalResult,
   AdminSelectOption,
 } from '../../../../../../../administracion/shared/admin-modal.types';
@@ -66,29 +69,6 @@ import {
 
 type IdentityFeedbackTone = 'neutral' | 'success' | 'warning' | 'error';
 
-interface IdentityFieldLocks {
-  names: boolean;
-  paternalSurname: boolean;
-  maternalSurname: boolean;
-  birthDate: boolean;
-  phone: boolean;
-  email: boolean;
-  geography: boolean;
-  reference: boolean;
-}
-
-function emptyIdentityFieldLocks(): IdentityFieldLocks {
-  return {
-    names: false,
-    paternalSurname: false,
-    maternalSurname: false,
-    birthDate: false,
-    phone: false,
-    email: false,
-    geography: false,
-    reference: false,
-  };
-}
 
 @Component({
   selector: 'app-productor-form',
@@ -96,14 +76,16 @@ function emptyIdentityFieldLocks(): IdentityFieldLocks {
   imports: [
     ReactiveFormsModule,
     FaIconComponent,
+    PersonLookupComponent,
+    PersonDataFieldsComponent,
     FormErrorComponent,
-    GeographyCascadeComponent,
   ],
   templateUrl: './productor-form.html',
   styleUrl: './productor-form.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProductorFormComponent {
+  @Input() apappss = false;
   @ViewChild('dialog', { static: true })
   private readonly dialogRef!: ElementRef<HTMLDialogElement>;
 
@@ -125,9 +107,12 @@ export class ProductorFormComponent {
   readonly errorMessage = signal<string | null>(null);
   readonly initialDistrictCode = signal('');
   readonly initialPopulationCenterId = signal<number | null>(null);
-  readonly identityLocks = signal<IdentityFieldLocks>(
-    emptyIdentityFieldLocks(),
-  );
+  readonly identityLocks = signal<PersonIdentityLocks>(emptyPersonIdentityLocks());
+  readonly registrationStep = signal<'lookup' | 'form' | 'membership'>('lookup');
+  readonly manualEntry = signal(false);
+  readonly lookupMessage = signal<string | null>(null);
+  readonly identityDocumentLocked = signal(false);
+  private identityRequest = 0;
   readonly resolvedSex = signal<string | null>(null);
   readonly identityEditingEnabled = signal(false);
   readonly identityRecordLoaded = signal(false);
@@ -223,8 +208,12 @@ export class ProductorFormComponent {
     associations: readonly AdminSelectOption[],
     producer: Productor | ProductorDetalle | null = null,
   ): Promise<AdminModalResult<number>> {
+    this.identityRequest++;
     this.associations.set(associations);
     this.current.set(producer);
+    this.registrationStep.set(producer ? 'form' : 'lookup');
+    this.manualEntry.set(false);
+    this.identityDocumentLocked.set(!!producer);
     this.resetIdentityState();
     this.errorMessage.set(null);
 
@@ -255,7 +244,7 @@ export class ProductorFormComponent {
       referencia: detail?.referencia ?? '',
       fechaAlta: producer?.fechaAlta ?? today,
       asociacionId:
-        producer?.asociacionId ?? associations[0]?.value ?? 0,
+        (this.apappss ? associations[0]?.value : producer?.asociacionId) ?? associations[0]?.value ?? 0,
       fechaDesde:
         detail?.afiliaciones.find((item) => item.estado)?.fechaDesde
         ?? producer?.fechaAlta
@@ -270,18 +259,22 @@ export class ProductorFormComponent {
     ]({ emitEvent: false });
 
     this.applyDocumentValidators(false);
+    this.applyRequiredPersonalFields(true);
+    if (producer) this.form.controls.tipoDocumento.disable({emitEvent: false});
+    else this.form.controls.tipoDocumento.enable({emitEvent: false});
 
     if (producer) {
       this.identityRecordLoaded.set(true);
       this.identityLocks.set({
-        names: true,
-        paternalSurname: true,
-        maternalSurname: true,
-        birthDate: true,
-        phone: true,
-        email: true,
-        geography: true,
-        reference: true,
+        names: !!producer.nombres?.trim(),
+        paternalSurname: !!producer.apellidoPaterno?.trim(),
+        maternalSurname: !!producer.apellidoMaterno?.trim(),
+        birthDate: !!detail?.fechaNacimiento,
+        phone: !!producer.telefono?.trim(),
+        email: !!producer.correo?.trim(),
+        geography: !!detail?.distritoCodigo?.trim(),
+        populationCenter: !!detail?.centroPobladoId,
+        reference: !!detail?.referencia?.trim(),
       });
 
       if (type === 'DNI' || type === 'RUC') {
@@ -300,9 +293,10 @@ export class ProductorFormComponent {
 
   setGeography(selection: GeographySelection): void {
     if (this.isIdentityFieldReadOnly('geography')) {
-      this.form.patchValue({
-        centroPobladoId: selection.populationCenterId ?? 0,
-      });
+      // El distrito oficial se conserva, pero se puede completar el centro poblado faltante.
+      if (!this.isIdentityFieldReadOnly('populationCenter')) {
+        this.form.patchValue({ centroPobladoId: selection.populationCenterId ?? 0 });
+      }
       return;
     }
 
@@ -338,8 +332,6 @@ export class ProductorFormComponent {
     control.updateValueAndValidity({ emitEvent: false });
     this.resetIdentityLookup();
 
-    if (!this.current()) {
-      }
   }
 
   documentMaxLength(): number {
@@ -377,59 +369,115 @@ export class ProductorFormComponent {
         === expectedLength;
   }
 
+  /** Primera pantalla: DESCO local -> Factiliza si SQL lo permite. Nunca desde alta manual. */
   resolveIdentity(): void {
+    if (this.current() || this.registrationStep() !== 'lookup' || !this.canResolveIdentity()) return;
     const type = this.form.controls.tipoDocumento.value;
-
-    if (type !== 'DNI' && type !== 'RUC') {
-      return;
-    }
-
-    const control = this.form.controls.numeroDocumento;
-    control.markAsTouched();
-    control.updateValueAndValidity();
-
-    if (!this.canResolveIdentity()) {
-      return;
-    }
-
-    const documentNumber = sanitizeDocument(type, control.value);
-
+    if (type !== 'DNI' && type !== 'RUC') return;
+    const documentNumber = sanitizeDocument(type, this.form.controls.numeroDocumento.value);
+    const key = this.identityKey(type, documentNumber);
+    const request = ++this.identityRequest;
     this.identityLoading.set(true);
     this.identityBlocked.set(false);
     this.identityTone.set('neutral');
     this.identityMessage.set(null);
-
-    this.identities
-      .resolve('PERSONA', type, documentNumber)
-      .pipe(finalize(() => this.identityLoading.set(false)))
+    this.errorMessage.set(null);
+    this.identities.resolve('PERSONA', type, documentNumber)
+      .pipe(finalize(() => { if (request === this.identityRequest) this.identityLoading.set(false); }))
       .subscribe({
-        next: (result) =>
-          this.applyPersonIdentity(result, type, documentNumber),
+        next: (result) => {
+          if (request !== this.identityRequest || this.identityKey(this.form.controls.tipoDocumento.value, this.form.controls.numeroDocumento.value) !== key) return;
+          this.applyPersonIdentity(result, type, documentNumber);
+        },
         error: () => {
-          this.verifiedIdentityKey.set(
-            this.identityKey(type, documentNumber),
-          );
-          this.identityBlocked.set(false);
+          if (request !== this.identityRequest) return;
           this.identityTone.set('warning');
-          this.identityMessage.set(
-            'No se pudieron obtener los datos de la persona. Complete la información manualmente.',
-          );
+          this.identityMessage.set('No se pudo realizar la búsqueda. Intente nuevamente.');
         },
       });
   }
 
-  save(): void {
-    if (!this.current()) {
+  /** La segunda pantalla es solo alta: no consulta DESCO ni Factiliza. */
+  startManualEntry(): void {
+    if (this.current() || this.saving()) return;
+    ++this.identityRequest;
+    this.identityLoading.set(false);
+    this.resetIdentityLookup();
+    this.clearRegistrationFields();
+    this.identityDocumentLocked.set(false);
+    this.form.controls.tipoDocumento.enable({emitEvent: false});
+    this.manualEntry.set(true);
+    this.registrationStep.set('form');
+    this.applyRequiredPersonalFields(true);
+    this.identityTone.set('neutral');
+    this.identityMessage.set(null);
+  }
+
+  backToLookup(): void {
+    if (this.current() || this.saving()) return;
+    ++this.identityRequest;
+    this.identityLoading.set(false);
+    this.resetIdentityLookup();
+    this.clearRegistrationFields();
+    this.identityDocumentLocked.set(false);
+    this.form.controls.tipoDocumento.enable({emitEvent: false});
+    this.manualEntry.set(false);
+    this.registrationStep.set('lookup');
+  }
+
+  private applyRequiredPersonalFields(required: boolean): void {
+    this.form.controls.nombres.setValidators([
+      ...(required ? [Validators.required, notBlankValidator] : []),
+      personNameValidator, Validators.maxLength(100),
+    ]);
+    this.form.controls.apellidoPaterno.setValidators([
+      ...(required ? [Validators.required, notBlankValidator] : []),
+      personNameValidator, Validators.maxLength(80),
+    ]);
+    this.form.controls.distritoCodigo.setValidators([
+      ...(required ? [Validators.required] : []),
+      Validators.pattern(/^\d{6}$/),
+    ]);
+    if (!required && !this.form.controls.distritoCodigo.value)
+      this.form.controls.distritoCodigo.setValidators([Validators.pattern(/^(?:\d{6})?$/)]);
+    for (const key of ['nombres', 'apellidoPaterno', 'distritoCodigo'])
+      this.form.get(key)?.updateValueAndValidity({emitEvent: false});
+  }
+
+  /** Separa los datos personales de los datos de socio. */
+  continueToMembership(): void {
+    if (this.saving() || this.identityLoading() || this.identityBlocked()) return;
+    if (!this.identityRecordLoaded()) {
+      // Para personas nuevas se exigen los datos esenciales del registro.
+      const required = ['tipoDocumento', 'numeroDocumento', 'nombres', 'apellidoPaterno', 'distritoCodigo'];
+      if (required.some(name => this.form.get(name)?.invalid)) {
+        required.forEach(name => this.form.get(name)?.markAsTouched());
+        this.errorMessage.set('Complete los datos obligatorios de la persona.');
+        return;
       }
+    }
+    this.errorMessage.set(null);
+    this.registrationStep.set('membership');
+  }
+
+  backToPersonalData(): void {
+    if (!this.saving()) this.registrationStep.set('form');
+  }
+
+  save(): void {
 
     this.form.updateValueAndValidity({ emitEvent: false });
     this.form.markAllAsTouched();
 
-    if (
-      this.form.invalid
-      || this.saving()
-      || this.identityLoading()
-    ) {
+    if (this.saving() || this.identityLoading()) return;
+    if (this.form.invalid) {
+      const personalRequired = ['tipoDocumento', 'numeroDocumento', 'nombres', 'apellidoPaterno', 'distritoCodigo'];
+      if (personalRequired.some(name => this.form.get(name)?.invalid)) {
+        this.errorMessage.set('Complete los datos obligatorios de la persona para registrar al socio.');
+        this.registrationStep.set('form');
+      } else {
+        this.errorMessage.set('Revise los datos del socio antes de guardar.');
+      }
       return;
     }
 
@@ -441,12 +489,12 @@ export class ProductorFormComponent {
     );
 
     if (
-      this.shouldResolveIdentity()
-      && this.verifiedIdentityKey()
-        !== this.identityKey(raw.tipoDocumento, documentNumber)
+      this.identityDocumentLocked()
+      && !current
+      && this.verifiedIdentityKey() !== this.identityKey(raw.tipoDocumento, documentNumber)
     ) {
       this.errorMessage.set(
-        `Valide el ${raw.tipoDocumento} antes de guardar.`,
+        'El documento cambió. Vuelva a buscar a la persona.',
       );
       return;
     }
@@ -584,56 +632,33 @@ export class ProductorFormComponent {
     type: 'DNI' | 'RUC',
     documentNumber: string,
   ): void {
-    const key = this.identityKey(type, documentNumber);
-    this.verifiedIdentityKey.set(key);
-
     const current = this.current();
-
-    if (
-      result.isPartner
-      && (!current || result.entityId !== current.socioId)
-    ) {
+    if (result.isPartner && (!current || result.entityId !== current.socioId)) {
       this.identityBlocked.set(true);
       this.identityTone.set('error');
-      this.identityMessage.set(
-        'Esta persona ya está registrada como socio.',
-      );
+      this.identityMessage.set('Esta persona ya figura como socio. Utilice su registro existente.');
       return;
     }
-
-    this.identityBlocked.set(false);
-    this.prefillPerson(result);
-
-    if (result.found) {
-      this.identityRecordLoaded.set(true);
-
-      const resolvedType = this.form.controls.tipoDocumento.value;
-      const resolvedDocument = this.form.controls.numeroDocumento.value;
-
-      if (resolvedType === 'DNI' || resolvedType === 'RUC') {
-        this.verifiedIdentityKey.set(
-          this.identityKey(resolvedType, resolvedDocument),
-        );
-      }
-
-      this.identityTone.set('success');
-      this.identityMessage.set('Datos de la persona cargados.');
-      return;
-    }
-
-    if (result.manualEntryAllowed) {
+    if (!result.found && !result.manualEntryAllowed) {
+      this.identityBlocked.set(true);
       this.identityTone.set('warning');
-      this.identityMessage.set(
-        'No se pudieron obtener los datos de la persona. Complete la información manualmente.',
-      );
+      this.identityMessage.set('No se pudo completar la búsqueda. Intente nuevamente.');
       return;
     }
-
-    this.identityBlocked.set(true);
-    this.identityTone.set('error');
-    this.identityMessage.set(
-      'No se pudieron obtener los datos de la persona. Intente nuevamente.',
-    );
+    this.identityBlocked.set(false);
+    this.verifiedIdentityKey.set(result.found ? this.identityKey(type, documentNumber) : null);
+    this.prefillPerson(result);
+    this.identityDocumentLocked.set(result.found);
+    if (result.found) this.form.controls.tipoDocumento.disable({emitEvent: false});
+    else this.form.controls.tipoDocumento.enable({emitEvent: false});
+    this.manualEntry.set(!result.found);
+    this.registrationStep.set('form');
+    this.identityRecordLoaded.set(result.found);
+    this.applyRequiredPersonalFields(!result.found);
+    this.identityTone.set(result.found ? 'success' : 'warning');
+    this.identityMessage.set(result.found
+      ? 'Puede completar los datos pendientes o continuar.'
+      : null);
   }
 
   private prefillPerson(result: IdentityResolution): void {
@@ -643,18 +668,7 @@ export class ProductorFormComponent {
       result.locationReference
       ?? result.suggestedFiscalAddress;
 
-    const locks: IdentityFieldLocks = result.found
-      ? {
-          names: true,
-          paternalSurname: true,
-          maternalSurname: true,
-          birthDate: true,
-          phone: true,
-          email: true,
-          geography: true,
-          reference: true,
-        }
-      : emptyIdentityFieldLocks();
+    const locks = personIdentityLocks(result);
 
     this.form.patchValue({
       tipoDocumento:
@@ -720,8 +734,8 @@ export class ProductorFormComponent {
   }
 
   canToggleIdentityEditing(): boolean {
-    return this.identityRecordLoaded()
-      && this.canEditIdentityData();
+    // Los datos recuperados durante un ALTA nunca se desbloquean.
+    return !!this.current() && this.identityRecordLoaded() && this.canEditIdentityData();
   }
 
   toggleIdentityEditing(enabled: boolean): void {
@@ -731,10 +745,14 @@ export class ProductorFormComponent {
   }
 
   isIdentityFieldReadOnly(
-    field: keyof IdentityFieldLocks,
+    field: keyof PersonIdentityLocks,
   ): boolean {
     return this.identityLocks()[field]
       && !this.identityEditingEnabled();
+  }
+
+  effectiveIdentityLocks(): PersonIdentityLocks {
+    return this.identityEditingEnabled() ? emptyPersonIdentityLocks() : this.identityLocks();
   }
 
   private resetIdentityLookup(): void {
@@ -764,7 +782,7 @@ export class ProductorFormComponent {
             ? ''
             : this.form.controls.distritoCodigo.value,
         centroPobladoId:
-          locks.geography
+          locks.populationCenter
             ? 0
             : this.form.controls.centroPobladoId.value,
         referencia:
@@ -780,7 +798,7 @@ export class ProductorFormComponent {
       this.initialPopulationCenterId.set(null);
     }
 
-    this.identityLocks.set(emptyIdentityFieldLocks());
+    this.identityLocks.set(emptyPersonIdentityLocks());
     this.identityEditingEnabled.set(false);
     this.identityRecordLoaded.set(false);
     this.resolvedSex.set(null);
@@ -789,6 +807,16 @@ export class ProductorFormComponent {
     this.identityTone.set('neutral');
     this.identityMessage.set(null);
     this.errorMessage.set(null);
+  }
+
+  private clearRegistrationFields(): void {
+    this.form.patchValue({
+      nombres: '', apellidoPaterno: '', apellidoMaterno: '', telefono: '', correo: '',
+      fechaNacimiento: '', distritoCodigo: '', centroPobladoId: 0, referencia: '',
+    }, {emitEvent: false});
+    this.initialDistrictCode.set('');
+    this.initialPopulationCenterId.set(null);
+    this.resolvedSex.set(null);
   }
 
   private resetIdentityState(): void {
@@ -829,6 +857,7 @@ export class ProductorFormComponent {
     this.resolver = null;
     this.current.set(null);
     this.errorMessage.set(null);
+    this.identityRequest++;
     this.resetIdentityState();
   }
 }

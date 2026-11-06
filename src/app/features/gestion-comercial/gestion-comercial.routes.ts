@@ -1,5 +1,7 @@
 import { convenioModuleGuard } from '../convenios/convenio-module.guard';
 import { Routes } from '@angular/router';
+import { provideE4 } from './e4/e4.providers';
+import { provideE5 } from './e5/e5.providers';
 
 import { permissionGuard } from '../../core/access/permission.guard';
 import { ajustesPrecioRoutes } from './ajustes-precio/ajustes-precio.routes';
@@ -75,6 +77,20 @@ export const gestionComercialRoutes: Routes = [
         },
         canActivate: [permissionGuard],
         loadComponent: commercialWorkspace,
+      },
+      {
+        path: 'acopio-rapido',
+        data: { breadcrumb: 'Acopio individual APAPPSS', permission: 'JABAS_LISTAR' },
+        canActivate: [permissionGuard],
+        providers: provideE4(),
+        loadComponent: () => import('./e4/adapter/in/ui/e4-page').then(m => m.E4Page),
+      },
+      {
+        path: 'finanzas-apappss',
+        data: { breadcrumb: 'Finanzas y liquidaciones APAPPSS', permission: 'LIQUIDACIONES_LISTAR' },
+        canActivate: [permissionGuard],
+        providers: provideE5(),
+        loadComponent: () => import('./e5/adapter/in/ui/e5-page').then(m => m.E5Page),
       },
       { path: 'campanas', redirectTo: 'campanias', pathMatch: 'full' },
       { path: 'acopio-entregas', redirectTo: 'entregas', pathMatch: 'full' },

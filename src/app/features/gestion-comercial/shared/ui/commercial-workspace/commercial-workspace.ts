@@ -10,7 +10,7 @@ import {
   signal,
 } from '@angular/core';
 import { FormArray, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
 import {
   faArrowRotateLeft,
@@ -102,6 +102,7 @@ const EMPTY_REFS: CommercialReferences = {
   imports: [
     CommonModule,
     ReactiveFormsModule,
+    RouterLink,
     FaIconComponent,
     PermissionDirective,
     PageHeaderComponent,

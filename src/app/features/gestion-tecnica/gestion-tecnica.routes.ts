@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 
+import { gestionProductivaRoutes } from './gestion-productiva/gestion-productiva.routes';
 import { censosRoutes } from './censos/censos.routes';
 import { evaluacionesRoutes } from './evaluaciones/evaluaciones.routes';
 import { parcelasCultivosRoutes } from './parcelas-cultivos/parcelas-cultivos.routes';
@@ -18,6 +19,7 @@ export const gestionTecnicaRoutes: Routes = [
       { path: 'cultivos', redirectTo: 'parcelas-cultivos', pathMatch: 'full' },
       { path: 'produccion-disponible', redirectTo: 'produccion', pathMatch: 'full' },
       ...productoresRoutes,
+      ...gestionProductivaRoutes,
       ...prediosRoutes,
       ...parcelasCultivosRoutes,
       ...censosRoutes,

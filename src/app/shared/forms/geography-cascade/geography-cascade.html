@@ -1,4 +1,5 @@
 <section class="geography-cascade" aria-label="Ubicación geográfica">
+  @if (!populationCenterOnly) {
   <div class="admin-field">
     <label for="geoDepartment">Departamento</label>
     <select
@@ -44,6 +45,7 @@
     </select>
   </div>
 
+  }
   <div class="admin-field">
     <label for="geoPopulationCenter">Centro poblado <span>*Opcional</span></label>
     <select

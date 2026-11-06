@@ -39,6 +39,15 @@ import { Configuration }                                     from '../configurat
 import { BaseService } from '../api.base.service';
 
 
+export interface AlmacenesProductosTransferiblesRequestParams {
+    almacenOrigenId: number;
+    almacenDestinoId: number;
+    /** Identificador UUID de correlación. Si no se envía, el backend genera uno y lo devuelve en la respuesta. */
+    xCorrelationId?: string;
+    /** Identificador lógico estable del dispositivo generado por el frontend. Se utiliza para sesiones y seguridad de cuenta. */
+    xDeviceId?: string;
+}
+
 export interface AlmacenesTransferirStockRequestParams {
     /** UUID que identifica de forma idempotente esta escritura. Reutilice la misma clave únicamente al reintentar exactamente la misma solicitud. */
     xIdempotencyKey: string;
@@ -124,6 +133,99 @@ export class LogsticaOperativaPorUOTService extends BaseService {
 
     constructor(protected httpClient: HttpClient, @Optional() @Inject(BASE_PATH) basePath: string|string[], @Optional() configuration?: Configuration) {
         super(basePath, configuration);
+    }
+
+    /**
+     * Productos de origen y motivos que impiden transferirlos
+     * @endpoint get /api/v1/recursos-operativos/transferencias/productos
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public almacenesProductosTransferibles(requestParameters: AlmacenesProductosTransferiblesRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<ApiResponseListMapStringObject>;
+    public almacenesProductosTransferibles(requestParameters: AlmacenesProductosTransferiblesRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<ApiResponseListMapStringObject>>;
+    public almacenesProductosTransferibles(requestParameters: AlmacenesProductosTransferiblesRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<ApiResponseListMapStringObject>>;
+    public almacenesProductosTransferibles(requestParameters: AlmacenesProductosTransferiblesRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const almacenOrigenId = requestParameters?.almacenOrigenId;
+        if (almacenOrigenId === null || almacenOrigenId === undefined) {
+            throw new Error('Required parameter almacenOrigenId was null or undefined when calling almacenesProductosTransferibles.');
+        }
+        const almacenDestinoId = requestParameters?.almacenDestinoId;
+        if (almacenDestinoId === null || almacenDestinoId === undefined) {
+            throw new Error('Required parameter almacenDestinoId was null or undefined when calling almacenesProductosTransferibles.');
+        }
+        const xCorrelationId = requestParameters?.xCorrelationId;
+        const xDeviceId = requestParameters?.xDeviceId;
+
+        let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'almacenOrigenId',
+            <any>almacenOrigenId,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'almacenDestinoId',
+            <any>almacenDestinoId,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        let localVarHeaders = this.defaultHeaders;
+        if (xCorrelationId !== undefined && xCorrelationId !== null) {
+            localVarHeaders = localVarHeaders.set('X-Correlation-Id', String(xCorrelationId));
+        }
+        if (xDeviceId !== undefined && xDeviceId !== null) {
+            localVarHeaders = localVarHeaders.set('X-Device-Id', String(xDeviceId));
+        }
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/recursos-operativos/transferencias/productos`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<ApiResponseListMapStringObject>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                params: localVarQueryParameters.toHttpParams(),
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
     }
 
     /**

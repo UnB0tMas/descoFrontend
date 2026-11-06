@@ -27,7 +27,7 @@ export interface InventoryAssetDetailResponse {
     placa?: string;
     tipoVehiculo?: string;
     kilometrajeKm?: number;
+    color?: string;
     recursos?: Array<Resource>;
     movimientos?: Array<Movement>;
 }
-

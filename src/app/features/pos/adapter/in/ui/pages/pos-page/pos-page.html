@@ -2,7 +2,7 @@
   <app-page-header
     title="Punto de venta"
     eyebrow="POS"
-    [subtitle]="'Venta directa de productos con stock disponible en ' + uot.label() + '.'"
+    [subtitle]="uot.label()"
     [icon]="pageIcon"
   >
     <div pageActions class="flex flex-wrap gap-2">
@@ -18,15 +18,9 @@
     </div>
   </app-page-header>
 
-  <nav class="admin-surface pos-mode-nav" aria-label="Gestión de ventas y salidas">
-    <button type="button" class="admin-secondary-button" [class.pos-mode-nav__active]="activeView() === 'venta'"
-      (click)="changeView('venta')">Venta POS</button>
-    @if (canUseTechnical()) {
-      <button type="button" class="admin-secondary-button" [class.pos-mode-nav__active]="activeView() === 'tecnica'"
-        (click)="changeView('tecnica')">Entrega a técnico (sin venta)</button>
-    }
-    <button type="button" class="admin-secondary-button" [class.pos-mode-nav__active]="activeView() === 'historial'"
-      (click)="changeView('historial')">Gestor de ventas</button>
+  <nav class="admin-tabs pos-mode-nav mt-5" aria-label="Gestión de ventas">
+    <button type="button" [class.active]="activeView() === 'venta'" (click)="changeView('venta')">Venta POS</button>
+    <button type="button" [class.active]="activeView() === 'historial'" (click)="changeView('historial')">Gestor de ventas</button>
   </nav>
 
   @if (contextError()) {
@@ -41,286 +35,122 @@
     />
   } @else {
     @if (activeView() === 'venta') {
-    <section class="admin-surface pos-toolbar" aria-label="Controles del punto de venta">
-      <div class="pos-toolbar__field">
-        <span class="pos-toolbar__label">
-          <fa-icon [icon]="warehouseIcon" />
-          Almacén de salida
-        </span>
-
-        <select
-          class="admin-select"
-          [value]="cart.warehouseId() ?? 0"
+    <section class="admin-surface pos-toolbar" aria-label="Almacén de salida">
+      <label class="pos-field pos-warehouse-field">
+        <span>Almacén</span>
+        <select class="admin-select" [value]="cart.warehouseId() ?? 0"
           [disabled]="processing() || cart.locked() || cart.items().length > 0"
-          (change)="changeWarehouse($any($event.target).value)"
-        >
+          (change)="changeWarehouse($any($event.target).value)">
           <option [value]="0">Seleccionar almacén</option>
           @for (warehouse of warehouses(); track warehouse.warehouseId) {
-            <option [value]="warehouse.warehouseId">
-              {{ warehouse.name }}
-              @if (warehouse.code) {
-                · {{ warehouse.code }}
-              }
-            </option>
+            <option [value]="warehouse.warehouseId">{{ warehouse.name }}</option>
           }
         </select>
-
-        @if (cart.items().length > 0) {
-          <small>Vacíe el carrito antes de cambiar de almacén.</small>
-        }
-      </div>
-
-      <div class="pos-toolbar__field pos-toolbar__field--grow">
-        <span class="pos-toolbar__label">
-          <fa-icon [icon]="searchIcon" />
-          Buscar producto
-        </span>
-
-        <input
-          class="admin-input"
-          type="search"
-          autocomplete="off"
-          placeholder="Código, nombre o categoría"
-          [value]="search()"
-          (input)="search.set($any($event.target).value)"
-        />
-      </div>
-
-      <div class="pos-toolbar__summary">
-        <span>Disponibles</span>
-        <strong>{{ filteredCatalog().length }}</strong>
-      </div>
-
-      <div class="pos-toolbar__summary">
-        <span>Unidades</span>
-        <strong>{{ cart.itemCount() }}</strong>
-      </div>
+      </label>
     </section>
 
     <div class="pos-layout">
       <main class="pos-workspace">
-        <section class="admin-surface pos-customer">
-          <header class="pos-section-header">
-            <div class="pos-section-heading">
-              <span class="pos-section-icon">
-                <fa-icon [icon]="customerIcon" />
-              </span>
-
-              <div>
-                <small>Cliente</small>
-                <strong>Identificación de la venta</strong>
-              </div>
-            </div>
-
-            @if (cart.customer(); as customer) {
-              <span class="pos-chip pos-chip--success">
-                {{ customerSourceLabel(customer) }}
-              </span>
-            }
-          </header>
-
-          <div class="pos-resolution-flow" aria-label="Flujo de identificación del cliente">
-            <div class="pos-resolution-step">
-              <span>1</span>
-              <div>
-                <strong>DESCO</strong>
-                <small>Primero se busca localmente</small>
-              </div>
-            </div>
-
-            <span class="pos-resolution-arrow" aria-hidden="true">→</span>
-
-            <div class="pos-resolution-step">
-              <span>2</span>
-              <div>
-                <strong>Factiliza</strong>
-                <small>Solo si el cliente no existe</small>
-              </div>
-            </div>
-
-            <span class="pos-resolution-arrow" aria-hidden="true">→</span>
-
-            <div class="pos-resolution-step">
-              <span>3</span>
-              <div>
-                <strong>Manual</strong>
-                <small>Solo si la validación no puede completarse</small>
-              </div>
-            </div>
-          </div>
-
-          @if (cart.customer(); as customer) {
-            <div class="pos-customer-selected">
-              <div class="pos-customer-selected__main">
-                <span>Cliente seleccionado</span>
-                <strong>{{ customer.displayName }}</strong>
-                <small>
-                  {{ customer.type === 'EMPRESA' ? 'Empresa' : 'Persona' }}
-                  · {{ customer.documentType }} {{ customer.documentNumber }}
-                </small>
-              </div>
-
-              <button
-                type="button"
-                class="admin-secondary-button admin-secondary-button--small"
-                [disabled]="cart.locked() || processing()"
-                (click)="cart.setCustomer(null); customerMessage.set(null); customerTone.set('neutral')"
-              >
-                Cambiar cliente
-              </button>
-            </div>
-          } @else {
-            <form
-              class="pos-customer-search"
-              [formGroup]="customerForm"
-              (ngSubmit)="resolveCustomer()"
-            >
-              <label class="pos-field">
-                <span>Tipo de cliente</span>
-                <select
-                  class="admin-select"
-                  formControlName="type"
-                  [disabled]="customerLoading() || processing() || cart.locked()"
-                  (change)="onCustomerTypeChange()"
-                >
-                  <option value="PERSONA">Persona</option>
-                  <option value="EMPRESA">Empresa</option>
-                </select>
-              </label>
-
-              <label class="pos-field">
-                <span>Documento</span>
-                <select
-                  class="admin-select"
-                  formControlName="documentType"
-                  [disabled]="customerForm.controls.type.value === 'EMPRESA' || customerLoading() || processing() || cart.locked()"
-                  (change)="onCustomerDocumentTypeChange()"
-                >
-                  <option value="DNI">DNI</option>
-                  <option value="RUC">RUC</option>
-                </select>
-              </label>
-
-              <label class="pos-field pos-customer-search__document">
-                <span>Número de documento</span>
-                <input
-                  class="admin-input"
-                  type="text"
-                  inputmode="numeric"
-                  autocomplete="off"
-                  formControlName="documentNumber"
-                  [attr.maxlength]="customerDocumentMaxLength()"
-                  [readOnly]="customerLoading() || processing() || cart.locked()"
-                  (input)="onCustomerDocumentInput()"
-                />
-              </label>
-
-              <button
-                type="submit"
-                class="admin-primary-button pos-customer-search__button"
+        <section class="admin-surface pos-customer" aria-label="Buscar cliente">
+          <div class="pos-customer-search">
+            <label class="pos-field pos-type-field">
+              <span>Tipo</span>
+              <select class="admin-select" [value]="customerForm.controls.type.value"
                 [disabled]="customerLoading() || processing() || cart.locked()"
-              >
-                @if (customerLoading()) {
-                  <span class="loading loading-spinner loading-sm"></span>
-                  Buscando...
-                } @else {
-                  <fa-icon [icon]="searchIcon" />
-                  Buscar cliente
-                }
+                (change)="customerForm.controls.type.setValue($any($event.target).value); onCustomerTypeChange()">
+                <option value="PERSONA">Persona</option><option value="EMPRESA">Empresa</option>
+              </select>
+            </label>
+            <app-person-lookup idPrefix="pos-cliente" [compact]="true" [showManualAction]="false"
+              [documentTypes]="customerDocumentOptions()"
+              [documentType]="customerForm.controls.documentType.value"
+              [documentNumber]="customerForm.controls.documentNumber.value"
+              [maxLength]="customerDocumentMaxLength()" inputMode="numeric"
+              [canSearch]="customerForm.controls.documentNumber.value.length === customerDocumentMaxLength()"
+              [searching]="customerLoading()"
+              [disabled]="processing() || cart.locked()"
+              (documentTypeChange)="onCustomerDocumentTypeChange($event)"
+              (documentNumberChange)="onCustomerDocumentInput($event)"
+              (searchRequested)="resolveCustomer()" />
+          </div>
+          @if (cart.customer(); as customer) {
+            <div class="pos-customer-result" role="status">
+              <fa-icon [icon]="customerIcon" />
+              <strong>{{ customer.displayName }}</strong>
+              <span>{{ customer.documentType }} {{ customer.documentNumber }}</span>
+              <button type="button" class="admin-icon-button" title="Quitar cliente" aria-label="Quitar cliente"
+                [disabled]="cart.locked() || processing()" (click)="useGeneralCustomer()">
+                <fa-icon [icon]="closeIcon" />
               </button>
-            </form>
-          }
-
-          @if (customerMessage()) {
-            <div
-              class="pos-inline-note"
-              [class.pos-inline-note--success]="customerTone() === 'success'"
-              [class.pos-inline-note--warning]="customerTone() === 'warning'"
-              [class.pos-inline-note--error]="customerTone() === 'error'"
-              role="status"
-            >
-              {{ customerMessage() }}
             </div>
+          } @else if (customerTone() === 'error' && customerMessage()) {
+            <div class="admin-inline-error" role="alert">{{ customerMessage() }}</div>
           }
         </section>
 
         <section class="pos-catalog-panel">
           <header class="pos-catalog-heading">
-            <div>
-              <small>Catálogo disponible</small>
-              <h2>Productos con stock</h2>
+            <h2>Productos</h2>
+            <div class="pos-catalog-controls">
+              <label class="pos-catalog-search">
+                <span class="sr-only">Buscar producto</span>
+                <input class="admin-input" type="search" autocomplete="off"
+                  placeholder="Buscar por nombre o código" [value]="search()"
+                  (input)="onCatalogSearch($any($event.target).value)" />
+              </label>
+              <app-list-view-switch [view]="catalogView()" label="Vista de productos"
+                (viewChange)="setCatalogView($event)" />
             </div>
-            <span>Precio vigente y stock del almacén seleccionado</span>
           </header>
 
           @if (!cart.warehouseId()) {
-            <app-empty-state
-              title="Seleccione un almacén"
-              message="El catálogo del POS se habilita cuando existe un almacén de salida."
-            />
+            <app-empty-state title="Seleccione un almacén" message="" />
           } @else if (catalogLoading()) {
-            <app-loading-state
-              title="Cargando catálogo"
-              message="Consultando precios vigentes y stock disponible."
-            />
+            <app-loading-state title="Cargando productos" message="" />
           } @else if (catalogError()) {
-            <app-error-state
-              [message]="catalogError() || 'No fue posible consultar el catálogo.'"
-              (retry)="loadCatalog()"
-            />
-          } @else if (filteredCatalog().length === 0) {
-            <app-empty-state
-              title="Sin productos disponibles"
-              message="No hay productos con precio vigente y stock para la búsqueda actual."
-            />
+            <app-error-state [message]="catalogError() || 'No fue posible consultar los productos.'" (retry)="loadCatalog()" />
           } @else {
-            <div class="pos-product-grid">
-              @for (product of filteredCatalog(); track product.productId) {
-                <article class="admin-surface pos-product-card">
-                  <app-pos-product-image
-                    [fileId]="product.imageFileId"
-                    [imageUrl]="product.imageUrl"
-                    [alt]="product.name"
-                  />
-
-                  <div class="pos-product-card__body">
-                    <div class="pos-product-card__heading">
-                      <div>
-                        <small>{{ product.code || 'SIN CÓDIGO' }}</small>
-                        <h3>{{ product.name }}</h3>
+            @if (catalogView() === 'table') {
+              <div class="admin-surface pos-products-table">
+                <app-data-table [columns]="productColumns" [rows]="catalogPageItems()"
+                  appearance="admin" [rowClickable]="true" trackByKey="productId"
+                  emptyMessage="Sin productos" (rowClick)="add($event)" />
+              </div>
+            } @else {
+              <div class="desco-record-grid pos-product-grid">
+                @for (product of catalogPageItems(); track product.productId) {
+                  <app-record-card>
+                    <header>
+                      <strong>{{ product.name }}</strong>
+                      <span class="admin-code">{{ product.code || '—' }}</span>
+                    </header>
+                    @if (product.category) { <p class="gp-subtle">{{ product.category }}</p> }
+                    <div class="pos-record-details">
+                      <div class="pos-record-thumbnail">
+                        <app-pos-product-image [fileId]="product.imageFileId"
+                          [imageUrl]="product.imageUrl" [alt]="product.name" />
                       </div>
-
-                      <span class="pos-stock">
-                        {{ product.stockAvailable | number:'1.0-3' }}
-                        {{ product.unit }}
-                      </span>
+                      <dl>
+                        <div><dt>Precio</dt><dd>{{ product.currency }} {{ product.unitPrice | number:'1.2-2' }}</dd></div>
+                        <div><dt>Disponible</dt><dd>{{ product.stockAvailable | number:'1.0-3' }} {{ product.unit }}</dd></div>
+                      </dl>
                     </div>
-
-                    <p>{{ product.description || product.category || 'Producto disponible para venta.' }}</p>
-
-                    <div class="pos-product-card__footer">
-                      <div>
-                        <small>Precio de venta</small>
-                        <strong>
-                          {{ product.currency }}
-                          {{ product.unitPrice | number:'1.2-2' }}
-                        </strong>
-                      </div>
-
-                      <button
-                        type="button"
-                        class="admin-primary-button admin-primary-button--small"
-                        [disabled]="cart.locked() || processing()"
-                        (click)="add(product)"
-                      >
-                        <fa-icon [icon]="plusIcon" />
-                        Agregar
-                      </button>
-                    </div>
-                  </div>
-                </article>
-              }
-            </div>
+                    <footer>
+                      <button type="button" class="admin-primary-button admin-primary-button--small"
+                        [disabled]="cart.locked() || processing() || product.stockAvailable <= 0"
+                        (click)="add(product)"><fa-icon [icon]="plusIcon" /> Agregar</button>
+                    </footer>
+                  </app-record-card>
+                } @empty {
+                  <app-empty-state title="Sin productos" message="" />
+                }
+              </div>
+            }
+            <app-paginator [page]="currentCatalogPage()" [size]="catalogPageSize()"
+              [totalRecords]="filteredCatalog().length" [totalPages]="catalogTotalPages()"
+              [pageSizes]="[10, 20, 50]"
+              (pageChange)="catalogPage.set($event)"
+              (sizeChange)="catalogPageSize.set($event); catalogPage.set(1)" />
           }
         </section>
       </main>
@@ -385,7 +215,7 @@
                     class="admin-icon-button"
                     title="Quitar producto"
                     [disabled]="cart.locked() || processing()"
-                    (click)="cart.remove(item.productId)"
+                    (click)="removeProduct(item.productId)"
                   >
                     <fa-icon [icon]="closeIcon" />
                   </button>
@@ -443,18 +273,186 @@
             <div class="pos-cart-empty">
               <fa-icon [icon]="cartIcon" />
               <strong>Carrito vacío</strong>
-              <span>Agregue productos desde el catálogo.</span>
             </div>
           }
         </div>
 
+        <footer class="pos-cart__footer">
+          <section class="pos-cart__totals">
+            <div>
+              <span>Unidades</span>
+              <strong>{{ cart.itemCount() }}</strong>
+            </div>
+
+            @if (savings() > 0) {
+              <div><span>Ahorro por precio vigente</span><strong>{{ cart.currency() }} {{ savings() | number:'1.2-2' }}</strong></div>
+            }
+            <div class="pos-cart__grand-total">
+              <span>Total estimado</span>
+              <strong>
+                {{ cart.currency() }}
+                {{ cart.total() | number:'1.2-2' }}
+              </strong>
+            </div>
+
+
+          </section>
+
+          @if (checkoutError()) {
+            <div class="admin-inline-error pos-checkout-message">
+              {{ checkoutError() }}
+            </div>
+          }
+
+          @if (lastSaleId()) {
+            <div class="pos-success-note">Venta #{{ lastSaleId() }} confirmada</div>
+            <button type="button" class="admin-secondary-button" (click)="openReceipt(lastSaleId()!)">Ver comprobante</button>
+          }
+
+          <button
+            type="button"
+            class="admin-primary-button pos-checkout-button"
+            [disabled]="!canCheckout()"
+            (click)="openCheckoutDialog()"
+          >
+            @if (processing()) {
+              <span class="loading loading-spinner loading-sm"></span>
+            } @else {
+              <fa-icon [icon]="pageIcon" />
+            }
+            {{ checkoutLabel() }}
+          </button>
+        </footer>
+      </aside>
+    </div>
+    }
+
+    @if (activeView() === 'historial') {
+      <section class="admin-surface pos-operation-panel">
+        <header class="pos-section-header"><div class="pos-section-heading"><span class="pos-section-icon"><fa-icon [icon]="pageIcon" /></span>
+          <div><strong>Gestor de ventas</strong></div></div>
+          <button type="button" class="admin-secondary-button" [disabled]="historyLoading()" (click)="loadHistory()">
+            <fa-icon [icon]="refreshIcon" /> Actualizar</button>
+        </header>
+        <div class="pos-sales-kpis">
+          <div><small>Ventas listadas</small><strong>{{ salesCount() }}</strong></div>
+          <div><small>Total vendido</small><strong>{{ salesTotal() | number:'1.2-2' }}</strong></div>
+          <div><small>Total cobrado</small><strong>{{ salesPaid() | number:'1.2-2' }}</strong></div>
+        </div>
+        @if (historyError()) { <div class="admin-inline-error" role="alert">{{ historyError() }}</div> }
+        <div class="pos-history-controls">
+          <label class="pos-catalog-search pos-history-search">
+            <span class="sr-only">Buscar venta</span>
+            <input class="admin-input" type="search" autocomplete="off"
+              placeholder="Buscar venta o cliente" [value]="historySearch()"
+              (input)="onHistorySearch($any($event.target).value)" />
+          </label>
+          <app-list-view-switch [view]="historyView()" label="Vista de ventas"
+            (viewChange)="setHistoryView($event)" />
+        </div>
+        @if (historyView() === 'table') {
+          <app-data-table appearance="admin" [columns]="saleColumns" [rows]="historyPageItems()"
+            [loading]="historyLoading()" [rowClickable]="true" trackByKey="saleId"
+            emptyMessage="Sin ventas" (rowClick)="viewSale($event.saleId)" />
+        } @else if (historyLoading()) {
+          <app-loading-state title="Cargando ventas" message="" />
+        } @else {
+          <div class="desco-record-grid pos-sales-grid">
+            @for (sale of historyPageItems(); track sale.saleId) {
+              <app-record-card>
+                <header>
+                  <strong>Venta #{{ sale.saleId }}</strong>
+                  <span class="admin-code">{{ sale.state.replace('_', ' ') }}</span>
+                </header>
+                <p class="gp-subtle">{{ sale.customer || 'Cliente varios' }}</p>
+                <dl>
+                  <div><dt>Fecha</dt><dd>{{ sale.date }}</dd></div>
+                  <div><dt>Total</dt><dd>{{ sale.currency }} {{ sale.total | number:'1.2-2' }}</dd></div>
+                  <div><dt>Pagado</dt><dd>{{ sale.currency }} {{ sale.paid | number:'1.2-2' }}</dd></div>
+                  <div><dt>Saldo</dt><dd>{{ sale.currency }} {{ sale.balance | number:'1.2-2' }}</dd></div>
+                </dl>
+                <footer class="pos-sales-card-actions">
+                  <button type="button" class="admin-secondary-button"
+                    [disabled]="saleActionId() !== null" (click)="viewSale(sale.saleId)">Ver detalle</button>
+                  <button type="button" class="admin-secondary-button"
+                    [disabled]="receiptLoading()" (click)="openReceipt(sale.saleId)">Comprobante</button>
+                </footer>
+              </app-record-card>
+            } @empty {
+              <app-empty-state title="Sin ventas" message="" />
+            }
+          </div>
+        }
+        <app-paginator [page]="currentHistoryPage()" [size]="historyPageSize()"
+          [totalRecords]="filteredSales().length" [totalPages]="historyTotalPages()"
+          [pageSizes]="[10, 20, 50]" (pageChange)="historyPage.set($event)"
+          (sizeChange)="historyPageSize.set($event); historyPage.set(1)" />
+      </section>
+    }
+  }
+</div>
+
+<app-action-confirm-dialog />
+
+<dialog #saleDetailDialog appDialogBackdrop class="modal desco-modal" (cancel)="$event.preventDefault(); closeSaleDetail()">
+  <div class="modal-box admin-modal-box pos-history-modal">
+    @if (selectedSale(); as detail) {
+        <button type="button" class="admin-icon-button pos-dialog-close" (click)="closeSaleDetail()" aria-label="Cerrar"><fa-icon [icon]="closeIcon" /></button>
+          <div class="pos-sale-detail">
+            <div class="pos-section-header"><strong>Venta #{{ detail.sale.saleId }} · {{ detail.sale.state }}</strong></div>
+            @for (line of detail.lines; track $index) {
+              <div class="pos-operation-line"><strong>{{ line.product }}</strong>
+                <span>{{ line.quantity | number:'1.0-3' }} × {{ line.unitPrice | number:'1.2-2' }}</span>
+                <span>{{ line.subtotal | number:'1.2-2' }}</span></div>
+            }
+            @if (detail.sale.balance > 0 && detail.sale.state !== 'ANULADA' && detail.sale.state !== 'ENTREGADA') {
+              <div class="pos-operation-grid">
+                <label class="pos-field"><span>Método de pago</span>
+                  <select class="admin-select" [value]="paymentForm.controls.paymentMethodId.value"
+                    (change)="paymentForm.controls.paymentMethodId.setValue(+$any($event.target).value)">
+                    @for (method of paymentMethods(); track method.paymentMethodId) {
+                      <option [value]="method.paymentMethodId">{{ method.name }}</option>
+                    }
+                  </select>
+                </label>
+                @if (selectedPaymentMethod()?.requiresOperationNumber) {
+                  <label class="pos-field"><span>Número de operación</span>
+                    <input class="admin-input" maxlength="120" [value]="paymentForm.controls.operationNumber.value"
+                      (input)="paymentForm.controls.operationNumber.setValue($any($event.target).value)" />
+                  </label>
+                }
+              </div>
+              <button class="admin-primary-button" type="button" [disabled]="saleActionId() !== null || !selectedPaymentMethod()"
+                (click)="paySelectedSale()">Registrar pago del saldo de {{ detail.sale.balance | number:'1.2-2' }}</button>
+            }
+            @if (detail.sale.balance <= 0 && detail.sale.state !== 'ANULADA' && detail.sale.state !== 'ENTREGADA') {
+              <button class="admin-primary-button" type="button" [disabled]="saleActionId() !== null"
+                (click)="deliverSelectedSale()">Confirmar entrega y descontar Kardex</button>
+            }
+            @if (detail.sale.paid === 0 && detail.sale.state !== 'ANULADA' && detail.sale.state !== 'ENTREGADA') {
+              <label class="pos-field"><span>Motivo para anular la venta sin pagos</span>
+                <input class="admin-input" maxlength="300" [value]="cancelReason()"
+                  (input)="cancelReason.set($any($event.target).value)" placeholder="Motivo de al menos 5 caracteres" /></label>
+              <button type="button" class="admin-secondary-button" [disabled]="!!saleActionId() || cancelReason().trim().length < 5"
+                (click)="cancelSelectedSale()">Anular venta</button>
+            }
+          </div>
+        }
+  </div>
+</dialog>
+
+<dialog #checkoutDialog appDialogBackdrop class="modal desco-modal" (cancel)="$event.preventDefault(); closeCheckoutDialog()">
+  <div class="modal-box admin-modal-box pos-checkout-modal">
+    <header class="admin-modal-header"><div class="admin-modal-title-group"><h2>Confirmar cobro</h2></div>
+      <button type="button" class="admin-icon-button" (click)="closeCheckoutDialog()" aria-label="Cerrar"><fa-icon [icon]="closeIcon" /></button></header>
+    <p class="pos-checkout-total">{{ cart.currency() }} {{ cart.total() | number:'1.2-2' }}</p>
         <section class="pos-payment" [formGroup]="paymentForm">
           <div class="pos-payment__heading">
             <div>
               <fa-icon [icon]="paymentIcon" />
               <strong>Cobro</strong>
             </div>
-            <small>Datos para finalizar la venta</small>
+
           </div>
 
           <div class="pos-payment__fields">
@@ -499,361 +497,93 @@
                 formControlName="observation"
                 [readOnly]="processing() || cart.locked()"
               ></textarea>
-              <small>Máximo 500 caracteres.</small>
+
             </label>
           </div>
         </section>
 
-        <footer class="pos-cart__footer">
-          <section class="pos-cart__totals">
-            <div>
-              <span>Unidades</span>
-              <strong>{{ cart.itemCount() }}</strong>
-            </div>
 
-            <div class="pos-cart__grand-total">
-              <span>Total estimado</span>
-              <strong>
-                {{ cart.currency() }}
-                {{ cart.total() | number:'1.2-2' }}
-              </strong>
-            </div>
+    @if (checkoutError()) { <div class="admin-inline-error">{{ checkoutError() }}</div> }
+    <footer class="admin-modal-actions"><button type="button" class="admin-secondary-button" (click)="closeCheckoutDialog()" [disabled]="processing()">Cancelar</button>
+      <button type="button" class="admin-primary-button" [disabled]="processing() || !canCheckout()" (click)="checkout()">{{ checkoutLabel() }}</button></footer>
+  </div>
+</dialog>
 
-            <small>
-              El backend vuelve a validar precio vigente y stock antes de registrar el cobro.
-            </small>
-          </section>
-
-          @if (checkoutError()) {
-            <div class="admin-inline-error pos-checkout-message">
-              {{ checkoutError() }}
-            </div>
-          }
-
-          @if (lastSaleId()) {
-            <div class="pos-success-note">
-              Última venta completada: #{{ lastSaleId() }}
-            </div>
-          }
-
-          <button
-            type="button"
-            class="admin-primary-button pos-checkout-button"
-            [disabled]="!canCheckout()"
-            (click)="checkout()"
-          >
-            @if (processing()) {
-              <span class="loading loading-spinner loading-sm"></span>
-            } @else {
-              <fa-icon [icon]="pageIcon" />
-            }
-            {{ checkoutLabel() }}
-          </button>
-        </footer>
-      </aside>
-    </div>
+<dialog #receiptDialog appDialogBackdrop class="modal desco-modal" (cancel)="$event.preventDefault(); closeReceipt()">
+  <div class="modal-box admin-modal-box pos-receipt-modal">
+    <header class="admin-modal-header"><h2>Comprobante de pago</h2>
+      <button class="admin-icon-button" type="button" (click)="closeReceipt()" aria-label="Cerrar"><fa-icon [icon]="closeIcon" /></button></header>
+    @if (receiptLoading()) { <p>Consultando venta...</p> }
+    @if (receiptError()) { <p role="alert" class="admin-inline-error">{{ receiptError() }}</p> }
+    @if (receiptSale(); as receipt) {
+      <div class="pos-thermal-receipt" id="pos-print-receipt">
+        <h3>COMPROBANTE DE PAGO</h3>
+        <p>DESCO</p>
+        <p>Venta N.º {{ receipt.sale.saleId }}</p>
+        <p>{{ receipt.sale.date }}</p>
+        <p>Cliente: {{ receipt.sale.customer || 'Cliente varios' }}</p>
+        <hr />
+        @for (line of receipt.lines; track $index) {
+          <div class="pos-receipt-line"><span>{{ line.product }}<small>{{ line.quantity | number:'1.0-3' }} × {{ line.unitPrice | number:'1.2-2' }}</small></span>
+            <strong>{{ line.subtotal | number:'1.2-2' }}</strong></div>
+        }
+        <hr />
+        <div class="pos-receipt-line"><strong>TOTAL</strong><strong>{{ receipt.sale.currency }} {{ receipt.sale.total | number:'1.2-2' }}</strong></div>
+        <div class="pos-receipt-line"><span>Pagado</span><span>{{ receipt.sale.paid | number:'1.2-2' }}</span></div>
+        <div class="pos-receipt-line"><span>Saldo</span><span>{{ receipt.sale.balance | number:'1.2-2' }}</span></div>
+        <p class="pos-receipt-note">Documento informativo. No es comprobante tributario electrónico.</p>
+      </div>
+      <button type="button" class="admin-primary-button" (click)="printReceipt()">Imprimir</button>
     }
+  </div>
+</dialog>
 
-    @if (activeView() === 'tecnica' && canUseTechnical()) {
-      <section class="admin-surface pos-operation-panel">
-        <header class="pos-section-header">
-          <div class="pos-section-heading">
-            <span class="pos-section-icon"><fa-icon [icon]="warehouseIcon" /></span>
-            <div><small>Inventario compartido por almacén</small><strong>Salida para uso técnico</strong></div>
-          </div>
-          <button type="button" class="admin-secondary-button" [disabled]="technicalProcessing()"
-            (click)="loadTechnical()"><fa-icon [icon]="refreshIcon" /> Actualizar</button>
-        </header>
-        <p class="pos-operation-panel__help">Esta operación entrega productos a un empleado y registra una salida de Kardex. No registra ventas, pagos ni comprobantes.</p>
-        <div class="pos-operation-grid">
-          <label class="pos-field"><span>Almacén de salida</span>
-            <select class="admin-select" [value]="cart.warehouseId() ?? 0" [disabled]="technicalProcessing() || technicalLines().length > 0 || cart.locked()"
-              (change)="changeWarehouse($any($event.target).value)">
-              @for (warehouse of warehouses(); track warehouse.warehouseId) {
-                <option [value]="warehouse.warehouseId">{{ warehouse.name }}</option>
-              }
-            </select>
-          </label>
-          <label class="pos-field"><span>Empleado receptor</span>
-            <select class="admin-select" [value]="technicalEmployeeId()" [disabled]="technicalProcessing()"
-              (change)="technicalEmployeeId.set(+$any($event.target).value)">
-              <option [value]="0">Seleccione un empleado</option>
-              @for (employee of technicalEmployees(); track employee.employeeId) {
-                <option [value]="employee.employeeId">{{ employee.name }} · {{ employee.code }}</option>
-              }
-            </select>
-          </label>
-          <label class="pos-field"><span>Producto habilitado para uso interno</span>
-            <select class="admin-select" [value]="technicalProductId()" [disabled]="technicalProcessing() || technicalLoading()"
-              (change)="technicalProductId.set(+$any($event.target).value)">
-              <option [value]="0">Seleccione un producto</option>
-              @for (product of technicalCatalog(); track product.productId) {
-                <option [value]="product.productId">{{ product.name }} (disponible: {{ product.stockAvailable | number:'1.0-3' }})</option>
-              }
-            </select>
-          </label>
-          <label class="pos-field"><span>Cantidad</span>
-            <input class="admin-input" type="number" min="0.001" step="0.001" [value]="technicalQuantity()"
-              [readOnly]="technicalProcessing()" (input)="technicalQuantity.set(+$any($event.target).value)" />
-          </label>
-          <button type="button" class="admin-secondary-button" [disabled]="technicalProcessing() || !technicalProductId()"
-            (click)="addTechnical()"><fa-icon [icon]="plusIcon" /> Agregar producto</button>
+<dialog #manualCustomerDialog appDialogBackdrop class="desco-modal pos-manual-modal"
+  aria-labelledby="pos-manual-title" (cancel)="$event.preventDefault(); closeManualCustomer()">
+  <div class="admin-modal-box pos-manual-modal__box">
+    <header class="admin-modal-header pos-manual-modal__header">
+      <div class="admin-modal-title-group">
+        <div><h2 id="pos-manual-title">{{ customerForm.controls.type.value === 'PERSONA' ? 'Registrar persona' : 'Registrar empresa' }}</h2></div>
+      </div>
+      <button type="button" class="admin-icon-button" aria-label="Cerrar"
+        [disabled]="manualSaving()" (click)="closeManualCustomer()"><fa-icon [icon]="closeIcon" /></button>
+    </header>
+    <form class="pos-manual-modal__form" [formGroup]="manualForm" (ngSubmit)="saveManualCustomer()">
+      <div class="pos-manual-modal__body">
+        <div class="pos-manual-document">
+          <span>{{ customerForm.controls.type.value === 'EMPRESA' ? 'Empresa' : 'Persona' }}</span>
+          <strong>{{ customerForm.controls.documentType.value }} {{ customerForm.controls.documentNumber.value }}</strong>
         </div>
-        @if (technicalLoading()) { <p class="pos-operation-panel__help">Actualizando catálogo y stock...</p> }
-        @if (technicalError()) { <div class="admin-inline-error" role="alert">{{ technicalError() }}</div> }
-        <div class="pos-operation-lines">
-          @for (item of technicalLines(); track item.productId) {
-            <div class="pos-operation-line">
-              <strong>{{ item.name }}</strong>
-              <span>{{ item.quantity | number:'1.0-3' }} {{ item.unit }}</span>
-              <button type="button" class="admin-icon-button" aria-label="Quitar producto" [disabled]="technicalProcessing()"
-                (click)="removeTechnical(item.productId)"><fa-icon [icon]="trashIcon" /></button>
+        @if (customerForm.controls.type.value === 'PERSONA') {
+          <!-- Se reutilizan validación, distribución y controles de los datos personales institucionales. -->
+          <app-person-data-fields [form]="manualForm" idPrefix="pos-persona"
+            [identityVisible]="false" [locationVisible]="false" [birthDateVisible]="false"
+            [disabled]="manualSaving()" />
+        } @else {
+          <div class="pos-manual-company">
+            <div class="admin-field pos-manual-company__full">
+              <label for="pos-razon">Razón social</label>
+              <input id="pos-razon" class="admin-input" formControlName="businessName" maxlength="200" />
+              <app-form-error [control]="manualForm.controls.businessName" fieldLabel="La razón social" />
             </div>
-          } @empty { <p class="pos-operation-panel__help">Agregue los productos que recibirá el técnico.</p> }
-        </div>
-        <div class="pos-operation-grid">
-          <label class="pos-field"><span>Motivo obligatorio</span>
-            <input class="admin-input" maxlength="300" [value]="technicalReason()" [readOnly]="technicalProcessing()"
-              (input)="technicalReason.set($any($event.target).value)" placeholder="Ej.: materiales para mantenimiento" />
-          </label>
-          <label class="pos-field"><span>Observación opcional</span>
-            <input class="admin-input" maxlength="500" [value]="technicalObservation()" [readOnly]="technicalProcessing()"
-              (input)="technicalObservation.set($any($event.target).value)" />
-          </label>
-        </div>
-        <button type="button" class="admin-primary-button" [disabled]="technicalProcessing() || !technicalLines().length || !technicalEmployeeId() || !technicalReason().trim()"
-          (click)="registerTechnical()">
-          @if (technicalProcessing()) { Registrando salida... } @else { Registrar salida, no venta }
-        </button>
-      </section>
-      <section class="admin-surface pos-operation-panel">
-        <header class="pos-section-header"><strong>Últimas entregas técnicas</strong></header>
-        <div class="pos-operation-table-wrap">
-          <table class="pos-operation-table"><thead><tr><th>Entrega</th><th>Fecha</th><th>Empleado</th><th>Almacén</th><th>Motivo</th><th>Kardex</th></tr></thead>
-            <tbody>
-              @for (item of technicalDeliveries(); track item.deliveryId) {
-                <tr><td>#{{ item.deliveryId }}</td><td>{{ item.date }}</td><td>{{ item.employee }}</td>
-                  <td>{{ item.warehouse }}</td><td>{{ item.reason }}</td><td>#{{ item.movementId }}</td></tr>
-              } @empty { <tr><td colspan="6">No hay entregas técnicas registradas para esta UOT.</td></tr> }
-            </tbody>
-          </table>
-        </div>
-      </section>
-    }
-
-    @if (activeView() === 'historial') {
-      <section class="admin-surface pos-operation-panel">
-        <header class="pos-section-header"><div class="pos-section-heading"><span class="pos-section-icon"><fa-icon [icon]="pageIcon" /></span>
-          <div><small>Ventas de la UOT</small><strong>Gestor de ventas</strong></div></div>
-          <button type="button" class="admin-secondary-button" [disabled]="historyLoading()" (click)="loadHistory()">
-            <fa-icon [icon]="refreshIcon" /> Actualizar</button>
-        </header>
-        @if (historyError()) { <div class="admin-inline-error" role="alert">{{ historyError() }}</div> }
-        @if (historyLoading()) { <p class="pos-operation-panel__help">Consultando ventas...</p> }
-        <div class="pos-operation-table-wrap">
-          <table class="pos-operation-table"><thead><tr><th>Venta</th><th>Fecha</th><th>Cliente</th><th>Estado</th><th>Total</th><th>Pagado</th><th>Saldo</th><th></th></tr></thead>
-            <tbody>
-              @for (sale of sales(); track sale.saleId) {
-                <tr><td>#{{ sale.saleId }}</td><td>{{ sale.date }}</td><td>{{ sale.customer }}</td><td>{{ sale.state }}</td>
-                  <td>{{ sale.currency }} {{ sale.total | number:'1.2-2' }}</td>
-                  <td>{{ sale.paid | number:'1.2-2' }}</td><td>{{ sale.balance | number:'1.2-2' }}</td>
-                  <td><button class="admin-secondary-button admin-secondary-button--small" type="button"
-                    [disabled]="saleActionId() !== null" (click)="viewSale(sale.saleId)">Detalle</button></td></tr>
-              } @empty { <tr><td colspan="8">No se encontraron ventas en la UOT seleccionada.</td></tr> }
-            </tbody>
-          </table>
-        </div>
-        @if (selectedSale(); as detail) {
-          <div class="pos-sale-detail">
-            <div class="pos-section-header"><strong>Venta #{{ detail.sale.saleId }} · {{ detail.sale.state }}</strong>
-              <button type="button" class="admin-icon-button" aria-label="Cerrar detalle" (click)="selectedSale.set(null)">
-                <fa-icon [icon]="closeIcon" /></button>
+            <div class="admin-field">
+              <label for="pos-telefono-empresa">Teléfono (opcional)</label>
+              <input id="pos-telefono-empresa" class="admin-input" formControlName="telefono" maxlength="30" type="tel" />
             </div>
-            @for (line of detail.lines; track $index) {
-              <div class="pos-operation-line"><strong>{{ line.product }}</strong>
-                <span>{{ line.quantity | number:'1.0-3' }} × {{ line.unitPrice | number:'1.2-2' }}</span>
-                <span>{{ line.subtotal | number:'1.2-2' }}</span></div>
-            }
-            @if (detail.sale.balance > 0 && detail.sale.state !== 'ANULADA' && detail.sale.state !== 'ENTREGADA') {
-              <div class="pos-operation-grid">
-                <label class="pos-field"><span>Método de pago</span>
-                  <select class="admin-select" [value]="paymentForm.controls.paymentMethodId.value"
-                    (change)="paymentForm.controls.paymentMethodId.setValue(+$any($event.target).value)">
-                    @for (method of paymentMethods(); track method.paymentMethodId) {
-                      <option [value]="method.paymentMethodId">{{ method.name }}</option>
-                    }
-                  </select>
-                </label>
-                @if (selectedPaymentMethod()?.requiresOperationNumber) {
-                  <label class="pos-field"><span>Número de operación</span>
-                    <input class="admin-input" maxlength="120" [value]="paymentForm.controls.operationNumber.value"
-                      (input)="paymentForm.controls.operationNumber.setValue($any($event.target).value)" />
-                  </label>
-                }
-              </div>
-              <button class="admin-primary-button" type="button" [disabled]="saleActionId() !== null || !selectedPaymentMethod()"
-                (click)="paySelectedSale()">Registrar pago del saldo de {{ detail.sale.balance | number:'1.2-2' }}</button>
-            }
-            @if (detail.sale.balance <= 0 && detail.sale.state !== 'ANULADA' && detail.sale.state !== 'ENTREGADA') {
-              <button class="admin-primary-button" type="button" [disabled]="saleActionId() !== null"
-                (click)="deliverSelectedSale()">Confirmar entrega y descontar Kardex</button>
-            }
-            @if (detail.sale.paid === 0 && detail.sale.state !== 'ANULADA' && detail.sale.state !== 'ENTREGADA') {
-              <label class="pos-field"><span>Motivo para anular la venta sin pagos</span>
-                <input class="admin-input" maxlength="300" [value]="cancelReason()"
-                  (input)="cancelReason.set($any($event.target).value)" placeholder="Motivo de al menos 5 caracteres" /></label>
-              <button type="button" class="admin-secondary-button" [disabled]="!!saleActionId() || cancelReason().trim().length < 5"
-                (click)="cancelSelectedSale()">Anular venta</button>
-            }
+            <div class="admin-field">
+              <label for="pos-correo-empresa">Correo (opcional)</label>
+              <input id="pos-correo-empresa" class="admin-input" formControlName="correo" maxlength="180" type="email" />
+              <app-form-error [control]="manualForm.controls.correo" fieldLabel="El correo" />
+            </div>
           </div>
         }
-      </section>
-    }
-  }
-</div>
-
-<dialog
-  #manualCustomerDialog
-  class="modal desco-modal"
-  (cancel)="$event.preventDefault(); closeManualCustomer()"
->
-  <div class="modal-box admin-modal-box">
-    <header class="admin-modal-header">
-      <div class="admin-modal-title-group">
-        <span class="admin-modal-icon">
-          <fa-icon [icon]="customerIcon" />
-        </span>
-        <div>
-          <p>POS</p>
-          <h2>Registrar cliente manualmente</h2>
-        </div>
       </div>
-
-      <button
-        type="button"
-        class="admin-icon-button"
-        [disabled]="manualSaving()"
-        (click)="closeManualCustomer()"
-      >
-        <fa-icon [icon]="closeIcon" />
-      </button>
-    </header>
-
-    <div class="pos-manual-document">
-      <span>
-        {{ customerForm.controls.type.value === 'EMPRESA' ? 'Empresa' : 'Persona' }}
-      </span>
-      <strong>
-        {{ customerForm.controls.documentType.value }}
-        {{ customerForm.controls.documentNumber.value }}
-      </strong>
-    </div>
-
-    <div class="pos-inline-note pos-inline-note--warning">
-      La carga manual se habilita únicamente porque la validación automática no pudo completar este cliente.
-    </div>
-
-    <form
-      class="admin-form-grid"
-      [formGroup]="manualForm"
-      (ngSubmit)="saveManualCustomer()"
-    >
-      @if (customerForm.controls.type.value === 'EMPRESA') {
-        <div class="admin-field admin-field-span-2">
-          <label>Razón social</label>
-          <input
-            class="admin-input"
-            type="text"
-            maxlength="200"
-            formControlName="businessName"
-          />
-          <app-form-error
-            [control]="manualForm.controls.businessName"
-            fieldLabel="La razón social"
-          />
-        </div>
-      } @else {
-        <div class="admin-field admin-field-span-2">
-          <label>Nombres</label>
-          <input
-            class="admin-input"
-            type="text"
-            maxlength="120"
-            formControlName="names"
-          />
-          <app-form-error
-            [control]="manualForm.controls.names"
-            fieldLabel="Los nombres"
-          />
-        </div>
-
-        <div class="admin-field">
-          <label>Apellido paterno</label>
-          <input
-            class="admin-input"
-            type="text"
-            maxlength="80"
-            formControlName="paternalSurname"
-          />
-        </div>
-
-        <div class="admin-field">
-          <label>Apellido materno</label>
-          <input
-            class="admin-input"
-            type="text"
-            maxlength="80"
-            formControlName="maternalSurname"
-          />
-        </div>
-      }
-
-      <div class="admin-field">
-        <label>Teléfono</label>
-        <input
-          class="admin-input"
-          type="tel"
-          maxlength="30"
-          formControlName="phone"
-        />
-      </div>
-
-      <div class="admin-field">
-        <label>Correo</label>
-        <input
-          class="admin-input"
-          type="email"
-          maxlength="180"
-          formControlName="email"
-        />
-        <app-form-error
-          [control]="manualForm.controls.email"
-          fieldLabel="El correo"
-        />
-      </div>
-
-      <footer class="admin-modal-actions admin-field-span-2">
-        <button
-          type="button"
-          class="admin-secondary-button"
-          [disabled]="manualSaving()"
-          (click)="closeManualCustomer()"
-        >
-          Cancelar
-        </button>
-
-        <button
-          type="submit"
-          class="admin-primary-button"
-          [disabled]="manualSaving()"
-        >
-          @if (manualSaving()) {
-            <span class="loading loading-spinner loading-sm"></span>
-            Guardando...
-          } @else {
-            <fa-icon [icon]="customerIcon" />
-            Registrar cliente
-          }
+      <footer class="admin-modal-actions pos-manual-modal__footer">
+        <button type="button" class="admin-secondary-button" [disabled]="manualSaving()"
+          (click)="closeManualCustomer()">Cancelar</button>
+        <button type="submit" class="admin-primary-button" [disabled]="manualSaving()">
+          @if (manualSaving()) { <span class="loading loading-spinner loading-sm"></span> Guardando… }
+          @else { Guardar cliente }
         </button>
       </footer>
     </form>

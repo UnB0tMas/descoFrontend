@@ -1,0 +1,2 @@
+import { GpTipoEvento } from './gpTipoEvento';
+export interface GpEventoResponse { eventoId: number; actividadId: number; tipo: GpTipoEvento; observacion: string; fechaHecho: string; fechaRegistro: string; usuarioId: number; usuarioNombre?: string | null; respuestaAId?: number | null; problemaId?: number | null; problema?: string | null; tratamientoId?: number | null; tratamiento?: string | null; cantidadAfectada?: number | null; afectadosAproximado?: boolean | null; fotoId?: number | null; fotosIds?: number[]; }

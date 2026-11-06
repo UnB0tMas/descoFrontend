@@ -1,0 +1,92 @@
+<div class="desco-page e2-page">
+  <app-page-header title="Salidas operativas" eyebrow="Gestión técnica" [icon]="icon">
+    <div pageActions class="flex flex-wrap gap-2">
+      <a class="admin-secondary-button" routerLink="/gestion-tecnica/salidas/historico">Histórico</a>
+      <a class="admin-secondary-button" routerLink="/documentos-evidencias/salidas">Mis documentos</a>
+      <button *appPermission="'SALIDAS_CREAR'" type="button" class="admin-primary-button" (click)="openCreate()">
+        <fa-icon [icon]="addIcon" /> Nueva salida
+      </button>
+    </div>
+  </app-page-header>
+  <section class="admin-surface mt-4">
+    <div class="admin-toolbar e2-toolbar">
+      <div class="admin-field e2-toolbar-search"><label for="e2Buscar">Buscar en esta página</label>
+        <input id="e2Buscar" class="admin-input" [(ngModel)]="buscar" (keyup.enter)="applySearch()" placeholder="Buscar por nombre o código" /></div>
+      <button type="button" class="admin-secondary-button" (click)="applySearch()"><fa-icon [icon]="searchIcon" /> Buscar</button>
+      <div class="admin-field"><label for="e2Estado">Estado</label>
+        <select id="e2Estado" class="admin-select" [(ngModel)]="estado" (change)="page=1;load()">
+          <option value="">Todos</option><option value="BORRADOR">Borradores</option>
+          <option value="SOLICITADA">Por aprobar</option><option value="OBSERVADA">Observada</option>
+          <option value="APROBADA">Aprobada</option><option value="EN_EJECUCION">En campo</option>
+          <option value="EN_RETORNO">Por inspeccionar</option><option value="CERRADA">Cerrada</option>
+          <option value="RECHAZADA">Rechazada</option><option value="CANCELADA">Cancelada</option>
+        </select></div>
+      <button type="button" class="admin-icon-button" title="Actualizar" aria-label="Actualizar" (click)="load()" [disabled]="loading()"><fa-icon [icon]="refreshIcon" /></button>
+    </div>
+    <div class="e2-listbar"><button class="admin-secondary-button" type="button" [class.e2-active-filter]="estado==='SOLICITADA'" [attr.aria-pressed]="estado==='SOLICITADA'" [disabled]="loading()" (click)="showPending()">@if(loading()){<span class="loading loading-spinner loading-xs"></span>}{{estado==='SOLICITADA'?'Ver todas':'Por aprobar ('+pendingCount()+')'}}</button>
+      <div class="technical-view-control" role="group" aria-label="Vista">
+        <button type="button" class="technical-view-button" [class.active]="vista==='tabla'" (click)="vista='tabla'" [attr.aria-pressed]="vista==='tabla'">Tabla</button>
+        <button type="button" class="technical-view-button" [class.active]="vista==='tarjetas'" (click)="vista='tarjetas'" [attr.aria-pressed]="vista==='tarjetas'">Tarjetas</button>
+      </div>
+    </div>
+    @if(loading()){<app-loading-state title="Cargando salidas" message="Consultando registros."/>}
+    @else if(error()){<app-error-state [message]="error()||'No se pudo consultar.'" (retry)="load()"/>}
+    @else if(!filtered().length){<app-empty-state title="Sin salidas" message="No se encontraron registros."/>}
+    @else if(vista==='tabla'){
+      <div class="admin-table-wrap e2-scroll" tabindex="0" role="region" aria-label="Listado de salidas, desplazamiento horizontal">
+        <table class="admin-table e2-table"><thead><tr><th>Salida</th><th>Solicitada</th><th>Inicio previsto</th><th>Fin previsto</th><th>Estado</th><th class="text-right">Acciones</th></tr></thead>
+          <tbody>@for(s of filtered();track s.salidaId){<tr>
+            <td><strong>{{s.nombre}}</strong><small class="e2-subline">#{{s.salidaId}}</small></td>
+            <td>{{s.fechaSolicitud|date:'dd/MM/yyyy HH:mm'}}</td><td>{{s.fechaInicioPrevista|date:'dd/MM/yyyy HH:mm'}}</td>
+            <td>{{s.fechaFinPrevista?(s.fechaFinPrevista|date:'dd/MM/yyyy HH:mm'):'—'}}</td>
+            <td><span class="admin-status" [class.admin-status--active]="s.estado==='APROBADA'||s.estado==='CERRADA'" [class.admin-status--info]="s.estado==='SOLICITADA'||s.estado==='EN_EJECUCION'">{{s.estado}}</span></td>
+            <td><div class="admin-row-actions"><button class="admin-icon-button" type="button" title="Detalles" aria-label="Ver detalles" (click)="open(s.salidaId)"><fa-icon [icon]="viewIcon" /></button>
+              @if(s.estado==='BORRADOR'){<button *appPermission="'SALIDAS_EDITAR'" class="admin-icon-button" type="button" title="Editar" aria-label="Editar" [disabled]="editingLoading()!==null||saving()" (click)="editar(s.salidaId)">@if(editingLoading()===s.salidaId){<span class="loading loading-spinner loading-xs"></span>}@else{<fa-icon [icon]="editIcon" />}</button>
+               <button *appPermission="'SALIDAS_EDITAR'" class="admin-icon-button" type="button" title="Eliminar" aria-label="Eliminar borrador" (click)="eliminar(s)"><fa-icon [icon]="trashIcon" /></button>}
+             @if(s.estado==='SOLICITADA'){
+               <button *appPermission="'SALIDAS_RETIRAR'" type="button" class="admin-icon-button admin-icon-button--danger" title="Cancelar solicitud" aria-label="Cancelar solicitud" [disabled]="saving()" (click)="cancelarSolicitud(s)"><fa-icon [icon]="trashIcon" /></button>}
+             </div></td>
+          </tr>}</tbody>
+        </table>
+      </div>
+    } @else {
+      <div class="desco-record-grid technical-record-cards e2-cards">@for(s of filtered();track s.salidaId){
+        <app-record-card class="e2-record-card">
+          <header><strong>{{s.nombre}}</strong><span class="admin-status">{{s.estado}}</span></header>
+          <dl class="technical-record-data"><div><dt>Solicitud</dt><dd>{{s.fechaSolicitud|date:'dd/MM/yyyy HH:mm'}}</dd></div>
+            <div><dt>Inicio</dt><dd>{{s.fechaInicioPrevista|date:'dd/MM/yyyy HH:mm'}}</dd></div>
+            <div><dt>Fin</dt><dd>{{s.fechaFinPrevista?(s.fechaFinPrevista|date:'dd/MM/yyyy HH:mm'):'—'}}</dd></div>
+            <div><dt>Código</dt><dd>#{{s.salidaId}}</dd></div></dl>
+          <footer><div class="admin-row-actions"><button class="admin-icon-button" type="button" title="Detalles" aria-label="Ver detalles" (click)="open(s.salidaId)"><fa-icon [icon]="viewIcon" /></button>
+              @if(s.estado==='BORRADOR'){<button *appPermission="'SALIDAS_EDITAR'" class="admin-icon-button" type="button" title="Editar" aria-label="Editar" [disabled]="editingLoading()!==null||saving()" (click)="editar(s.salidaId)">@if(editingLoading()===s.salidaId){<span class="loading loading-spinner loading-xs"></span>}@else{<fa-icon [icon]="editIcon" />}</button>
+               <button *appPermission="'SALIDAS_EDITAR'" class="admin-icon-button" type="button" title="Eliminar" aria-label="Eliminar borrador" (click)="eliminar(s)"><fa-icon [icon]="trashIcon" /></button>}
+             @if(s.estado==='SOLICITADA'){
+               <button *appPermission="'SALIDAS_RETIRAR'" type="button" class="admin-icon-button admin-icon-button--danger" title="Cancelar solicitud" aria-label="Cancelar solicitud" [disabled]="saving()" (click)="cancelarSolicitud(s)"><fa-icon [icon]="trashIcon" /></button>}
+             </div></footer>
+        </app-record-card>
+      }</div>
+    }
+    <app-paginator [page]="page" [size]="size" [totalRecords]="total()" [totalPages]="totalPages()" (pageChange)="changePage($event)" (sizeChange)="changeSize($event)" />
+  </section>
+</div>
+
+<dialog #createDialog class="modal desco-modal" (cancel)="$event.preventDefault();closeCreate()">
+ <div class="modal-box admin-modal-box e2-modal-box">
+  <header class="admin-modal-header"><div class="admin-modal-title-group"><h2>{{editingId()!==null?'Editar salida':'Nueva salida'}}</h2></div>
+   <button type="button" class="admin-icon-button" aria-label="Cerrar" title="Cerrar" (click)="closeCreate()">×</button></header>
+  <form class="e2-modal-body" (ngSubmit)="guardar()">
+   <div class="e2-form-grid">
+    <label class="admin-field e2-span-2">Nombre<input name="nombre" class="admin-input" [(ngModel)]="nombre" maxlength="180" required /></label>
+    <label class="admin-field">Motivo<select name="motivo" class="admin-select" [(ngModel)]="motivoId" required><option [ngValue]="0">Seleccione</option>
+      @for(m of catalogos().motivos;track m.id){<option [ngValue]="m.id">{{m.nombre}}</option>}</select></label>
+    <label class="admin-field">Inicio previsto<input name="inicio" class="admin-input" type="datetime-local" [(ngModel)]="inicio" required /></label>
+    <label class="admin-field">Fin previsto<input name="fin" class="admin-input" type="datetime-local" [(ngModel)]="fin" required /></label>
+    <label class="admin-field e2-span-2">Descripción<textarea name="descripcion" class="admin-textarea" [(ngModel)]="descripcion" rows="2" maxlength="400"></textarea></label>
+   </div>
+   <footer class="e2-modal-actions"><button class="admin-secondary-button" type="button" (click)="closeCreate()">Cancelar</button>
+    <button class="admin-primary-button" type="submit" [disabled]="saving()||!nombre.trim()||!motivoId||!inicio||!fin">{{saving()?'Guardando…':(editingId()!==null?'Guardar cambios':'Crear borrador')}}</button></footer>
+  </form>
+ </div>
+</dialog>
+
+<app-action-confirm-dialog />

@@ -12,5 +12,5 @@
 export interface ConvenioAsociacionResponse { 
     organizacionId?: number;
     nombre?: string;
+    convenioId?: number;
 }
-

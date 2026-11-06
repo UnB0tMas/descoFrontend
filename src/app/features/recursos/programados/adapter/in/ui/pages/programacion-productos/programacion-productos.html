@@ -15,14 +15,14 @@
         <p>Al aprobarse, la cantidad se reserva; al entregarse, se registra una salida de Kardex sin venta POS.</p></header>
       <div class="product-program-grid">
         <label class="admin-field"><span>Almacén</span>
-          <select class="admin-select" [value]="warehouseId()" (change)="warehouseId.set(+$any($event.target).value)">
+          <select class="admin-select" [value]="warehouseId()" (change)="warehouseId.set(+$any($event.target).value);productId.set(0)">
             <option value="0">Seleccionar almacén</option>
             @for (w of warehouses(); track w.almacenId) { <option [value]="w.almacenId">{{ w.nombre }}</option> }
           </select></label>
         <label class="admin-field"><span>Producto habilitado para uso interno</span>
           <select class="admin-select" [value]="productId()" (change)="productId.set(+$any($event.target).value)">
             <option value="0">Seleccionar producto</option>
-            @for (p of policies(); track p.productoId) { <option [value]="p.productoId">{{ p.nombre }}</option> }
+            @for (p of warehouseProducts(); track p.productoId) { <option [value]="p.productoId">{{ p.nombre }}</option> }
           </select></label>
         <label class="admin-field"><span>Empleado receptor</span>
           @if (employees().length > 0) {

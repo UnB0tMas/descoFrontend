@@ -1,0 +1,63 @@
+<div class="desco-page gp-page">
+  <nav class="gp-breadcrumb" aria-label="Ruta de navegación"><a routerLink="/gestion-tecnica/gestion-productiva">Predios</a><span aria-hidden="true">/</span><span aria-current="page">{{predioNombre()}}</span></nav>
+  <app-page-header [title]="predioNombre()" eyebrow="Gestión productiva · Parcelas"
+    subtitle="Selecciona una parcela para consultar sus actividades, censos, sanidad y evaluaciones."
+    [icon]="pageIcon">
+    <div pageActions class="flex flex-wrap gap-2">
+      <a routerLink="/gestion-tecnica/gestion-productiva" class="admin-secondary-button"><fa-icon [icon]="backIcon" /> Predios</a>
+      <button type="button" class="admin-secondary-button" [disabled]="loading()" (click)="load()"><fa-icon [icon]="refreshIcon" /> Actualizar</button>
+      <button *appPermission="'CULTIVOS_CREAR'" type="button" class="admin-primary-button" (click)="create()"><fa-icon [icon]="addIcon" /> Nueva parcela</button>
+    </div>
+  </app-page-header>
+  <section class="admin-surface mt-5" aria-label="Listado de parcelas">
+    <div class="admin-toolbar gp-filter-toolbar">
+      <div class="admin-field gp-search">
+        <label for="gpBuscarParcela">Nombre o código</label>
+        <input id="gpBuscarParcela" class="admin-input" type="search" [ngModel]="search()" (ngModelChange)="onSearch($event)" placeholder="Buscar en este predio" autocomplete="off" />
+      </div>
+      <div class="gp-view-toggle" role="group" aria-label="Presentación de parcelas">
+        <button type="button" [class.active]="view()==='tabla'" [attr.aria-pressed]="view()==='tabla'" (click)="view.set('tabla')"><fa-icon [icon]="tableIcon" /> Tabla</button>
+        <button type="button" [class.active]="view()==='tarjetas'" [attr.aria-pressed]="view()==='tarjetas'" (click)="view.set('tarjetas')"><fa-icon [icon]="cardsIcon" /> Tarjetas</button>
+      </div>
+    </div>
+    @if (loading()) { <app-loading-state title="Cargando parcelas" message="Consultando parcelas del predio seleccionado." /> }
+    @else if (error()) { <app-error-state [message]="error() || 'No se pudo cargar el listado.'" (retry)="load()" /> }
+    @else if (filtered().length === 0) {
+      <app-empty-state [title]="search() ? 'Sin coincidencias' : 'Sin parcelas registradas'"
+        [message]="search() ? 'Prueba con otro nombre o código.' : 'Registra una parcela para iniciar el seguimiento productivo.'"
+        [actionLabel]="search() ? 'Limpiar búsqueda' : null" (action)="clear()" />
+    } @else {
+      @if (view() === 'tabla') {
+        <ng-template #parcelaCell let-p><div class="admin-stack-copy"><strong>{{p.nombre}}</strong><span>{{p.codigo}}</span></div></ng-template>
+        <ng-template #estadoCell let-p><span class="admin-status" [class.admin-status--active]="p.estado" [class.admin-status--inactive]="!p.estado">{{p.estado ? 'Activa' : 'Inactiva'}}</span></ng-template>
+        <ng-template #accionesCell let-p><div class="admin-row-actions gp-activity-actions">
+          <a *appPermission="'CULTIVOS_VER'" class="admin-icon-button" [routerLink]="['/gestion-tecnica/gestion-productiva/predios',predioId,'parcelas',p.parcelaId]" [attr.aria-label]="'Seguimiento de ' + p.nombre" title="Detalles de parcela"><fa-icon [icon]="viewIcon" /></a>
+          <button *appPermission="'CULTIVOS_EDITAR'" type="button" class="admin-icon-button" [attr.aria-label]="'Editar ' + p.nombre" title="Editar parcela" [disabled]="editing() || !p.estado" (click)="edit(p)"><fa-icon [icon]="editIcon" /></button>
+          <button *appPermission="'CULTIVOS_RETIRAR'" type="button" class="admin-icon-button admin-icon-button--danger" [disabled]="editing()||!p.estado" (click)="eliminar(p)" title="Eliminar parcela" [attr.aria-label]="'Eliminar '+p.nombre"><fa-icon [icon]="deleteIcon" /></button>
+        </div></ng-template>
+        <app-data-table appearance="admin" [columns]="columns" [rows]="visible()" trackByKey="parcelaId"
+          [cellTemplates]="{nombre: parcelaCell, estado: estadoCell, acciones: accionesCell}" />
+      } @else {
+        <div class="desco-record-grid gp-cards gp-cards--institutional">
+          @for (p of visible(); track p.parcelaId) {
+            <app-record-card>
+              <div class="gp-card-top"><span class="gp-code">{{p.codigo}}</span><span class="admin-status" [class.admin-status--active]="p.estado" [class.admin-status--inactive]="!p.estado">{{p.estado ? 'Activa' : 'Inactiva'}}</span></div>
+              <div class="gp-card-icon"><fa-icon [icon]="pageIcon" /></div>
+              <h2>{{p.nombre}}</h2>
+              <div class="gp-meta"><span>{{p.areaHa == null ? 'Área por completar' : (p.areaHa | number:'1.2-2') + ' ha'}}</span></div>
+              <div class="gp-card-actions gp-activity-actions">
+                <a *appPermission="'CULTIVOS_VER'" class="admin-primary-button admin-primary-button--small" [routerLink]="['/gestion-tecnica/gestion-productiva/predios',predioId,'parcelas',p.parcelaId]"><fa-icon [icon]="viewIcon" /> Detalles</a>
+                <button *appPermission="'CULTIVOS_EDITAR'" type="button" class="admin-secondary-button" title="Editar parcela" [disabled]="editing() || !p.estado" (click)="edit(p)"><fa-icon [icon]="editIcon" /> Editar</button>
+                <button *appPermission="'CULTIVOS_RETIRAR'" type="button" class="admin-secondary-button" [disabled]="editing()||!p.estado" (click)="eliminar(p)" title="Eliminar parcela"><fa-icon [icon]="deleteIcon" /> Eliminar</button>
+              </div>
+            </app-record-card>
+          }
+        </div>
+      }
+      <app-paginator [page]="page()" [size]="size()" [totalRecords]="filtered().length" [totalPages]="totalPages()"
+        (pageChange)="setPage($event)" (sizeChange)="setSize($event)" />
+    }
+  </section>
+  <app-gp-parcela-form />
+  <app-action-confirm-dialog />
+</div>

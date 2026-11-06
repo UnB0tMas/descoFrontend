@@ -1,0 +1,187 @@
+<div class="desco-page gp-page">
+  <nav class="gp-breadcrumb" aria-label="Ruta de navegación"><a routerLink="/gestion-tecnica/gestion-productiva">Predios</a><span aria-hidden="true">/</span><a [routerLink]="['/gestion-tecnica/gestion-productiva/predios',predioId,'parcelas']">Parcelas</a><span aria-hidden="true">/</span><a [routerLink]="['/gestion-tecnica/gestion-productiva/predios',predioId,'parcelas',parcelaId]">{{parcelaNombre()}}</a><span aria-hidden="true">/</span><span aria-current="page">Detalle de actividad</span></nav>
+  <app-page-header [title]="selected()?.nombre || 'Detalle de actividad'" eyebrow="Gestión productiva · Actividad productiva" [icon]="pageIcon">
+    <div pageActions class="flex flex-wrap gap-2"><a class="admin-secondary-button" [routerLink]="['/gestion-tecnica/gestion-productiva/predios',predioId,'parcelas',parcelaId]"><fa-icon [icon]="backIcon" /> Actividades</a><button class="admin-secondary-button" type="button" [disabled]="loading()||detailsLoading()" (click)="refresh()"><fa-icon [icon]="refreshIcon" /> Actualizar</button></div>
+  </app-page-header>
+  @if(loading()){<app-loading-state title="Cargando actividad" message="Consultando el expediente productivo." />}
+  @else if(error()){<app-error-state [message]="error()||'No se pudo cargar la actividad.'" (retry)="refresh()" />}
+  @else if(selected();as a){
+      <section class="admin-surface mt-5 gp-panel" aria-label="Expediente de actividad productiva">
+        <div class="gp-section-title">
+          <div><h2>{{a.nombre}}</h2><p>{{a.rubro === 'CULTIVO' ? 'Cultivo agrícola' : 'Crianza animal'}} · {{medidaResumen(a)}}</p></div>
+          <div class="gp-actions">
+            <button *appPermission="'CENSOS_CREAR'" type="button" class="admin-secondary-button" [disabled]="a.estadoProceso==='FINALIZADA'||lifecycleBusy()" (click)="newCensus()"><fa-icon [icon]="censusIcon" /> {{a.rubro==='CULTIVO'?'Actualizar superficie':'Actualizar censo'}}</button>
+            <button type="button" class="admin-secondary-button" [disabled]="!canComment()||a.estadoProceso==='FINALIZADA'||lifecycleBusy()" (click)="newComment()">Comentario general</button>
+            <button type="button" class="admin-primary-button" [disabled]="!canCreateEvent()||a.estadoProceso==='FINALIZADA'||lifecycleBusy()" (click)="newEvent()"><fa-icon [icon]="addIcon" /> Registrar seguimiento</button>
+            <button *appPermission="'CULTIVOS_EDITAR'" type="button" class="admin-secondary-button" [disabled]="a.estadoProceso==='FINALIZADA'||lifecycleBusy()||(a.rubro==='CRIANZA'&&(a.cantidadExacta??a.cantidadAproximada??0)>0)" (click)="changeLifecycle('finalizar')"><fa-icon [icon]="finishIcon" /> {{a.rubro==='CULTIVO'?'Finalizar ciclo':'Cerrar crianza'}}</button>
+          </div>
+        </div>
+        @if(lifecycleError()){<div class="admin-inline-error" role="alert">{{lifecycleError()}}</div>}
+        <nav class="gp-sections" aria-label="Secciones del seguimiento">
+          <button type="button" [class.selected]="section()==='informacion'" [attr.aria-current]="section()==='informacion' ? 'page' : null" (click)="changeSection('informacion')">Información general</button>
+          <button type="button" [class.selected]="section()==='modificaciones'" [attr.aria-current]="section()==='modificaciones' ? 'page' : null" (click)="changeSection('modificaciones')">Historial de modificaciones ({{revisiones().length}})</button>
+          <button type="button" [class.selected]="section()==='historial'" [attr.aria-current]="section()==='historial' ? 'page' : null" (click)="changeSection('historial')"><fa-icon [icon]="eventsIcon" /> Historial técnico ({{eventos().length}})</button>
+          <button type="button" [class.selected]="section()==='incidencias'" [attr.aria-current]="section()==='incidencias' ? 'page' : null" (click)="changeSection('incidencias')"><fa-icon [icon]="eventsIcon" /> Incidencias y tratamientos</button>
+          <button type="button" [class.selected]="section()==='censos'" [attr.aria-current]="section()==='censos' ? 'page' : null" (click)="changeSection('censos')"><fa-icon [icon]="censusIcon" /> {{a.rubro==='CULTIVO'?'Historial de superficies':'Historial de censos'}} ({{censos().length}})</button>
+        </nav>
+        @if (detailsLoading()) { <app-loading-state title="Cargando seguimiento" message="Cargando registros." /> }
+        @else if (detailsError()) { <app-error-state [message]="detailsError() || 'No se pudo consultar el seguimiento.'" (retry)="loadActivity()" /> }
+        @else if (section() === 'informacion') {
+          <div class="gp-panel-top">
+            <h3>Información general</h3>
+            <div class="gp-view-toggle" role="group" aria-label="Vista de información general">
+              <button type="button" [class.active]="infoView()==='tabla'" [attr.aria-pressed]="infoView()==='tabla'" (click)="infoView.set('tabla')">Tabla</button>
+              <button type="button" [class.active]="infoView()==='tarjetas'" [attr.aria-pressed]="infoView()==='tarjetas'" (click)="infoView.set('tarjetas')">Tarjetas</button>
+            </div>
+          </div>
+          @if(infoView()==='tabla'){
+            <app-data-table appearance="admin" [columns]="infoColumns" [rows]="infoRows()" />
+          }@else{
+            <div class="desco-record-grid gp-cards gp-record-cards gp-info-cards">
+              @for(row of infoRows();track row.campo){
+                <app-record-card><span class="gp-record-label">{{row.campo}}</span><strong class="gp-record-value">{{row.valor}}</strong></app-record-card>
+              }
+            </div>
+          }
+           @if(comentarios().length){
+             <section class="gp-comment-section" aria-label="Comentarios generales">
+               <h3>Comentarios generales ({{comentarios().length}})</h3>
+               <div class="gp-comment-list">
+                 @for(c of comentarios();track c.eventoId){
+                   <article class="gp-comment-item">
+                     <div class="gp-comment-meta">
+                       <strong>{{c.usuarioNombre || 'Usuario #' + c.usuarioId}}</strong>
+                       <time>{{(c.fechaRegistro + 'Z') | date:'dd/MM/yyyy HH:mm'}}</time>
+                     </div>
+                     <p>{{c.observacion}}</p>
+                   </article>
+                 }
+               </div>
+             </section>
+           }
+          @if(a.rubro==='CRIANZA' && (a.cantidadExacta??a.cantidadAproximada??0)>0 && a.estadoProceso!=='FINALIZADA'){
+            <article class="gp-card gp-record-notice"><p>Para cerrar la crianza, registra la salida de todos los animales mediante una actualización del censo.</p></article>
+          }
+        } @else if (section() === 'modificaciones') {
+          <div class="gp-panel-top">
+            <h3>Historial de modificaciones</h3>
+            <div class="gp-view-toggle" role="group" aria-label="Vista de modificaciones">
+              <button type="button" [class.active]="revisionsView()==='tabla'" [attr.aria-pressed]="revisionsView()==='tabla'" (click)="revisionsView.set('tabla')">Tabla</button>
+              <button type="button" [class.active]="revisionsView()==='tarjetas'" [attr.aria-pressed]="revisionsView()==='tarjetas'" (click)="revisionsView.set('tarjetas')">Tarjetas</button>
+            </div>
+          </div>
+          <div class="gp-filter-toolbar gp-incidence-search"><div class="admin-field"><label for="gpBuscarRevision">Buscar modificación</label><input id="gpBuscarRevision" type="search" class="admin-input" [(ngModel)]="revisionSearchInput" (keyup.enter)="searchRevisions()" placeholder="Nombre, motivo o fecha" /></div><button class="admin-secondary-button" type="button" (click)="searchRevisions()"><fa-icon [icon]="searchIcon" /> Buscar</button></div>
+          @if(!revisiones().length){<app-empty-state title="Sin modificaciones" message="Todavía no existen revisiones de esta actividad." />}
+          @else if(!filteredRevisions().length){<app-empty-state title="Sin resultados" message="No hay modificaciones que coincidan con la búsqueda." />}
+          @else if(revisionsView()==='tabla'){
+            <app-data-table appearance="admin" [columns]="revisionColumns" [rows]="filteredRevisions()" trackByKey="revisionId" />
+          }@else{
+            <div class="desco-record-grid gp-cards gp-record-cards">
+              @for(r of filteredRevisions();track r.revisionId){
+                <app-record-card>
+                  <div class="gp-record-heading"><strong>Revisión #{{r.revisionId}}</strong><span class="gp-subtle">{{r.fechaRegistro | date:'dd/MM/yyyy HH:mm'}}</span></div>
+                  <dl class="gp-record-data">
+                    <div><dt>Nombre anterior</dt><dd>{{r.nombreAnterior||'—'}}</dd></div>
+                    <div><dt>Nombre nuevo</dt><dd>{{r.nombreNuevo||'—'}}</dd></div>
+                    <div><dt>Estado anterior</dt><dd>{{r.estadoAnterior?'Activo':'Inactivo'}}</dd></div>
+                    <div><dt>Estado nuevo</dt><dd>{{r.estadoNuevo?'Activo':'Inactivo'}}</dd></div>
+                    <div><dt>Motivo</dt><dd>{{r.motivo}}</dd></div>
+                    <div><dt>Técnico</dt><dd>#{{r.usuarioId}}</dd></div>
+                  </dl>
+                </app-record-card>
+              }
+            </div>
+          }
+        } @else if (section() === 'historial') {
+          <div class="gp-panel-top">
+            <h3>Historial técnico</h3>
+            <div class="gp-view-toggle" role="group" aria-label="Vista de seguimientos">
+              <button type="button" [class.active]="historyView()==='tabla'" [attr.aria-pressed]="historyView()==='tabla'" (click)="historyView.set('tabla')">Tabla</button>
+              <button type="button" [class.active]="historyView()==='tarjetas'" [attr.aria-pressed]="historyView()==='tarjetas'" (click)="historyView.set('tarjetas')">Tarjetas</button>
+            </div>
+          </div>
+          <div class="gp-filter-toolbar gp-incidence-search"><div class="admin-field"><label for="gpBuscarHistorial">Buscar seguimiento</label><input id="gpBuscarHistorial" type="search" class="admin-input" [(ngModel)]="historySearchInput" (keyup.enter)="searchHistory()" placeholder="Tipo, problema, tratamiento o fecha" /></div><button class="admin-secondary-button" type="button" (click)="searchHistory()"><fa-icon [icon]="searchIcon" /> Buscar</button></div>
+          @if(!eventos().length){<app-empty-state title="Sin actuaciones registradas" message="No hay seguimientos." />}
+          @else if(!filteredHistory().length){<app-empty-state title="Sin resultados" message="No se encontraron seguimientos con estos criterios." />}
+          @else{
+            @if(historyView()==='tabla'){
+              <ng-template #fotosTecnicas let-e>
+                @for(id of fotoIds(e);track id){
+                  @if(fotos()[id];as foto){<img class="gp-record-table-photo" [src]="foto" alt="Evidencia del seguimiento" loading="lazy" />}
+                  @else{<button type="button" class="admin-secondary-button" (click)="verFoto(id)">Ver foto #{{id}}</button>}
+                }@empty{<span>—</span>}
+              </ng-template>
+              <app-data-table appearance="admin" [columns]="historyColumns" [rows]="visibleHistory()" trackByKey="eventoId" [cellTemplates]="{fotos:fotosTecnicas}" />
+            }@else{
+              <div class="desco-record-grid gp-cards gp-record-cards">
+                @for(e of visibleHistory();track e.eventoId){
+                  <app-record-card>
+                    <div class="gp-record-heading"><strong>{{e.tipo}}</strong><span class="gp-code">#{{e.eventoId}}</span></div>
+                    <dl class="gp-record-data">
+                      <div><dt>Registro</dt><dd>{{(e.fechaRegistro + 'Z') | date:'dd/MM/yyyy HH:mm'}}</dd></div>
+                      <div><dt>Fecha del hecho</dt><dd>{{e.fechaHecho | date:'dd/MM/yyyy'}}</dd></div>
+                      <div><dt>Problema</dt><dd>{{e.problema||'—'}}</dd></div>
+                      <div><dt>Tratamiento</dt><dd>{{e.tratamiento||'—'}}</dd></div>
+                      <div><dt>Cantidad afectada</dt><dd>{{e.cantidadAfectada==null?'—':e.cantidadAfectada}}{{e.afectadosAproximado?' (aprox.)':''}}</dd></div>
+                      <div><dt>Descripción</dt><dd>{{e.observacion}}</dd></div>
+                      <div><dt>Responde a</dt><dd>{{e.respuestaAId?'#'+e.respuestaAId:'—'}}</dd></div>
+                      <div><dt>Registrado por</dt><dd>{{e.usuarioNombre || 'Usuario #' + e.usuarioId}}</dd></div>
+                    </dl>
+                    @if(fotoIds(e).length){
+                      <div class="gp-record-evidence"><strong>Evidencias</strong><div class="gp-event-photos">
+                        @for(id of fotoIds(e);track id){
+                          @if(fotos()[id];as foto){<img class="gp-event-photo" [src]="foto" alt="Evidencia del seguimiento" loading="lazy" />}
+                          @else{<button type="button" class="admin-secondary-button" (click)="verFoto(id)">Ver foto #{{id}}</button>}
+                        }
+                      </div></div>
+                    }
+                  </app-record-card>
+                }
+              </div>
+            }
+            <app-paginator [page]="historyPage()" [size]="historySize()" [totalRecords]="filteredHistory().length" [totalPages]="historyPages()" (pageChange)="setHistoryPage($event)" (sizeChange)="setHistorySize($event)" />
+          }
+        } @else if (section() === 'incidencias') {
+          <app-gp-incidencias-panel [actividad]="a" [catalogos]="catalogos()" (changed)="refresh()" />
+        } @else if(section()==='censos'){
+          <div class="gp-panel-top">
+            <h3>{{a.rubro==='CULTIVO'?'Historial de superficies':'Historial de censos animales'}}</h3>
+            <div class="gp-view-toggle" role="group" aria-label="Vista del historial de mediciones">
+              <button type="button" [class.active]="censusView()==='tabla'" [attr.aria-pressed]="censusView()==='tabla'" (click)="censusView.set('tabla')">Tabla</button>
+              <button type="button" [class.active]="censusView()==='tarjetas'" [attr.aria-pressed]="censusView()==='tarjetas'" (click)="censusView.set('tarjetas')">Tarjetas</button>
+            </div>
+          </div>
+          <div class="gp-filter-toolbar gp-incidence-search"><div class="admin-field"><label for="gpBuscarCenso">Buscar medición</label><input id="gpBuscarCenso" type="search" class="admin-input" [(ngModel)]="censusSearchInput" (keyup.enter)="searchCensuses()" placeholder="Fecha, técnico u observación" /></div><button class="admin-secondary-button" type="button" (click)="searchCensuses()"><fa-icon [icon]="searchIcon" /> Buscar</button></div>
+          @if(!censos().length){<app-empty-state title="Sin mediciones" message="Aún no hay mediciones." />}
+          @else if(!filteredCensuses().length){<app-empty-state title="Sin resultados" message="No hay mediciones que coincidan con la búsqueda." />}
+          @else{
+            @if(censusView()==='tabla'){
+              <app-data-table appearance="admin" [columns]="a.rubro==='CULTIVO'?cropCensusColumns:animalCensusColumns" [rows]="visibleCensuses()" trackByKey="censoId" />
+            }@else{
+              <div class="desco-record-grid gp-cards gp-record-cards">
+                @for(v of visibleCensuses();track v.censoId){
+                  <app-record-card>
+                    <div class="gp-record-heading"><strong>Versión #{{v.censoId}}</strong><span class="gp-subtle">{{v.fechaRegistro | date:'dd/MM/yyyy HH:mm'}}</span></div>
+                    <dl class="gp-record-data">
+                      <div><dt>Fecha de medición</dt><dd>{{v.fecha | date:'dd/MM/yyyy'}}</dd></div>
+                      @if(a.rubro==='CRIANZA'){<div><dt>Animales exactos</dt><dd>{{v.cantidadExacta??'—'}}</dd></div><div><dt>Animales aproximados</dt><dd>{{v.cantidadAproximada??'—'}}</dd></div>}
+                      <div><dt>Superficie exacta</dt><dd>{{v.superficieExactaM2==null?'—':v.superficieExactaM2+' m²'}}</dd></div>
+                      <div><dt>Superficie aproximada</dt><dd>{{v.superficieAproximadaM2==null?'—':v.superficieAproximadaM2+' m²'}}</dd></div>
+                      <div><dt>Variación</dt><dd>{{variacionCenso(v)}}</dd></div>
+                      <div><dt>{{a.rubro==='CULTIVO'?'Variedades':'Razas'}}</dt><dd>{{distribucionCenso(v)}}</dd></div>
+                      <div><dt>Motivo / observación</dt><dd>{{v.observacion||'—'}}</dd></div>
+                      <div><dt>Técnico</dt><dd>#{{v.usuarioId}}</dd></div>
+                    </dl>
+                  </app-record-card>
+                }
+              </div>
+            }
+            <app-paginator [page]="censusPage()" [size]="censusSize()" [totalRecords]="filteredCensuses().length" [totalPages]="censusPages()" (pageChange)="setCensusPage($event)" (sizeChange)="setCensusSize($event)" />
+          }
+        }
+      </section>
+
+  }
+  <app-gp-accion-modal />
+  <app-action-confirm-dialog />
+</div>

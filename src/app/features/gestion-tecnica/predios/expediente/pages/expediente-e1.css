@@ -1,0 +1,16 @@
+.e1-section { padding: 1.25rem; display: grid; gap: 1rem; }
+.e1-section h2 { font-weight: 650; font-size: 1.05rem; }
+.e1-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(190px,1fr)); gap: .8rem; }
+.e1-row { display: flex; align-items: end; flex-wrap: wrap; gap: .75rem; }
+.e1-grow { flex: 1 1 250px; }
+.e1-selected { display: flex; align-items: center; gap: .85rem; flex-wrap: wrap; }
+.e1-details { border-top: 1px solid var(--color-base-300,#ddd); padding-top: 1rem; }
+.e1-details summary { font-weight: 600; cursor: pointer; margin-bottom: .75rem; }
+.e1-result { display: block; width: 100%; padding: .75rem; text-align: left; border: 1px solid var(--color-base-300,#ddd); border-radius: .5rem; text-decoration: none; }
+.e1-actions { display: flex; justify-content: flex-end; }
+.e1-error { border: 1px solid #d77; border-radius: .5rem; padding: .75rem; margin-top: 1rem; }
+.e1-tabs { display: flex; flex-wrap: wrap; gap: .35rem; border-bottom: 1px solid var(--color-base-300,#ddd); padding-bottom: .5rem; }
+.e1-tabs button { padding: .45rem .85rem; border-radius: .4rem; }
+.e1-tabs button[aria-selected="true"] { font-weight: 700; text-decoration: underline; }
+.e1-timeline { list-style: none; padding: 0; display: grid; gap: .65rem; }
+.e1-timeline li { border-left: 3px solid var(--color-primary,#456); padding: .5rem 1rem; }

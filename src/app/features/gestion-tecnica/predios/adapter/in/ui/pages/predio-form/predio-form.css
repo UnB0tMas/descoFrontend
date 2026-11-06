@@ -98,3 +98,60 @@
     max-width: none;
   }
 }
+
+/* Consistencia del formulario de predios con los modales de Administración. */
+.predio-modal-box{box-sizing:border-box;padding:clamp(1rem,2.8vw,1.65rem)!important;overflow-x:hidden;}
+.predio-modal-box .admin-form-grid>*{min-width:0;}
+.predio-modal-box .admin-input,.predio-modal-box .admin-select,.predio-modal-box textarea{max-width:100%;min-width:0;width:100%;box-sizing:border-box;}
+.predio-modal-box .admin-field{min-width:0;}
+@media(max-width:620px){.predio-modal-box{padding:1rem!important;}}
+
+/* La cabecera de edición no se desplaza junto a los campos. */
+:host .predio-modal-box.desco-fixed-form-modal{padding:0!important;overflow:hidden!important}
+:host .predio-modal-box .desco-fixed-form-body{gap:.9rem}
+:host .predio-modal-box .desco-fixed-form-body>.admin-field{min-width:0}
+
+/* Correctivo visual del buscador y la titularidad. */
+.predio-modal-box, .predio-modal-box .admin-field, .predio-modal-box button { font-family: inherit; }
+.predio-modal-box .admin-field { font-size: .875rem; line-height: 1.45; }
+.predio-modal-box .optional-label { font-size: .8125rem; font-weight: 400; }
+.predio-owner-editor { display: grid; gap: .8rem; min-width: 0; }
+.predio-owner-fields { display: grid; grid-template-columns: minmax(0,1.4fr) minmax(8rem,.65fr) auto; align-items: end; gap: .75rem; }
+.predio-owner-fields .admin-field { min-width: 0; margin: 0; }
+.predio-owner-fields .admin-field > .admin-input, .predio-owner-fields .admin-field > .admin-select { width: 100%; }
+.predio-owner-fields button { min-height: 2.65rem; }
+.predio-owner-result, .predio-owner-selected { display: flex; align-items: center; justify-content: space-between; width: 100%; min-width: 0; gap: .75rem; padding: .65rem .85rem; border: 1px solid var(--desco-border); border-radius: .75rem; background: var(--desco-surface); color: var(--desco-text); text-align: left; }
+.predio-owner-result strong, .predio-owner-selected strong { font-size: .875rem; font-weight: 650; }
+.predio-owner-result span, .predio-owner-selected span { font-size: .8125rem; color: var(--desco-text-muted); }
+.predio-manual-person { display: grid; gap: .8rem; min-width: 0; padding: 1rem; border: 1px solid var(--desco-border); border-radius: .8rem; }
+.predio-manual-header { display: flex; align-items: center; justify-content: space-between; gap: .7rem; }
+.predio-owner-percentage { display: grid; gap: .3rem; max-width: 9rem; font-size: .8125rem; }
+.predio-owner-percentage .admin-input { width: 100%; min-width: 0; }
+.owner-list article { min-width: 0; }
+.owner-list article strong { font-size: .875rem; }
+.owner-list article span, .owner-list p, .owner-total { font-size: .8125rem; }
+@media(max-width: 760px) {
+  .predio-owner-fields { grid-template-columns: minmax(0,1fr) minmax(0,1fr); }
+  .predio-owner-fields button { grid-column: 1/-1; width: 100%; }
+}
+@media(max-width: 520px) {
+  .predio-owner-fields { grid-template-columns: minmax(0,1fr); }
+  .predio-owner-fields button { grid-column: auto; }
+  .owner-list article { flex-wrap: wrap; }
+  .predio-owner-percentage { max-width: none; flex: 1 1 100%; }
+  .predio-owner-selected { flex-wrap: wrap; }
+}
+
+/* Normalización visual, sin textos diminutos ni controles fuera de escala. */
+.predio-modal-box .admin-field > label, .predio-modal-box label.admin-field { font-size: .875rem; line-height: 1.45; font-weight: 600; }
+.predio-modal-box .optional-label, .predio-modal-box .owner-list p, .predio-modal-box .owner-total, .predio-modal-box .owner-list span { font-size: .875rem; }
+.predio-modal-box .admin-input, .predio-modal-box .admin-select, .predio-modal-box .admin-textarea { font-size: .875rem; min-height: 2.65rem; }
+.predio-modal-box .owner-editor, .predio-modal-box .predio-owner-fields { gap: .75rem; }
+.predio-modal-box .owner-list article { padding: .75rem .85rem; }
+.predio-modal-box .owner-list strong { font-size: .875rem; }
+.predio-modal-box .admin-inline-error { font-size: .875rem; }
+.predio-switching-out .predio-modal-box { animation: predio-modal-leave 140ms ease-in both !important; }
+:host dialog[open] .predio-modal-box { animation: predio-modal-enter 190ms cubic-bezier(.2,.75,.2,1) both; }
+@keyframes predio-modal-enter { from { opacity:0;transform:translateY(12px) scale(.985); } to { opacity:1;transform:none; } }
+@keyframes predio-modal-leave { from { opacity:1;transform:none; } to { opacity:0;transform:translateY(8px) scale(.99); } }
+@media(prefers-reduced-motion:reduce) { .predio-switching-out .predio-modal-box, :host dialog[open] .predio-modal-box {animation:none!important;} }

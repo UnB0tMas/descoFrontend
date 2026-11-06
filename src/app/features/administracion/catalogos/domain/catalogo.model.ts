@@ -183,6 +183,17 @@ export const CATALOGOS_ADMINISTRABLES: readonly Catalogo[] = [
     admiteDescripcion: true,
   },
   {
+    codigo: 'TIPO_TITULARIDAD',
+    nombre: 'Tipos de titularidad',
+    descripcion: 'Clasificaciones de las personas titulares de un predio.',
+    requiereCategoria: false,
+    grupoCodigo: 'GESTION_TECNICA',
+    grupoNombre: 'Gestión técnica',
+    codigoMaxLength: 20,
+    nombreMaxLength: 120,
+    admiteDescripcion: false,
+  },
+  {
     codigo: 'ZONA_PRODUCTIVA',
     nombre: 'Zonas productivas',
     descripcion: 'Zonas utilizadas para organizar la intervención territorial.',

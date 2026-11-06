@@ -1,0 +1,38 @@
+/* El buscador adopta los controles del formulario donde se utiliza. */
+:host { display: block; width: 100%; min-width: 0; font-family: inherit; }
+.person-lookup { display: grid; gap: .85rem; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; }
+.person-lookup__heading h3 { margin: 0; color: var(--desco-text); font-size: .875rem; line-height: 1.45; font-weight: 700; }
+.person-lookup__grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr) auto; align-items: end; gap: .75rem; }
+.person-lookup__grid .admin-field { min-width: 0; display: grid; gap: .4rem; margin: 0; }
+.person-lookup__grid label { color: var(--desco-text); font-size: .875rem; line-height: 1.35; font-weight: 600; }
+.person-lookup__grid .admin-input, .person-lookup__grid .admin-select { width: 100%; min-width: 0; height: 2.65rem; box-sizing: border-box; font: inherit; }
+.person-lookup__search { display: inline-flex; align-items: center; justify-content: center; height: 2.65rem; min-width: 6.4rem; white-space: nowrap; }
+.person-lookup__actions { display: flex; align-items: center; justify-content: flex-start; flex-wrap: wrap; gap: .6rem .8rem; }
+.person-lookup__actions span { font-size: .875rem; color: var(--desco-text-muted); }
+.person-lookup__actions button { display: inline-flex; justify-content: center; min-height: 2.4rem; }
+.person-lookup__message { margin: 0; font-size: .875rem; line-height: 1.45; color: var(--desco-text-muted); }
+@media(max-width: 680px) {
+  .person-lookup__grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); }
+  .person-lookup__search { grid-column: 1 / -1; width: 100%; }
+}
+@media(max-width: 440px) {
+  .person-lookup__grid { grid-template-columns: minmax(0, 1fr); }
+  .person-lookup__search { grid-column: auto; }
+  .person-lookup__actions { align-items: stretch; }
+  .person-lookup__actions button { width: 100%; }
+}
+
+/* Variante compacta: misma búsqueda y controles institucionales sin cabeceras extra. */
+.person-lookup--compact .person-lookup__grid { grid-template-columns: minmax(7rem,10rem) minmax(0,1fr) auto; align-items: end; gap: .75rem; }
+.person-lookup--compact .person-lookup__grid .admin-field { min-width: 0; }
+.person-lookup--compact .person-lookup__grid .admin-input,
+.person-lookup--compact .person-lookup__grid .admin-select { width:100%; min-width:0; min-height:2.65rem; box-sizing:border-box; }
+.person-lookup--compact .person-lookup__search { min-height:2.65rem; min-width:6rem; justify-content:center; }
+@media (max-width:600px) {
+  .person-lookup--compact .person-lookup__grid { grid-template-columns: minmax(0,1fr) minmax(0,1.4fr); }
+  .person-lookup--compact .person-lookup__search { grid-column:1/-1; width:100%; }
+}
+@media (max-width:420px) {
+  .person-lookup--compact .person-lookup__grid { grid-template-columns:minmax(0,1fr); }
+  .person-lookup--compact .person-lookup__search { grid-column:auto; }
+}

@@ -1,0 +1,78 @@
+<div class="desco-page">
+  <app-page-header title="Salidas operativas" eyebrow="Gestión técnica" [icon]="icon"
+      subtitle="Solicitudes, autorizaciones, visitas y control de bienes.">
+    <div pageActions class="flex gap-2 flex-wrap">
+      <a class="admin-secondary-button" routerLink="/gestion-tecnica/salidas">Histórico de salidas</a>
+      <button *appPermission="'SALIDAS_CREAR'" type="button" class="admin-primary-button"
+        (click)="showForm.set(!showForm())">{{showForm()?'Ocultar formulario':'Solicitar salida'}}</button>
+    </div>
+  </app-page-header>
+  @if(showForm()){
+  <section class="admin-surface mt-4">
+    <div class="admin-section-header"><div><p>Solicitud única</p><h2>Datos principales</h2></div></div>
+    <form class="admin-form-grid" (ngSubmit)="solicitar()">
+      <div class="admin-field"><label for="e2nombre">Nombre de salida</label>
+        <input id="e2nombre" class="admin-input" name="nombre" [(ngModel)]="nombre" required maxlength="180"/></div>
+      <div class="admin-field"><label for="e2motivo">Motivo</label>
+        <select id="e2motivo" class="admin-select" name="motivo" [(ngModel)]="motivoId" required>
+          <option [ngValue]="0">Seleccione</option>
+          @for(m of catalogos().motivos;track m.id){<option [ngValue]="m.id">{{m.nombre}}</option>}
+        </select></div>
+      <div class="admin-field"><label for="e2inicio">Inicio previsto</label>
+        <input id="e2inicio" class="admin-input" type="datetime-local" name="inicio" [(ngModel)]="inicio" required/></div>
+      <div class="admin-field"><label for="e2fin">Fin previsto (opcional)</label>
+        <input id="e2fin" class="admin-input" type="datetime-local" name="fin" [(ngModel)]="fin"/></div>
+      <div class="admin-field admin-field-span-2"><label for="e2descripcion">Propósito (opcional)</label>
+        <textarea id="e2descripcion" class="admin-textarea" name="descripcion" [(ngModel)]="descripcion" maxlength="400"></textarea></div>
+    </form>
+    <div class="admin-section-header mt-4"><div><p>Lugares</p><h2>Destinos de la salida</h2></div></div>
+    <div class="e2-grid">
+      <div class="admin-field"><label>Buscar predio existente</label>
+        <div class="flex gap-2"><input class="admin-input" [(ngModel)]="destinoBuscar" placeholder="Nombre o código"/>
+          <button type="button" class="admin-secondary-button" (click)="searchPredios()">Buscar</button></div></div>
+      <div class="admin-field"><label>Predio encontrado</label>
+        <select class="admin-select" [(ngModel)]="predioSeleccionado"><option [ngValue]="0">Otro destino</option>
+        @for(p of candidates();track p.predioId){<option [ngValue]="p.predioId">{{p.codigo}} — {{p.nombre}}</option>}
+        </select></div>
+      <div class="admin-field"><label>O referencia de lugar no registrado</label>
+        <input class="admin-input" [(ngModel)]="referencia" placeholder="Nombre del lugar, sector, referencia"/></div>
+      <div class="flex items-end"><button type="button" class="admin-secondary-button" (click)="addDestino()">Añadir destino</button></div>
+    </div>
+    <div class="e2-chips">@for(d of destinos();track $index){
+      <span class="e2-chip">{{d.predioId?'Predio #'+d.predioId:d.referencia}}
+        <button type="button" [attr.aria-label]="'Quitar destino'" (click)="removeDestino($index)">×</button></span>
+    }</div>
+    <div class="admin-section-header mt-4"><div><p>Opcional</p><h2>Bienes a solicitar</h2></div></div>
+    <div class="flex flex-wrap gap-2">
+      <select class="admin-select" [(ngModel)]="bienSeleccionado"><option [ngValue]="0">Seleccione bien disponible</option>
+        @for(b of catalogos().bienes;track b.id){<option [ngValue]="b.id">{{b.nombre}}</option>}
+      </select><button type="button" class="admin-secondary-button" (click)="addBien()">Añadir bien</button>
+    </div>
+    <div class="e2-chips">@for(b of bienes();track b.bienId){<span class="e2-chip">{{b.nombre}}
+      <button type="button" (click)="removeBien(b.bienId)" aria-label="Quitar bien">×</button></span>}</div>
+    <div class="admin-modal-actions mt-4"><button type="button" class="admin-primary-button"
+      [disabled]="saving()||!destinos().length" (click)="solicitar()">{{saving()?'Enviando...':'Enviar a aprobación'}}</button></div>
+  </section>}
+  <section class="admin-surface mt-5">
+    <div class="admin-toolbar flex flex-wrap gap-2">
+      <div class="admin-field"><label>Estado</label><select class="admin-select" [(ngModel)]="estado" (change)="page=1;load()">
+        <option value="">Todos</option><option value="SOLICITADA">Por aprobar</option><option value="OBSERVADA">Observada</option>
+        <option value="APROBADA">Aprobada</option><option value="EN_EJECUCION">En campo</option>
+        <option value="EN_RETORNO">Por inspeccionar</option><option value="CERRADA">Cerrada</option>
+        <option value="RECHAZADA">Rechazada</option></select></div>
+      <button type="button" class="admin-secondary-button" (click)="load()">Actualizar</button>
+    </div>
+    @if(loading()){<app-loading-state title="Cargando solicitudes" message="Consultando la UOT actual."/>}
+    @else if(error()){<app-error-state [message]="error()||'Error de consulta'" (retry)="load()"/>}
+    @else if(!items().length){<app-empty-state title="Sin solicitudes" message="No hay salidas con estos filtros."/>}
+    @else {<div class="admin-table-wrap"><table class="admin-table"><thead><tr>
+      <th>Salida</th><th>Solicitada</th><th>Inicio</th><th>Estado</th><th>Acción</th>
+    </tr></thead><tbody>@for(s of items();track s.salidaId){<tr>
+      <td><strong>{{s.nombre}}</strong></td><td>{{s.fechaSolicitud|date:'dd/MM/yyyy HH:mm'}}</td>
+      <td>{{s.fechaInicioPrevista|date:'dd/MM/yyyy HH:mm'}}</td><td>{{s.estado}}</td>
+      <td><button class="admin-secondary-button" type="button" (click)="open(s.salidaId)">Ver expediente</button></td>
+    </tr>}</tbody></table></div>}
+    <app-paginator [page]="page" [size]="size" [totalRecords]="total()"
+      [totalPages]="totalPages()" (pageChange)="changePage($event)" (sizeChange)="changeSize($event)"/>
+  </section>
+</div>

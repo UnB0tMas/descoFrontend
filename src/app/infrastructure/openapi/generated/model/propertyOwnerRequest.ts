@@ -9,9 +9,9 @@
  */
 
 
-export interface PropertyOwnerRequest { 
-    socioId: number;
+export interface PropertyOwnerRequest {
+    personaId?: number; 
+    socioId?: number;
     tipoTitularidad: string;
     porcentaje: number;
 }
-

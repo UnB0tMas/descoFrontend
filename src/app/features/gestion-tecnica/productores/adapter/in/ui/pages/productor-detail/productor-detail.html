@@ -48,7 +48,7 @@
           <div class="admin-section-header"><div><p>Territorio</p><h2>Predios</h2></div><fa-icon class="text-blue-600" [icon]="propertyIcon" /></div>
           <div class="producer-mini-list">
             @for (property of producer.predios; track property.predioId) {
-              <article><div><strong>{{ property.nombre }}</strong><span>{{ property.codigo }} · {{ property.tipoTitularidad || 'Titularidad' }}</span></div><em>{{ property.porcentaje ?? '—' }}%</em></article>
+              <a class="producer-property-link" [routerLink]="['/gestion-tecnica/predios', property.predioId, 'expediente']"><div><strong>{{ property.nombre }}</strong><span>{{ property.codigo }} · {{ property.tipoTitularidad || 'Titularidad' }}</span></div><em>{{ property.porcentaje ?? '—' }}%</em></a>
             } @empty { <p class="admin-empty-copy p-4">Sin predios vinculados.</p> }
           </div>
         </section>

@@ -7,6 +7,7 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { ResourceAssetVehicleRequest } from './resourceAssetVehicleRequest';
 
 
 export interface ResourceAssetCreateRequest { 
@@ -26,5 +27,5 @@ export interface ResourceAssetCreateRequest {
     proveedorPersonaId?: number;
     proveedorEmpresaId?: number;
     observacion?: string;
+    vehiculo?: ResourceAssetVehicleRequest;
 }
-

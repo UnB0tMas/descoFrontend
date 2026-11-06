@@ -14,6 +14,8 @@ export const apappssAccessGuard: CanActivateFn = (_route, state) => {
   const allowed = (
     access.hasAll(['APAPPSS_SOCIOS_LISTAR', 'PRODUCTORES_LISTAR']) ||
     access.hasAll(['APAPPSS_PREDIOS_LISTAR', 'PREDIOS_LISTAR']) ||
+    access.hasAll(['APAPPSS_PREDIOS_VER', 'PREDIOS_VER']) ||
+    access.hasAll(['APAPPSS_SOCIOS_VER', 'PRODUCTORES_VER']) ||
     [
       'CAMPANIAS_LISTAR', 'PARTICIPANTES_LISTAR', 'OPERATIVOS_LISTAR',
       'ENTREGAS_LISTAR', 'JABAS_LISTAR', 'PRECIOS_LISTAR',

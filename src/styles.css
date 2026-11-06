@@ -112,3 +112,39 @@ select,
 textarea {
   font: inherit;
 }
+
+
+/* Modal universal DESCO: toda la ventana se desenfoca, incluida la barra
+   lateral fija y el contenido principal. El dialogo nativo abierto está en
+   el top layer del navegador, por encima de esta capa. */
+html:has(dialog:modal) body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 2147483646;
+  pointer-events: none;
+  background-color: rgb(0 0 0 / 24%);
+  -webkit-backdrop-filter: blur(9px) saturate(0.82);
+  backdrop-filter: blur(9px) saturate(0.82);
+}
+
+:is(html[data-theme="dark"], html.dark):has(dialog:modal) body::before {
+  background-color: rgb(0 0 0 / 20%);
+}
+
+/* Evita dos fondos superpuestos y la animación anterior del backdrop.
+   La capa body::before ya cubre el viewport completo; el modal sigue
+   nítido, centrado e interactivo. */
+html:has(dialog:modal) dialog:modal::backdrop {
+  background: transparent !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  animation: none !important;
+}
+
+/* Respaldo para backdrops DOM si un módulo no usa el elemento dialog.
+   Respeta el sombreado del componente; no altera la capa del modal. */
+html [data-modal-backdrop] {
+  -webkit-backdrop-filter: blur(9px) saturate(0.82);
+  backdrop-filter: blur(9px) saturate(0.82);
+}

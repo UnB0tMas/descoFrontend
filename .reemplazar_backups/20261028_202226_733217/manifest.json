@@ -1,0 +1,11 @@
+{
+  "proyecto": "D:\\FrancoSystem\\desco_frontend",
+  "fecha": "2026-10-28T20:22:26",
+  "cambios": [
+    {
+      "ruta": "src/app/features/convenios/plantas/adapter/in/ui/plantas-e3.ts",
+      "accion": "escribir",
+      "existia": true
+    }
+  ]
+}

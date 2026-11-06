@@ -1,1 +1,170 @@
-:host{display:block}
+/* Diseño exclusivo de las tarjetas de socios dentro de Convenios / APAPPSS. */
+:host { display: block; min-width: 0; }
+
+.apappss-socio-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+  gap: .75rem;
+  padding: .85rem;
+  min-width: 0;
+}
+
+.apappss-socio-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: .9rem;
+  gap: .75rem;
+  border: 1px solid var(--desco-border);
+  border-radius: var(--desco-radius-md, .85rem);
+  background: var(--desco-surface);
+  transition: border-color .16s ease, box-shadow .16s ease;
+}
+.apappss-socio-card:hover {
+  border-color: color-mix(in srgb, var(--desco-primary) 32%, var(--desco-border));
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--desco-text) 6%, transparent);
+}
+.apappss-socio-card__header {
+  display: flex;
+  align-items: flex-start;
+  gap: .65rem;
+  min-width: 0;
+}
+.apappss-socio-card__avatar {
+  display: grid;
+  flex: 0 0 2rem;
+  height: 2rem;
+  place-items: center;
+  border-radius: .6rem;
+  color: var(--desco-primary);
+  background: color-mix(in srgb, var(--desco-primary) 11%, transparent);
+  font-size: .85rem;
+}
+.apappss-socio-card__identity { display: grid; gap: .13rem; flex: 1 1 auto; min-width: 0; }
+.apappss-socio-card__identity strong {
+  color: var(--desco-text);
+  font-size: .87rem;
+  font-weight: 730;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.apappss-socio-card__identity > span {
+  color: var(--desco-text-muted);
+  font-size: .72rem;
+  overflow-wrap: anywhere;
+}
+.apappss-socio-card__membership {
+  flex: 0 0 auto;
+  max-width: 40%;
+  padding: .25rem .48rem;
+  border-radius: 999px;
+  font-size: .65rem;
+  line-height: 1.25;
+  font-weight: 720;
+  text-align: center;
+  overflow-wrap: anywhere;
+  color: var(--desco-primary);
+  border: 1px solid color-mix(in srgb, var(--desco-primary) 22%, transparent);
+  background: color-mix(in srgb, var(--desco-primary) 9%, transparent);
+}
+.apappss-socio-card__membership--inactive {
+  color: var(--desco-text-muted);
+  border-color: var(--desco-border);
+  background: var(--desco-surface-soft);
+}
+.apappss-socio-card__data {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .65rem .8rem;
+  margin: 0;
+  min-width: 0;
+}
+.apappss-socio-card__data > div { min-width: 0; }
+.apappss-socio-card__data dt {
+  margin-bottom: .16rem;
+  color: var(--desco-text-muted);
+  font-size: .69rem;
+  line-height: 1.2;
+}
+.apappss-socio-card__data dd {
+  margin: 0;
+  color: var(--desco-text);
+  font-size: .79rem;
+  font-weight: 570;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.apappss-socio-card__association { grid-column: 1 / -1; }
+.apappss-socio-card__association dd {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  min-height: 0;
+}
+.apappss-socio-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: .6rem;
+  margin-top: auto;
+  padding-top: .65rem;
+  border-top: 1px solid var(--desco-border);
+}
+.apappss-socio-card__state {
+  display: inline-flex;
+  align-items: center;
+  gap: .33rem;
+  color: var(--desco-text-muted);
+  font-size: .69rem;
+  font-weight: 600;
+}
+.apappss-socio-card__state-dot {
+  width: .42rem;
+  height: .42rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--desco-primary);
+}
+.apappss-socio-card__state--retired .apappss-socio-card__state-dot {
+  background: var(--desco-text-muted);
+}
+.apappss-socio-card__actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: .35rem;
+  margin-left: auto;
+}
+.apappss-socio-card__details {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .4rem;
+  min-height: 2rem;
+  padding: .3rem .58rem;
+  font-size: .73rem;
+  font-weight: 650;
+  text-decoration: none;
+}
+.apappss-socio-card__actions .admin-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  min-width: 2rem;
+  padding: 0;
+}
+.apappss-socio-card__actions .hidden { display: none !important; }
+@media (max-width: 420px) {
+  .apappss-socio-cards { padding: .65rem; gap: .65rem; }
+  .apappss-socio-card { padding: .8rem; }
+  .apappss-socio-card__membership { max-width: 33%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .apappss-socio-card { transition: none; }
+}
+
