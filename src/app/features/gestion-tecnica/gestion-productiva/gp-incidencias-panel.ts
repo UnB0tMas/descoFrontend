@@ -1,3 +1,4 @@
+import { ResourceDatePipe } from '../../../shared/formatting/resource-date.pipe';
 import { RecordCardComponent } from '../../../shared/data-display/record-card/record-card';
 import { ChangeDetectionStrategy, Component, ElementRef, EventEmitter, Input, OnChanges, Output, ViewChild, inject, signal, computed } from '@angular/core';
 import { DatePipe } from '@angular/common';
@@ -22,7 +23,7 @@ import { PaginatorComponent } from '../../../shared/data-display/paginator/pagin
 import { EmptyStateComponent } from '../../../shared/data-display/empty-state/empty-state';
 
 @Component({selector:'app-gp-incidencias-panel',standalone:true,
- imports: [RecordCardComponent, FormsModule,RouterLink,DatePipe,FaIconComponent,PermissionDirective,DataTableComponent,PaginatorComponent,EmptyStateComponent,ActionConfirmDialogComponent],templateUrl:'./gp-incidencias-panel.html',styleUrl:'./gestion-productiva.css',
+ imports: [ResourceDatePipe,RecordCardComponent, FormsModule,RouterLink,DatePipe,FaIconComponent,PermissionDirective,DataTableComponent,PaginatorComponent,EmptyStateComponent,ActionConfirmDialogComponent],templateUrl:'./gp-incidencias-panel.html',styleUrl:'./gestion-productiva.css',
  changeDetection:ChangeDetectionStrategy.OnPush})
 export class GpIncidenciasPanel implements OnChanges {
  readonly viewIcon=faEye;
@@ -102,7 +103,12 @@ export class GpIncidenciasPanel implements OnChanges {
   {key:'usuarioId',label:'Técnico',format:v=>`#${v}`},
   {key:'acciones',label:'Acciones',align:'right'},
  ];
- fechaHora(value:unknown):string{return value?new Date(String(value)).toLocaleString('es-PE',{dateStyle:'short',timeStyle:'short'}):'—';}
+ fechaHora(value:unknown):string {
+  if(!value)return '—';
+  const raw=String(value);
+  const normalized=!/(?:Z|[+-]\d{2}:?\d{2})$/.test(raw)?raw+'Z':raw;
+  return new Date(normalized).toLocaleString('es-PE',{dateStyle:'short',timeStyle:'short',timeZone:'America/Lima'});
+ }
  medida(superficie?:number|null,animales?:number|null):string{
   return this.actividad.rubro==='CULTIVO'?(superficie==null?'—':`${superficie} m²`):(animales==null?'—':`${animales} animales`);
  }

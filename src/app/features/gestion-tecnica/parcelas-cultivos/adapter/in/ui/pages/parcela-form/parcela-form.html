@@ -1,4 +1,4 @@
-<dialog #dialog class="modal desco-modal" (cancel)="$event.preventDefault(); close()">
+<dialog #dialog class="modal desco-modal" (cancel)="$event.preventDefault(); close()" aria-labelledby="gt-parcela-form-parcela-form-dialog-title-1">
   <div class="modal-box admin-modal-box desco-fixed-form-modal">
     <header class="admin-modal-header">
       <div class="admin-modal-title-group">
@@ -7,7 +7,7 @@
         </span>
         <div>
           <p>Parcelas</p>
-          <h2>{{ current() ? 'Editar parcela' : 'Registrar parcela' }}</h2>
+          <h2 id="gt-parcela-form-parcela-form-dialog-title-1">{{ current() ? 'Editar parcela' : 'Registrar parcela' }}</h2>
         </div>
       </div>
       <button
@@ -15,7 +15,7 @@
         type="button"
         [disabled]="saving()"
         (click)="close()"
-      >
+       aria-label="Cerrar">
         <fa-icon [icon]="closeIcon" />
       </button>
     </header>
@@ -27,8 +27,8 @@
     <form class="desco-fixed-form-layout" [formGroup]="form" (ngSubmit)="save()">
       <div class="desco-fixed-form-body admin-form-grid">
       <div class="admin-field admin-field-span-2">
-        <label>Predio</label>
-        <select class="admin-select" formControlName="predioId">
+        <label for="gt-parcela-form-parcela-form-field-1">Predio</label>
+        <select class="admin-select" formControlName="predioId" id="gt-parcela-form-parcela-form-field-1">
           @for (property of options(); track property.id) {
             <option [value]="property.id">
               {{ property.codigo }} · {{ property.label }}
@@ -42,12 +42,12 @@
       </div>
 
       <div class="admin-field admin-field-span-2">
-        <label>Nombre</label>
+        <label for="gt-parcela-form-parcela-form-field-2">Nombre</label>
         <input
           class="admin-input"
           formControlName="nombre"
           maxlength="120"
-        />
+        id="gt-parcela-form-parcela-form-field-2" />
         <app-form-error
           [control]="form.controls.nombre"
           fieldLabel="El nombre"
@@ -60,7 +60,7 @@
       </div>
 
       <div class="admin-field admin-field-span-2">
-        <label>Área (ha)</label>
+        <label for="gt-parcela-form-parcela-form-field-3">Área (ha)</label>
         <input
           type="number"
           class="admin-input"
@@ -68,7 +68,7 @@
           min="0.0001"
           max="999999.9999"
           step="0.0001"
-        />
+        id="gt-parcela-form-parcela-form-field-3" />
         <app-form-error
           [control]="form.controls.areaHa"
           fieldLabel="El área"

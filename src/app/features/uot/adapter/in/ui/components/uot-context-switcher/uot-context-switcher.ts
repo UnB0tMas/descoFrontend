@@ -111,7 +111,7 @@ export class UotContextSwitcherComponent {
   }
 
   private async refreshCurrentRoute(): Promise<void> {
-    const returnUrl = this.router.url;
+    const returnUrl = this.store.isGeneral() ? '/inicio' : this.router.url;
 
     try {
       const moved = await this.router.navigateByUrl('/__contexto-uot', {

@@ -206,7 +206,7 @@
               <tbody>
                 @for (item of pagedDetailKardex(); track item.movimientoInventarioId + ':' + item.productoId) {
                   <tr>
-                    <td><div class="admin-stack-copy"><strong>{{ item.fechaHora | date:'dd/MM/yyyy' }}</strong><span>{{ item.fechaHora | date:'HH:mm' }} h</span></div></td>
+                    <td><div class="admin-stack-copy"><strong>{{ item.fechaHora | resourceDate:'dd/MM/yyyy'}}</strong><span>{{ item.fechaHora | resourceDate:'HH:mm'}} h</span></div></td>
                     <td>
                       <div class="admin-entity warehouse-entity">
                         <span class="admin-entity-icon"><fa-icon [icon]="configureIcon" /></span>
@@ -314,7 +314,7 @@
                   <td class="text-right warehouse-number">{{ (item.stockActual ?? 0) | number:'1.0-3' }}</td>
                   <td class="text-right warehouse-number admin-table-muted">{{ (item.stockReservado ?? 0) | number:'1.0-3' }}</td>
                   <td class="text-right"><div class="warehouse-stock-cell"><strong class="warehouse-number" [class]="stockTone(item)">{{ (item.stockDisponible ?? 0) | number:'1.0-3' }}</strong><span class="admin-status" [class.admin-status--active]="stockStatus(item) === 'Disponible'" [class.admin-status--warning]="stockStatus(item) === 'Reponer'" [class.admin-status--inactive]="stockStatus(item) === 'Agotado' || stockStatus(item) === 'Inactivo'">{{ stockStatus(item) }}</span></div></td>
-                  <td><div class="admin-stack-copy"><strong>{{ item.fechaActualizacion | date:'dd/MM/yyyy' }}</strong><span>{{ item.fechaActualizacion | date:'HH:mm' }} h</span></div></td>
+                  <td><div class="admin-stack-copy"><strong>{{ item.fechaActualizacion | resourceDate:'dd/MM/yyyy'}}</strong><span>{{ item.fechaActualizacion | resourceDate:'HH:mm'}} h</span></div></td>
                   <td><div class="admin-row-actions">
                         @if(canManageProduct(item)){
                           <button type="button" class="admin-icon-button" title="Editar configuración" [attr.aria-label]="'Editar configuración de ' + item.producto" (click)="manageProduct(item,'EDITAR')"><fa-icon [icon]="settingsIcon" /></button>
@@ -346,7 +346,7 @@
             <tbody>
               @for (item of pagedKardex(); track item.movimientoInventarioId + ':' + item.productoId) {
                 <tr>
-                  <td><div class="admin-stack-copy"><strong>{{ item.fechaHora | date:'dd/MM/yyyy' }}</strong><span>{{ item.fechaHora | date:'HH:mm' }} h</span></div></td>
+                  <td><div class="admin-stack-copy"><strong>{{ item.fechaHora | resourceDate:'dd/MM/yyyy'}}</strong><span>{{ item.fechaHora | resourceDate:'HH:mm'}} h</span></div></td>
                   <td><div class="admin-stack-copy"><strong [title]="item.uotNombre || ''">{{ item.uotNombre || '—' }}</strong><span [title]="item.almacen || ''">{{ item.almacen || '—' }}</span></div></td>
                   <td><div class="admin-entity warehouse-entity"><span class="admin-entity-icon"><fa-icon [icon]="configureIcon" /></span><div><strong [title]="item.producto || ''">{{ item.producto || 'Producto' }}</strong><span>{{ productCode(item.productoId) || 'Sin código' }}</span></div></div></td>
                   <td><span class="admin-type-badge">{{ item.tipoMovimiento || 'Movimiento' }}</span></td>

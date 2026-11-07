@@ -101,7 +101,6 @@
           <div>
             <p>Identificación</p>
             <h2>{{ item.nombre || 'Producto sin nombre' }}</h2>
-            <span class="admin-code">{{ item.codigo || '—' }}</span>
           </div>
 
           <span
@@ -117,11 +116,6 @@
           <div>
             <dt>UOT</dt>
             <dd>{{ item.uotNombre || '—' }}</dd>
-          </div>
-
-          <div>
-            <dt>Código</dt>
-            <dd>{{ item.codigo || '—' }}</dd>
           </div>
 
           <div>
@@ -228,9 +222,9 @@
                       <td>{{ price.precioInicial | number:'1.2-2' }}</td>
                       <td><strong>{{ price.precioVenta | number:'1.2-2' }}</strong></td>
                       <td>{{ price.moneda }}</td>
-                      <td>{{ price.fechaDesde | date:'dd/MM/yyyy HH:mm' }}</td>
+                      <td>{{ price.fechaDesde | resourceDate:'dd/MM/yyyy HH:mm'}}</td>
                       <td>
-                        {{ price.fechaHasta ? (price.fechaHasta | date:'dd/MM/yyyy HH:mm') : '—' }}
+                        {{ price.fechaHasta ? (price.fechaHasta | resourceDate:'dd/MM/yyyy HH:mm') : '—'}}
                       </td>
                       <td>
                         <span

@@ -1,3 +1,4 @@
+import { ResourceDatePipe } from '../../../shared/formatting/resource-date.pipe';
 import { RecordCardComponent } from '../../../shared/data-display/record-card/record-card';
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
@@ -33,7 +34,7 @@ type Category = 'TODOS' | 'CULTIVO' | 'CRIANZA';
 type InfoRow = { campo: string; valor: string };
 @Component({
   selector: 'app-gestion-productiva-actividad', standalone: true,
-  imports: [RecordCardComponent, DatePipe, FormsModule, RouterLink, FaIconComponent, PermissionDirective,
+  imports: [ResourceDatePipe,RecordCardComponent, DatePipe, FormsModule, RouterLink, FaIconComponent, PermissionDirective,
     PageHeaderComponent, DataTableComponent, PaginatorComponent,
     EmptyStateComponent, ErrorStateComponent, LoadingStateComponent, GpAccionModal, GpIncidenciasPanel, ActionConfirmDialogComponent],
   templateUrl: './gestion-productiva-actividad.html', styleUrl: './gestion-productiva.css',

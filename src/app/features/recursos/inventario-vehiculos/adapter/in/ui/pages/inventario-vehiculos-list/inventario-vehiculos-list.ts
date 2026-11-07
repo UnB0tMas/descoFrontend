@@ -1,6 +1,7 @@
+import { ResourceDatePipe } from '../../../../../../../../shared/formatting/resource-date.pipe';
 import { DecimalPipe } from '@angular/common';
 import {
-  ChangeDetectionStrategy,
+  afterNextRender, ChangeDetectionStrategy,
   Component,
   OnInit,
   ViewChild,
@@ -52,7 +53,7 @@ type InventoryViewMode = 'table' | 'cards';
 @Component({
   selector: 'app-inventario-vehiculos-list-page',
   standalone: true,
-  imports: [DecimalPipe, RouterLink, FaIconComponent, PermissionDirective, EmptyStateComponent, ErrorStateComponent, LoadingStateComponent, PaginatorComponent, PageHeaderComponent, ResourceImageComponent, RecursoFormComponent, SuministroFormComponent],
+  imports: [ResourceDatePipe,DecimalPipe, RouterLink, FaIconComponent, PermissionDirective, EmptyStateComponent, ErrorStateComponent, LoadingStateComponent, PaginatorComponent, PageHeaderComponent, ResourceImageComponent, RecursoFormComponent, SuministroFormComponent],
   templateUrl: './inventario-vehiculos-list.html',
   styleUrl: './inventario-vehiculos-list.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -103,6 +104,12 @@ export class InventarioVehiculosListPage implements OnInit {
     if (!query) return this.supplies().items;
     return this.supplies().items.filter((item) => [item.codigo, item.nombre, item.unidadMedida, item.uotNombre, item.uotCodigo].some((value) => (value ?? '').toLowerCase().includes(query)));
   });
+
+  constructor() {
+    afterNextRender(() => {
+      if (window.matchMedia('(max-width: 640px)').matches) this.viewMode.set('cards');
+    });
+  }
 
   ngOnInit(): void {
     this.unitFilter.set(this.isGeneral() ? null : this.uot.selectedId());

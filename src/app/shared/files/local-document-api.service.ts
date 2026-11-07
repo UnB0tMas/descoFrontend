@@ -19,6 +19,7 @@ export interface LocalFileUpload {
   linkType?: string;
   linkId?: number;
   principal?: boolean;
+  evidence?: { tipo: string; origen: string; fecha?: string; latitud?: number; longitud?: number };
 }
 
 @Injectable({ providedIn: 'root' })
@@ -56,6 +57,12 @@ export class LocalDocumentApiService {
       )
       .set('principal', String(input.principal ?? false));
 
+    if(input.evidence) {
+      params=params.set('tipoEvidencia',input.evidence.tipo).set('origenCaptura',input.evidence.origen);
+      if(input.evidence.fecha) params=params.set('fechaCaptura',input.evidence.fecha);
+      if(input.evidence.latitud!=null) params=params.set('latitudCaptura',String(input.evidence.latitud));
+      if(input.evidence.longitud!=null) params=params.set('longitudCaptura',String(input.evidence.longitud));
+    }
     const description = input.description?.trim();
     if (description) {
       params = params.set('descripcion', description);

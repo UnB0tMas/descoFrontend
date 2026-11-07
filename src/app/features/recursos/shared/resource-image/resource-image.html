@@ -1,4 +1,4 @@
-<div class="resource-image" [class]="'resource-image resource-image--' + variant">
+<div class="resource-image" [class]="'resource-image resource-image--' + variant" [class.resource-image--empty]="!src() || failed()">
   @if (src() && !failed()) {
     <img [src]="src()" [alt]="alt" loading="lazy" (error)="onImageError()" />
   } @else {

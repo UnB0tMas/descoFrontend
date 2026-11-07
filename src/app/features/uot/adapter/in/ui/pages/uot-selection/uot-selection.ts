@@ -95,6 +95,7 @@ export class UotSelectionPage implements OnInit {
   }
 
   private finishNavigation(): Promise<boolean> {
+    if (this.store.isGeneral()) return this.router.navigateByUrl('/inicio');
     const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
     const safe =
       returnUrl &&

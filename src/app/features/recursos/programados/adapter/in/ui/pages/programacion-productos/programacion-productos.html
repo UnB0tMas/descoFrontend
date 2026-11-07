@@ -129,7 +129,7 @@
     @if (selected(); as item) {
       <div class="product-program-selected">
         <header><h3>Solicitud #{{ item.programacionId }} · {{ item.estadoProceso }}</h3>
-          <p>{{ item.actividad }} · {{ item.lugar }} · {{ item.fechaInicio | date:'dd/MM/yyyy HH:mm' }}</p></header>
+          <p>{{ item.actividad }} · {{ item.lugar }} · {{ item.fechaInicio | resourceDate:'dd/MM/yyyy HH:mm'}}</p></header>
         <p>Producto: {{ item.productoNombre }}. Cantidad reservada / programada: {{ item.cantidadProgramada | number:'1.0-3' }}.</p>
         @if (availableActions(item).length > 0) {
           <div class="product-program-grid">

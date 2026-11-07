@@ -1,3 +1,4 @@
+import { ResourceDatePipe } from '../../../../../../../../shared/formatting/resource-date.pipe';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import {
@@ -56,7 +57,7 @@ type WarehouseTab = 'warehouses' | 'stock' | 'kardex';
   selector: 'app-almacenes-list-page',
   standalone: true,
   imports: [
-    DatePipe,
+    ResourceDatePipe,
     DecimalPipe,
     FaIconComponent,
     RouterLink,

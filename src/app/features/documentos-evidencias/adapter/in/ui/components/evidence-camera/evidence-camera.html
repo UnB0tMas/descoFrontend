@@ -1,4 +1,4 @@
-<dialog appDialogBackdrop #dialog class="modal desco-modal" (cancel)="$event.preventDefault(); close()"><div class="modal-box admin-modal-box admin-modal-box--wide">
+<dialog aria-label="Capturar evidencia" appDialogBackdrop #dialog class="modal desco-modal" (cancel)="$event.preventDefault(); close()"><div class="modal-box admin-modal-box admin-modal-box--wide">
 <header class="admin-modal-header"><div class="admin-modal-title-group"><span class="admin-modal-icon"><fa-icon [icon]="cameraIcon" /></span><div><p>Documentos y evidencias</p><h2>Registrar fotografía</h2></div></div><button type="button" class="admin-icon-button" [disabled]="saving()" (click)="close()"><fa-icon [icon]="closeIcon" /></button></header>
 @if (errorMessage()) { <div class="admin-inline-error" role="alert">{{ errorMessage() }}</div> }
 <form class="admin-form-grid" [formGroup]="form" (ngSubmit)="save()">
@@ -12,7 +12,7 @@
   @else { <button type="button" class="admin-primary-button" [disabled]="starting() || saving()" (click)="capture()"><fa-icon [icon]="cameraIcon" /> Capturar</button> }
   @if (location()) { <span class="camera-location">Ubicación registrada</span> }
 </div>
-<div class="admin-field"><label for="photoType">Tipo de evidencia</label><input id="photoType" class="admin-input" formControlName="tipoEvidencia" maxlength="50" /><app-form-error [control]="form.controls.tipoEvidencia" fieldLabel="El tipo de evidencia" /></div>
-<div class="admin-field"><label for="photoDescription">Descripción</label><input id="photoDescription" class="admin-input" formControlName="descripcion" maxlength="1000" /></div>
+<div class="admin-field"><label for="photoType">Tipo de evidencia</label><input id="photoType" class="admin-input" formControlName="tipoEvidencia" maxlength="40" /><app-form-error [control]="form.controls.tipoEvidencia" fieldLabel="El tipo de evidencia" /></div>
+<div class="admin-field"><label for="photoDescription">Descripción</label><input id="photoDescription" class="admin-input" formControlName="descripcion" maxlength="400" /></div>
 <footer class="admin-modal-actions admin-field-span-2"><button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="close()">Cancelar</button><button type="submit" class="admin-primary-button" [disabled]="saving() || !captured()">@if (saving()) { <span class="loading loading-spinner loading-sm"></span> Guardando… } @else { <fa-icon [icon]="saveIcon" /> Guardar fotografía }</button></footer>
 </form></div></dialog>

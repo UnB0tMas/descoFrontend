@@ -1,4 +1,4 @@
-import { DatePipe } from '@angular/common';
+import { ResourceDatePipe } from '../../../../../../../../shared/formatting/resource-date.pipe';
 import { RouterLink } from '@angular/router';
 import {
   ChangeDetectionStrategy,
@@ -51,7 +51,7 @@ import { RecursoProgramadoFormComponent } from '../recurso-programado-form/recur
   selector: 'app-recursos-programados-list-page',
   standalone: true,
   imports: [
-    DatePipe,
+    ResourceDatePipe,
     FaIconComponent,
     RouterLink,
     PermissionDirective,

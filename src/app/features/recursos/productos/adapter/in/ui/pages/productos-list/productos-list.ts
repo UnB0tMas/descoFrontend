@@ -1,5 +1,5 @@
 import { DecimalPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
+import { afterNextRender, ChangeDetectionStrategy, Component, OnDestroy, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
 import { faEye, faFilter, faGrip, faList, faMagnifyingGlass, faPen, faPlus, faRotate, faTags } from '@fortawesome/free-solid-svg-icons';
@@ -83,6 +83,12 @@ export class ProductosListPage implements OnInit, OnDestroy {
     const id = this.contextUotId();
     return id ? this.units().find((unit) => unit.uotId === id)?.nombre ?? 'UOT' : 'Todas mis UOT';
   });
+
+  constructor() {
+    afterNextRender(() => {
+      if (window.matchMedia('(max-width: 640px)').matches) this.viewMode.set('cards');
+    });
+  }
 
   ngOnInit(): void {
     this.unitFilter.set(this.isGeneral() ? null : this.uot.selectedId());

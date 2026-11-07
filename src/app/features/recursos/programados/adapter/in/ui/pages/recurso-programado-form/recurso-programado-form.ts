@@ -1,6 +1,6 @@
+import { ResourceDatePipe } from '../../../../../../../../shared/formatting/resource-date.pipe';
 import { DialogBackdropDirective } from '../../../../../../../../shared/feedback/dialog-lifecycle/dialog-backdrop.directive';
 import { decimalPrecisionValidator } from '../../../../../../../../shared/forms/validators/desco-input.validators';
-import { DatePipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -56,7 +56,7 @@ export type RecursoProgramadoFormMode =
 @Component({
   selector: 'app-recurso-programado-form',
   standalone: true,
-  imports: [DialogBackdropDirective, DatePipe, ReactiveFormsModule, FaIconComponent, FormErrorComponent],
+  imports: [DialogBackdropDirective, ResourceDatePipe, ReactiveFormsModule, FaIconComponent, FormErrorComponent],
   templateUrl: './recurso-programado-form.html',
   styleUrl: './recurso-programado-form.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -103,7 +103,7 @@ export class RecursoProgramadoFormComponent {
 
   readonly createForm = this.fb.nonNullable.group({
     uotId: [0, [Validators.required, Validators.min(1)]],
-    destinoTipo: ['SALIDA' as TipoDestinoRecurso, [Validators.required]],
+    destinoTipo: ['CAMPANIA' as TipoDestinoRecurso, [Validators.required]],
     destinoId: [0, [Validators.required, Validators.min(1)]],
     recursoTipo: ['BIEN' as TipoRecursoProgramable, [Validators.required]],
     recursoId: [0, [Validators.required, Validators.min(1)]],
@@ -150,7 +150,7 @@ export class RecursoProgramadoFormComponent {
 
     this.createForm.reset({
       uotId,
-      destinoTipo: 'SALIDA',
+      destinoTipo: 'CAMPANIA',
       destinoId: 0,
       recursoTipo: 'BIEN',
       recursoId: 0,

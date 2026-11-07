@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { EMPTY, expand, map, reduce, throwError } from 'rxjs';
+import { EMPTY, expand, map, reduce } from 'rxjs';
 
 import { IdempotencyKeyService } from '../../../core/http/services/idempotency-key.service';
 import { ResourceWarehouseProductManageRequest } from '../../../infrastructure/openapi/generated/model/resourceWarehouseProductManageRequest';
@@ -311,21 +311,9 @@ export class ResourceApiService {
       motivo: string;
     },
   ) {
-    /*
-     * El cliente OpenAPI vigente expone únicamente la reactivación de
-     * productos mediante ResourceProductStateRequest.
-     *
-     * No se inventa un endpoint de desactivación que no existe en el
-     * contrato generado. Si se solicita desactivar, se devuelve un error
-     * controlado hasta que el backend publique esa operación.
-     */
     if (!body.estado) {
-      return throwError(
-        () =>
-          new Error(
-            'La desactivación de productos no está disponible en el contrato actual del backend.',
-          ),
-      );
+      return this.api.recursosProductosDesactivar({ id, uotId: body.uotContextoId }, 'body', false,
+        { transferCache: false }).pipe(map(response => unwrapApiResponse(response)));
     }
 
     const request: ResourceProductStateRequest = {

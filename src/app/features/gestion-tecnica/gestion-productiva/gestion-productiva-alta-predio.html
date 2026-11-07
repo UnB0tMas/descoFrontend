@@ -1,9 +1,9 @@
-<dialog #dialog class="modal desco-modal gp-modal gp-fundo-dialog" (cancel)="$event.preventDefault(); close()">
+<dialog #dialog class="modal desco-modal gp-modal gp-fundo-dialog" (cancel)="$event.preventDefault(); close()" aria-labelledby="gt-gestion-productiva-gestion-productiva-alta-predio-dialog-title-1">
   <div class="modal-box admin-modal-box gp-dialog-box gp-fundo-box">
     <header class="admin-modal-header">
       <div class="admin-modal-title-group">
         <span class="admin-modal-icon"><fa-icon [icon]="addIcon" /></span>
-        <div><p>GESTIÓN PRODUCTIVA</p><h2>Nuevo predio / fundo</h2></div>
+        <div><p>GESTIÓN PRODUCTIVA</p><h2 id="gt-gestion-productiva-gestion-productiva-alta-predio-dialog-title-1">Nuevo predio / fundo</h2></div>
       </div>
       <button type="button" class="admin-icon-button" [disabled]="saving()" aria-label="Cerrar" (click)="close()"><fa-icon [icon]="closeIcon" /></button>
     </header>

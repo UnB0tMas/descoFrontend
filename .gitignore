@@ -41,3 +41,23 @@ __screenshots__/
 # System files
 .DS_Store
 Thumbs.db
+
+# Configuración privada, credenciales y respaldos locales
+.env
+.env.*
+!.env.example
+!.env.sample
+*.local.properties
+*.local.yml
+*.local.yaml
+application-local*.properties
+application-local*.yml
+application-local*.yaml
+*.pem
+*.key
+*.pfx
+*.p12
+*.bak
+*.sql.bak
+/backups/
+/.run-logs/

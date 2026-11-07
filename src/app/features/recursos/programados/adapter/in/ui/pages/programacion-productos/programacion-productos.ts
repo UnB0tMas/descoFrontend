@@ -1,3 +1,4 @@
+import { ResourceDatePipe } from '../../../../../../../../shared/formatting/resource-date.pipe';
 import { DecimalPipe, DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
@@ -20,7 +21,7 @@ import { ResourceApiService } from '../../../../../../shared/resource-api.servic
 
 @Component({
   selector: 'app-programacion-productos', standalone: true,
-  imports: [DecimalPipe, DatePipe, RouterLink, FaIconComponent, PageHeaderComponent, PaginatorComponent],
+  imports: [DecimalPipe, ResourceDatePipe, RouterLink, FaIconComponent, PageHeaderComponent, PaginatorComponent],
   templateUrl: './programacion-productos.html', styleUrl: './programacion-productos.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

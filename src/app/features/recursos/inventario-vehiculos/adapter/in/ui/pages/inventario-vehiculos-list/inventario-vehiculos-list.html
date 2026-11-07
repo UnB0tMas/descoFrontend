@@ -451,7 +451,7 @@
                               <tbody>
                                 @for (movementItem of kardex(); track movementItem.suministroMovimientoId) {
                                   <tr>
-                                    <td>{{ movementItem.fechaHora || '—' }}</td>
+                                    <td>{{ movementItem.fechaHora ? (movementItem.fechaHora | resourceDate:'dd/MM/yyyy HH:mm':'-0500') : '—'}}</td>
                                     <td>{{ movementItem.tipoMovimiento || '—' }}</td>
                                     <td>{{ (movementItem.cantidad ?? 0) | number:'1.0-3' }}</td>
                                     <td><strong>{{ (movementItem.saldo ?? 0) | number:'1.0-3' }}</strong></td>

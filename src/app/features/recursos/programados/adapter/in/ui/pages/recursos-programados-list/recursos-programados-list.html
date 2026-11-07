@@ -15,6 +15,10 @@
       </button>
     </div>
   </app-page-header>
+  <p class="admin-info-note mt-4">Los recursos para salidas de campo se solicitan y autorizan en
+    <a routerLink="/gestion-tecnica/salidas" class="underline">Salidas de campo</a>.
+    Aquí puedes gestionar recursos de campañas y operativos, y consultar su historial.
+  </p>
 
   <section class="admin-surface mt-5">
     <div class="admin-toolbar">
@@ -71,7 +75,7 @@
                   </div>
                 </td>
                 <td><div class="admin-stack-copy"><strong>{{ item.cantidadProgramada }}</strong><span>Devuelto: {{ item.cantidadDevuelta }}</span></div></td>
-                <td class="resource-program-date">{{ item.fechaProgramacion ? (item.fechaProgramacion | date:'dd/MM/yyyy HH:mm') : '—' }}</td>
+                <td class="resource-program-date">{{ item.fechaProgramacion ? (item.fechaProgramacion | resourceDate:'dd/MM/yyyy HH:mm') : '—'}}</td>
                 <td class="text-center">
                   <span class="admin-status" [class.admin-status--info]="item.estadoProceso==='PROGRAMADO'" [class.admin-status--warning]="item.estadoProceso==='EN_EJECUCION'" [class.admin-status--active]="item.estadoProceso==='COMPLETADO'" [class.admin-status--inactive]="item.estadoProceso==='CANCELADO'">
                     {{ item.estadoProceso }}

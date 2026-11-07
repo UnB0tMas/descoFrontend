@@ -25,17 +25,18 @@
   <select
     class="uot-switcher-select"
     aria-label="Cambiar contexto UOT"
+    [title]="store.label()"
     [value]="value()"
     [disabled]="disabled()"
     (change)="change($any($event.target).value)"
   >
     @if (store.canUseGeneral()) {
-      <option value="GENERAL">GENERAL · Todas mis UOT</option>
+      <option value="GENERAL" [selected]="value() === 'GENERAL'">GENERAL · Resumen de inicio</option>
     }
 
     @for (unit of store.memberships(); track unit.uotId) {
-      <option [value]="unit.uotId">
-        UOT · {{ unit.codigo ? unit.codigo + ' · ' : '' }}{{ unit.nombre }}
+      <option [value]="unit.uotId" [selected]="store.isSpecific() && store.selectedId() === unit.uotId">
+        {{ unit.nombre }}
       </option>
     }
   </select>

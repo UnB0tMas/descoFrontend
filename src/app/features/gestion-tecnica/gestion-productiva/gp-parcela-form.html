@@ -1,9 +1,9 @@
-<dialog #dialog class="modal desco-modal gp-modal" (cancel)="$event.preventDefault(); close()">
+<dialog #dialog class="modal desco-modal gp-modal" (cancel)="$event.preventDefault(); close()" aria-labelledby="gt-gestion-productiva-gp-parcela-form-dialog-title-1">
   <div class="modal-box admin-modal-box gp-dialog-box">
     <div class="admin-modal-header">
       <div class="admin-modal-title-group"><span class="admin-modal-icon"><fa-icon [icon]="modalIcon" /></span><div>
         <p>GESTIÓN PRODUCTIVA</p>
-        <h2>{{ editing() ? 'Editar parcela' : 'Nueva parcela' }}</h2>
+        <h2 id="gt-gestion-productiva-gp-parcela-form-dialog-title-1">{{ editing() ? 'Editar parcela' : 'Nueva parcela' }}</h2>
       </div></div>
       <button type="button" class="admin-icon-button" [disabled]="saving()" (click)="close()" aria-label="Cerrar"><fa-icon [icon]="closeIcon" /></button>
     </div>

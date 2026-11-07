@@ -65,3 +65,14 @@
 .resource-image--thumb .resource-image-placeholder span {
   display: none;
 }
+
+@media (max-width: 640px) {
+  .resource-image--card.resource-image--empty {
+    aspect-ratio: auto;
+    height: 6rem;
+  }
+
+  .resource-image--card.resource-image--empty svg {
+    width: 3rem;
+  }
+}

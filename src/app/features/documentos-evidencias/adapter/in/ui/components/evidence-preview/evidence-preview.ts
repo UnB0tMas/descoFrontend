@@ -1,3 +1,5 @@
+import { LocalDocumentApiService } from '../../../../../../../shared/files/local-document-api.service';
+import { Subscription } from 'rxjs';
 import { DialogBackdropDirective } from '../../../../../../../shared/feedback/dialog-lifecycle/dialog-backdrop.directive';
 import { ChangeDetectionStrategy, Component, ElementRef, ViewChild, inject, signal } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
@@ -19,6 +21,11 @@ export class EvidencePreviewComponent {
 
   private readonly sanitizer = inject(DomSanitizer);
 
+  private readonly local = inject(LocalDocumentApiService);
+  private pending?: Subscription;
+  private objectUrl: string | null = null;
+  readonly contentUrl = signal<string | null>(null);
+  readonly loadError = signal<string | null>(null);
   readonly evidence = signal<DocumentoEvidencia | DocumentoEvidenciaDetalle | null>(null);
   readonly safeDocumentUrl = signal<SafeResourceUrl | null>(null);
   readonly closeIcon = faXmark;
@@ -26,16 +33,31 @@ export class EvidencePreviewComponent {
   readonly openIcon = faArrowUpRightFromSquare;
 
   open(evidence: DocumentoEvidencia | DocumentoEvidenciaDetalle): void {
+    this.release();
     this.evidence.set(evidence);
-    this.safeDocumentUrl.set(
-      evidence.mimeType === 'application/pdf'
-        ? this.sanitizer.bypassSecurityTrustResourceUrl(evidence.secureUrl)
-        : null,
-    );
+    this.loadError.set(null);
     this.dialogRef.nativeElement.showModal();
+    if(/^\/api\/v1\/documentos\/local\/\d+\/contenido$/.test(evidence.secureUrl)) {
+      this.pending=this.local.content(evidence.archivoId).subscribe({
+        next:blob=>{this.objectUrl=URL.createObjectURL(blob);this.setUrl(this.objectUrl,evidence.mimeType);},
+        error:()=>this.loadError.set('No se pudo cargar el archivo. Cierra y vuelve a intentarlo.'),
+      });
+    } else this.setUrl(evidence.secureUrl,evidence.mimeType);
   }
 
+  private setUrl(url:string,mime:string):void {
+    this.contentUrl.set(url);
+    this.safeDocumentUrl.set(mime==='application/pdf'?this.sanitizer.bypassSecurityTrustResourceUrl(url):null);
+  }
+  private release():void {
+    this.pending?.unsubscribe();
+    if(this.objectUrl) URL.revokeObjectURL(this.objectUrl);
+    this.objectUrl=null;this.contentUrl.set(null);this.safeDocumentUrl.set(null);
+  }
+  ngOnDestroy():void {this.release();}
+
   close(): void {
+    this.release();
     if (this.dialogRef.nativeElement.open) {
       this.dialogRef.nativeElement.close();
     }

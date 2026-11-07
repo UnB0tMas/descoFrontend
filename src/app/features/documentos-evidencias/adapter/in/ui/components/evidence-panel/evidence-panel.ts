@@ -1,3 +1,4 @@
+import { ResourceImageComponent } from '../../../../../../recursos/shared/resource-image/resource-image';
 import { ChangeDetectionStrategy, Component, Input, OnChanges, ViewChild, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
@@ -17,7 +18,7 @@ import { EvidenceCameraComponent } from '../evidence-camera/evidence-camera';
 import { EvidencePreviewComponent } from '../evidence-preview/evidence-preview';
 import { EvidenceUploaderComponent } from '../evidence-uploader/evidence-uploader';
 
-@Component({ selector: 'app-evidence-panel', standalone: true, imports: [DatePipe, FaIconComponent, PermissionDirective, LoadingStateComponent, EmptyStateComponent, ActionConfirmDialogComponent, EvidenceCameraComponent, EvidencePreviewComponent, EvidenceUploaderComponent], templateUrl: './evidence-panel.html', styleUrl: './evidence-panel.css', changeDetection: ChangeDetectionStrategy.OnPush })
+@Component({ selector: 'app-evidence-panel', standalone: true, imports: [ResourceImageComponent, DatePipe, FaIconComponent, PermissionDirective, LoadingStateComponent, EmptyStateComponent, ActionConfirmDialogComponent, EvidenceCameraComponent, EvidencePreviewComponent, EvidenceUploaderComponent], templateUrl: './evidence-panel.html', styleUrl: './evidence-panel.css', changeDetection: ChangeDetectionStrategy.OnPush })
 export class EvidencePanelComponent implements OnChanges {
   @Input({ required: true }) context!: EvidenciaContexto;
   @Input() title = 'Documentos y evidencias';

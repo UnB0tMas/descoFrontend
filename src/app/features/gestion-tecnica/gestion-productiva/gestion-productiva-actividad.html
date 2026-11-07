@@ -51,7 +51,7 @@
                    <article class="gp-comment-item">
                      <div class="gp-comment-meta">
                        <strong>{{c.usuarioNombre || 'Usuario #' + c.usuarioId}}</strong>
-                       <time>{{(c.fechaRegistro + 'Z') | date:'dd/MM/yyyy HH:mm'}}</time>
+                       <time>{{c.fechaRegistro | resourceDate:'dd/MM/yyyy HH:mm'}}</time>
                      </div>
                      <p>{{c.observacion}}</p>
                    </article>
@@ -79,7 +79,7 @@
             <div class="desco-record-grid gp-cards gp-record-cards">
               @for(r of filteredRevisions();track r.revisionId){
                 <app-record-card>
-                  <div class="gp-record-heading"><strong>Revisión #{{r.revisionId}}</strong><span class="gp-subtle">{{r.fechaRegistro | date:'dd/MM/yyyy HH:mm'}}</span></div>
+                  <div class="gp-record-heading"><strong>Revisión #{{r.revisionId}}</strong><span class="gp-subtle">{{r.fechaRegistro | resourceDate:'dd/MM/yyyy HH:mm'}}</span></div>
                   <dl class="gp-record-data">
                     <div><dt>Nombre anterior</dt><dd>{{r.nombreAnterior||'—'}}</dd></div>
                     <div><dt>Nombre nuevo</dt><dd>{{r.nombreNuevo||'—'}}</dd></div>
@@ -118,7 +118,7 @@
                   <app-record-card>
                     <div class="gp-record-heading"><strong>{{e.tipo}}</strong><span class="gp-code">#{{e.eventoId}}</span></div>
                     <dl class="gp-record-data">
-                      <div><dt>Registro</dt><dd>{{(e.fechaRegistro + 'Z') | date:'dd/MM/yyyy HH:mm'}}</dd></div>
+                      <div><dt>Registro</dt><dd>{{e.fechaRegistro | resourceDate:'dd/MM/yyyy HH:mm'}}</dd></div>
                       <div><dt>Fecha del hecho</dt><dd>{{e.fechaHecho | date:'dd/MM/yyyy'}}</dd></div>
                       <div><dt>Problema</dt><dd>{{e.problema||'—'}}</dd></div>
                       <div><dt>Tratamiento</dt><dd>{{e.tratamiento||'—'}}</dd></div>
@@ -161,7 +161,7 @@
               <div class="desco-record-grid gp-cards gp-record-cards">
                 @for(v of visibleCensuses();track v.censoId){
                   <app-record-card>
-                    <div class="gp-record-heading"><strong>Versión #{{v.censoId}}</strong><span class="gp-subtle">{{v.fechaRegistro | date:'dd/MM/yyyy HH:mm'}}</span></div>
+                    <div class="gp-record-heading"><strong>Versión #{{v.censoId}}</strong><span class="gp-subtle">{{v.fechaRegistro | resourceDate:'dd/MM/yyyy HH:mm'}}</span></div>
                     <dl class="gp-record-data">
                       <div><dt>Fecha de medición</dt><dd>{{v.fecha | date:'dd/MM/yyyy'}}</dd></div>
                       @if(a.rubro==='CRIANZA'){<div><dt>Animales exactos</dt><dd>{{v.cantidadExacta??'—'}}</dd></div><div><dt>Animales aproximados</dt><dd>{{v.cantidadAproximada??'—'}}</dd></div>}

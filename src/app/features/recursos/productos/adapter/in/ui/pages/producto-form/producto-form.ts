@@ -52,7 +52,6 @@ export class ProductoFormComponent {
   readonly mode = signal<ProductFormMode>('create');
   readonly current = signal<ProductTarget | null>(null);
   readonly saving = signal(false);
-  readonly codeLoading = signal(false);
   readonly referencesLoading = signal(false);
   readonly errorMessage = signal<string | null>(null);
   readonly units = signal<readonly { code: string; label: string }[]>([]);
@@ -70,7 +69,6 @@ export class ProductoFormComponent {
 
   readonly productForm = this.fb.nonNullable.group({
     uotContextoId: [0, [Validators.required, Validators.min(1)]],
-    codigo: ['', [Validators.maxLength(50)]],
     nombre: ['', [Validators.required, notBlankValidator, Validators.maxLength(180)]],
     descripcion: ['', [Validators.maxLength(700)]],
     unidadMedida: ['', [Validators.required, notBlankValidator, Validators.maxLength(20)]],
@@ -96,13 +94,12 @@ export class ProductoFormComponent {
     this.resetState('create', null);
     this.productForm.reset({
       uotContextoId: this.resolveCreateUotId(preferredUotId),
-      codigo: '', nombre: '', descripcion: '', unidadMedida: '', categoria: '',
+      nombre: '', descripcion: '', unidadMedida: '', categoria: '',
       requiereLote: false, controlaVencimiento: false,
       permiteVenta: false,
     });
     this.productForm.controls.uotContextoId[this.uot.isSpecific() ? 'disable' : 'enable']({ emitEvent: false });
     this.loadReferences();
-    this.loadSuggestedCode(true);
     return this.show();
   }
 
@@ -110,7 +107,6 @@ export class ProductoFormComponent {
     this.resetState('edit', item);
     this.productForm.reset({
       uotContextoId: Number(uotId ?? item.uotId ?? 0),
-      codigo: item.codigo ?? '',
       nombre: item.nombre ?? '',
       descripcion: item.descripcion ?? '',
       unidadMedida: item.unidadMedidaCodigo ?? '',
@@ -148,7 +144,6 @@ export class ProductoFormComponent {
   }
 
   availableUnits() { return this.uot.memberships(); }
-  onCreateUotChange(): void { if (this.mode() === 'create') this.loadSuggestedCode(true); }
   close(): void { if (!this.saving()) this.finish({ saved: false, value: null }); }
 
   title(): string {
@@ -198,7 +193,6 @@ export class ProductoFormComponent {
           })
         : this.api.createProduct({
             ...common,
-            codigo: raw.codigo.trim().toUpperCase() || undefined,
             requiereLote: raw.requiereLote,
             controlaVencimiento: raw.controlaVencimiento,
             permiteVenta: raw.permiteVenta,
@@ -268,28 +262,6 @@ export class ProductoFormComponent {
   private resolveCreateUotId(preferredUotId?: number): number {
     if (this.uot.isSpecific()) return this.uot.selectedId() ?? 0;
     return preferredUotId && preferredUotId > 0 ? preferredUotId : 0;
-  }
-
-  private loadSuggestedCode(force = false): void {
-    const uotId = Number(this.productForm.getRawValue().uotContextoId);
-    const control = this.productForm.controls.codigo;
-    if (uotId <= 0) { if (force) control.setValue('', { emitEvent: false }); return; }
-    if (!force && control.dirty && control.value.trim()) return;
-    this.codeLoading.set(true);
-    this.api.suggestCode(uotId, 'PRODUCTO').pipe(finalize(() => this.codeLoading.set(false))).subscribe({
-      next: (code) => {
-        // No sobrescribir un código personalizado mientras llega la sugerencia.
-        if (!code || control.dirty || Number(this.productForm.getRawValue().uotContextoId) !== uotId) return;
-        control.setValue(code, { emitEvent: false });
-        control.markAsPristine();
-      },
-      error: () => {
-        if (force && !control.dirty && Number(this.productForm.getRawValue().uotContextoId) === uotId) {
-          control.setValue('', { emitEvent: false });
-          control.markAsPristine();
-        }
-      },
-    });
   }
 
   private resetState(mode: ProductFormMode, item: ProductTarget | null): void {

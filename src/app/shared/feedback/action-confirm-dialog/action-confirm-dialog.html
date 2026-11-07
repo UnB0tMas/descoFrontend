@@ -1,4 +1,5 @@
 <dialog appDialogBackdrop
+  [attr.aria-label]="config()?.title ?? 'Confirmar acción'"
   #dialog
   class="modal desco-modal modal-bottom sm:modal-middle"
   (cancel)="$event.preventDefault(); cancel()"

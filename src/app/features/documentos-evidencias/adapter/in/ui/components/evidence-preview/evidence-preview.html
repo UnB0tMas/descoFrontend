@@ -1,4 +1,4 @@
-<dialog appDialogBackdrop #dialog class="modal desco-modal" (cancel)="$event.preventDefault(); close()">
+<dialog aria-label="Vista previa" appDialogBackdrop #dialog class="modal desco-modal" (cancel)="$event.preventDefault(); close()">
   <div class="modal-box admin-modal-box evidence-preview-modal">
     <header class="admin-modal-header">
       <div class="admin-modal-title-group">
@@ -10,8 +10,8 @@
 
     @if (evidence(); as item) {
       <div class="evidence-preview-body">
-        @if (isImage()) {
-          <img [src]="item.secureUrl" [alt]="item.nombreOriginal" />
+        @if(loadError()){<p role="alert">{{loadError()}}</p>} @else if(!contentUrl()){<p>Cargando archivo…</p>} @else if (isImage()) {
+          <img [src]="contentUrl()" [alt]="item.nombreOriginal" />
         } @else if (isPdf()) {
           <iframe [src]="safeDocumentUrl()" [title]="item.nombreOriginal"></iframe>
         } @else {
@@ -24,9 +24,9 @@
       </div>
       <footer class="evidence-preview-footer">
         <span>{{ item.mimeType }} · {{ formatBytes(item.tamanoBytes) }}</span>
-        <a class="admin-primary-button" [href]="item.secureUrl" target="_blank" rel="noopener noreferrer">
+        @if(contentUrl()){<a class="admin-primary-button" [href]="contentUrl()" target="_blank" rel="noopener noreferrer">
           <fa-icon [icon]="openIcon" /> Abrir archivo
-        </a>
+        </a>}
       </footer>
     }
   </div>

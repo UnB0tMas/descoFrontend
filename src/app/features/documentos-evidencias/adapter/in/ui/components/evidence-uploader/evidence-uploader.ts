@@ -28,9 +28,9 @@ export class EvidenceUploaderComponent {
   private resolver: ((result: AdminModalResult<number>) => void) | null = null;
   readonly categories: readonly EvidenciaCategoria[] = ['DOCUMENTO','FOTOGRAFIA','TICKET','COMPROBANTE','OTRO'];
   readonly form = this.fb.nonNullable.group({
-    tipoEvidencia: ['DOCUMENTO', [Validators.required, Validators.maxLength(50)]],
+    tipoEvidencia: ['DOCUMENTO', [Validators.required, Validators.maxLength(40)]],
     categoria: ['DOCUMENTO' as EvidenciaCategoria, [Validators.required]],
-    descripcion: ['', [Validators.maxLength(1000)]],
+    descripcion: ['', [Validators.maxLength(400)]],
     fechaCaptura: [''],
     contextoTipo: ['SOCIO' as EvidenciaContextoTipo, [Validators.required]],
     contextoId: [0, [Validators.required, Validators.min(1)]],

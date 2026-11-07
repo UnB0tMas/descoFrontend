@@ -1,4 +1,4 @@
-<dialog appDialogBackdrop #dialog class="modal desco-modal" (cancel)="$event.preventDefault(); close()">
+<dialog aria-labelledby="almacen-operation-form-dialog-title" appDialogBackdrop #dialog class="modal desco-modal" (cancel)="$event.preventDefault(); close()">
   <div
     class="modal-box admin-modal-box warehouse-modal-box"
     [class.warehouse-modal-box--incoming]="mode() === 'movement' && movementNature() === 'E'"
@@ -8,7 +8,7 @@
     <header class="admin-modal-header">
       <div class="admin-modal-title-group">
         <span class="admin-modal-icon"><fa-icon [icon]="icon()" /></span>
-        <div><p>Almacenes</p><h2>{{ title() }}</h2></div>
+        <div><p>Almacenes</p><h2 id="almacen-operation-form-dialog-title">{{ title() }}</h2></div>
       </div>
       <button type="button" class="admin-icon-button" [disabled]="saving()" (click)="close()" aria-label="Cerrar formulario">
         <fa-icon [icon]="closeIcon" />
@@ -22,8 +22,8 @@
     @if (mode() === 'create') {
       <form class="admin-form-grid" [formGroup]="createForm" (ngSubmit)="save()">
         <div class="admin-field">
-          <label>UOT propietaria</label>
-          <select class="admin-select" formControlName="uotId" (change)="onCreateUnitChange()">
+          <label for="almacen-operation-form-field-1">UOT propietaria</label>
+          <select id="almacen-operation-form-field-1" class="admin-select" formControlName="uotId" (change)="onCreateUnitChange()">
             <option [value]="0">Seleccionar</option>
             @for (unit of uot.memberships(); track unit.uotId) {
               <option [value]="unit.uotId">{{ unit.nombre }}</option>
@@ -33,8 +33,8 @@
         </div>
 
         <div class="admin-field">
-          <label>Código</label>
-          <input
+          <label for="almacen-operation-form-field-2">Código</label>
+          <input id="almacen-operation-form-field-2"
             class="admin-input"
             formControlName="codigo"
             maxlength="40"
@@ -52,8 +52,8 @@
         </div>
 
         <div class="admin-field admin-field-span-2">
-          <label>Nombre</label>
-          <input class="admin-input" formControlName="nombre" maxlength="160" />
+          <label for="almacen-operation-form-field-3">Nombre</label>
+          <input id="almacen-operation-form-field-3" class="admin-input" formControlName="nombre" maxlength="160" />
           <app-form-error [control]="createForm.controls.nombre" fieldLabel="El nombre" />
         </div>
 
@@ -76,8 +76,8 @@
         </div>
 
         <div class="admin-field admin-field-span-2">
-          <label>Referencia de ubicación</label>
-          <input
+          <label for="almacen-operation-form-field-4">Referencia de ubicación</label>
+          <input id="almacen-operation-form-field-4"
             class="admin-input"
             formControlName="referencia"
             maxlength="300"
@@ -86,8 +86,8 @@
         </div>
 
         <div class="admin-field admin-field-span-2">
-          <label>Descripción</label>
-          <textarea class="admin-textarea" rows="3" maxlength="400" formControlName="descripcion"></textarea>
+          <label for="almacen-operation-form-field-5">Descripción</label>
+          <textarea id="almacen-operation-form-field-5" class="admin-textarea" rows="3" maxlength="400" formControlName="descripcion"></textarea>
         </div>
 
         <ng-container *ngTemplateOutlet="actions"></ng-container>
@@ -101,8 +101,8 @@
         </div>
 
         <div class="admin-field admin-field-span-2">
-          <label>Compartir con UOT</label>
-          <select class="admin-select" formControlName="uotId">
+          <label for="almacen-operation-form-field-6">Compartir con UOT</label>
+          <select id="almacen-operation-form-field-6" class="admin-select" formControlName="uotId">
             <option [value]="0">Seleccionar</option>
             @for (unit of uot.memberships(); track unit.uotId) {
               @if (unit.uotId !== currentWarehouse()?.uotPropietariaId) {
@@ -145,8 +145,8 @@
         </div>
 
         <div class="admin-field">
-          <label>UOT que registra la entrada</label>
-          <select class="admin-select" formControlName="uotId" (change)="onConfigureUnitChange()">
+          <label for="almacen-operation-form-field-7">UOT que registra la entrada</label>
+          <select id="almacen-operation-form-field-7" class="admin-select" formControlName="uotId" (change)="onConfigureUnitChange()">
             <option [value]="0">Seleccionar</option>
             @for (unit of uot.memberships(); track unit.uotId) {
               <option [value]="unit.uotId">{{ unit.nombre }}</option>
@@ -156,8 +156,8 @@
         </div>
 
         <div class="admin-field">
-          <label>Producto</label>
-          <select
+          <label for="almacen-operation-form-field-8">Producto</label>
+          <select id="almacen-operation-form-field-8"
             class="admin-select"
             formControlName="productoId"
             [disabled]="loadingProducts()"
@@ -186,8 +186,8 @@
         </div>
 
         <div class="admin-field">
-          <label>Stock inicial</label>
-          <input
+          <label for="almacen-operation-form-field-9">Stock inicial</label>
+          <input id="almacen-operation-form-field-9"
             class="admin-input"
             type="number"
             min="0"
@@ -202,8 +202,8 @@
         </div>
 
         <div class="admin-field">
-          <label>Stock mínimo</label>
-          <input
+          <label for="almacen-operation-form-field-10">Stock mínimo</label>
+          <input id="almacen-operation-form-field-10"
             class="admin-input"
             type="number"
             min="0"
@@ -222,8 +222,8 @@
         </div>
 
         <div class="admin-field">
-          <label>Costo unitario <span class="warehouse-optional">(opcional)</span></label>
-          <input
+          <label for="almacen-operation-form-field-11">Costo unitario <span class="warehouse-optional">(opcional)</span></label>
+          <input id="almacen-operation-form-field-11"
             class="admin-input"
             type="number"
             min="0"
@@ -234,14 +234,14 @@
 
         @if (selectedConfigureProduct()?.permiteVenta === true) {
           <div class="admin-field">
-            <label>Precio de venta de la UOT</label>
-            <input class="admin-input" type="number" min="0.0001" step="0.0001" formControlName="precioVenta" />
+            <label for="almacen-operation-form-field-12">Precio de venta de la UOT</label>
+            <input id="almacen-operation-form-field-12" class="admin-input" type="number" min="0.0001" step="0.0001" formControlName="precioVenta" />
             <app-form-error [control]="configureForm.controls.precioVenta" fieldLabel="El precio de venta" />
             <small>Precio comercial de esta UOT; no altera el costo del Kardex.</small>
           </div>
           <div class="admin-field">
-            <label>Moneda de venta</label>
-            <select class="admin-select" formControlName="monedaVenta">
+            <label for="almacen-operation-form-field-13">Moneda de venta</label>
+            <select id="almacen-operation-form-field-13" class="admin-select" formControlName="monedaVenta">
               @for (currency of currencies(); track currency.code) {
                 <option [value]="currency.code">{{ currency.code }} · {{ currency.label }}</option>
               }
@@ -251,8 +251,8 @@
           <div class="admin-info-note admin-field-span-2">Producto para uso operativo: se controla stock y costo, sin precio de venta.</div>
         }
         <div class="admin-field">
-          <label>Moneda del costo</label>
-          <select class="admin-select" formControlName="moneda">
+          <label for="almacen-operation-form-field-14">Moneda del costo</label>
+          <select id="almacen-operation-form-field-14" class="admin-select" formControlName="moneda">
             @for (currency of currencies(); track currency.code) {
               <option [value]="currency.code">{{ currency.code }} · {{ currency.label }}</option>
             }
@@ -264,7 +264,7 @@
         </div>
 
         <div class="admin-field">
-          <label>
+          <label for="almacen-operation-form-field-15">
             Lote
             @if (selectedConfigureProduct()?.requiereLote) {
               <span aria-hidden="true">*</span>
@@ -272,7 +272,7 @@
               <span class="warehouse-optional">(opcional)</span>
             }
           </label>
-          <input
+          <input id="almacen-operation-form-field-15"
             class="admin-input"
             maxlength="80"
             formControlName="lote"
@@ -285,7 +285,7 @@
         </div>
 
         <div class="admin-field">
-          <label>
+          <label for="almacen-operation-form-field-16">
             Fecha de vencimiento
             @if (selectedConfigureProduct()?.controlaVencimiento) {
               <span aria-hidden="true">*</span>
@@ -293,7 +293,7 @@
               <span class="warehouse-optional">(opcional)</span>
             }
           </label>
-          <input
+          <input id="almacen-operation-form-field-16"
             class="admin-input"
             type="date"
             [min]="today"
@@ -373,8 +373,8 @@
         </div>
 
         <div class="admin-field admin-field-span-2">
-          <label>Observaciones <span class="warehouse-optional">(opcional)</span></label>
-          <textarea
+          <label for="almacen-operation-form-field-17">Observaciones <span class="warehouse-optional">(opcional)</span></label>
+          <textarea id="almacen-operation-form-field-17"
             class="admin-textarea"
             rows="3"
             maxlength="500"
@@ -463,8 +463,8 @@
               </div>
               <div class="warehouse-line-fields">
                 <div class="admin-field warehouse-line-product">
-                  <label>Producto</label>
-                  <select class="admin-select" formControlName="productoId">
+                  <label for="almacen-operation-form-field-18">Producto</label>
+                  <select id="almacen-operation-form-field-18" class="admin-select" formControlName="productoId">
                     <option [value]="0">Seleccionar producto</option>
                     @for (product of movementProducts(); track product.productoId) {
                       <option [value]="product.productoId">{{ product.nombre }} · {{ product.codigo }}</option>
@@ -473,29 +473,29 @@
                   <app-form-error [control]="line.get('productoId')" fieldLabel="El producto" />
                 </div>
                 <div class="admin-field">
-                  <label>Cantidad</label>
-                  <input class="admin-input" type="number" min="0.001" step="0.001" formControlName="cantidad" />
+                  <label for="almacen-operation-form-field-19">Cantidad</label>
+                  <input id="almacen-operation-form-field-19" class="admin-input" type="number" min="0.001" step="0.001" formControlName="cantidad" />
                   <app-form-error [control]="line.get('cantidad')" fieldLabel="La cantidad" />
                 </div>
                 <div class="admin-field warehouse-line-cost">
-                  <label>Costo unitario <span class="warehouse-optional">(opcional)</span></label>
-                  <input class="admin-input" type="number" min="0" step="0.01" formControlName="costoUnitario" />
+                  <label for="almacen-operation-form-field-20">Costo unitario <span class="warehouse-optional">(opcional)</span></label>
+                  <input id="almacen-operation-form-field-20" class="admin-input" type="number" min="0" step="0.01" formControlName="costoUnitario" />
                 </div>
                 <div class="admin-field">
-                  <label>Moneda</label>
-                  <select class="admin-select" formControlName="moneda">
+                  <label for="almacen-operation-form-field-21">Moneda</label>
+                  <select id="almacen-operation-form-field-21" class="admin-select" formControlName="moneda">
                     @for (currency of currencies(); track currency.code) {
                       <option [value]="currency.code">{{ currency.code }}</option>
                     }
                   </select>
                 </div>
                 <div class="admin-field warehouse-line-lot">
-                  <label>Lote <span class="warehouse-optional">{{ movementNature() === 'S' ? '(automático si se omite)' : movementProduct(index)?.requiereLote ? '(obligatorio)' : '(opcional)' }}</span></label>
-                  <input class="admin-input" maxlength="80" formControlName="lote" placeholder="Código de lote" />
+                  <label for="almacen-operation-form-field-22">Lote <span class="warehouse-optional">{{ movementNature() === 'S' ? '(automático si se omite)' : movementProduct(index)?.requiereLote ? '(obligatorio)' : '(opcional)' }}</span></label>
+                  <input id="almacen-operation-form-field-22" class="admin-input" maxlength="80" formControlName="lote" placeholder="Código de lote" />
                 </div>
                 <div class="admin-field">
-                  <label>Vencimiento <span class="warehouse-optional">{{ movementNature() === 'E' && movementProduct(index)?.controlaVencimiento ? '(obligatorio)' : '(opcional)' }}</span></label>
-                  <input class="admin-input" type="date" [min]="today" formControlName="fechaVencimiento" />
+                  <label for="almacen-operation-form-field-23">Vencimiento <span class="warehouse-optional">{{ movementNature() === 'E' && movementProduct(index)?.controlaVencimiento ? '(obligatorio)' : '(opcional)' }}</span></label>
+                  <input id="almacen-operation-form-field-23" class="admin-input" type="date" [min]="today" formControlName="fechaVencimiento" />
                 </div>
               </div>
             </div>

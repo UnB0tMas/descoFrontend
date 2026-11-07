@@ -20,7 +20,7 @@
       @for (item of items(); track item.archivoId) {
         <article class="evidence-card">
           <button type="button" class="evidence-card-preview" (click)="openPreview(item)">
-            @if (item.mimeType.startsWith('image/')) { <img [src]="item.secureUrl" [alt]="item.nombreOriginal" /> }
+            @if (item.mimeType.startsWith('image/')) { <app-resource-image [fileId]="item.secureUrl.startsWith('/api/v1/documentos/local/')?item.archivoId:null" [imageUrl]="item.secureUrl" [alt]="item.nombreOriginal" variant="card" /> }
             @else { <fa-icon [icon]="folderIcon" /> }
           </button>
           <div class="evidence-card-copy"><strong>{{ item.nombreOriginal }}</strong><span>{{ item.categoria || item.tipoEvidencia }}</span>

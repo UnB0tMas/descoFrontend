@@ -30,7 +30,7 @@
     <label class="resource-filter-field resource-filter-field--search">
       <span>Buscar</span>
       <div class="resource-search-control">
-        <input class="admin-input" type="search" placeholder="Código, producto o descripción"
+        <input class="admin-input" type="search" placeholder="Producto o descripción"
           [value]="search()" (input)="search.set($any($event.target).value)" (keyup.enter)="applyFilters()" />
         <button type="button" class="admin-secondary-button resource-search-button" title="Buscar" (click)="applyFilters()">
           <fa-icon [icon]="searchIcon" />
@@ -81,7 +81,7 @@
         <table class="admin-table resource-products-table">
           <thead>
             <tr>
-              <th>Imagen</th><th>UOT</th><th>Código</th><th>Producto</th><th>Categoría</th>
+              <th>Imagen</th><th>UOT</th><th>Producto</th><th>Categoría</th>
               <th>Unidad</th><th>Precio venta UOT</th><th>Estado</th><th class="resource-actions-column">Acciones</th>
             </tr>
           </thead>
@@ -93,7 +93,6 @@
                     [imageUrl]="item.imagenPrincipalUrl" [alt]="item.nombre || 'Producto'" />
                 </td>
                 <td><strong>{{ item.uotNombre || '—' }}</strong><small class="resource-cell-help">{{ item.uotCodigo || '' }}</small></td>
-                <td><span class="admin-code">{{ item.codigo || '—' }}</span></td>
                 <td><strong>{{ item.nombre || '—' }}</strong><small class="resource-cell-help">{{ item.descripcion || 'Sin descripción' }}</small></td>
                 <td>{{ item.categoriaNombre || item.categoriaCodigo || '—' }}</td>
                 <td>{{ item.unidadMedidaNombre || item.unidadMedidaCodigo || '—' }}</td>
@@ -133,7 +132,7 @@
             [imageUrl]="item.imagenPrincipalUrl" [alt]="item.nombre || 'Producto'" />
           <div class="resource-card-body">
             <header>
-              <div><small>{{ item.uotNombre || 'UOT' }}</small><h3>{{ item.nombre || 'Producto' }}</h3><span>{{ item.codigo || '—' }}</span></div>
+              <div><small>{{ item.uotNombre || 'UOT' }}</small><h3>{{ item.nombre || 'Producto' }}</h3></div>
               <span class="resource-status" [class.resource-status--ok]="item.estado !== false"
                 [class.resource-status--muted]="item.estado === false">{{ item.estado === false ? 'Inactivo' : 'Activo' }}</span>
             </header>

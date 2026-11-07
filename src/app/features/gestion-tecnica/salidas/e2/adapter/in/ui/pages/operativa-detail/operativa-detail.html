@@ -224,9 +224,9 @@
   </div>
  }
 </div>
-<dialog #operationDialog class="modal desco-modal" (cancel)="$event.preventDefault();closeOperation()">
+<dialog #operationDialog class="modal desco-modal" (cancel)="$event.preventDefault();closeOperation()" aria-labelledby="gt-operativa-detail-operativa-detail-dialog-title-1">
  <div class="modal-box admin-modal-box e2-modal-box">
-  <header class="admin-modal-header"><h2>
+  <header class="admin-modal-header"><h2 id="gt-operativa-detail-operativa-detail-dialog-title-1">
    @switch(operation()){@case('cancelar'){Cancelar solicitud}@case('decision'){Decidir solicitud}
      @case('destino'){@if(destinoEditIndex===null){Agregar destino}@else{Editar destino}}@case('vincular'){Vincular predio}@case('visita'){Nueva visita}@case('finalizar'){Finalizar visita}
      @case('retorno'){Registrar retorno}@case('inspeccion'){Inspeccionar recursos}@case('fecha'){Regularizar fin}}

@@ -1,4 +1,4 @@
-<dialog #dialog class="modal desco-modal" (cancel)="$event.preventDefault(); close()">
+<dialog #dialog class="modal desco-modal" (cancel)="$event.preventDefault(); close()" aria-labelledby="gt-predio-form-predio-form-dialog-title-1">
   <div class="modal-box admin-modal-box admin-modal-box--wide predio-modal-box desco-fixed-form-modal">
     <header class="admin-modal-header">
       <div class="admin-modal-title-group">
@@ -7,7 +7,7 @@
         </span>
         <div>
           <p>Predios</p>
-          <h2>{{ current() ? 'Editar predio' : 'Registrar predio' }}</h2>
+          <h2 id="gt-predio-form-predio-form-dialog-title-1">{{ current() ? 'Editar predio' : 'Registrar predio' }}</h2>
         </div>
       </div>
       <button

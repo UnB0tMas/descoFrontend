@@ -207,9 +207,9 @@
                 <div>
                   <strong>{{ history.estadoBien || '—' }}</strong>
                   <small>
-                    {{ history.fechaDesde | date:'dd/MM/yyyy HH:mm' }}
+                    {{ history.fechaDesde | resourceDate:'dd/MM/yyyy HH:mm'}}
                     @if (history.fechaHasta) {
-                      · hasta {{ history.fechaHasta | date:'dd/MM/yyyy HH:mm' }}
+                      · hasta {{ history.fechaHasta | resourceDate:'dd/MM/yyyy HH:mm'}}
                     }
                   </small>
                   @if (history.motivo) {
@@ -239,7 +239,7 @@
                 <header>
                   <div>
                     <strong>{{ incident.tipoIncidente || 'Incidencia' }}</strong>
-                    <small>{{ incident.fechaHora | date:'dd/MM/yyyy HH:mm' }}</small>
+                    <small>{{ incident.fechaHora | resourceDate:'dd/MM/yyyy HH:mm'}}</small>
                   </div>
                   <span [class]="incidentStatusClass(incident.estadoIncidente)">
                     {{ incidentStatusLabel(incident.estadoIncidente) }}
@@ -264,7 +264,7 @@
                   @if (incident.fechaCierre) {
                     <span>
                       Cierre:
-                      {{ incident.fechaCierre | date:'dd/MM/yyyy HH:mm' }}
+                      {{ incident.fechaCierre | resourceDate:'dd/MM/yyyy HH:mm'}}
                     </span>
                   }
                 </div>

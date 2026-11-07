@@ -1,3 +1,4 @@
+import { ResourceDatePipe } from '../../../../../../../../shared/formatting/resource-date.pipe';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, ViewChild, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -22,7 +23,7 @@ import { RecursoFormComponent } from '../recurso-form/recurso-form';
 
 @Component({
   selector:'app-recurso-detail-page', standalone:true,
-  imports:[DatePipe,DecimalPipe,RouterLink,FaIconComponent,PermissionDirective,ErrorStateComponent,LoadingStateComponent,LocalFilePanelComponent,PageHeaderComponent,ResourceImageComponent,RecursoFormComponent],
+  imports:[ResourceDatePipe,DecimalPipe,RouterLink,FaIconComponent,PermissionDirective,ErrorStateComponent,LoadingStateComponent,LocalFilePanelComponent,PageHeaderComponent,ResourceImageComponent,RecursoFormComponent],
   templateUrl:'./recurso-detail.html', styleUrl:'./recurso-detail.css', changeDetection:ChangeDetectionStrategy.OnPush,
 })
 export class RecursoDetailPage implements OnInit {

@@ -40,7 +40,7 @@
               <span class="gp-code">#{{i.incidenciaId}} · {{eventosDe(i.incidenciaId).length}} tratamiento(s)</span>
               <div class="gp-record-heading"><strong>{{i.problema}}</strong><span class="admin-status" [class.admin-status--active]="i.estado==='ABIERTA'">{{i.estado==='ABIERTA'?'En seguimiento':'Cerrada'}}</span></div>
               <dl class="gp-record-data">
-                <div><dt>Registro</dt><dd>{{i.fechaRegistro | date:'dd/MM/yyyy HH:mm'}}</dd></div>
+                <div><dt>Registro</dt><dd>{{i.fechaRegistro | resourceDate:'dd/MM/yyyy HH:mm'}}</dd></div>
                 <div><dt>Afectación</dt><dd>{{medida(i.afectadaM2,i.afectadosAnimales)}}</dd></div>
                 <div><dt>Técnico</dt><dd>#{{i.usuarioId}}</dd></div>
               </dl>
@@ -72,12 +72,12 @@
           <article class="gp-record-summary">
 
             <dl class="gp-record-data gp-record-data--wide">
-              <div><dt>Registro</dt><dd>{{i.fechaRegistro | date:'dd/MM/yyyy HH:mm'}}</dd></div>
+              <div><dt>Registro</dt><dd>{{i.fechaRegistro | resourceDate:'dd/MM/yyyy HH:mm'}}</dd></div>
               <div><dt>Técnico</dt><dd>#{{i.usuarioId}}</dd></div>
               <div><dt>Afectación inicial</dt><dd>{{medida(i.afectadaM2,i.afectadosAnimales)}}</dd></div>
               <div><dt>Resultado</dt><dd>{{resultado(i)}}</dd></div>
               <div><dt>{{actividad.rubro==='CULTIVO'?'Superficie perdida':'Animales fallecidos'}}</dt><dd>{{i.estado==='CERRADA'?medida(i.perdidaM2,i.perdidosAnimales):'—'}}</dd></div>
-              <div><dt>Fecha de cierre</dt><dd>{{i.fechaCierre?(i.fechaCierre | date:'dd/MM/yyyy HH:mm'):'—'}}</dd></div>
+              <div><dt>Fecha de cierre</dt><dd>{{i.fechaCierre?(i.fechaCierre | resourceDate:'dd/MM/yyyy HH:mm'):'—'}}</dd></div>
               <div><dt>Técnico del cierre</dt><dd>{{i.usuarioCierreId!=null?'#'+i.usuarioCierreId:'—'}}</dd></div>
               <div class="gp-record-data-full"><dt>Descripción</dt><dd>{{i.descripcion}}</dd></div>
               <div class="gp-record-data-full"><dt>Observación del cierre</dt><dd>{{i.descripcionCierre||'—'}}</dd></div>
@@ -111,9 +111,9 @@
                   <span class="gp-code">Tratamiento #{{t.eventoId}}</span>
                   <div class="gp-record-heading"><strong>{{t.tratamiento}}</strong><span class="admin-status" [class.admin-status--active]="!t.fechaFinReal">{{t.fechaFinReal?'Finalizado':'En curso'}}</span></div>
                   <dl class="gp-record-data">
-                    <div><dt>Inicio</dt><dd>{{t.fechaInicio | date:'dd/MM/yyyy HH:mm'}}</dd></div>
-                    <div><dt>Fin previsto</dt><dd>{{t.fechaFinPrevista?(t.fechaFinPrevista | date:'dd/MM/yyyy HH:mm'):'—'}}</dd></div>
-                    <div><dt>Fin real</dt><dd>{{t.fechaFinReal?(t.fechaFinReal | date:'dd/MM/yyyy HH:mm'):'En curso'}}</dd></div>
+                    <div><dt>Inicio</dt><dd>{{t.fechaInicio | resourceDate:'dd/MM/yyyy HH:mm'}}</dd></div>
+                    <div><dt>Fin previsto</dt><dd>{{t.fechaFinPrevista?(t.fechaFinPrevista | resourceDate:'dd/MM/yyyy HH:mm'):'—'}}</dd></div>
+                    <div><dt>Fin real</dt><dd>{{t.fechaFinReal?(t.fechaFinReal | resourceDate:'dd/MM/yyyy HH:mm'):'En curso'}}</dd></div>
                     <div class="gp-record-data-full"><dt>Descripción</dt><dd>{{t.descripcion||'—'}}</dd></div>
                     @if(t.descripcionCierre){<div class="gp-record-data-full"><dt>Resultado</dt><dd>{{t.descripcionCierre}}</dd></div>}
                     <div><dt>Técnico</dt><dd>#{{t.usuarioId}}</dd></div>
@@ -134,7 +134,7 @@
               @for(rev of filteredRevisions();track rev.revisionId){
                 <app-record-card>
                   <div class="gp-record-heading"><strong>{{rev.accion==='RETIRO'?'Retiro lógico':'Corrección'}} #{{rev.revisionId}}</strong>
-                    <span class="gp-subtle">{{rev.fechaRegistro | date:'dd/MM/yyyy HH:mm'}} · Técnico #{{rev.usuarioId}}</span></div>
+                    <span class="gp-subtle">{{rev.fechaRegistro | resourceDate:'dd/MM/yyyy HH:mm'}} · Técnico #{{rev.usuarioId}}</span></div>
                   <dl class="gp-record-data">
                     <div><dt>Problema</dt><dd>#{{rev.problemaAnterior}} → #{{rev.problemaNuevo}}</dd></div>
                     <div><dt>Afectación</dt><dd>{{rev.afectadaAnterior??rev.animalesAnteriores??'—'}} → {{rev.afectadaNueva??rev.animalesNuevos??'—'}}</dd></div>

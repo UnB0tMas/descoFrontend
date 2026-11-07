@@ -70,9 +70,9 @@
   </section>
 </div>
 
-<dialog #createDialog class="modal desco-modal" (cancel)="$event.preventDefault();closeCreate()">
+<dialog #createDialog class="modal desco-modal" (cancel)="$event.preventDefault();closeCreate()" aria-labelledby="gt-operativas-list-operativas-list-dialog-title-1">
  <div class="modal-box admin-modal-box e2-modal-box">
-  <header class="admin-modal-header"><div class="admin-modal-title-group"><h2>{{editingId()!==null?'Editar salida':'Nueva salida'}}</h2></div>
+  <header class="admin-modal-header"><div class="admin-modal-title-group"><h2 id="gt-operativas-list-operativas-list-dialog-title-1">{{editingId()!==null?'Editar salida':'Nueva salida'}}</h2></div>
    <button type="button" class="admin-icon-button" aria-label="Cerrar" title="Cerrar" (click)="closeCreate()">×</button></header>
   <form class="e2-modal-body" (ngSubmit)="guardar()">
    <div class="e2-form-grid">

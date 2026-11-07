@@ -1,3 +1,4 @@
+import { ResourceDatePipe } from '../../../../../../../../shared/formatting/resource-date.pipe';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, ViewChild, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -21,7 +22,7 @@ import { ResourceApiService, ResourceProductPriceHistory } from '../../../../../
 import { ResourceImageComponent } from '../../../../../../shared/resource-image/resource-image';
 import { ProductoFormComponent } from '../producto-form/producto-form';
 
-@Component({selector:'app-producto-detail-page',standalone:true,imports:[DatePipe,DecimalPipe,RouterLink,FaIconComponent,PermissionDirective,EmptyStateComponent,ErrorStateComponent,LoadingStateComponent,ActionConfirmDialogComponent,LocalFilePanelComponent,PageHeaderComponent,ResourceImageComponent,ProductoFormComponent],templateUrl:'./producto-detail.html',styleUrl:'./producto-detail.css',changeDetection:ChangeDetectionStrategy.OnPush})
+@Component({selector:'app-producto-detail-page',standalone:true,imports:[ResourceDatePipe,DecimalPipe,RouterLink,FaIconComponent,PermissionDirective,EmptyStateComponent,ErrorStateComponent,LoadingStateComponent,ActionConfirmDialogComponent,LocalFilePanelComponent,PageHeaderComponent,ResourceImageComponent,ProductoFormComponent],templateUrl:'./producto-detail.html',styleUrl:'./producto-detail.css',changeDetection:ChangeDetectionStrategy.OnPush})
 export class ProductoDetailPage implements OnInit {
  @ViewChild(ProductoFormComponent) private form!:ProductoFormComponent; @ViewChild(ActionConfirmDialogComponent) private confirm!:ActionConfirmDialogComponent;
  private readonly route=inject(ActivatedRoute); private readonly api=inject(ResourceApiService); private readonly permissions=inject(PermissionService); private readonly toast=inject(ToastService); readonly uot=inject(UotContextStore);

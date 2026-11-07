@@ -1,11 +1,11 @@
-<dialog appDialogBackdrop #dialog class="modal desco-modal" (cancel)="$event.preventDefault(); close()">
+<dialog aria-labelledby="suministro-form-dialog-title" appDialogBackdrop #dialog class="modal desco-modal" (cancel)="$event.preventDefault(); close()">
   <div class="modal-box admin-modal-box">
     <header class="admin-modal-header">
       <div class="admin-modal-title-group">
         <span class="admin-modal-icon"><fa-icon [icon]="icon()" /></span>
-        <div><p>Suministros</p><h2>{{ title() }}</h2></div>
+        <div><p>Suministros</p><h2 id="suministro-form-dialog-title">{{ title() }}</h2></div>
       </div>
-      <button type="button" class="admin-icon-button" [disabled]="saving()" (click)="close()"><fa-icon [icon]="closeIcon" /></button>
+      <button aria-label="Cerrar formulario" type="button" class="admin-icon-button" [disabled]="saving()" (click)="close()"><fa-icon [icon]="closeIcon" /></button>
     </header>
 
     @if (errorMessage()) {
@@ -15,33 +15,33 @@
     @if (mode() === 'movement') {
       <form class="admin-form-grid" [formGroup]="movementForm" (ngSubmit)="save()">
         <div class="admin-field admin-field-span-2">
-          <label>Suministro</label>
-          <input class="admin-input" [value]="current()?.nombre || ''" readonly />
+          <label for="suministro-form-field-1">Suministro</label>
+          <input id="suministro-form-field-1" class="admin-input" [value]="current()?.nombre || ''" readonly />
         </div>
         <div class="admin-field">
-          <label>UOT</label>
-          <input class="admin-input" [value]="current()?.uotNombre || ''" readonly />
+          <label for="suministro-form-field-2">UOT</label>
+          <input id="suministro-form-field-2" class="admin-input" [value]="current()?.uotNombre || ''" readonly />
         </div>
         <div class="admin-field">
-          <label>Tipo</label>
-          <select class="admin-select" formControlName="tipoMovimiento">
+          <label for="suministro-form-field-3">Tipo</label>
+          <select id="suministro-form-field-3" class="admin-select" formControlName="tipoMovimiento">
             <option value="ENTRADA">Entrada</option>
             <option value="AJUSTE_ENTRADA">Ajuste de entrada</option>
             <option value="AJUSTE_SALIDA">Ajuste de salida</option>
           </select>
         </div>
         <div class="admin-field">
-          <label>Cantidad</label>
-          <input class="admin-input" type="number" min="0.001" step="0.001" formControlName="cantidad" />
+          <label for="suministro-form-field-4">Cantidad</label>
+          <input id="suministro-form-field-4" class="admin-input" type="number" min="0.001" step="0.001" formControlName="cantidad" />
           <app-form-error [control]="movementForm.controls.cantidad" fieldLabel="La cantidad" />
         </div>
         <div class="admin-field">
-          <label>Documento de referencia</label>
-          <input class="admin-input" maxlength="120" formControlName="documentoReferencia" />
+          <label for="suministro-form-field-5">Documento de referencia</label>
+          <input id="suministro-form-field-5" class="admin-input" maxlength="120" formControlName="documentoReferencia" />
         </div>
         <div class="admin-field admin-field-span-2">
-          <label>Observación</label>
-          <textarea class="admin-textarea" rows="3" maxlength="300" formControlName="observacion"></textarea>
+          <label for="suministro-form-field-6">Observación</label>
+          <textarea id="suministro-form-field-6" class="admin-textarea" rows="3" maxlength="300" formControlName="observacion"></textarea>
         </div>
         <footer class="admin-modal-actions admin-field-span-2">
           <button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="close()">Cancelar</button>
@@ -54,8 +54,8 @@
     } @else {
       <form class="admin-form-grid" [formGroup]="form" (ngSubmit)="save()">
         <div class="admin-field admin-field-span-2">
-          <label>UOT del suministro</label>
-          <select class="admin-select" formControlName="uotId" (change)="onUotChange()">
+          <label for="suministro-form-field-7">UOT del suministro</label>
+          <select id="suministro-form-field-7" class="admin-select" formControlName="uotId" (change)="onUotChange()">
             <option [value]="0">Seleccionar UOT</option>
             @for (unit of availableUnits(); track unit.uotId) {
               <option [value]="unit.uotId">{{ unit.nombre }}</option>
@@ -65,8 +65,8 @@
         </div>
 
         <div class="admin-field">
-          <label>Unidad</label>
-          <select class="admin-select" formControlName="unidadMedida" [disabled]="referencesLoading()">
+          <label for="suministro-form-field-8">Unidad</label>
+          <select id="suministro-form-field-8" class="admin-select" formControlName="unidadMedida" [disabled]="referencesLoading()">
             @for (unit of units(); track unit.code) {
               <option [value]="unit.code">{{ unit.label }} · {{ unit.code }}</option>
             }
@@ -74,19 +74,19 @@
           <app-form-error [control]="form.controls.unidadMedida" fieldLabel="La unidad" />
         </div>
         <div class="admin-field admin-field-span-2">
-          <label>Nombre</label>
-          <input class="admin-input" maxlength="150" formControlName="nombre" />
+          <label for="suministro-form-field-9">Nombre</label>
+          <input id="suministro-form-field-9" class="admin-input" maxlength="150" formControlName="nombre" />
           <app-form-error [control]="form.controls.nombre" fieldLabel="El nombre" />
         </div>
         @if (mode() === 'create') {
           <div class="admin-field">
-            <label>Stock inicial</label>
-            <input class="admin-input" type="number" min="0" step="0.001" formControlName="stockInicial" />
+            <label for="suministro-form-field-10">Stock inicial</label>
+            <input id="suministro-form-field-10" class="admin-input" type="number" min="0" step="0.001" formControlName="stockInicial" />
           </div>
         }
         <div class="admin-field">
-          <label>Stock mínimo</label>
-          <input class="admin-input" type="number" min="0" step="0.001" formControlName="stockMinimo" />
+          <label for="suministro-form-field-11">Stock mínimo</label>
+          <input id="suministro-form-field-11" class="admin-input" type="number" min="0" step="0.001" formControlName="stockMinimo" />
         </div>
         <footer class="admin-modal-actions admin-field-span-2">
           <button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="close()">Cancelar</button>

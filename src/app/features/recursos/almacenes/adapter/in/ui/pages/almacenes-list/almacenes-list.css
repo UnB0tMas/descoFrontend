@@ -163,14 +163,7 @@
   color: var(--desco-danger-text);
 }
 
-.warehouse-nature {
-  border-radius: 999px;
-  background: var(--desco-surface-soft);
-  padding: .2rem .45rem;
-  color: var(--desco-text);
-  font-size: .6rem;
-  font-weight: 800;
-}
+
 
 @media (max-width: 1050px) {
   .warehouse-card-grid {
@@ -216,11 +209,11 @@
 .warehouse-detail-tabs button.active { border-bottom-color: #3b82f6; color: var(--desco-primary-text); }
 .warehouse-detail-table { overflow-x: auto; }
 .warehouse-detail-empty { display: flex; gap: .6rem; align-items: center; justify-content: center; min-height: 10rem; color: var(--desco-text-muted); font-size: .8rem; }
-.warehouse-product-name { display: grid; gap: .23rem; min-width: 10rem; }
-.warehouse-product-name strong { color: var(--desco-text); }
-.warehouse-product-name small { color: var(--desco-text-muted); font-size: .65rem; }
-.warehouse-row-actions { display: flex; align-items: center; flex-wrap: nowrap; gap: .3rem; }
-.warehouse-row-actions .btn { white-space: nowrap; }
+
+
+
+
+
 @media (max-width: 850px) { .warehouse-detail-metrics { grid-template-columns: 1fr; } .warehouse-detail-panel { padding: .75rem; } }
 
 
@@ -233,8 +226,7 @@
 .warehouse-data-table .warehouse-entity { min-width: 13.5rem; max-width: 19rem; }
 .warehouse-data-table .admin-entity strong,
 .warehouse-data-table .admin-stack-copy strong { color: var(--desco-text); }
-.warehouse-data-table .admin-entity > div > span,
-.warehouse-data-table .admin-stack-copy span { color: var(--desco-text-muted); }
+.warehouse-data-table :is(.admin-entity > div,.admin-stack-copy) span { color: var(--desco-text-muted); }
 .warehouse-data-table .admin-entity-icon { background: var(--desco-primary-soft); color: var(--desco-primary-text); }
 .warehouse-data-table .admin-type-badge { max-width: 10rem; overflow: hidden; text-overflow: ellipsis; }
 .warehouse-number { font-variant-numeric: tabular-nums; font-weight: 800; white-space: nowrap; }
@@ -245,7 +237,7 @@
 .warehouse-stock-cell .admin-status { font-size: .58rem; }
 .warehouse-data-table .admin-row-actions.warehouse-actions { justify-content: flex-end; flex-wrap: nowrap; gap: .35rem; min-width: 9rem; }
 .warehouse-data-table .admin-icon-button { flex-shrink: 0; }
-.warehouse-table-shell { overflow: hidden; }
+
 .warehouse-detail-panel > app-paginator { display: block; margin: .25rem -.1rem -.65rem; }
 .warehouse-detail-toolbar:focus-within { position: relative; }
 @media (max-width: 640px) {

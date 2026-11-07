@@ -20,7 +20,7 @@ export class EvidenceCameraComponent {
   readonly starting = signal(false); readonly saving = signal(false); readonly captured = signal<Blob | null>(null); readonly previewUrl = signal<string | null>(null); readonly context = signal<EvidenciaContexto | null>(null); readonly errorMessage = signal<string | null>(null); readonly location = signal<{ latitude: number; longitude: number } | null>(null);
   readonly cameraIcon = faCamera; readonly closeIcon = faXmark; readonly retryIcon = faRotate; readonly saveIcon = faFloppyDisk;
   private stream: MediaStream | null = null; private resolver: ((result: AdminModalResult<number>) => void) | null = null;
-  readonly form = this.fb.nonNullable.group({ tipoEvidencia: ['FOTOGRAFIA', [Validators.required, Validators.maxLength(50)]], descripcion: ['', [Validators.maxLength(1000)]] });
+  readonly form = this.fb.nonNullable.group({ tipoEvidencia: ['FOTOGRAFIA', [Validators.required, Validators.maxLength(40)]], descripcion: ['', [Validators.maxLength(400)]] });
 
   async open(context: EvidenciaContexto): Promise<AdminModalResult<number>> {
     this.context.set(context); this.captured.set(null); this.releasePreview(); this.errorMessage.set(null); this.location.set(null); this.form.reset({ tipoEvidencia: 'FOTOGRAFIA', descripcion: '' }); this.dialogRef.nativeElement.showModal();

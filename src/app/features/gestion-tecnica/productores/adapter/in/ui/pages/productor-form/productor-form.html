@@ -1,9 +1,9 @@
-<dialog #dialog class="modal desco-modal" (cancel)="$event.preventDefault(); close()">
+<dialog #dialog class="modal desco-modal" (cancel)="$event.preventDefault(); close()" aria-labelledby="gt-productor-form-productor-form-dialog-title-1">
   <div class="modal-box admin-modal-box admin-modal-box--wide">
     <header class="admin-modal-header">
       <div class="admin-modal-title-group">
         <span class="admin-modal-icon"><fa-icon [icon]="current() ? editIcon : addIcon" /></span>
-        <div><p>{{ apappss ? 'Convenios · APAPPSS' : 'Productores' }}</p><h2>{{ current() ? (apappss ? 'Editar socio' : 'Editar productor') : (apappss ? 'Nuevo socio' : 'Registrar productor') }}</h2></div>
+        <div><p>{{ apappss ? 'Convenios · APAPPSS' : 'Productores' }}</p><h2 id="gt-productor-form-productor-form-dialog-title-1">{{ current() ? (apappss ? 'Editar socio' : 'Editar productor') : (apappss ? 'Nuevo socio' : 'Registrar productor') }}</h2></div>
       </div>
       <button type="button" class="admin-icon-button" aria-label="Cerrar" [disabled]="saving() || identityLoading()" (click)="close()"><fa-icon [icon]="closeIcon" /></button>
     </header>
