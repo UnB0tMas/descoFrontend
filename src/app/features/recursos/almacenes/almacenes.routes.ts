@@ -4,6 +4,7 @@ import { moduleAccessGuard } from '../../../core/access/module-access.guard';
 import { permissionGuard } from '../../../core/access/permission.guard';
 
 export const almacenesRoutes: Routes = [
+  {path:'programacion-productos',data:{breadcrumb:'Programación de productos',module:'ALMACENES',permission:'RECURSOS_LISTAR'},canActivate:[moduleAccessGuard,permissionGuard],loadComponent:()=>import('./adapter/in/ui/pages/programacion-productos/programacion-productos').then(m=>m.ProgramacionProductosPage)},
   {
     path: 'almacenes',
     data: {

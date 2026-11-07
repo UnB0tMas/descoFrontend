@@ -53,7 +53,6 @@ export const EVIDENCIA_CONTEXTOS: readonly EvidenciaContextoDescriptor[] = [
   { tipo: 'CASO_SANIDAD', etiqueta: 'Caso de sanidad vegetal', campoVinculo: 'casoFitosanitarioId' },
   { tipo: 'TRATAMIENTO', etiqueta: 'Tratamiento sanitario', campoVinculo: 'tratamientoId' },
   { tipo: 'SEGUIMIENTO', etiqueta: 'Seguimiento sanitario', campoVinculo: 'seguimientoFitosanitarioId' },
-  { tipo: 'PRODUCCION', etiqueta: 'Producción disponible', campoVinculo: 'disponibilidadProduccionId' },
   { tipo: 'CAMPANIA', etiqueta: 'Campaña de venta', campoVinculo: 'campaniaVentaId' },
   { tipo: 'PRECIO', etiqueta: 'Precio comercial', campoVinculo: 'precioComercialId' },
   { tipo: 'PARTICIPANTE', etiqueta: 'Participación en campaña', campoVinculo: 'participacionCampaniaSocioId' },

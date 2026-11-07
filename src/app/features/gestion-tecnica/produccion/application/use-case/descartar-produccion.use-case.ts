@@ -1,1 +1,0 @@
-import{inject,Injectable}from'@angular/core';import{PRODUCCION_GATEWAY,ProduccionGateway}from'../port/out/produccion.gateway';@Injectable()export class DescartarProduccionUseCase{private readonly g:ProduccionGateway=inject(PRODUCCION_GATEWAY);execute(id:number,motivo:string){return this.g.discard(id,motivo);}}

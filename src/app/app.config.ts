@@ -28,13 +28,11 @@ import { provideParcelasCultivos } from './features/gestion-tecnica/parcelas-cul
 import { providePredios } from './features/gestion-tecnica/predios/predios.providers';
 import { provideProductores } from './features/gestion-tecnica/productores/productores.providers';
 import { provideSalidas } from './features/gestion-tecnica/salidas/salidas.providers';
-import { provideProduccion } from './features/gestion-tecnica/produccion/produccion.providers';
 import { provideSanidad } from './features/gestion-tecnica/sanidad/sanidad.providers';
 import { provideVisitas } from './features/gestion-tecnica/visitas/visitas.providers';
 import { provideInicio } from './features/inicio/inicio.providers';
 import { provideMiCuenta } from './features/mi-cuenta/mi-cuenta.providers';
 import { provideInventarioVehiculos } from './features/recursos/inventario-vehiculos/inventario-vehiculos.providers';
-import { provideProgramados } from './features/recursos/programados/programados.providers';
 import { provideAuditoria } from './features/reportes-control/auditoria/auditoria.providers';
 import { provideReportes } from './features/reportes-control/reportes/reportes.providers';
 import { provideOpenApi } from './infrastructure/openapi/openapi.providers';
@@ -66,7 +64,6 @@ export const appConfig: ApplicationConfig = {
         ...provideUsuarios(),
         ...provideDocumentosEvidencias(),
         ...provideInventarioVehiculos(),
-        ...provideProgramados(),
         ...provideProductores(),
         ...providePredios(),
         ...provideParcelasCultivos(),
@@ -75,7 +72,6 @@ export const appConfig: ApplicationConfig = {
         ...provideVisitas(),
         ...provideEvaluaciones(),
         ...provideSanidad(),
-        ...provideProduccion(),
         ...provideIncidencias(),
         ...provideAjustesPrecio(),
         ...provideGastos(),

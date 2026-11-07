@@ -1,2 +1,0 @@
-export interface EstimacionProduccionCreate{parcelaCultivoId:number;visitaTecnicaId:number;fechaEstimacion:string;disponibleDesde:string;disponibleHasta:string;cantidadEstimadaKg:number;observacion?:string;}
-export interface EstimacionProduccionUpdate{disponibleDesde:string;disponibleHasta:string;cantidadEstimadaKg:number;observacion?:string;}

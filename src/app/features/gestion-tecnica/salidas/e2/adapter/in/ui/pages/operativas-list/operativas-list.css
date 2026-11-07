@@ -5,3 +5,5 @@
 
 .e2-active-filter{background:var(--desco-primary-soft);color:var(--desco-primary-text);border-color:var(--desco-primary)}
 .e2-listbar .technical-view-control{margin-left:auto}
+
+@media(max-width:640px){.e2-toolbar{align-items:stretch}.e2-toolbar-search{flex:0 0 auto;min-width:0;width:100%}}

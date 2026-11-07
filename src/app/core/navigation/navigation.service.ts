@@ -59,8 +59,6 @@ const ROUTES: Readonly<Record<string, string>> = {
   INVENTARIO: '/recursos/inventario-vehiculos',
   PRODUCTOS: '/recursos/productos',
   ALMACENES: '/recursos/almacenes',
-  RECURSOS: '/recursos/programados',
-  RECURSOS_PROGRAMADOS: '/recursos/programados',
   PRODUCTORES: '/gestion-tecnica/productores',
   PREDIOS: '/gestion-tecnica/predios',
   CULTIVOS: '/gestion-tecnica/parcelas-cultivos',
@@ -69,7 +67,6 @@ const ROUTES: Readonly<Record<string, string>> = {
   VISITAS: '/gestion-tecnica/visitas',
   EVALUACIONES: '/gestion-tecnica/evaluaciones',
   SANIDAD: '/gestion-tecnica/sanidad',
-  PRODUCCION: '/gestion-tecnica/produccion',
   CAMPANIAS: '/gestion-comercial/campanias',
   PARTICIPANTES: '/gestion-comercial/participantes',
   OPERATIVOS: '/gestion-comercial/operativos',
@@ -171,6 +168,7 @@ export class NavigationService {
   }
 
   private buildTree(modules: readonly AccessModule[]): readonly NavigationItem[] {
+    modules=modules.filter(m=>!['RECURSOS','RECURSOS_PROGRAMADOS','PRODUCCION'].includes(m.codigo.trim().toUpperCase()));
     const moduleById = new Map(modules.map((module) => [module.moduloId, module] as const));
     const includedIds = new Set<number>();
 

@@ -112,11 +112,7 @@ export class RecursoFormComponent {
       types:this.refs.catalog('TIPO_BIEN'),
       vehicleTypes:this.refs.catalog('TIPO_VEHICULO'),
       currencies:this.refs.catalog('MONEDA'),
-      organizations:this.listOrganizations.execute(
-        1,
-        100,
-        Number(this.form.getRawValue().uotId)||undefined,
-      ),
+      organizations:this.listOrganizations.companies(Number(this.form.getRawValue().uotId)||undefined),
     })
       .pipe(
         finalize(()=>{
@@ -143,8 +139,7 @@ export class RecursoFormComponent {
             })),
           );
           this.organizations.set(
-            organizations.items
-              .filter((item)=>item.estado)
+            organizations
               .map((item)=>({
                 value:item.empresaId,
                 label:item.razonSocial,

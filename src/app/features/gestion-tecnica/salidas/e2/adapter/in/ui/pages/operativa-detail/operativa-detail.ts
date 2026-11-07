@@ -101,7 +101,7 @@ export class OperativaDetailPage implements OnInit {
         this.destinosCorreccion.set(d.destinos.map(x=>({predioId:x.predioId,actividadPrevista:x.actividadPrevista})));
         this.bienesCorreccion.set(d.bienes.map(x=>({bienId:x.bienId,suministroId:x.suministroId,cantidad:x.cantidadSolicitada})));
         this.participantesCorreccion.set(d.participantes.filter(x=>!x.responsable).map(x=>({empleadoId:x.empleadoId,funcion:x.funcion})));
-        this.cantidadesDevueltas.set(Object.fromEntries(d.bienes.map(x=>[x.solicitudRecursoId,x.cantidadSolicitada])));
+        this.cantidadesDevueltas.set(Object.fromEntries(d.bienes.map(x=>[x.solicitudRecursoId,x.cantidadDevueltaValidada ?? x.cantidadDevueltaDeclarada ?? x.cantidadSolicitada])));
         this.observacionesBien.set(Object.fromEntries(d.bienes.map(x=>[x.solicitudRecursoId,x.observacion??''])));
         this.loadDocumentos();
         this.resultadoDeclarado.set(Object.fromEntries(d.bienes.map(b=>[b.solicitudRecursoId,

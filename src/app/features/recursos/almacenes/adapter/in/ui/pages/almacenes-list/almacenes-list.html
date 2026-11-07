@@ -5,6 +5,7 @@
     [icon]="pageIcon"
   >
     <div pageActions class="flex flex-wrap gap-2">
+      <a *appPermission="'RECURSOS_LISTAR'" class="admin-secondary-button" routerLink="/recursos/programacion-productos">Solicitudes de productos</a>
       <a class="admin-secondary-button" routerLink="/recursos/operaciones-stock">Políticas y transferencias</a>
       <button type="button" class="admin-secondary-button" [disabled]="loading()" (click)="load()">
         <fa-icon [icon]="refreshIcon" />

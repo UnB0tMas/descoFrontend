@@ -1,3 +1,5 @@
+import {EMPTY,expand,reduce} from 'rxjs';
+import {Empresa} from '../../domain/empresa.model';
 import { inject, Injectable } from '@angular/core';
 
 import {
@@ -11,6 +13,13 @@ export class ListarOrganizacionesUseCase {
 
   execute(page: number, size: number, uotId?: number) {
     return this.gateway.list(page, size, uotId);
+  }
+
+  companies(uotId?:number) {
+    return this.execute(1,100,uotId).pipe(
+      expand(page=>page.page<page.totalPages?this.execute(page.page+1,100,uotId):EMPTY),
+      reduce((items,page)=>[...items,...page.items.filter(item=>item.estado&&!item.esAsociacion)],[] as Empresa[]),
+    );
   }
 
   areas(page: number, size: number, uotId?: number, empresaId?: number) {

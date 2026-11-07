@@ -37,10 +37,10 @@ export interface GpIncidenciaRevisionResponse {
 }
 export interface GpIncidenciaEditarRequest extends GpIncidenciaAltaRequest {motivo:string;}
 export interface GpIncidenciaRetirarRequest {motivo:string;}
-export interface GpTratamientoSeguimientoResponse {eventoId:number;incidenciaId:number;tratamientoId:number;tratamiento:string;
+export interface GpTratamientoSeguimientoResponse {producto?:string;cantidadUtilizada?:number;unidadUtilizada?:string;eventoId:number;incidenciaId:number;tratamientoId:number;tratamiento:string;
  descripcion:string;fechaInicio:string;fechaFinPrevista?:string|null;fechaFinReal?:string|null;descripcionCierre?:string|null;usuarioId:number;}
 export interface GpIncidenciaAltaRequest {problemaId:number;afectadaM2?:number|null;afectadosAnimales?:number|null;descripcion:string;}
-export interface GpTratamientoAplicarRequest {incidenciaId:number;tratamientoId:number;descripcion:string;fechaFinPrevista?:string|null;}
+export interface GpTratamientoAplicarRequest {programacionProductoId?:number;cantidadUtilizada?:number;incidenciaId:number;tratamientoId:number;descripcion:string;fechaFinPrevista?:string|null;}
 export interface GpIncidenciaCerrarRequest {perdidaM2?:number|null;perdidosAnimales?:number|null;descripcion:string;}
 export interface GpEnvelope<T> {exitoso:boolean; codigo:string; mensaje:string; datos:T; correlacionId:string; fechaHoraUtc:string;}
 @Injectable({providedIn:'root'})

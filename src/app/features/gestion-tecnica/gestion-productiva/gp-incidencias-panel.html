@@ -115,7 +115,7 @@
                     <div><dt>Fin previsto</dt><dd>{{t.fechaFinPrevista?(t.fechaFinPrevista | resourceDate:'dd/MM/yyyy HH:mm'):'—'}}</dd></div>
                     <div><dt>Fin real</dt><dd>{{t.fechaFinReal?(t.fechaFinReal | resourceDate:'dd/MM/yyyy HH:mm'):'En curso'}}</dd></div>
                     <div class="gp-record-data-full"><dt>Descripción</dt><dd>{{t.descripcion||'—'}}</dd></div>
-                    @if(t.descripcionCierre){<div class="gp-record-data-full"><dt>Resultado</dt><dd>{{t.descripcionCierre}}</dd></div>}
+                    @if(t.cantidadUtilizada){<div class="gp-record-data-full"><dt>Producto utilizado</dt><dd>{{t.producto}} · {{t.cantidadUtilizada}} {{t.unidadUtilizada}}</dd></div>}@if(t.descripcionCierre){<div class="gp-record-data-full"><dt>Resultado</dt><dd>{{t.descripcionCierre}}</dd></div>}
                     <div><dt>Técnico</dt><dd>#{{t.usuarioId}}</dd></div>
                   </dl>
                   @if(i.estado==='ABIERTA'&&!t.fechaFinReal&&actividad.estado&&actividad.estadoProceso!=='FINALIZADA'){<div class="gp-card-actions"><button *appPermission="'SANIDAD_CREAR'" type="button" class="admin-icon-button admin-icon-button--success" title="Finalizar tratamiento" aria-label="Finalizar tratamiento" (click)="open('finalizar',t.eventoId)"><fa-icon [icon]="completeIcon" /></button></div>}
@@ -167,6 +167,7 @@
        <input class="admin-input" type="number" min="0" [step]="actividad.rubro==='CULTIVO'?'0.01':'1'" [(ngModel)]="afectacion" /></label>
      
    }@else if(form==='tratamiento'){
+<app-consumo-producto-entregado [(value)]="usoProducto" />
      <label class="admin-field">Tratamiento según enfermedad
        <select class="admin-select" [(ngModel)]="tratamientoId"><option [ngValue]="0">Seleccionar tratamiento</option>
        @for(t of tratamientosDe(incidenciaId!);track t.id){<option [ngValue]="t.id">{{t.nombre}}</option>}</select></label>
