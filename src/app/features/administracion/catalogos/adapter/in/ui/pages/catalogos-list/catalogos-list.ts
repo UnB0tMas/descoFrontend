@@ -40,6 +40,7 @@ import {
 } from '../../../../../domain/catalogo.model';
 import { CatalogoItem } from '../../../../../domain/catalogo-item.model';
 import { CatalogoDetailComponent } from '../catalogo-detail/catalogo-detail';
+import { CampaignSanctionsPanel } from '../../../../../../../gestion-comercial/campaigns/campaign-sanctions-panel';
 
 type CatalogStatusView = 'ACTIVE' | 'INACTIVE';
 
@@ -56,6 +57,7 @@ type CatalogStatusView = 'ACTIVE' | 'INACTIVE';
     ActionConfirmDialogComponent,
     PageHeaderComponent,
     CatalogoDetailComponent,
+    CampaignSanctionsPanel,
     CatalogosProductivos,
   ],
   templateUrl: './catalogos-list.html',
@@ -71,6 +73,7 @@ export class CatalogosListPage implements OnInit {
 
   @ViewChild(CatalogosProductivos)
   productivos?: CatalogosProductivos;
+  @ViewChild(CampaignSanctionsPanel) sanciones?: CampaignSanctionsPanel;
 
   private readonly route = inject(ActivatedRoute);
   private readonly listUseCase = inject(ListarCatalogosUseCase);
@@ -173,11 +176,17 @@ export class CatalogosListPage implements OnInit {
   });
 
   ngOnInit(): void {
-    this.productivosVisible.set(this.route.snapshot.queryParamMap.get('seccion') === 'productivos');
-    if (!this.productivosVisible()) this.load();
+    const params = this.route.snapshot.queryParamMap;
+    this.productivosVisible.set(params.get('seccion') === 'productivos');
+    if (!this.productivosVisible()) {
+      const group = this.catalogGroups.find(item => item.codigo === params.get('grupo'));
+      if (group?.catalogos[0] && !this.fixedCatalogCode) this.catalogCode.set(group.catalogos[0].codigo);
+      this.load();
+    }
   }
 
   load(): void {
+    if (this.catalogCode() === 'SANCION_VENTA') { this.loading.set(false); this.errorMessage.set(null); return; }
     this.loading.set(true);
     this.errorMessage.set(null);
 
@@ -207,6 +216,7 @@ export class CatalogosListPage implements OnInit {
   }
 
   refresh(): void {
+    if (!this.productivosVisible() && this.catalogCode() === 'SANCION_VENTA') { this.sanciones?.reload(); return; }
     if (this.productivosVisible()) {
       this.productivos?.load();
     } else {
@@ -288,6 +298,7 @@ export class CatalogosListPage implements OnInit {
   }
 
   async create(): Promise<void> {
+    if (this.catalogCode() === 'SANCION_VENTA' && !this.productivosVisible()) { this.sanciones?.openCatalog(); return; }
     if (this.productivosVisible()) {
       this.productivos?.create();
       return;

@@ -44,7 +44,7 @@ export interface ConteoE1 {
 }
 export interface ExpedienteE1 {
   predioId: number; codigo: string; nombre: string; distritoCodigo: string;
-  referencia?: string; latitud?: number; longitud?: number;
+  referencia?: string; centroPobladoId?:number; centroPoblado?:string; latitud?: number; longitud?: number;
   areaTotalHa?: number; areaCultivableHa?: number; tipoRiego?: string;
   fichaCompleta: boolean; titulares: TitularE1[]; cultivos: CultivoE1[];
   crianzas: CrianzaE1[]; historial: ActuacionE1[]; censos: CensoE1[]; conteos: ConteoE1[];

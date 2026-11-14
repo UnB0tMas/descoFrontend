@@ -6,7 +6,7 @@ import {
 } from '@angular/core';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
 import { faExpand, faLocationCrosshairs, faXmark } from '@fortawesome/free-solid-svg-icons';
-import type { Map as LeafletMap, LeafletMouseEvent, Marker, TileLayer } from 'leaflet';
+import type { Map as LeafletMap, LeafletMouseEvent, Marker, TileLayer, Polyline, CircleMarker } from 'leaflet';
 import { ThemeService } from '../../../../../../../../core/ui/theme.service';
 import { ToastService } from '../../../../../../../../shared/feedback/toast-center/toast.service';
 
@@ -25,6 +25,10 @@ export class PredioMapComponent implements AfterViewInit, OnChanges, OnDestroy {
   @Input() editable = false;
   @Input() height = '19rem';
   @Input() autoLocateOnCreate = false;
+  /** Ruta y posición del visitante para el modo de navegación (solo lectura). */
+  @Input() navigationRoute: [number, number][] = [];
+  @Input() navigationOrigin: { lat: number; lng: number } | null = null;
+  @Input() navigationFollow = false;
   @Output() locationChange = new EventEmitter<{ latitude: number; longitude: number }>();
 
   private readonly platformId = inject(PLATFORM_ID);
@@ -36,6 +40,8 @@ export class PredioMapComponent implements AfterViewInit, OnChanges, OnDestroy {
   private marker: Marker | null = null;
   private largeMarker: Marker | null = null;
   private readonly tileLayers = new WeakMap<LeafletMap, TileLayer>();
+  private readonly navigationPaths = new WeakMap<LeafletMap, Polyline>();
+  private readonly navigationMarkers = new WeakMap<LeafletMap, CircleMarker>();
   private readonly tileFallback = new WeakMap<LeafletMap, { enabled: boolean }>();
   private gpsRequestId = 0;
   private destroyed = false;
@@ -66,8 +72,13 @@ export class PredioMapComponent implements AfterViewInit, OnChanges, OnDestroy {
     void this.initializeMap();
   }
 
-  ngOnChanges(_: SimpleChanges): void {
-    if (this.map || this.largeMap) this.refreshMarkers(true);
+  ngOnChanges(changes: SimpleChanges): void {
+    if (!this.map && !this.largeMap) return;
+    if (changes['latitude'] || changes['longitude']) this.refreshMarkers(true);
+    if (changes['navigationRoute'] || changes['navigationOrigin']) {
+      this.refreshNavigation(this.map, !!changes['navigationRoute']);
+      this.refreshNavigation(this.largeMap, !!changes['navigationRoute']);
+    }
   }
 
   ngOnDestroy(): void {
@@ -124,6 +135,7 @@ export class PredioMapComponent implements AfterViewInit, OnChanges, OnDestroy {
     this.expanded.set(true);
     this.largeMap = this.createMap(this.expandedHost.nativeElement, true);
     this.refreshMarkers(false);
+    this.refreshNavigation(this.largeMap, true);
     requestAnimationFrame(() => this.largeMap?.invalidateSize({ animate: false }));
   }
 
@@ -160,6 +172,7 @@ export class PredioMapComponent implements AfterViewInit, OnChanges, OnDestroy {
       this.lib = L;
       this.map = this.createMap(this.host.nativeElement, false);
       this.refreshMarkers(false);
+      this.refreshNavigation(this.map, true);
       requestAnimationFrame(() => this.map?.invalidateSize({ animate: false }));
     } catch {
       this.mapError.set('No se pudo abrir el mapa. Verifica la instalación de Leaflet.');
@@ -239,4 +252,38 @@ export class PredioMapComponent implements AfterViewInit, OnChanges, OnDestroy {
     if (center) map.flyTo(point, Math.max(map.getZoom(), 16), { duration: 0.3 });
     return marker;
   }
+
+  private refreshNavigation(map: LeafletMap | null, fitRoute: boolean): void {
+    if (!map || !this.lib || this.editable) return;
+    const L = this.lib;
+    const path = this.navigationRoute.filter(p => p.length === 2 &&
+      Number.isFinite(p[0]) && Number.isFinite(p[1]) &&
+      p[0] >= -90 && p[0] <= 90 && p[1] >= -180 && p[1] <= 180);
+    let layer = this.navigationPaths.get(map);
+    if (path.length >= 2) {
+      if (!layer) {
+        layer = L.polyline(path, { color: '#3b82f6', weight: 5, opacity: .88 }).addTo(map);
+        this.navigationPaths.set(map, layer);
+      } else layer.setLatLngs(path);
+      if (fitRoute && !this.navigationFollow && layer.getBounds().isValid())
+        map.fitBounds(layer.getBounds(), { padding: [35, 35], maxZoom: 17 });
+    } else if (layer) { layer.remove(); this.navigationPaths.delete(map); }
+
+    let marker = this.navigationMarkers.get(map);
+    const p = this.navigationOrigin;
+    if (p && Number.isFinite(p.lat) && Number.isFinite(p.lng) &&
+      p.lat >= -90 && p.lat <= 90 && p.lng >= -180 && p.lng <= 180) {
+      const position = L.latLng(p.lat, p.lng);
+      if (!marker) {
+        marker = L.circleMarker(position, { radius: 8, weight: 3, color: '#fff',
+          fillColor: '#2563eb', fillOpacity: 1 }).addTo(map).bindPopup('Mi ubicación');
+        this.navigationMarkers.set(map, marker);
+      } else marker.setLatLng(position);
+      if (this.navigationFollow) {
+        // El punto del usuario es la referencia visual durante la navegación, también en mapa ampliado.
+        map.setView(position,Math.max(map.getZoom(),16),{animate:false});
+      }
+    } else if (marker) { marker.remove(); this.navigationMarkers.delete(map); }
+  }
+
 }

@@ -72,7 +72,7 @@ export class CatalogoDetailComponent {
 
   readonly requiresExplicitCode = computed(() => {
     const code = this.catalog()?.codigo;
-    return code === 'MONEDA' || code === 'UNIDAD_MEDIDA';
+    return code === 'MONEDA' || code === 'UNIDAD_MEDIDA' || code === 'TIPO_DOCUMENTO_COMPRADOR';
   });
 
   readonly codeLabel = computed(() =>
@@ -84,7 +84,7 @@ export class CatalogoDetailComponent {
   readonly codePlaceholder = computed(() =>
     this.catalog()?.codigo === 'MONEDA'
       ? 'PEN'
-      : 'KG',
+      : this.catalog()?.codigo === 'TIPO_DOCUMENTO_COMPRADOR' ? 'PASAPORTE' : 'KG',
   );
 
   private resolver:
@@ -206,10 +206,10 @@ export class CatalogoDetailComponent {
         Validators.pattern(/^[A-Za-z]{3}$/),
         Validators.maxLength(3),
       ]);
-    } else if (catalog.codigo === 'UNIDAD_MEDIDA') {
+    } else if (catalog.codigo === 'UNIDAD_MEDIDA' || catalog.codigo === 'TIPO_DOCUMENTO_COMPRADOR') {
       this.form.controls.codigo.setValidators([
         Validators.required,
-        Validators.pattern(/^[A-Za-z0-9._-]+$/),
+        Validators.pattern(catalog.codigo === 'TIPO_DOCUMENTO_COMPRADOR' ? /^[A-Za-z0-9_]{2,15}$/ : /^[A-Za-z0-9._-]+$/),
         Validators.maxLength(catalog.codigoMaxLength ?? 20),
       ]);
     } else {

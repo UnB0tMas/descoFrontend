@@ -21,6 +21,7 @@ export class PersonDataFieldsComponent {
   @Input() identityVisible = true;
   @Input() locationVisible = true;
   @Input() birthDateVisible = true;
+  @Input() hiddenFields: readonly string[] = [];
   @Input() disabled = false;
   @Input() locks: PersonIdentityLocks = emptyPersonIdentityLocks();
   @Input() districtCode = '';
@@ -35,20 +36,20 @@ export class PersonDataFieldsComponent {
   @Output() readonly phoneChanged = new EventEmitter<void>();
   @Output() readonly geographyChanged = new EventEmitter<GeographySelection>();
   show(field: keyof PersonIdentityLocks): boolean {
-    return !this.missingOnly || !this.locks[field];
+    return !this.hiddenFields.includes(field) && (!this.missingOnly || !this.locks[field]);
   }
   showIdentity(): boolean { return this.identityVisible && !this.missingOnly; }
   showPersonal(): boolean {
-    return !this.missingOnly || this.show('names') || this.show('paternalSurname')
-      || this.show('maternalSurname') || (this.birthDateVisible && this.show('birthDate')) || this.show('phone')
-      || this.show('email');
+    return this.show('names') || this.show('paternalSurname')
+      || this.show('maternalSurname') || (this.birthDateVisible && this.show('birthDate'))
+      || this.show('phone') || this.show('email');
   }
   showLocation(): boolean {
-    return this.locationVisible && (!this.missingOnly || !this.locks.geography || !this.locks.populationCenter
-      || !this.locks.reference);
+    return this.locationVisible && (this.showGeography() || this.show('reference'));
   }
   showGeography(): boolean {
-    return this.locationVisible && (!this.missingOnly || !this.locks.geography || !this.locks.populationCenter);
+    return this.locationVisible && !this.hiddenFields.includes('geography')
+      && (!this.missingOnly || !this.locks.geography || !this.locks.populationCenter);
   }
   invalid(name: string): boolean {
     const control = this.form.get(name);

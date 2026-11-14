@@ -20,14 +20,14 @@ import {
   faUserPlus,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
-import { finalize, Observable } from 'rxjs';
+import { finalize, firstValueFrom, map, Observable, tap } from 'rxjs';
 
 import { PermissionService } from '../../../../../../../../core/access/permission.service';
 import { mapOpenApiError } from '../../../../../../../../infrastructure/openapi/openapi-http-error.mapper';
 import { ToastService } from '../../../../../../../../shared/feedback/toast-center/toast.service';
 import { FormErrorComponent } from '../../../../../../../../shared/forms/form-error/form-error';
-import { PersonLookupComponent } from '../../../../../../../../shared/forms/person-registration/person-lookup';
 import { PersonDataFieldsComponent } from '../../../../../../../../shared/forms/person-registration/person-data-fields';
+import { EntityRegistrationModalComponent, EntityDraft, EntityLookupData, EntityModalOptions } from '../../../../../../../../shared/forms/person-registration/entity-registration-modal';
 import { GeographySelection } from '../../../../../../../../shared/forms/geography-cascade/geography-cascade';
 import {
   adultBirthDateValidator,
@@ -60,6 +60,8 @@ import {
 } from '../../../../../../../administracion/shared/admin-modal.types';
 import { CrearProductorUseCase } from '../../../../../application/use-case/crear-productor.use-case';
 import { EditarProductorUseCase } from '../../../../../application/use-case/editar-productor.use-case';
+import { ObtenerProductorUseCase } from '../../../../../application/use-case/obtener-productor.use-case';
+import { identityCompletionChanged, hasIdentityGaps } from '../../../../../../../../shared/identity/identity-completion';
 import { ProductorDetalle } from '../../../../../domain/productor-detalle.model';
 import {
   Productor,
@@ -76,8 +78,8 @@ type IdentityFeedbackTone = 'neutral' | 'success' | 'warning' | 'error';
   imports: [
     ReactiveFormsModule,
     FaIconComponent,
-    PersonLookupComponent,
     PersonDataFieldsComponent,
+    EntityRegistrationModalComponent,
     FormErrorComponent,
   ],
   templateUrl: './productor-form.html',
@@ -86,12 +88,14 @@ type IdentityFeedbackTone = 'neutral' | 'success' | 'warning' | 'error';
 })
 export class ProductorFormComponent {
   @Input() apappss = false;
+  @ViewChild(EntityRegistrationModalComponent) private entityModal!: EntityRegistrationModalComponent;
   @ViewChild('dialog', { static: true })
   private readonly dialogRef!: ElementRef<HTMLDialogElement>;
 
   private readonly fb = inject(FormBuilder);
   private readonly createUseCase = inject(CrearProductorUseCase);
   private readonly updateUseCase = inject(EditarProductorUseCase);
+  private readonly getUseCase = inject(ObtenerProductorUseCase);
   private readonly identities = inject(IdentityResolverService);
   private readonly permissions = inject(PermissionService);
   private readonly toast = inject(ToastService);
@@ -109,12 +113,14 @@ export class ProductorFormComponent {
   readonly initialPopulationCenterId = signal<number | null>(null);
   readonly identityLocks = signal<PersonIdentityLocks>(emptyPersonIdentityLocks());
   readonly registrationStep = signal<'lookup' | 'form' | 'membership'>('lookup');
+  readonly existingSocioFound = signal(false);
+  private existingSocioBaseline: Record<string, unknown> | null = null;
   readonly manualEntry = signal(false);
   readonly lookupMessage = signal<string | null>(null);
   readonly identityDocumentLocked = signal(false);
   private identityRequest = 0;
   readonly resolvedSex = signal<string | null>(null);
-  readonly identityEditingEnabled = signal(false);
+  private originalEditValues: string | null = null;
   readonly identityRecordLoaded = signal(false);
 
   readonly addIcon = faUserPlus;
@@ -208,10 +214,14 @@ export class ProductorFormComponent {
     associations: readonly AdminSelectOption[],
     producer: Productor | ProductorDetalle | null = null,
   ): Promise<AdminModalResult<number>> {
+    if (this.apappss) return this.openShared(associations, producer);
     this.identityRequest++;
     this.associations.set(associations);
     this.current.set(producer);
-    this.registrationStep.set(producer ? 'form' : 'lookup');
+    this.originalEditValues = null;
+    this.registrationStep.set(producer || this.apappss ? 'form' : 'lookup');
+    this.existingSocioFound.set(false);
+    this.existingSocioBaseline = null;
     this.manualEntry.set(false);
     this.identityDocumentLocked.set(!!producer);
     this.resetIdentityState();
@@ -259,7 +269,7 @@ export class ProductorFormComponent {
     ]({ emitEvent: false });
 
     this.applyDocumentValidators(false);
-    this.applyRequiredPersonalFields(true);
+    this.applyRequiredPersonalFields(!producer);
     if (producer) this.form.controls.tipoDocumento.disable({emitEvent: false});
     else this.form.controls.tipoDocumento.enable({emitEvent: false});
 
@@ -284,11 +294,127 @@ export class ProductorFormComponent {
       }
     }
 
+    // La comparación de valores es más precisa que touched/dirty: si se revierte un cambio, no hay UPDATE.
+    this.originalEditValues = producer ? this.snapshotEditValues() : null;
     this.dialogRef.nativeElement.showModal();
 
     return new Promise((resolve) => {
       this.resolver = resolve;
     });
+  }
+
+  /** APAPPSS usa el mismo modal de identidad que Compradores. El flujo tradicional se conserva. */
+  private async openShared(
+    associations: readonly AdminSelectOption[],
+    producer: Productor | ProductorDetalle | null,
+  ): Promise<AdminModalResult<number>> {
+    const associationId = Number(associations[0]?.value ?? producer?.asociacionId ?? 0);
+    if (associationId <= 0) {
+      this.toast.warning('Seleccione un convenio o asociación válido.');
+      return {saved:false,value:null};
+    }
+    let registered: ProductorDetalle | null = null;
+    try {
+      if (producer) {
+        registered = 'afiliaciones' in producer
+          ? producer as ProductorDetalle
+          : await firstValueFrom(this.getUseCase.execute(producer.socioId));
+      }
+      const initial = registered ? this.sharedDraft(registered) : undefined;
+      const options: EntityModalOptions = {
+        eyebrow:'Convenios · APAPPSS',
+        title:registered?'Editar socio':'Nuevo socio',
+        saveLabel:registered?'Guardar cambios':'Guardar socio',
+        documents:this.documentTypes.map(t=>({value:t.value,label:t.label})),
+        rucKind:'PERSONA',
+        initial,
+        roleId:registered?.socioId,
+        requireDistrictForManual:true,
+        allowOverwrite:!!registered && this.permissions.has('VALIDACIONIDENTIDAD_EDITAR'),
+        extras:registered ? [] : [{key:'fechaAlta',label:'Fecha de alta',type:'date',value:this.today,required:true,max:this.today}],
+        lookupRegistered:result=>this.getUseCase.execute(result.entityId!).pipe(
+          tap(detail=>{registered=detail;}),
+          map(detail=>({roleId:detail.socioId,entityId:result.entityId,data:this.sharedDraft(detail)} satisfies EntityLookupData)),
+        ),
+        save:(data,ctx)=>{
+          const affiliation = registered?.afiliaciones.find(a=>a.estado);
+          const common = {
+            tipoDocumento:data.tipoDocumento as TipoDocumentoProductor,
+            numeroDocumento:data.numeroDocumento,
+            nombres:data.nombres,
+            apellidoPaterno:data.apellidoPaterno,
+            apellidoMaterno:data.apellidoMaterno||undefined,
+            telefono:data.telefono||undefined,
+            correo:data.correo||undefined,
+            fechaNacimiento:data.fechaNacimiento||undefined,
+            asociacionId:registered?.asociacionId ?? affiliation?.asociacionId ?? associationId,
+            fechaDesde:affiliation?.fechaDesde ?? registered?.fechaAlta ?? this.today,
+            situacionMembresia:(affiliation?.situacionMembresia==='SUSPENDIDO'?'SUSPENDIDO':'ACTIVO') as SituacionMembresia,
+            ubicacion:{
+              distritoCodigo:data.distritoCodigo,
+              centroPobladoId:data.centroPobladoId||undefined,
+              referencia:data.referencia||undefined,
+            },
+          };
+          return ctx.roleId
+            ? this.updateUseCase.execute(ctx.roleId,common).pipe(map(()=>ctx.roleId!))
+            : this.createUseCase.execute({
+                ...common,fechaAlta:ctx.extras['fechaAlta']||this.today,
+                fechaDesde:ctx.extras['fechaAlta']||this.today,
+              });
+        },
+      };
+      const result=await this.entityModal.open(options);
+      if (!result) return {saved:false,value:null};
+      if (!result.unchanged) this.toast.success(registered?'Socio actualizado':'Socio registrado');
+      return {saved:true,value:result.id};
+    } catch (error) {
+      this.toast.error('No se pudo registrar al socio',mapOpenApiError(error).message);
+      return {saved:false,value:null};
+    }
+  }
+
+  /** Tradicional: identidad en el modal compartido, afiliación en su formulario actual. */
+  async openSharedTraditionalIdentity():Promise<void> {
+    if (this.apappss || this.current() || this.saving() || this.identityLoading()) return;
+    const result=await this.entityModal.open({
+      eyebrow:'Productores',title:'Datos de la persona',saveLabel:'Continuar',
+      documents:this.documentTypes.map(t=>({value:t.value,label:t.label})),
+      rucKind:'PERSONA',captureOnly:true,requireDistrictForManual:true,
+      startDocument:{type:this.form.controls.tipoDocumento.value,
+        number:this.form.controls.numeroDocumento.value},
+    });
+    if (!result?.data) return;
+    const data=result.data;
+    this.form.patchValue({
+      tipoDocumento:data.tipoDocumento as TipoDocumentoProductor,
+      numeroDocumento:data.numeroDocumento,nombres:data.nombres,
+      apellidoPaterno:data.apellidoPaterno,apellidoMaterno:data.apellidoMaterno,
+      fechaNacimiento:data.fechaNacimiento,telefono:data.telefono,
+      correo:data.correo,distritoCodigo:data.distritoCodigo,
+      centroPobladoId:data.centroPobladoId,referencia:data.referencia,
+    });
+    this.initialDistrictCode.set(data.distritoCodigo);
+    this.initialPopulationCenterId.set(data.centroPobladoId||null);
+    this.resolvedSex.set(data.sexo||null);
+    this.identityDocumentLocked.set(true);
+    this.verifiedIdentityKey.set(this.identityKey(data.tipoDocumento as TipoDocumentoProductor,data.numeroDocumento));
+    this.identityBlocked.set(false);
+    this.applyDocumentValidators(false);
+    this.applyRequiredPersonalFields(true);
+    this.errorMessage.set(null);
+    this.registrationStep.set('membership');
+  }
+
+  private sharedDraft(detail: ProductorDetalle): Partial<EntityDraft> {
+    return {
+      tipoDocumento:detail.tipoDocumento,numeroDocumento:detail.numeroDocumento,
+      nombres:detail.nombres||'',apellidoPaterno:detail.apellidoPaterno||'',
+      apellidoMaterno:detail.apellidoMaterno||'',fechaNacimiento:detail.fechaNacimiento||'',
+      telefono:detail.telefono||'',correo:detail.correo||'',
+      distritoCodigo:detail.distritoCodigo||'',centroPobladoId:detail.centroPobladoId||0,
+      referencia:detail.referencia||'',
+    };
   }
 
   setGeography(selection: GeographySelection): void {
@@ -371,7 +497,7 @@ export class ProductorFormComponent {
 
   /** Primera pantalla: DESCO local -> Factiliza si SQL lo permite. Nunca desde alta manual. */
   resolveIdentity(): void {
-    if (this.current() || this.registrationStep() !== 'lookup' || !this.canResolveIdentity()) return;
+    if (this.current() || (!this.apappss && this.registrationStep() !== 'lookup') || !this.canResolveIdentity()) return;
     const type = this.form.controls.tipoDocumento.value;
     if (type !== 'DNI' && type !== 'RUC') return;
     const documentNumber = sanitizeDocument(type, this.form.controls.numeroDocumento.value);
@@ -392,7 +518,8 @@ export class ProductorFormComponent {
         error: () => {
           if (request !== this.identityRequest) return;
           this.identityTone.set('warning');
-          this.identityMessage.set('No se pudo realizar la búsqueda. Intente nuevamente.');
+          this.identityMessage.set('No se pudo obtener los datos de la persona. Complete el formulario manualmente.');
+          this.manualEntry.set(true);
         },
       });
   }
@@ -461,10 +588,13 @@ export class ProductorFormComponent {
   }
 
   backToPersonalData(): void {
-    if (!this.saving()) this.registrationStep.set('form');
+    if (this.saving()) return;
+    if (!this.apappss && !this.current()) { void this.openSharedTraditionalIdentity(); return; }
+    this.registrationStep.set('form');
   }
 
   save(): void {
+    if (this.current() && !this.hasEditChanges()) return;
 
     this.form.updateValueAndValidity({ emitEvent: false });
     this.form.markAllAsTouched();
@@ -474,7 +604,7 @@ export class ProductorFormComponent {
       const personalRequired = ['tipoDocumento', 'numeroDocumento', 'nombres', 'apellidoPaterno', 'distritoCodigo'];
       if (personalRequired.some(name => this.form.get(name)?.invalid)) {
         this.errorMessage.set('Complete los datos obligatorios de la persona para registrar al socio.');
-        this.registrationStep.set('form');
+        this.registrationStep.set('membership');
       } else {
         this.errorMessage.set('Revise los datos del socio antes de guardar.');
       }
@@ -504,6 +634,23 @@ export class ProductorFormComponent {
         this.identityMessage()
           || 'No se puede usar esta persona para el socio.',
       );
+      return;
+    }
+
+    if (!raw.distritoCodigo.trim() && (raw.referencia.trim() || Number(raw.centroPobladoId) > 0)) {
+      this.errorMessage.set('Para guardar la dirección o el centro poblado, seleccione primero el distrito.');
+      return;
+    }
+    if (this.existingSocioFound() && this.existingSocioBaseline &&
+        !identityCompletionChanged(this.existingSocioBaseline, {
+          nombres: raw.nombres, apellidoPaterno: raw.apellidoPaterno,
+          apellidoMaterno: raw.apellidoMaterno, telefono: raw.telefono,
+          correo: raw.correo, fechaNacimiento: raw.fechaNacimiento,
+          distritoCodigo: raw.distritoCodigo, centroPobladoId: raw.centroPobladoId,
+          referencia: raw.referencia,
+        })) {
+      this.identityMessage.set('El socio ya se encuentra registrado. No hay datos pendientes por completar.');
+      this.toast.warning('El socio ya se encuentra registrado.');
       return;
     }
 
@@ -632,17 +779,111 @@ export class ProductorFormComponent {
     type: 'DNI' | 'RUC',
     documentNumber: string,
   ): void {
-    const current = this.current();
-    if (result.isPartner && (!current || result.entityId !== current.socioId)) {
+    if (!this.apappss) {
+      const current = this.current();
+      if (result.isPartner && (!current || result.entityId !== current.socioId)) {
+        this.identityBlocked.set(true);
+        this.identityTone.set('error');
+        this.identityMessage.set('Esta persona ya figura como socio. Utilice su registro existente.');
+        return;
+      }
+      if (!result.found && !result.manualEntryAllowed) {
+        this.identityBlocked.set(true);
+        this.identityTone.set('warning');
+        this.identityMessage.set('No se pudo completar la búsqueda. Intente nuevamente.');
+        return;
+      }
+      this.identityBlocked.set(false);
+      this.verifiedIdentityKey.set(result.found ? this.identityKey(type, documentNumber) : null);
+      this.prefillPerson(result);
+      this.identityDocumentLocked.set(result.found);
+      if (result.found) this.form.controls.tipoDocumento.disable({emitEvent: false});
+      else this.form.controls.tipoDocumento.enable({emitEvent: false});
+      this.manualEntry.set(!result.found);
+      this.registrationStep.set('form');
+      this.identityRecordLoaded.set(result.found);
+      this.applyRequiredPersonalFields(!result.found);
+      this.identityTone.set(result.found ? 'success' : 'warning');
+      this.identityMessage.set(result.found ? 'Puede completar los datos pendientes o continuar.' : null);
+      return;
+    }
+    if (result.isPartner && !result.entityId) {
       this.identityBlocked.set(true);
-      this.identityTone.set('error');
-      this.identityMessage.set('Esta persona ya figura como socio. Utilice su registro existente.');
+      this.identityMessage.set('El socio ya se encuentra registrado. No se pudo obtener su ficha.');
+      return;
+    }
+    if (result.isPartner && result.entityId) {
+      if (!this.permissions.has('PRODUCTORES_VER')) {
+        this.identityBlocked.set(true);
+        this.identityMessage.set('El socio ya se encuentra registrado. No tiene permiso para consultar sus datos.');
+        return;
+      }
+      const token = ++this.identityRequest;
+      this.identityLoading.set(true);
+      this.getUseCase.execute(result.entityId).pipe(finalize(() => {
+        if (token === this.identityRequest) this.identityLoading.set(false);
+      })).subscribe({
+        next: detail => {
+          if (token !== this.identityRequest) return;
+          this.current.set(detail);
+          this.existingSocioFound.set(true);
+          const affiliation = detail.afiliaciones.find(a => a.estado);
+          const baseline = {
+            nombres: detail.nombres, apellidoPaterno: detail.apellidoPaterno,
+            apellidoMaterno: detail.apellidoMaterno, telefono: detail.telefono,
+            correo: detail.correo, fechaNacimiento: detail.fechaNacimiento,
+            distritoCodigo: detail.distritoCodigo, centroPobladoId: detail.centroPobladoId,
+            referencia: detail.referencia,
+          };
+          this.existingSocioBaseline = baseline;
+          this.form.patchValue({
+            tipoDocumento: this.normalizeProducerDocumentType(detail.tipoDocumento),
+            numeroDocumento: detail.numeroDocumento,
+            nombres: detail.nombres ?? '', apellidoPaterno: detail.apellidoPaterno ?? '',
+            apellidoMaterno: detail.apellidoMaterno ?? '', telefono: detail.telefono ?? '',
+            correo: detail.correo ?? '', fechaNacimiento: detail.fechaNacimiento ?? '',
+            distritoCodigo: detail.distritoCodigo ?? '', centroPobladoId: detail.centroPobladoId ?? 0,
+            referencia: detail.referencia ?? '', fechaAlta: detail.fechaAlta ?? this.today,
+            asociacionId: affiliation?.asociacionId ?? detail.asociacionId ?? 0,
+            fechaDesde: affiliation?.fechaDesde ?? detail.fechaAlta ?? this.today,
+            situacionMembresia: (affiliation?.situacionMembresia === 'SUSPENDIDO' ? 'SUSPENDIDO' : 'ACTIVO'),
+          });
+          this.form.controls.tipoDocumento.disable({emitEvent:false});
+          this.form.controls.fechaAlta.disable({emitEvent:false});
+          this.identityDocumentLocked.set(true);
+          this.identityRecordLoaded.set(true);
+          this.verifiedIdentityKey.set(this.identityKey(type, documentNumber));
+          this.initialDistrictCode.set(detail.distritoCodigo || '');
+          this.initialPopulationCenterId.set(detail.centroPobladoId || null);
+          this.identityLocks.set(personIdentityLocks({...result,
+            names: detail.nombres, paternalSurname: detail.apellidoPaterno,
+            maternalSurname: detail.apellidoMaterno, phone: detail.telefono,
+            email: detail.correo, birthDate: detail.fechaNacimiento,
+            districtCode: detail.distritoCodigo, populationCenterId: detail.centroPobladoId,
+            locationReference: detail.referencia,
+          }));
+          this.applyRequiredPersonalFields(false);
+          const gaps = hasIdentityGaps(baseline, [
+            'apellidoMaterno','telefono','correo','fechaNacimiento',
+            'distritoCodigo','centroPobladoId','referencia',
+          ]);
+          this.identityMessage.set(gaps
+            ? 'El socio ya existe. Puede completar sus datos pendientes de manera opcional.'
+            : 'El socio ya se encuentra registrado y sus datos están completos.');
+          this.identityBlocked.set(!this.permissions.has('PRODUCTORES_EDITAR'));
+        },
+        error: err => {
+          if (token !== this.identityRequest) return;
+          this.identityBlocked.set(true);
+          this.identityMessage.set('El socio ya se encuentra registrado. ' + mapOpenApiError(err).message);
+        },
+      });
       return;
     }
     if (!result.found && !result.manualEntryAllowed) {
       this.identityBlocked.set(true);
       this.identityTone.set('warning');
-      this.identityMessage.set('No se pudo completar la búsqueda. Intente nuevamente.');
+      this.identityMessage.set(result.message || 'No se pudo completar la consulta. Intente nuevamente.');
       return;
     }
     this.identityBlocked.set(false);
@@ -657,8 +898,8 @@ export class ProductorFormComponent {
     this.applyRequiredPersonalFields(!result.found);
     this.identityTone.set(result.found ? 'success' : 'warning');
     this.identityMessage.set(result.found
-      ? 'Puede completar los datos pendientes o continuar.'
-      : null);
+      ? 'Datos encontrados. Puede completar los campos vacíos o registrar al socio.'
+      : 'No se pudo obtener los datos de la persona. Complete el formulario manualmente.');
   }
 
   private prefillPerson(result: IdentityResolution): void {
@@ -733,26 +974,35 @@ export class ProductorFormComponent {
     return this.permissions.has('VALIDACIONIDENTIDAD_EDITAR');
   }
 
-  canToggleIdentityEditing(): boolean {
-    // Los datos recuperados durante un ALTA nunca se desbloquean.
-    return !!this.current() && this.identityRecordLoaded() && this.canEditIdentityData();
-  }
-
-  toggleIdentityEditing(enabled: boolean): void {
-    this.identityEditingEnabled.set(
-      enabled && this.canToggleIdentityEditing(),
-    );
-  }
-
-  isIdentityFieldReadOnly(
-    field: keyof PersonIdentityLocks,
-  ): boolean {
-    return this.identityLocks()[field]
-      && !this.identityEditingEnabled();
+  // La edición autorizada desbloquea inmediatamente los datos personales, sin checkbox.
+  // En ausencia del permiso de identidad, los campos protegidos mantienen sus bloqueos.
+  isIdentityFieldReadOnly(field: keyof PersonIdentityLocks): boolean {
+    return this.effectiveIdentityLocks()[field];
   }
 
   effectiveIdentityLocks(): PersonIdentityLocks {
-    return this.identityEditingEnabled() ? emptyPersonIdentityLocks() : this.identityLocks();
+    return this.current() && this.canEditIdentityData()
+      ? emptyPersonIdentityLocks()
+      : this.identityLocks();
+  }
+
+  private snapshotEditValues(): string {
+    const values = this.form.getRawValue();
+    return JSON.stringify({
+      tipoDocumento: values.tipoDocumento, numeroDocumento: values.numeroDocumento,
+      nombres: values.nombres, apellidoPaterno: values.apellidoPaterno,
+      apellidoMaterno: values.apellidoMaterno, telefono: values.telefono,
+      correo: values.correo, fechaNacimiento: values.fechaNacimiento,
+      distritoCodigo: values.distritoCodigo, centroPobladoId: Number(values.centroPobladoId),
+      referencia: values.referencia, fechaAlta: values.fechaAlta,
+      asociacionId: Number(values.asociacionId), fechaDesde: values.fechaDesde,
+      situacionMembresia: values.situacionMembresia,
+    });
+  }
+
+  hasEditChanges(): boolean {
+    return !!this.current() && this.originalEditValues !== null
+      && this.snapshotEditValues() !== this.originalEditValues;
   }
 
   private resetIdentityLookup(): void {
@@ -799,7 +1049,6 @@ export class ProductorFormComponent {
     }
 
     this.identityLocks.set(emptyPersonIdentityLocks());
-    this.identityEditingEnabled.set(false);
     this.identityRecordLoaded.set(false);
     this.resolvedSex.set(null);
     this.verifiedIdentityKey.set(null);
@@ -856,6 +1105,9 @@ export class ProductorFormComponent {
     this.resolver?.(result);
     this.resolver = null;
     this.current.set(null);
+    this.originalEditValues = null;
+    this.existingSocioFound.set(false);
+    this.existingSocioBaseline = null;
     this.errorMessage.set(null);
     this.identityRequest++;
     this.resetIdentityState();

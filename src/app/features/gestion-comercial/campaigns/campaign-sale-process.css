@@ -1,0 +1,23 @@
+:host{display:block;min-width:0}
+.campaign-sale-page{display:grid;gap:1rem;min-width:0}
+.sale-overview,.sale-partners{padding:1rem 1.2rem;min-width:0}
+.sale-header,.sale-block-heading{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+.sale-header h2{color:var(--desco-text);font-size:1.12rem;font-weight:750;margin:.2rem 0}
+.sale-header p{color:var(--desco-text-muted);font-size:.82rem}
+.sale-metrics{margin-top:1rem;padding-top:1rem;border-top:1px solid var(--desco-border);display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:1rem}
+.sale-metrics>div,.sale-partner-facts{display:grid;gap:.3rem}
+.sale-metrics span,.sale-partner-facts span{color:var(--desco-text-muted);font-size:.77rem}
+.sale-metrics strong,.sale-partner-facts strong{color:var(--desco-text);font-weight:700}
+.sale-partners{display:grid;gap:1rem}
+.sale-block-heading h2{color:var(--desco-text);font-size:1rem;font-weight:750}
+.sale-filters{display:flex;align-items:end;gap:1rem;flex-wrap:wrap}
+.sale-filters>.admin-field{flex:1 1 190px;max-width:390px;display:grid;gap:.35rem}
+.sale-table-wrap{overflow-x:auto;min-width:0;border:1px solid var(--desco-border);border-radius:.75rem}
+.sale-table-wrap .admin-table{width:100%;min-width:680px}
+.sale-participants-table small{display:block;color:var(--desco-text-muted)}
+.sale-partner-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr))}
+.sale-partner-card{display:grid;gap:1rem;min-width:0}
+.sale-partner-card h3{font-weight:750;color:var(--desco-text);overflow-wrap:anywhere}
+.sale-partner-card small{color:var(--desco-text-muted)}
+.campaign-code{color:var(--desco-text-muted);font-size:.76rem;font-weight:700;letter-spacing:.04em}
+@media(max-width:640px){.sale-overview,.sale-partners{padding:.85rem}.sale-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}

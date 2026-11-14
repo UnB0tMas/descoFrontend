@@ -1,24 +1,21 @@
 <dialog aria-label="Subir documento" appDialogBackdrop #dialog class="modal desco-modal" (cancel)="$event.preventDefault(); close()">
   <div class="modal-box admin-modal-box">
     <header class="admin-modal-header">
-      <div class="admin-modal-title-group"><span class="admin-modal-icon"><fa-icon [icon]="uploadIcon" /></span><div><p>Documentos y evidencias</p><h2>Subir documento</h2></div></div>
+      <div class="admin-modal-title-group"><span class="admin-modal-icon"><fa-icon [icon]="uploadIcon" /></span><div><h2>Subir comprobante</h2></div></div>
       <button type="button" class="admin-icon-button" aria-label="Cerrar" [disabled]="saving()" (click)="close()"><fa-icon [icon]="closeIcon" /></button>
     </header>
     @if (errorMessage()) { <div class="admin-inline-error" role="alert">{{ errorMessage() }}</div> }
     <form class="admin-form-grid" [formGroup]="form" (ngSubmit)="save()">
       <div class="admin-field admin-field-span-2">
-        <label for="evidenceFile">Archivo</label>
-        <label class="evidence-dropzone" for="evidenceFile">
-          <fa-icon [icon]="fileIcon" />
-          <strong>{{ file()?.name || 'Selecciona un archivo' }}</strong>
-          <span>{{ file() ? (file()!.size / 1024 / 1024).toFixed(2) + ' MB' : 'El archivo se almacenará antes de registrar su evidencia.' }}</span>
-          <input id="evidenceFile" type="file" [disabled]="saving()" (change)="selectFile($event)" />
-        </label>
+                <app-e3-file-dropzone title="Documento o fotografía"
+          [files]="file() ? [file()!] : []" [multiple]="false" [maxFiles]="1" [maxSizeMb]="25"
+          [allowedExtensions]="['jpg','jpeg','png','webp','pdf']" formatsLabel="JPG, PNG, WEBP o PDF"
+          accept="image/jpeg,image/png,image/webp,application/pdf"
+          [disabled]="saving()" [uploading]="saving()"
+          (filesChange)="selectFiles($event)" (invalid)="errorMessage.set($event)" />
       </div>
-      <div class="admin-field"><label for="evidenceType">Tipo de evidencia</label><input id="evidenceType" class="admin-input" formControlName="tipoEvidencia" maxlength="40" /><app-form-error [control]="form.controls.tipoEvidencia" fieldLabel="El tipo de evidencia" /></div>
-      <div class="admin-field"><label for="evidenceCategory">Categoría</label><select id="evidenceCategory" class="admin-select" formControlName="categoria">@for (category of categories; track category) { <option [value]="category">{{ category }}</option> }</select></div>
-      <div class="admin-field admin-field-span-2"><label for="evidenceDescription">Descripción</label><textarea id="evidenceDescription" class="admin-textarea" formControlName="descripcion" maxlength="400" rows="3"></textarea></div>
-      <div class="admin-field"><label for="evidenceCaptureDate">Fecha de captura</label><input id="evidenceCaptureDate" class="admin-input" type="datetime-local" formControlName="fechaCaptura" /></div>
+      <div class="admin-field admin-field-span-2"><label for="evidenceCategory">Categoría</label><select id="evidenceCategory" class="admin-select" formControlName="categoria">@for (category of categories; track category) { <option [value]="category">{{ category }}</option> }</select></div>
+      <div class="admin-field admin-field-span-2"><label for="evidenceDescription">Descripción (opcional)</label><textarea id="evidenceDescription" class="admin-textarea" formControlName="descripcion" maxlength="400" rows="3"></textarea></div>
       @if (!fixedContext()) {
         <div class="admin-field"><label for="evidenceContextType">Contexto</label><select id="evidenceContextType" class="admin-select" formControlName="contextoTipo">@for (context of contexts; track context.tipo) { <option [value]="context.tipo">{{ context.etiqueta }}</option> }</select></div>
         <div class="admin-field admin-field-span-2"><label for="evidenceContextId">Identificador del contexto</label><input id="evidenceContextId" class="admin-input" type="number" min="1" formControlName="contextoId" /><app-form-error [control]="form.controls.contextoId" fieldLabel="El identificador" /></div>

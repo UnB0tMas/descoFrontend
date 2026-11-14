@@ -1,0 +1,720 @@
+<section class="desco-page commercial-campaigns-page">
+  <app-page-header [title]="title()" eyebrow="APAPPSS · Comercialización asociativa" [icon]="calendarIcon"
+    [subtitle]="campaignId() ? 'Planificación, variedades, socios y distribución de jabas.' : 'Campañas de venta de palta.'"
+    [showBack]="!!campaignId()" (back)="router.navigate(['/gestion-comercial/campanias'])">
+    <div pageActions class="flex flex-wrap gap-2">
+      <button class="admin-secondary-button" type="button" [disabled]="loading()" (click)="load()"><fa-icon [icon]="reloadIcon" /> Actualizar</button>
+      @if (!campaignId()) {
+        <button *appPermission="'CAMPANIAS_CREAR'" type="button" class="admin-primary-button" [disabled]="refsLoading() || !apappss()" (click)="open('create')"><fa-icon [icon]="plusIcon" /> Nueva campaña</button>
+      } @else {
+        @if (canTransition(campaign(), 'activar')) {
+          <button type="button" class="admin-primary-button" [disabled]="busy()" (click)="changeCampaignState(campaign(), 'activar')"><fa-icon [icon]="activateIcon" /> Activar campaña</button>
+        }
+        @if (canTransition(campaign(), 'cerrar')) {
+          <button type="button" class="admin-secondary-button" [disabled]="busy()" (click)="changeCampaignState(campaign(), 'cerrar')"><fa-icon [icon]="finishIcon" /> Cerrar campaña</button>
+        }
+        @if (canEdit() && permission.has('CAMPANIAS_EDITAR')) {
+          <button type="button" class="admin-secondary-button" [disabled]="busy()" (click)="open('edit')"><fa-icon [icon]="editIcon" /> Editar campaña</button>
+        }
+      }
+    </div>
+  </app-page-header>
+
+  @if (loading()) {
+    <app-loading-state title="Cargando campañas" variant="detail" [rows]="6" />
+  } @else if (error()) {
+    <app-error-state [message]="error() || 'No se pudieron cargar los datos.'" (retry)="load()" />
+  } @else if (!campaignId()) {
+    <section class="admin-surface campaign-list-surface" aria-label="Listado de campañas">
+      <div class="admin-toolbar campaign-search-surface">
+        <label class="admin-field"><span>Buscar</span><input type="search" class="admin-input" [value]="campaignSearch()"
+          (input)="campaignSearch.set($any($event.target).value)" placeholder="Nombre o código de campaña" /></label>
+        <label class="admin-field"><span>Estado</span><select class="admin-select" [value]="campaignState()"
+          (change)="campaignState.set($any($event.target).value)">
+          <option value="">Todos</option><option value="PLANIFICACION">Planificación</option><option value="ACTIVA">Activa</option><option value="VENCIDA">Vencida</option><option value="CERRADA">Cerrada</option><option value="CANCELADA">Cancelada</option>
+        </select></label>
+        <app-list-view-switch label="Presentación de campañas" [view]="listView()" (viewChange)="listView.set($event)" />
+      </div>
+      @if (filteredCampaigns().length === 0) {
+        <app-empty-state title="Sin campañas" message="No hay campañas con los filtros seleccionados." />
+      } @else if (listView() === 'table') {
+        <ng-template #campName let-c><div class="admin-stack-copy"><strong>{{ c['nombre'] }}</strong><span>{{ c['codigo'] }}</span></div></ng-template>
+        <ng-template #campGrades let-c><span class="campaign-grade-preview">{{varietiesSummary(c)}}</span></ng-template>
+        <ng-template #campStatus let-c><span class="admin-status" [class.admin-status--active]="effectiveStatus(c)==='ACTIVA'">{{ effectiveStatus(c) || 'PLANIFICACION' }}</span></ng-template>
+        <ng-template #campActions let-c>
+          <div class="admin-row-actions">
+            <a class="admin-secondary-button" [routerLink]="['/gestion-comercial/campanias',findId(c)]" title="Ver detalles" [attr.aria-label]="'Ver ' + c['nombre']"><fa-icon [icon]="eyeIcon" /></a>
+            @if (saleEnabled(c)) {
+              <a *appPermission="'JABAS_LISTAR'" class="admin-secondary-button" [routerLink]="['/gestion-comercial/campanias',findId(c)]" [queryParams]="{tab:'venta'}"
+                 title="Proceso de venta" [attr.aria-label]="'Proceso de venta de ' + c['nombre']"><fa-icon [icon]="scaleIcon" /></a>
+            }
+            @if (canTransition(c, 'activar')) {
+              <button class="admin-primary-button admin-primary-button--small" type="button" [disabled]="busy()" title="Activar campaña" [attr.aria-label]="'Activar ' + c['nombre']" (click)="changeCampaignState(c, 'activar')"><fa-icon [icon]="activateIcon" /></button>
+            }
+            @if (canTransition(c, 'cerrar')) {
+              <button class="admin-secondary-button" type="button" [disabled]="busy()" title="Cerrar campaña" [attr.aria-label]="'Cerrar ' + c['nombre']" (click)="changeCampaignState(c, 'cerrar')"><fa-icon [icon]="finishIcon" /></button>
+            }
+            @if (canTransition(c, 'cancelar')) {
+              <button class="admin-secondary-button" type="button" [disabled]="busy()" title="Cancelar campaña" [attr.aria-label]="'Cancelar ' + c['nombre']" (click)="changeCampaignState(c, 'cancelar')"><fa-icon [icon]="cancelIcon" /></button>
+            }
+            @if ((effectiveStatus(c)==='PLANIFICACION' || effectiveStatus(c)==='ACTIVA') && date(c['fechaFin'])>=today()) {
+              <button *appPermission="'CAMPANIAS_EDITAR'" class="admin-secondary-button" type="button" [disabled]="busy()" title="Editar campaña" [attr.aria-label]="'Editar ' + c['nombre']" (click)="editFromList(c)"><fa-icon [icon]="editIcon" /></button>
+            }
+          </div>
+        </ng-template>
+        <app-data-table appearance="admin" [columns]="listColumns" [rows]="filteredCampaigns()" trackByKey="campaniaVentaId"
+          [cellTemplates]="{ nombre:campName, estadoProceso:campStatus, calibres:campGrades, acciones:campActions }" />
+      } @else {
+        <div class="desco-record-grid campaigns-card-grid">
+          @for (c of filteredCampaigns(); track findId(c)) {
+            <app-record-card>
+              <header class="campaign-card-top"><span class="campaign-code">{{ c['codigo'] }}</span><span class="admin-status" [class.admin-status--active]="effectiveStatus(c)==='ACTIVA'">{{ effectiveStatus(c) || 'PLANIFICACION' }}</span></header>
+              <div class="campaign-record-icon"><fa-icon [icon]="calendarIcon" /></div>
+              <h2>{{ c['nombre'] }}</h2>
+              <p class="campaign-record-association">{{ c['asociacionNombre'] || c['asociacion'] || 'APAPPSS' }}</p>
+              <p class="campaign-buyer-summary">Comprador: {{ c['comprador'] || c['empresaCompradora'] || 'Sin nombre' }}</p>
+              <div class="campaign-card-grades"><span>Variedades y calibres</span><strong>{{varietiesSummary(c)}}</strong></div>
+              <dl class="campaign-record-dates"><div><dt>Inicio</dt><dd>{{ date(c['fechaInicio']) }}</dd></div><div><dt>Fin</dt><dd>{{ date(c['fechaFin']) }}</dd></div></dl>
+              <footer class="campaign-record-actions">
+                <a class="admin-icon-button" [routerLink]="['/gestion-comercial/campanias',findId(c)]" title="Ver detalles" [attr.aria-label]="'Ver detalles de '+c['nombre']"><fa-icon [icon]="eyeIcon" /></a>
+                @if (saleEnabled(c)) {
+                  <a *appPermission="'JABAS_LISTAR'" class="admin-primary-button admin-primary-button--small"
+                    [routerLink]="['/gestion-comercial/campanias',findId(c)]" [queryParams]="{tab:'venta'}" title="Proceso de venta" [attr.aria-label]="'Proceso de venta de '+c['nombre']"><fa-icon [icon]="scaleIcon" /></a>
+                }
+                @if (canTransition(c, 'activar')) {
+                  <button type="button" class="admin-primary-button admin-primary-button--small" [disabled]="busy()" title="Activar campaña" [attr.aria-label]="'Activar '+c['nombre']" (click)="changeCampaignState(c, 'activar')"><fa-icon [icon]="activateIcon" /></button>
+                }
+                @if (canTransition(c, 'cerrar')) {
+                  <button type="button" class="admin-secondary-button" [disabled]="busy()" title="Cerrar campaña" [attr.aria-label]="'Cerrar '+c['nombre']" (click)="changeCampaignState(c, 'cerrar')"><fa-icon [icon]="finishIcon" /></button>
+                }
+                @if (canTransition(c, 'cancelar')) {
+                  <button type="button" class="admin-secondary-button" [disabled]="busy()" title="Cancelar campaña" [attr.aria-label]="'Cancelar '+c['nombre']" (click)="changeCampaignState(c, 'cancelar')"><fa-icon [icon]="cancelIcon" /></button>
+                }
+                @if ((effectiveStatus(c)==='PLANIFICACION' || effectiveStatus(c)==='ACTIVA') && date(c['fechaFin'])>=today()) {
+                  <button *appPermission="'CAMPANIAS_EDITAR'" class="admin-secondary-button" type="button" [disabled]="busy()" title="Editar campaña" [attr.aria-label]="'Editar '+c['nombre']" (click)="editFromList(c)"><fa-icon [icon]="editIcon" /></button>
+                }
+              </footer>
+            </app-record-card>
+          }
+        </div>
+      }
+      <app-paginator [page]="list().page" [size]="list().size" [totalRecords]="list().totalRecords" [totalPages]="list().totalPages"
+        (pageChange)="load($event)" (sizeChange)="list.set({items:[],page:1,size:$event,totalRecords:0,totalPages:0});load(1)" />
+    </section>
+  } @else {
+    @if (!canEdit()) {
+      <p class="campaign-info" role="status">Campaña en modo de consulta. Puede revisar el historial y los detalles; las liquidaciones y pagos pendientes se gestionan en sus módulos respectivos.</p>
+    }
+    <nav class="campaign-detail-tabs" role="tablist" aria-label="Secciones de campaña">
+      <button type="button" role="tab" [attr.aria-selected]="activeTab()==='general'" [class.is-active]="activeTab()==='general'"
+        (click)="selectTab('general')"><fa-icon [icon]="calendarIcon" /> General</button>
+      <button type="button" role="tab" [attr.aria-selected]="activeTab()==='participantes'" [class.is-active]="activeTab()==='participantes'"
+        (click)="selectTab('participantes')"><fa-icon [icon]="usersIcon" /> Socios participantes
+        <span class="campaign-tab-count">{{plan()?.participantes?.length || 0}}</span></button>
+      @if (permission.has('JABAS_LISTAR')) {
+        <button type="button" role="tab" [attr.aria-selected]="activeTab()==='venta'" [class.is-active]="activeTab()==='venta'"
+          (click)="selectTab('venta')"><fa-icon [icon]="scaleIcon" /> Proceso de venta</button>
+      }
+    </nav>
+
+    @switch (activeTab()) {
+      @case ('general') {
+        <section class="admin-surface campaign-summary" role="tabpanel" aria-label="Resumen general de campaña">
+          <div class="campaign-summary-head"><div><span class="campaign-code">{{campaign()?.['codigo']}}</span><h2>{{campaign()?.['nombre']}}</h2>
+            <p class="campaign-summary-context">{{plan()?.compradorNombre || campaign()?.['comprador'] || 'Comprador no indicado'}} ·
+              {{plan()?.modalidadVentaId ? label(references().salesModalities,plan()?.modalidadVentaId) : 'Sin modalidad'}}</p>
+          </div><span class="admin-status" [class.admin-status--active]="effectiveStatus(campaign())==='ACTIVA'">{{effectiveStatus(campaign())}}</span></div>
+          <div class="campaign-facts campaign-facts--wide">
+            <div><span>Inicio</span><strong>{{date(campaign()?.['fechaInicio'])}}</strong></div>
+            <div><span>Fin</span><strong>{{date(campaign()?.['fechaFin'])}}</strong></div>
+            <div><span>Socios</span><strong>{{plan()?.participantes?.length || 0}}</strong></div>
+            <div><span>Origen</span><strong>{{plan()?.origenJabas === 'ASOCIACION' ? 'Asociación' : 'UOT'}}</strong></div>
+            <div><span>Cupo de jabas</span><strong>{{plan()?.cupoJabas ?? 'Sin definir'}}</strong></div>
+            <div><span>Reservadas</span><strong>{{plan()?.jabasComprometidas || 0}}</strong></div>
+            <div><span>En operativos</span><strong>{{plan()?.jabasOperativo || 0}}</strong></div>
+            <div><span>Libres</span><strong class="campaign-quota-free">{{hasQuota() ? availableQuota() : '—'}}</strong></div>
+          </div>
+          @if (!hasQuota()) { <p class="campaign-info">Defina el cupo de jabas para incorporar socios.</p> }
+          @if (!withinCampaignDates()) { <p class="campaign-info">La modificación de participantes requiere una campaña vigente.</p> }
+        </section>
+
+        <section class="admin-surface campaign-grades-summary" aria-label="Variedades y calibres de la campaña">
+          <div class="campaign-section-header"><div><h2>Variedades, calibres y precios</h2><p>Productos incluidos en la campaña.</p></div></div>
+          @if (grades().length) {
+            <div class="campaign-grade-chips">@for(g of grades();track g.calibreId) {
+              <div class="campaign-grade-chip"><strong>{{label(references().varieties,g.variedadPaltaId)}} · {{g.calibre}}</strong>
+                <span>{{rangeText(g)}} · S/ {{g.precioKg | number:'1.2-4'}} / kg</span></div>
+            }</div>
+          } @else { <p class="campaign-info">Esta campaña aún no tiene calibres definidos.</p> }
+        </section>
+
+        @if (campaignId() && permission.has('CAMPANIAS_VER')) {
+          <app-campaign-sanctions-panel mode="campaign" [campaignId]="campaignId()!" [readOnly]="!canEdit()" />
+        }
+
+        @if (permission.has('JABAS_LISTAR')) {
+          <section class="admin-surface campaign-dashboard" aria-labelledby="campaign-dashboard-heading">
+            <div class="campaign-section-header"><div><h2 id="campaign-dashboard-heading">Indicadores de campaña</h2>
+              <p>Recepciones registradas en el periodo seleccionado (fecha local de Perú).</p></div></div>
+            <div class="campaign-dashboard-filters admin-toolbar">
+              <label class="admin-field"><span>Desde</span><input class="admin-input" type="date" [value]="indicatorStart()"
+                (change)="indicatorStart.set($any($event.target).value)" /></label>
+              <label class="admin-field"><span>Hasta</span><input class="admin-input" type="date" [value]="indicatorEnd()"
+                (change)="indicatorEnd.set($any($event.target).value)" /></label>
+              <label class="admin-field"><span>Variedad</span><select class="admin-select" [value]="indicatorVariety() ?? ''"
+                (change)="indicatorVariety.set($any($event.target).value ? +$any($event.target).value : null)">
+                  <option value="">Todas las variedades</option>
+                  @for(v of references().varieties;track v.value){<option [value]="v.value">{{v.label}}</option>}
+                </select></label>
+              <button type="button" class="admin-primary-button" [disabled]="indicatorsLoading()" (click)="loadIndicators()">Aplicar filtros</button>
+            </div>
+            @if (indicatorsError()) { <p class="campaign-dashboard-error" role="alert">{{indicatorsError()}}</p> }
+            @if (indicatorsLoading()) { <app-loading-state title="Consultando indicadores" [rows]="2" /> }
+            @else if (indicators(); as stats) {
+              <div class="campaign-dashboard-metrics">
+                <div><span>Jabas registradas</span><strong>{{stats.resumen.jabasRegistradas | number:'1.0-0'}}</strong></div>
+                <div><span>Peso bruto</span><strong>{{stats.resumen.pesoBrutoKg | number:'1.2-3'}} <small>kg</small></strong></div>
+                <div><span>Peso neto</span><strong>{{stats.resumen.pesoNetoKg | number:'1.2-3'}} <small>kg</small></strong></div>
+              </div>
+              <div class="campaign-dashboard-charts">
+                <article class="campaign-chart-panel" aria-labelledby="campaign-daily-heading">
+                  <div class="campaign-chart-heading"><h3 id="campaign-daily-heading">Recepción por día</h3><span>Peso neto (kg)</span></div>
+                  @if (stats.porDia.length) {
+                    <div class="campaign-daily-bars" role="img" aria-label="Gráfico de kilogramos netos por fecha">
+                      @for(row of stats.porDia;track row.fecha) {
+                        <div class="campaign-daily-column" [title]="row.fecha+' · '+row.pesoNetoKg+' kg · '+row.jabas+' jabas'">
+                          <div class="campaign-bar-track"><div class="campaign-bar-fill"
+                            [style.height.%]="percent(row.pesoNetoKg,dailyMax())"></div></div>
+                          <span>{{shortDate(row.fecha)}}</span>
+                        </div>
+                      }
+                    </div>
+                  } @else { <p class="campaign-chart-empty">Sin recepciones en el periodo.</p> }
+                </article>
+                <article class="campaign-chart-panel" aria-labelledby="campaign-variety-heading">
+                  <div class="campaign-chart-heading"><h3 id="campaign-variety-heading">Peso neto por variedad</h3><span>Participación por kg</span></div>
+                  @if (stats.porVariedad.length) {
+                    <div class="campaign-variety-bars">
+                      @for(row of stats.porVariedad;track row.nombre) {
+                        <div class="campaign-variety-row"><div><strong>{{row.nombre}}</strong><span>{{row.pesoNetoKg | number:'1.2-3'}} kg</span></div>
+                          <div class="campaign-horizontal-track"><div class="campaign-horizontal-fill"
+                            [style.width.%]="percent(row.pesoNetoKg,varietyMax())"></div></div>
+                        </div>
+                      }
+                    </div>
+                  } @else { <p class="campaign-chart-empty">Sin datos por variedad.</p> }
+                </article>
+              </div>
+            }
+          </section>
+        }
+      }
+      @case ('participantes') {
+        <section class="admin-surface campaign-section" role="tabpanel" aria-label="Socios participantes">
+          <div class="campaign-section-header"><div><h2>Socios participantes</h2><p>Asignación y estado de jabas por socio.</p></div>
+            <div class="campaign-section-actions">
+              <app-list-view-switch label="Presentación de participantes" [view]="participantsView()" (viewChange)="participantsView.set($event)" />
+              @if (canAddMembers()) {
+                <button *appPermission="'PARTICIPANTES_CREAR'" class="admin-primary-button" type="button"
+                  [disabled]="busy() || !hasQuota() || availableQuota()===0" (click)="openMembers()"><fa-icon [icon]="plusIcon" /> Agregar socios</button>
+              }
+            </div>
+          </div>
+          <div class="campaign-participants-toolbar admin-toolbar">
+            <label class="admin-field campaign-participant-search"><span>Buscar socio</span><input class="admin-input" type="search"
+              placeholder="Nombre o documento" [value]="participantsSearch()" (input)="participantsSearch.set($any($event.target).value)" /></label>
+          </div>
+          @if (!filteredParticipants().length) {
+            <app-empty-state [title]="participantsSearch() ? 'Sin coincidencias' : 'Sin participantes'"
+              [message]="participantsSearch() ? 'Pruebe con otro nombre o documento.' : 'Agregue socios a esta campaña.'" />
+          } @else if (participantsView() === 'table') {
+            <div class="admin-table-wrap campaign-detail-table-wrap"><table class="admin-table campaign-detail-table">
+              <thead><tr><th>Socio</th><th>Jabas asignadas</th><th>Estado</th><th class="text-right">Acciones</th></tr></thead>
+              <tbody>@for(p of filteredParticipants();track p.participacionId) {
+                <tr>
+                  <td><div class="admin-entity"><span class="admin-entity-icon"><fa-icon [icon]="usersIcon" /></span>
+                    <div><strong>{{p.socioNombre}}</strong><span>{{p.documento}}</span></div></div></td>
+                  <td>{{p.cantidadJabas || 0}} @if (p.cantidadAjustePendiente) { <small class="campaign-crates-pending">{{ p.cantidadAjustePendiente > 0 ? '+' : '' }}{{p.cantidadAjustePendiente}} pendientes</small> }</td>
+                  <td><span class="admin-status" [class.admin-status--active]="p.estadoJabas==='DEVUELTA'"
+                    [class.admin-status--warning]="p.estadoJabas==='PENDIENTE_RECOJO' || p.estadoJabas==='PENDIENTE_DEVOLUCION'">{{participantStatus(p)}}</span></td>
+                  <td><div class="admin-row-actions campaign-table-actions">
+                    @if (canManageParticipants() && p.estadoJabas !== 'DEVUELTA') {
+                      <button *appPermission="'JABAS_CREAR'" type="button" class="admin-icon-button" title="Ajustar jabas"
+                        [attr.aria-label]="'Ajustar jabas de '+p.socioNombre" [disabled]="busy()" (click)="editPartnerCrates(p)"><fa-icon [icon]="editIcon" /></button>
+                      @if (p.estadoJabas === 'PENDIENTE_RECOJO') {
+                        <button *appPermission="'JABAS_CREAR'" type="button" class="admin-icon-button" [disabled]="busy()" title="Confirmar entrega" [attr.aria-label]="'Entregar jabas a '+p.socioNombre" (click)="deliverPartner(p)"><fa-icon [icon]="cratesIcon" /></button>
+                      }
+                      @if (p.estadoJabas === 'PENDIENTE_DEVOLUCION') {
+                        <button *appPermission="'JABAS_CREAR'" type="button" class="admin-icon-button" [disabled]="busy()" title="Confirmar devolución" [attr.aria-label]="'Recibir jabas de '+p.socioNombre" (click)="returnPartnerCrates(p)"><fa-icon [icon]="returnIcon" /></button>
+                      }
+                      @if (p.estadoJabas === 'PENDIENTE_RECOJO' && !(p.cantidadJabas && p.cantidadAjustePendiente)) {
+                        <button *appPermission="'PARTICIPANTES_RETIRAR'" type="button" class="admin-icon-button admin-icon-button--danger"
+                          title="Retirar socio" [attr.aria-label]="'Retirar '+p.socioNombre" [disabled]="busy()" (click)="removePartner(p)"><fa-icon [icon]="closeIcon" /></button>
+                      }
+                    }
+                  </div></td>
+                </tr>
+              }</tbody>
+            </table></div>
+          } @else {
+            <div class="desco-record-grid campaign-participant-cards">
+              @for(p of filteredParticipants();track p.participacionId) {
+                <app-record-card>
+                  <article class="campaign-participant-card">
+                    <header><div class="admin-entity"><span class="admin-entity-icon"><fa-icon [icon]="usersIcon" /></span>
+                      <div><strong>{{p.socioNombre}}</strong><span>{{p.documento}}</span></div></div></header>
+                    <dl><div><dt>Jabas</dt><dd>{{p.cantidadJabas || 0}} @if (p.cantidadAjustePendiente) { <small class="campaign-crates-pending">{{ p.cantidadAjustePendiente > 0 ? '+' : '' }}{{p.cantidadAjustePendiente}} pendientes</small> }</dd></div>
+                      <div><dt>Estado</dt><dd><span class="admin-status" [class.admin-status--active]="p.estadoJabas==='DEVUELTA'"
+                        [class.admin-status--warning]="p.estadoJabas==='PENDIENTE_RECOJO' || p.estadoJabas==='PENDIENTE_DEVOLUCION'">{{participantStatus(p)}}</span></dd></div></dl>
+                    <footer class="admin-row-actions">
+                      @if (canManageParticipants() && p.estadoJabas !== 'DEVUELTA') {
+                        <button *appPermission="'JABAS_CREAR'" type="button" class="admin-icon-button" [disabled]="busy()"
+                          title="Ajustar jabas" [attr.aria-label]="'Ajustar jabas de '+p.socioNombre" (click)="editPartnerCrates(p)"><fa-icon [icon]="editIcon" /></button>
+                        @if (p.estadoJabas === 'PENDIENTE_RECOJO') {
+                          <button *appPermission="'JABAS_CREAR'" type="button" class="admin-icon-button" [disabled]="busy()" title="Confirmar entrega" [attr.aria-label]="'Entregar jabas a '+p.socioNombre" (click)="deliverPartner(p)"><fa-icon [icon]="cratesIcon" /></button>
+                        }
+                        @if (p.estadoJabas === 'PENDIENTE_DEVOLUCION') {
+                          <button *appPermission="'JABAS_CREAR'" type="button" class="admin-icon-button" [disabled]="busy()" title="Confirmar devolución" [attr.aria-label]="'Recibir jabas de '+p.socioNombre" (click)="returnPartnerCrates(p)"><fa-icon [icon]="returnIcon" /></button>
+                        }
+                        @if (p.estadoJabas === 'PENDIENTE_RECOJO' && !(p.cantidadJabas && p.cantidadAjustePendiente)) {
+                          <button *appPermission="'PARTICIPANTES_RETIRAR'" type="button" class="admin-icon-button admin-icon-button--danger"
+                            title="Retirar socio" [attr.aria-label]="'Retirar '+p.socioNombre" (click)="removePartner(p)"><fa-icon [icon]="closeIcon" /></button>
+                        }
+                      }
+                    </footer>
+                  </article>
+                </app-record-card>
+              }
+            </div>
+          }
+        </section>
+      }
+      @case ('venta') {
+        @if (permission.has('JABAS_LISTAR')) {
+          <section class="admin-surface campaign-sale-workspace" role="tabpanel" aria-label="Proceso de venta por socio">
+            <div class="campaign-section-header"><div><h2>Proceso de venta</h2><p>Seleccione primero al socio para registrar o corregir jabas.</p></div></div>
+            @if (selectedSalePartner(); as selected) {
+              <div class="campaign-sale-selected">
+                <div><span>Socio seleccionado</span><strong>{{selected.socioNombre}}</strong><small>{{selected.documento}} · {{selected.devueltas}} de {{selected.asignadas}} jabas</small></div>
+                <button type="button" class="admin-icon-button" title="Cambiar socio" aria-label="Cambiar socio" (click)="closeSalePartner()"><fa-icon [icon]="backIcon" /></button>
+              </div>
+              <div class="campaign-sale-slot">
+                <app-campaign-sale-partner-detail [embedded]="true" [campaignContextId]="campaignId()"
+                  [participantContextId]="selected.participacionId" [readOnly]="!saleEnabled(campaign())" (backRequest)="closeSalePartner()" (changed)="saleChanged()" />
+              </div>
+            } @else {
+              <div class="campaign-sale-metrics">
+                <div><span>Socios</span><strong>{{saleConfig()?.socios?.length || 0}}</strong></div>
+                <div><span>Jabas asignadas</span><strong>{{totalAssigned()}}</strong></div>
+                <div><span>Registradas</span><strong>{{totalReceived()}}</strong></div>
+                <div><span>Pendientes</span><strong>{{totalAssigned()-totalReceived()}}</strong></div>
+                <div><span>Peso neto total</span><strong>{{totalNet() | number:'1.2-3'}} kg</strong></div>
+              </div>
+              <div class="campaign-sale-filters admin-toolbar">
+                <label class="admin-field"><span>Buscar socio</span><input type="search" class="admin-input" placeholder="Nombre o documento"
+                  [value]="saleSearch()" (input)="saleSearch.set($any($event.target).value)" /></label>
+                <label class="admin-field"><span>Recepción</span><select class="admin-select" [value]="saleStatus()"
+                  (change)="saleStatus.set($any($event.target).value)">
+                    <option value="todos">Todos</option><option value="pendientes">Pendientes</option><option value="completos">Registradas completas</option>
+                  </select></label>
+              </div>
+              @if (!saleParticipants().length) { <app-empty-state title="Sin socios para mostrar" message="Revise la búsqueda o incorpore participantes." /> }
+              @else { <div class="admin-table-wrap campaign-sale-participants-wrap"><table class="admin-table">
+                <thead><tr><th>Socio</th><th>Jabas registradas</th><th>Peso neto</th><th>Estado</th><th class="text-right">Acción</th></tr></thead>
+                <tbody>@for(s of saleParticipants();track s.participacionId){
+                  <tr><td><div class="admin-entity"><span class="admin-entity-icon"><fa-icon [icon]="usersIcon" /></span>
+                    <div><strong>{{s.socioNombre}}</strong><span>{{s.documento}}</span></div></div></td>
+                    <td>{{s.devueltas}} / {{s.asignadas}}</td><td>{{s.pesoNetoKg | number:'1.2-3'}} kg</td>
+                    <td><span class="admin-status" [class.admin-status--active]="s.estadoJabas==='DEVUELTA'"
+                      [class.admin-status--warning]="s.estadoJabas==='PENDIENTE_RECOJO'">{{saleStatusLabel(s)}}</span></td>
+                    <td><div class="admin-row-actions"><button type="button" class="admin-icon-button" (click)="selectSalePartner(s)"
+                      [title]="s.devueltas >= s.asignadas ? 'Ver pesajes' : 'Registrar pesajes'" [attr.aria-label]="(s.devueltas >= s.asignadas ? 'Ver pesajes de ' : 'Registrar pesajes de ') + s.socioNombre"><fa-icon [icon]="scaleIcon" /></button></div></td>
+                  </tr>
+                }</tbody>
+              </table></div> }
+            }
+          </section>
+        }
+      }
+    }
+  }
+
+  <app-action-confirm-dialog />
+  <dialog #editorDialog class="modal desco-modal campaign-dialog" [attr.data-editor]="editor()" (cancel)="$event.preventDefault();close()">
+    <div class="modal-box admin-modal-box admin-modal-box--wide campaign-modal-box">
+      <header class="admin-modal-header"><div class="admin-modal-title-group"><span class="admin-modal-icon"><fa-icon [icon]="calendarIcon" /></span><div><p>Campañas de venta</p><h2>
+        @switch(editor()){ @case('create'){Nueva campaña} @case('edit'){Editar campaña} @case('members'){Agregar participantes} @case('crates'){Asignar jabas} @case('history'){Historial de precios} }
+      </h2></div></div><button type="button" class="admin-icon-button campaign-modal-close" [disabled]="busy()" aria-label="Cerrar" (click)="close()"><fa-icon [icon]="closeIcon" /></button></header>
+      <div class="campaign-modal-scroll">
+      @switch (editor()) {
+        @case ('create') { @if (refsLoading()) { <app-loading-state title="Cargando catálogos" /> } @else {
+          <form id="campaign-create-form" [formGroup]="form" (ngSubmit)="saveCampaign()" class="campaign-create-form">
+            <section class="campaign-create-section" aria-labelledby="campaign-general-title">
+              <h3 id="campaign-general-title" class="campaign-create-section-title">Datos de la campaña</h3>
+              <div class="campaign-create-grid">
+                <div class="admin-field campaign-create-wide">
+                  <label for="campaign-association">Asociación</label>
+                  <input id="campaign-association" class="admin-input" [value]="apappss()?.nombre || 'Sin convenio APAPPSS disponible'" readonly />
+                </div>
+                <div class="admin-field campaign-create-wide">
+                  <label for="campaign-name">Nombre de campaña</label>
+                  <input id="campaign-name" class="admin-input" type="text" maxlength="180" formControlName="name" />
+                </div>
+                <div class="campaign-create-wide campaign-buyer-field campaign-buyer-document">
+                  <div class="campaign-buyer-document-grid">
+                    <div class="admin-field">
+                      <label for="campaign-buyer-doc-type">Tipo de documento</label>
+                      <select id="campaign-buyer-doc-type" class="admin-select" [value]="buyerDocumentType()" (change)="changeBuyerDocumentType($any($event.target).value)" [disabled]="busy()">
+                        @for (documentType of buyerDocumentTypes(); track documentType.value) {
+                          <option [value]="documentType.value">{{ documentType.label }}</option>
+                        }
+                      </select>
+                    </div>
+                    <div class="admin-field">
+                      <label for="campaign-buyer-doc-number">Número de documento</label>
+                      <input id="campaign-buyer-doc-number" class="admin-input" type="text" autocomplete="off" spellcheck="false"
+                        [attr.inputmode]="buyerDocumentInputMode()" [maxLength]="buyerDocumentMaxLength()"
+                        [value]="buyerDocumentNumber()" (input)="changeBuyerDocumentNumber($any($event.target))"
+                        (keydown.enter)="$event.preventDefault(); lookupCampaignBuyer()"
+                        [placeholder]="buyerDocumentHint()" [disabled]="busy()" />
+                    </div>
+                    <button class="admin-secondary-button campaign-buyer-document-search" type="button"
+                      [disabled]="!validBuyerDocument() || buyerDocumentLoading() || busy()" (click)="lookupCampaignBuyer()">
+                      {{ buyerDocumentLoading() ? 'Buscando...' : 'Buscar comprador' }}
+                    </button>
+                  </div>
+                  @if (campaignBuyer(); as buyer) {
+                    <div class="campaign-buyer-identified" role="status">
+                      <span class="campaign-buyer-identified-label">Comprador identificado</span>
+                      <strong>{{ buyer.nombre }}</strong>
+                      <span>{{ buyer.tipoDocumento }} · {{ buyer.documento }} · {{ buyer.tipo === 'PERSONA' ? 'Persona' : 'Empresa' }}</span>
+                    </div>
+                  } @else if (buyerDocumentMatches().length > 1) {
+                    <div class="admin-field campaign-buyer-multiple">
+                      <label for="campaign-buyer-choice">Seleccionar comprador</label>
+                      <select id="campaign-buyer-choice" class="admin-select" [value]="form.controls.buyerId.value" (change)="selectCampaignBuyer($any($event.target).value)">
+                        <option [value]="0">Seleccionar comprador</option>
+                        @for (buyer of buyerDocumentMatches(); track buyer.compradorId) {
+                          <option [value]="buyer.compradorId">{{ buyer.nombre }} · {{ buyer.documento }}</option>
+                        }
+                      </select>
+                    </div>
+                  }
+                  @if (buyerDocumentMessage()) {
+                    <p class="campaign-buyer-document-message" role="status">
+                      {{ buyerDocumentMessage() }}
+                      @if (buyerDocumentNotFound()) {
+                        <a routerLink="/gestion-comercial/compradores" (click)="close()">Registrar comprador</a>
+                      }
+                    </p>
+                  }
+                </div>
+                <div class="admin-field">
+                  <label for="campaign-modality">Modalidad de venta</label>
+                  <select id="campaign-modality" class="admin-select" formControlName="modalityId">
+                    <option [ngValue]="0">Seleccionar</option>
+                    @for (m of references().salesModalities; track m.value) { <option [ngValue]="m.value">{{ m.label }}</option> }
+                  </select>
+                </div>
+                <fieldset class="campaign-create-wide campaign-origin-field">
+                  <legend>Origen de las jabas</legend>
+                  <div class="campaign-origin-options">
+                    <label class="campaign-origin-option" [class.is-selected]="form.controls.crateOrigin.value === 'UOT'">
+                      <input type="radio" formControlName="crateOrigin" value="UOT" />
+                      <span class="campaign-origin-icon" aria-hidden="true"><fa-icon [icon]="cratesIcon" /></span>
+                      <span class="campaign-origin-copy"><strong>UOT</strong><small>Jabas de la unidad territorial</small></span>
+                      <span class="campaign-origin-mark" aria-hidden="true"></span>
+                    </label>
+                    <label class="campaign-origin-option" [class.is-selected]="form.controls.crateOrigin.value === 'ASOCIACION'">
+                      <input type="radio" formControlName="crateOrigin" value="ASOCIACION" />
+                      <span class="campaign-origin-icon" aria-hidden="true"><fa-icon [icon]="usersIcon" /></span>
+                      <span class="campaign-origin-copy"><strong>Asociación</strong><small>Jabas de la organización</small></span>
+                      <span class="campaign-origin-mark" aria-hidden="true"></span>
+                    </label>
+                  </div>
+                </fieldset>
+                <div class="admin-field">
+                  <label for="campaign-quota">Cupo de jabas (opcional)</label>
+                  <input id="campaign-quota" class="admin-input" type="number" step="1" min="0" max="100000" formControlName="quota" placeholder="Sin definir" />
+                </div>
+                <div class="admin-field">
+                  <label for="campaign-discount">Tara por jaba (kg, opcional)</label>
+                  <input id="campaign-discount" class="admin-input" type="number" min="0" max="9.999" step="0.001"
+                    placeholder="0.000" formControlName="discount" />
+                </div>
+                <div class="admin-field">
+                  <label for="campaign-start">Fecha inicio</label>
+                  <input id="campaign-start" class="admin-input" type="date" formControlName="start" [min]="today()" />
+                </div>
+                <div class="admin-field">
+                  <label for="campaign-end">Fecha fin</label>
+                  <input id="campaign-end" class="admin-input" type="date" formControlName="end" [min]="form.controls.start.value > today() ? form.controls.start.value : today()" />
+                </div>
+                <div class="admin-field campaign-create-wide">
+                  <label for="campaign-observation">Observación</label>
+                  <textarea id="campaign-observation" class="admin-textarea" rows="2" maxlength="400" formControlName="observation"></textarea>
+                </div>
+              </div>
+            </section>
+            <section class="campaign-create-section" aria-labelledby="campaign-prices-title">
+              <h3 id="campaign-prices-title" class="campaign-create-section-title">Variedades, calibres y precios</h3>
+
+              <div class="campaign-create-prices" formArrayName="lines">
+                @for (line of lines.controls; track line; let i = $index) {
+                  <div class="campaign-create-price-row" [formGroupName]="i">
+                    <div class="admin-field">
+                      <label [attr.for]="'campaign-variety-' + i">Variedad</label>
+                      <select [id]="'campaign-variety-' + i" class="admin-select" formControlName="variety">
+                        <option [ngValue]="0">Seleccionar</option>
+                        @for (r of references().varieties; track r.value) { <option [ngValue]="r.value">{{ r.label }}</option> }
+                      </select>
+                    </div>
+                    <div class="admin-field"><label [attr.for]="'campaign-grade-'+i">Calibre</label>
+                      <select [id]="'campaign-grade-'+i" class="admin-select" formControlName="grade">
+                        <option value="PRIMERA">Primera</option><option value="SEGUNDA">Segunda</option><option value="DESCARTE">Descarte</option>
+                      </select></div>
+                    <div class="admin-field"><label [attr.for]="'campaign-from-'+i">Desde (g)</label>
+                      <input [id]="'campaign-from-'+i" class="admin-input" type="number" step="1" min="0" formControlName="gramsFrom" /></div>
+                    <div class="admin-field"><label [attr.for]="'campaign-to-'+i">Hasta (g, opcional)</label>
+                      <input [id]="'campaign-to-'+i" class="admin-input" type="number" step="1" min="0" formControlName="gramsTo" placeholder="Sin límite superior" /></div>
+                    <div class="campaign-calibre-preview" [attr.aria-label]="'Rango efectivo: '+createRangeText(i)">{{createRangeText(i)}}</div>
+                    <div class="admin-field">
+                      <label [attr.for]="'campaign-price-' + i">Precio S/ por kg</label>
+                      <input [id]="'campaign-price-' + i" class="admin-input" type="number" min="0.0001" step="0.0001" formControlName="price" />
+                    </div>
+                    <button type="button" class="admin-secondary-button campaign-remove-variety" [disabled]="lines.length===1" (click)="removeLine(i)" title="Quitar calibre" [attr.aria-label]="'Quitar calibre '+(i+1)"><fa-icon [icon]="removeIcon" /></button>
+                  </div>
+                }
+                <button type="button" class="admin-secondary-button campaign-add-variety" [disabled]="lines.length>=20" (click)="addLine()"><fa-icon [icon]="plusIcon" /> Otro calibre</button>
+              </div>
+            </section>
+          @if (permission.has('SANCIONES_CONFIGURAR')) {
+          <section class="campaign-sanctions-editor" aria-label="Sanciones de venta">
+            <div class="campaign-section-header"><h3>Sanciones de venta</h3></div>
+            <p class="campaign-sanction-hint">La selección se aplica únicamente al guardar la campaña.</p>
+            @if (sanctionsLoading()) {
+              <p class="campaign-sanctions-empty campaign-sanctions-loading" role="status"><span class="campaign-mini-spinner" aria-hidden="true"></span> Cargando sanciones...</p>
+            } @else if (sanctionsError()) {
+              <p class="campaign-sanctions-error" role="alert">{{sanctionsError()}}</p>
+            } @else {
+              <div class="campaign-sanction-picker">
+                <label class="admin-field"><span>Buscar sanción</span><input class="admin-input" type="search"
+                  placeholder="Buscar por nombre o código" [value]="sanctionSearch()" (input)="sanctionSearch.set($any($event.target).value)" /></label>
+                <label class="admin-field"><span>Seleccionar sanción</span><select class="admin-select" [value]="selectedSanctionId() ?? ''"
+                  (change)="selectedSanctionId.set($any($event.target).value ? +$any($event.target).value : null)">
+                    <option value="">{{availableEditorSanctions().length ? 'Seleccione una sanción' : 'Sin sanciones disponibles'}}</option>
+                    @for (item of availableEditorSanctions(); track item.id) {
+                      <option [value]="item.id">{{item.codigo}} · {{item.nombre}}</option>
+                    }
+                  </select></label>
+                <button type="button" class="admin-secondary-button campaign-sanction-add"
+                  [disabled]="selectedSanctionId()===null || busy()" (click)="addEditorSanction()"><fa-icon [icon]="plusIcon" /> Agregar</button>
+              </div>
+              @if (selectedEditorSanctions().length) {
+                <div class="campaign-sanctions-list">
+                  @for (sanction of selectedEditorSanctions(); track sanction.id) {
+                    <div class="campaign-sanction-option" [class.is-active]="sanction.enabled">
+                        <label class="campaign-sanction-choice">
+                          <input type="checkbox" [checked]="sanction.enabled" [disabled]="sanction.socios>0 || busy()"
+                            (change)="toggleEditorSanction(sanction.id,$any($event.target).checked)" />
+                          <span class="campaign-sanction-check" aria-hidden="true"></span>
+                          <span class="campaign-sanction-copy"><strong>{{sanction.nombre}}</strong><small>{{sanction.codigo}}</small>
+                            @if (!sanction.enabled) { <small class="campaign-sanction-pending">Se quitará al guardar</small> }
+                            @if (sanction.socios>0) { <small class="campaign-sanction-in-use">En uso: no editable</small> }
+                          </span>
+                        </label>
+                      <label class="admin-field campaign-sanction-amount"><span>Descuento S/ por kg</span>
+                        <input class="admin-input" type="number" min="0.0001" step="0.0001" [value]="sanction.descuento"
+                          [disabled]="!sanction.enabled || sanction.socios>0 || busy()"
+                          (input)="changeEditorSanctionAmount(sanction.id,$any($event.target).value)" />
+                      </label>
+                    </div>
+                  }
+                </div>
+              } @else { <p class="campaign-sanctions-empty">No hay sanciones agregadas a la campaña.</p> }
+            }
+          </section>
+          }
+          </form>
+        }}
+        @case ('edit') {
+          <form id="campaign-edit-form" [formGroup]="form" (ngSubmit)="saveCampaign()" class="admin-form-grid campaign-main-form">
+            <div class="admin-field campaign-buyer-field"><label>Comprador</label>
+              <input class="admin-input" type="search" aria-label="Buscar comprador" placeholder="Buscar nombre o documento" [value]="buyerSearch()" [disabled]="campaign()?.['estadoProceso']==='ACTIVA'" (input)="searchBuyers($any($event.target).value)" />
+              <select class="admin-select" formControlName="buyerId">
+                <option [ngValue]="0">Seleccionar comprador</option>
+                @if (plan()?.compradorId && !buyerListed(plan()!.compradorId!)) { <option [ngValue]="plan()!.compradorId">{{ plan()?.compradorNombre || 'Comprador actual' }}</option> }
+                @for (b of buyers(); track b.compradorId) { <option [ngValue]="b.compradorId">{{ b.nombre }} · {{ b.tipo === 'PERSONA' ? 'Persona' : 'Empresa' }}</option> }
+              </select>
+            </div>
+            <div class="admin-field"><label>Modalidad de venta</label><input class="admin-input" [value]="plan()?.modalidadVentaId ? label(references().salesModalities,plan()?.modalidadVentaId) : 'Sin definir'" readonly /></div>
+            <div class="admin-field"><label>Nombre</label><input class="admin-input" maxlength="180" formControlName="name" /></div>
+            <div class="admin-field"><label>Fecha inicio</label><input class="admin-input" type="date" formControlName="start" [readonly]="campaign()?.['estadoProceso']==='ACTIVA'" /></div>
+            <div class="admin-field"><label>Fecha fin</label><input class="admin-input" type="date" formControlName="end" [readonly]="campaign()?.['estadoProceso']==='ACTIVA'" /></div>
+            <fieldset class="admin-field-span-2 campaign-origin-field">
+              <legend>Origen de las jabas</legend>
+              <div class="campaign-origin-options">
+                <label class="campaign-origin-option" [class.is-selected]="form.controls.crateOrigin.value === 'UOT'">
+                  <input type="radio" formControlName="crateOrigin" value="UOT" />
+                  <span class="campaign-origin-icon" aria-hidden="true"><fa-icon [icon]="cratesIcon" /></span>
+                  <span class="campaign-origin-copy"><strong>UOT</strong><small>Jabas de la unidad territorial</small></span>
+                  <span class="campaign-origin-mark" aria-hidden="true"></span>
+                </label>
+                <label class="campaign-origin-option" [class.is-selected]="form.controls.crateOrigin.value === 'ASOCIACION'">
+                  <input type="radio" formControlName="crateOrigin" value="ASOCIACION" />
+                  <span class="campaign-origin-icon" aria-hidden="true"><fa-icon [icon]="usersIcon" /></span>
+                  <span class="campaign-origin-copy"><strong>Asociación</strong><small>Jabas de la organización</small></span>
+                  <span class="campaign-origin-mark" aria-hidden="true"></span>
+                </label>
+              </div>
+            </fieldset>
+            <div class="admin-field-span-2 admin-field"><label>Observación</label><textarea class="admin-textarea" maxlength="400" formControlName="observation"></textarea></div>
+          </form>
+          <section class="campaign-edit-grades">
+            <div class="campaign-section-header"><h3>Variedades, calibres y precios</h3></div>
+            <div class="campaign-edit-grade-list">
+              @for(g of editGrades();track $index;let i=$index){
+                <div class="campaign-edit-grade-item" [class.campaign-edit-grade-item--saved]="!!g.calibreId">
+                  @if(g.calibreId) {
+                    <div class="campaign-grade-identity"><strong>{{gradeLabel(g)}}</strong></div>
+                  } @else {
+                    <label class="admin-field"><span>Variedad</span><select class="admin-select" [value]="g.variedadPaltaId" (change)="updateEditGrade(i,'variedadPaltaId',+$any($event.target).value)">
+                      <option value="0">Seleccionar</option>@for(v of references().varieties;track v.value){<option [value]="v.value">{{v.label}}</option>}
+                    </select></label>
+                    <label class="admin-field"><span>Calibre</span><select class="admin-select" [value]="g.calibre" (change)="updateEditGrade(i,'calibre',$any($event.target).value)">
+                      <option value="PRIMERA">Primera</option><option value="SEGUNDA">Segunda</option><option value="DESCARTE">Descarte</option>
+                    </select></label>
+                    <label class="admin-field"><span>Desde (g)</span><input class="admin-input" type="number" step="1" min="0" [value]="g.gramosDesde" (input)="updateEditGrade(i,'gramosDesde',+$any($event.target).value)" /></label>
+                    <label class="admin-field"><span>Hasta (g)</span><input class="admin-input" type="number" step="1" min="0" placeholder="Sin límite" [value]="g.gramosHasta ?? ''" (input)="updateEditGrade(i,'gramosHasta',$any($event.target).value===''?null:+$any($event.target).value)" /></label>
+                  }
+                  @if(!g.calibreId) { <div class="campaign-calibre-preview" [attr.aria-label]="'Rango efectivo: '+editRangeText(i)">{{editRangeText(i)}}</div> }
+                  <label class="admin-field"><span>Precio S/ por kg</span><input class="admin-input" type="number" min="0.0001" step="0.0001"
+                    [value]="g.precioKg" [disabled]="g.calibreId ? !permission.has('PRECIOS_EDITAR') : !permission.has('PRECIOS_CREAR')"
+                    (input)="updateEditGrade(i,'precioKg',+$any($event.target).value)" /></label>
+                  <button type="button" class="admin-secondary-button campaign-edit-grade-remove" [disabled]="editGrades().length===1 || busy() || (!!g.calibreId && !permission.has('PRECIOS_RETIRAR'))"
+                    (click)="removeEditGrade(i)" title="Quitar calibre" [attr.aria-label]="'Quitar calibre '+(i+1)"><fa-icon [icon]="removeIcon" /></button>
+                </div>
+              }
+            </div>
+            <button *appPermission="'PRECIOS_CREAR'" type="button" class="admin-secondary-button campaign-edit-grade-add"
+              [disabled]="editGrades().length>=20 || busy()" (click)="addEditGrade()"><fa-icon [icon]="plusIcon" /> Añadir calibre</button>
+          </section>
+          @if (permission.has('SANCIONES_CONFIGURAR')) {
+          <section class="campaign-sanctions-editor" aria-label="Sanciones de venta">
+            <div class="campaign-section-header"><h3>Sanciones de venta</h3></div>
+            <p class="campaign-sanction-hint">La selección se aplica únicamente al guardar la campaña.</p>
+            @if (sanctionsLoading()) {
+              <p class="campaign-sanctions-empty campaign-sanctions-loading" role="status"><span class="campaign-mini-spinner" aria-hidden="true"></span> Cargando sanciones...</p>
+            } @else if (sanctionsError()) {
+              <p class="campaign-sanctions-error" role="alert">{{sanctionsError()}}</p>
+            } @else {
+              <div class="campaign-sanction-picker">
+                <label class="admin-field"><span>Buscar sanción</span><input class="admin-input" type="search"
+                  placeholder="Buscar por nombre o código" [value]="sanctionSearch()" (input)="sanctionSearch.set($any($event.target).value)" /></label>
+                <label class="admin-field"><span>Seleccionar sanción</span><select class="admin-select" [value]="selectedSanctionId() ?? ''"
+                  (change)="selectedSanctionId.set($any($event.target).value ? +$any($event.target).value : null)">
+                    <option value="">{{availableEditorSanctions().length ? 'Seleccione una sanción' : 'Sin sanciones disponibles'}}</option>
+                    @for (item of availableEditorSanctions(); track item.id) {
+                      <option [value]="item.id">{{item.codigo}} · {{item.nombre}}</option>
+                    }
+                  </select></label>
+                <button type="button" class="admin-secondary-button campaign-sanction-add"
+                  [disabled]="selectedSanctionId()===null || busy()" (click)="addEditorSanction()"><fa-icon [icon]="plusIcon" /> Agregar</button>
+              </div>
+              @if (selectedEditorSanctions().length) {
+                <div class="campaign-sanctions-list">
+                  @for (sanction of selectedEditorSanctions(); track sanction.id) {
+                    <div class="campaign-sanction-option" [class.is-active]="sanction.enabled">
+                        <label class="campaign-sanction-choice">
+                          <input type="checkbox" [checked]="sanction.enabled" [disabled]="sanction.socios>0 || busy()"
+                            (change)="toggleEditorSanction(sanction.id,$any($event.target).checked)" />
+                          <span class="campaign-sanction-check" aria-hidden="true"></span>
+                          <span class="campaign-sanction-copy"><strong>{{sanction.nombre}}</strong><small>{{sanction.codigo}}</small>
+                            @if (!sanction.enabled) { <small class="campaign-sanction-pending">Se quitará al guardar</small> }
+                            @if (sanction.socios>0) { <small class="campaign-sanction-in-use">En uso: no editable</small> }
+                          </span>
+                        </label>
+                      <label class="admin-field campaign-sanction-amount"><span>Descuento S/ por kg</span>
+                        <input class="admin-input" type="number" min="0.0001" step="0.0001" [value]="sanction.descuento"
+                          [disabled]="!sanction.enabled || sanction.socios>0 || busy()"
+                          (input)="changeEditorSanctionAmount(sanction.id,$any($event.target).value)" />
+                      </label>
+                    </div>
+                  }
+                </div>
+              } @else { <p class="campaign-sanctions-empty">No hay sanciones agregadas a la campaña.</p> }
+            }
+          </section>
+          }
+          <div class="campaign-edit-quota-grid" [formGroup]="quotaForm">
+            <label class="admin-field"><span>Cupo total de jabas</span><input type="number" min="1" max="100000" step="1" class="admin-input" formControlName="count" /></label>
+            <label class="admin-field"><span>Tara de jaba (kg)</span><input type="number" min="0" max="9.999" step="0.001" class="admin-input" formControlName="tare" /></label>
+          </div>
+        }
+        @case ('members') {
+          <div class="campaign-member-picker">
+            <div class="campaign-member-picker-toolbar">
+              <label class="admin-field"><span>Buscar socio APAPPSS</span><input class="admin-input" type="search" [value]="memberSearch()" (input)="memberSearch.set($any($event.target).value)" placeholder="Nombre o documento" /></label>
+              <app-list-view-switch label="Presentación de socios" [view]="memberView()" (viewChange)="memberView.set($event)" />
+            </div>
+            <div class="campaign-picker-bar"><span><strong>{{ selection().length }}</strong> de 100 seleccionados · Cupo libre {{ availableQuota() }}</span>
+              <button type="button" class="admin-secondary-button" (click)="toggleAll(true)">Añadir visibles</button>
+              <button type="button" class="admin-secondary-button" [disabled]="selection().length===0" (click)="clearCart()">Limpiar lista</button>
+            </div>
+            <div class="campaign-picker-layout">
+              <div class="campaign-picker-catalog">
+                @if(filteredEligible().length===0){<p class="campaign-info">No hay socios elegibles para esta búsqueda.</p>}
+                @else if (memberView()==='table') {
+                  <div class="campaign-picker-table-wrap"><table class="campaign-picker-table"><thead><tr><th>Socio</th><th>Documento</th><th>Seleccionar</th></tr></thead><tbody>
+                    @for (p of filteredEligible(); track p.socioAsociacionId) {
+                      <tr><td>{{p.nombre}}</td><td>{{p.numeroDocumento}}</td><td><button class="admin-icon-button" type="button" [disabled]="!isSelected(p.socioAsociacionId) && selection().length>=100"
+                        [title]="isSelected(p.socioAsociacionId) ? 'Quitar socio' : 'Agregar socio'"
+                        [attr.aria-label]="(isSelected(p.socioAsociacionId) ? 'Quitar ' : 'Agregar ') + p.nombre"
+                        (click)="toggleMember(p.socioAsociacionId,!isSelected(p.socioAsociacionId))"><fa-icon [icon]="isSelected(p.socioAsociacionId) ? closeIcon : plusIcon" /></button></td></tr>
+                    }
+                  </tbody></table></div>
+                } @else {
+                  <div class="campaign-picker-items">@for(p of filteredEligible(); track p.socioAsociacionId){
+                    <article class="campaign-picker-item"><span><strong>{{p.nombre}}</strong><small>{{p.numeroDocumento}}</small></span>
+                      <button class="admin-icon-button" type="button" [disabled]="!isSelected(p.socioAsociacionId) && selection().length>=100" [title]="isSelected(p.socioAsociacionId) ? 'Quitar socio' : 'Agregar socio'"
+                        [attr.aria-label]="(isSelected(p.socioAsociacionId) ? 'Quitar ' : 'Agregar ') + p.nombre"
+                        (click)="toggleMember(p.socioAsociacionId,!isSelected(p.socioAsociacionId))"><fa-icon [icon]="isSelected(p.socioAsociacionId) ? closeIcon : plusIcon" /></button></article>
+                  }</div>
+                }
+              </div>
+              <aside class="campaign-cart" aria-label="Socios seleccionados"><h3>Socios por incorporar ({{ selection().length }})</h3>
+                @if (cartPartners().length===0) { <p>Aún no ha seleccionado socios.</p> }
+                @for (p of cartPartners();track p.socioAsociacionId) { <div class="campaign-cart-row"><span><strong>{{p.nombre}}</strong><small>1 jaba inicial</small></span>
+                  <button class="admin-icon-button" type="button" [attr.aria-label]="'Quitar '+p.nombre" title="Quitar de la lista" (click)="toggleMember(p.socioAsociacionId,false)"><fa-icon [icon]="closeIcon" /></button></div> }
+              </aside>
+            </div>
+          </div>
+        }
+        @case ('crates') {
+          <form id="campaign-crates-form" class="admin-form-grid campaign-compact-form" [formGroup]="cratesForm" (ngSubmit)="saveCrates()">
+            <div class="admin-field-span-2"><strong>{{ chosenPartner()?.socioNombre }}</strong><p class="campaign-info">Actuales: {{ chosenPartner()?.cantidadJabas || 0 }} · Cupo libre: {{ availableQuota() }}</p></div>
+            <div class="admin-field admin-field-span-2"><label>Cantidad total solicitada</label><input class="admin-input" type="number" step="1" [min]="chosenPartner()?.estadoJabas === 'ENTREGADA' || chosenPartner()?.estadoJabas === 'PENDIENTE_DEVOLUCION' || (chosenPartner()?.cantidadAjustePendiente || 0) > 0 ? 0 : 1" formControlName="count" /></div>
+            @if (chosenPartner()?.estadoJabas === 'ENTREGADA' || chosenPartner()?.estadoJabas === 'PENDIENTE_DEVOLUCION' || (chosenPartner()?.cantidadAjustePendiente || 0) > 0) {
+              <div class="admin-field admin-field-span-2"><label>Comentario del ajuste</label>
+                <textarea class="admin-textarea" formControlName="comment" rows="3" maxlength="500" placeholder="Motivo del cambio" required></textarea></div>
+            }
+          </form>
+        }
+        @case ('history') {
+          <div class="campaign-history">@for (h of history(); track $index){<div class="campaign-history-row"><strong>{{h['moneda']||'PEN'}} {{num(h['precio'])|number:'1.2-4'}} / KG</strong><span>Versión {{h['version']||$index+1}} · {{date(h['fechaVigenciaDesde'])}}</span></div>}@empty{<p>No hay versiones anteriores registradas.</p>}</div>
+        }
+      }
+      </div>
+      <footer class="admin-modal-actions campaign-modal-footer">
+        <button type="button" class="admin-secondary-button" [disabled]="busy()" (click)="close()">{{ editor() === 'history' ? 'Cerrar' : 'Cancelar' }}</button>
+        @switch (editor()) {
+          @case ('create') { <button type="submit" form="campaign-create-form" class="admin-primary-button" [disabled]="busy() || sanctionsLoading() || form.invalid">{{ busy() ? 'Guardando...' : 'Guardar campaña' }}</button> }
+          @case ('edit') { <button type="submit" form="campaign-edit-form" class="admin-primary-button" [disabled]="busy() || sanctionsLoading() || !campaignEditChanged() || !gradesEditValid() || (quotaEditChanged() && quotaForm.invalid)">{{ busy() ? 'Guardando...' : 'Guardar cambios' }}</button> }
+          @case ('members') { <button type="button" class="admin-primary-button" [disabled]="busy() || !canAddMembers() || !hasQuota() || selection().length===0 || selection().length>100 || selection().length>availableQuota()" (click)="saveMembers()">{{ busy() ? 'Guardando...' : 'Agregar socios' }}</button> }
+          @case ('crates') { <button type="submit" form="campaign-crates-form" class="admin-primary-button" [disabled]="busy() || cratesForm.invalid || !cratesEditChanged()">{{ busy() ? 'Guardando...' : 'Guardar asignación' }}</button> }
+        }
+      </footer>
+    </div>
+  </dialog>
+
+</section>

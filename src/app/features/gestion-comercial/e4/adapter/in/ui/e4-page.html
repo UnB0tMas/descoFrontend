@@ -3,7 +3,7 @@
     <div pageActions class="e4-actions">
       <a routerLink="/gestion-comercial/campanias" class="admin-secondary-button">Campañas</a>
       <a routerLink="/gestion-comercial/operativos" class="admin-secondary-button">Operativos</a>
-      <a routerLink="/gestion-comercial/precios" class="admin-secondary-button">Precios y condiciones</a>
+      <a routerLink="/gestion-comercial/campanias" class="admin-secondary-button">Precios y condiciones</a>
       <a *appPermission="'LIQUIDACIONES_LISTAR'" routerLink="/gestion-comercial/finanzas-apappss" [queryParams]="{campaniaId: campaignId}" class="admin-secondary-button">Finanzas y cierre</a>
       <button type="button" class="admin-secondary-button" (click)="refreshCampaign()" [disabled]="busy()||!campaignId">Actualizar</button>
     </div>

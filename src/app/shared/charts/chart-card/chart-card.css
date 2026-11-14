@@ -2,3 +2,11 @@
   display: block;
   height: 100%;
 }
+
+.chart-card-surface{background:var(--desco-surface);border-color:var(--desco-border);color:var(--desco-text);}
+.chart-card-divider{border-color:var(--desco-border);}
+.chart-card-icon{color:var(--desco-primary-text);background:var(--desco-surface-soft);}
+.chart-card-title{color:var(--desco-text);}
+.chart-card-caption{color:var(--desco-text-muted);}
+.chart-card-empty{background:var(--desco-surface);border-color:var(--desco-border);}
+:host ::ng-deep .apexcharts-tooltip,:host ::ng-deep .apexcharts-xaxistooltip{background:var(--desco-surface)!important;color:var(--desco-text)!important;border-color:var(--desco-border)!important;}

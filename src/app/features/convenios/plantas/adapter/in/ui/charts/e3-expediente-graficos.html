@@ -1,0 +1,36 @@
+<section class="e3-graphs" [class.e3-graphs--single]="soloProduccion" aria-label="Gráficos de la planta">
+ @if(!soloProduccion){
+ <article class="e3-graph" aria-label="Evolución sanitaria en el periodo seleccionado">
+  <header class="e3-graph__head"><div><span class="e3-graph__eyebrow">SANIDAD</span><h4>Evolución sanitaria</h4>
+   <p>{{desde}} — {{hasta}}</p></div><span class="e3-graph__metric">{{actividadTotal}} <small>actuaciones</small></span></header>
+  <div class="e3-graph__plot" role="img" [attr.aria-label]="hayActividad?'Barras de nuevos casos, recuperaciones y bajas':'Sin movimientos sanitarios registrados'">
+   <div class="e3-graph__grid" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+   @for(p of actividad;track $index){<div class="e3-graph__slot" [attr.title]="p.etiqueta+' · Nuevos: '+p.nuevos+' · Controladas: '+p.controladas+' · Bajas: '+p.bajas">
+    <div class="e3-graph__stack">
+     <span class="e3-graph__bar e3-graph__bar--baja" [style.height.%]="p.altoBajas"></span>
+     <span class="e3-graph__bar e3-graph__bar--controlada" [style.height.%]="p.altoControladas"></span>
+     <span class="e3-graph__bar e3-graph__bar--caso" [style.height.%]="p.altoNuevos"></span>
+    </div><small>{{p.etiqueta}}</small></div>}
+   @if(!hayActividad){<div class="e3-graph__empty">Sin movimientos en el periodo</div>}
+  </div>
+  <footer class="e3-graph__legend"><span><i class="e3-graph__key e3-graph__key--caso"></i>Nuevos casos</span>
+   <span><i class="e3-graph__key e3-graph__key--controlada"></i>Controladas</span>
+   <span><i class="e3-graph__key e3-graph__key--baja"></i>Bajas</span></footer>
+ </article>
+ }
+ <article class="e3-graph" aria-label="Producción anual de la planta">
+  <header class="e3-graph__head"><div><span class="e3-graph__eyebrow">PRODUCCIÓN</span><h4>Producción por año</h4>
+   <p>Kilogramos estimados y cosechados</p></div>
+   <span class="e3-graph__metric">{{promedioReal|number:'1.0-2'}} <small>kg/año</small></span></header>
+  <div class="e3-graph__plot" role="img" [attr.aria-label]="porAnio.length?'Gráfico comparativo de estimación y cosecha real por año':'Sin registros de producción'">
+   <div class="e3-graph__grid" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+   @for(p of porAnio;track p.anio){<div class="e3-graph__slot" [attr.title]="p.anio+' · Estimado: '+(p.tieneEstimacion?p.estimado+' kg':'Sin dato')+' · Cosechado: '+(p.tieneReal?p.real+' kg':'Sin dato')">
+    <div class="e3-graph__pair"><span class="e3-graph__bar e3-graph__bar--estimado" [style.height.%]="p.altoEstimado"></span>
+     <span class="e3-graph__bar e3-graph__bar--real" [style.height.%]="p.altoReal"></span></div><small>{{p.anio}}</small></div>}
+   @if(!porAnio.length){<div class="e3-graph__empty">Sin producción registrada todavía</div>}
+  </div>
+  <footer class="e3-graph__legend"><span><i class="e3-graph__key e3-graph__key--estimado"></i>Estimado</span>
+   <span><i class="e3-graph__key e3-graph__key--real"></i>Cosechado</span>
+   <span class="e3-graph__legend-end">{{periodosConCosecha}} años con cosecha</span></footer>
+ </article>
+</section>

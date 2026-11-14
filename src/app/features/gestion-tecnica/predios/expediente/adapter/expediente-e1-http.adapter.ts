@@ -74,10 +74,13 @@ export class ExpedienteE1HttpAdapter implements ExpedienteE1Gateway {
     return this.api.expedientesPredioDetalle({ id, uotId: uot, convenioId: convenio },
       'body', false, this.settings).pipe(map(r => {
         const d = required(r.datos, 'expediente');
+        // El backend ya expone ambos campos; el SDK generado se sincroniza en el siguiente OpenAPI.
+        const ubicacion = d as typeof d & { centroPobladoId?:number; centroPoblado?:string };
         const detail: ExpedienteE1 = {
           predioId: required(d.predioId, 'predioId'), codigo: d.codigo ?? '',
           nombre: d.nombre ?? '', distritoCodigo: d.distritoCodigo ?? '',
-          referencia: d.referencia, latitud: d.latitud, longitud: d.longitud,
+          referencia: d.referencia, centroPobladoId:ubicacion.centroPobladoId, centroPoblado:ubicacion.centroPoblado,
+          latitud: d.latitud, longitud: d.longitud,
           areaTotalHa: d.areaTotalHa, areaCultivableHa: d.areaCultivableHa,
           tipoRiego: d.tipoRiego, fichaCompleta: d.fichaCompleta ?? false,
           titulares: (d.titulares ?? []).map(t => ({

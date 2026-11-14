@@ -8,9 +8,9 @@ export class E5UseCase {
  tablero(c:number){return this.repo.tablero(c)}
  gastos(c:number){return this.repo.gastos(c)}
  repartos(g:number){return this.repo.repartos(g)}
- repartir(g:number){return this.repo.repartir(g)}
+ repartir(g:number,cuotas?:readonly {participacionId:number;monto:number}[]){return this.repo.repartir(g,cuotas)}
  aprobarReparto(g:number){return this.repo.aprobarReparto(g)}
- rectificarReparto(g:number,m:string){return this.repo.rectificarReparto(g,m)}
+ rectificarReparto(g:number,m:string,cuotas?:readonly {participacionId:number;monto:number}[]){return this.repo.rectificarReparto(g,m,cuotas)}
  liquidaciones(c:number){return this.repo.liquidaciones(c)}
  liquidar(p:number,m?:string){return this.repo.liquidar(p,m)}
  liquidacion(l:number){return this.repo.liquidacion(l)}

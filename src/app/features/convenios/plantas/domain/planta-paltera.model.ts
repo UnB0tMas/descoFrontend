@@ -1,8 +1,13 @@
-export type EstadoPlantaE3 = 'SIN_EVALUAR' | 'SANA' | 'ENFERMA' | 'MUERTA';
+export type EstadoPlantaE3 = 'SIN_EVALUAR' | 'SANA' | 'ENFERMA' | 'MUERTA' | 'ELIMINADA';
 export type TipoActuacionE3 = 'SANITARIO' | 'PREVENTIVO' | 'PODA' | 'RIEGO' | 'FERTILIZACION' | 'OTRO';
 export type TipoProduccionE3 = 'ESTIMACION' | 'COSECHA';
 export interface OpcionE3 { id: number; nombre: string; }
-export interface CatalogosE3 { variedades: OpcionE3[]; diagnosticos: OpcionE3[]; parcelas: OpcionE3[]; socios: OpcionE3[]; }
+export interface TratamientoCatalogoE3 extends OpcionE3 { problemaId: number; }
+export interface CatalogosE3 { variedades: OpcionE3[]; diagnosticos: OpcionE3[];
+ tratamientos: TratamientoCatalogoE3[]; parcelas: OpcionE3[]; socios: OpcionE3[]; }
+export interface DiaE3 { fecha: string; nuevosCasos: number; recuperadas: number; bajas: number; }
+export interface EstadisticasE3 { desde: string; hasta: string; vivas: number; sanas: number;
+ enfermas: number; muertas: number; casosPeriodo: number; tratamientosPeriodo: number; serie: DiaE3[]; }
 export interface ResumenE3 { variedadId: number; variedad: string; cantidad: number; sinEvaluar: number;
  sanas: number; enfermas: number; muertas: number; plantasConEstimacion: number; plantasConCosecha: number;
  estimadoKg: number; realKg: number; }
@@ -13,15 +18,16 @@ export interface PlantaE3 { plantaId: number; codigo: string; variedad: string; 
 export interface PaginaE3 { total: number; items: PlantaE3[]; resumen: ResumenE3[];
  anioResumen: number; resumenParcelas: ResumenParcelaE3[]; }
 export interface EventoE3 { eventoId: number; tipo: string; estadoAnterior?: string; estadoNuevo?: string;
- observacion?: string; visitaId?: number; usuarioId?: number; fechaHora?: string; }
+ observacion?: string; visitaId?: number; usuarioId?: number; usuarioNombre?: string; fechaHora?: string; }
 export interface EpisodioE3 { episodioId: number; diagnostico: string; diagnosticoId: number;
- inicio?: string; fin?: string; observacion?: string; }
+ inicio?: string; fin?: string; observacion?: string;
+ usuarioAperturaId?: number; usuarioApertura?: string; usuarioCierreId?: number; usuarioCierre?: string; }
 export interface SeguimientoE3 { seguimientoId: number; episodioId?: number; tipo: TipoActuacionE3;
- observacion: string; resultado?: string; eventoId: number; visitaId?: number; usuarioId?: number; fechaHora?: string; }
+ observacion: string; resultado?: string; eventoId: number; visitaId?: number; usuarioId?: number; usuarioNombre?: string; fechaHora?: string; }
 export interface FichaHistorialE3 { fichaId: number; fechaPlantacion?: string; edadReferenciaAnios?: number;
- fechaReferencia?: string; version: number; usuarioId: number; fechaHora?: string; }
+ fechaReferencia?: string; version: number; usuarioId: number; usuarioNombre?: string; fechaHora?: string; }
 export interface TratamientoE3 { tratamientoId: number; episodioId: number; descripcion: string;
- resultado?: string; fechaHora?: string; visitaId?: number; }
+ resultado?: string; fechaHora?: string; visitaId?: number; catalogoTratamientoId?: number; catalogoTratamiento?: string; usuarioId?: number; usuarioNombre?: string; }
 export interface ProduccionE3 { produccionId: number; anio: number; tipo: TipoProduccionE3 | 'LEGADO';
  estimadoKg?: number; realKg?: number; observacion?: string; fechaEvento?: string;
  visitaId?: number; fechaHora?: string; }
@@ -41,12 +47,12 @@ export interface DetalleE3 { plantaId: number; predioId: number; codigo: string;
 export interface FilaE3 { variedadId: number; cantidad: number; parcelaCultivoId?: number; }
 export interface LoteResultadoE3 { total: number; resumen: ResumenE3[]; }
 export interface OperacionE3 { plantaId: number; eventoId: number; estado: EstadoPlantaE3; }
-export interface AmbitoE3 { uotId: number; convenioId: number; predioId: number; }
+export interface AmbitoE3 { uotId: number; convenioId: number; predioId: number; parcelaCultivoId?: number; }
 export interface FiltrosE3 { buscar?: string; estado?: string; variedadId?: number; pagina: number; tamano: number; }
 export interface EstadoE3 { version: number; estado: EstadoPlantaE3; diagnosticoId?: number;
  observacion?: string; visitaId?: number; correccionExcepcional?: boolean; motivoCorreccion?: string; }
-export interface FichaE3 { version: number; fechaPlantacion?: string; edadReferenciaAnios?: number; }
-export interface TratamientoNuevoE3 { descripcion: string; resultado?: string; visitaId?: number; }
+export interface FichaE3 { version: number; fechaPlantacion?: string; edadReferenciaAnios?: number; variedadId?: number; parcelaCultivoId?: number; }
+export interface TratamientoNuevoE3 { catalogoTratamientoId: number; resultado?: string; visitaId?: number; }
 export interface SeguimientoNuevoE3 { observacion: string; tipo?: TipoActuacionE3;
  resultado?: string; visitaId?: number; }
 export interface ProduccionNuevaE3 { anio: number; tipo: TipoProduccionE3;

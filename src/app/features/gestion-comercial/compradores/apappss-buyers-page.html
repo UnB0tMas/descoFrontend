@@ -1,0 +1,120 @@
+<section class="desco-page apappss-buyers">
+  <app-page-header title="Compradores" eyebrow="APAPPSS" [icon]="pageIcon">
+    <div pageActions class="flex flex-wrap gap-2">
+      <button type="button" class="admin-secondary-button" [disabled]="loading()" (click)="load()"><fa-icon [icon]="reloadIcon" /> Actualizar</button>
+      <button type="button" *appPermission="'APAPPSS_COMPRADORES_CREAR'" class="admin-primary-button" (click)="openCreate()"><fa-icon [icon]="addIcon" /> Nuevo comprador</button>
+    </div>
+  </app-page-header>
+  <section class="admin-surface apappss-buyers-content">
+    <form class="apappss-buyers-toolbar" (submit)="$event.preventDefault();applySearch()">
+      <label class="admin-field"><span>Buscar</span><input type="search" class="admin-input" [value]="search()" (input)="search.set($any($event.target).value)" placeholder="Nombre o documento" /></label>
+      <label class="admin-field"><span>Tipo</span><select class="admin-select" [value]="filter()" (change)="setType($any($event.target).value)">
+        <option value="">Todos</option><option value="PERSONA">Persona natural</option><option value="EMPRESA">Empresa</option>
+      </select></label>
+      <button type="submit" class="admin-secondary-button" [disabled]="loading()"><fa-icon [icon]="searchIcon" /> Buscar</button>
+    </form>
+    <div class="apappss-buyers-viewbar">
+      <div class="technical-view-control" role="group" aria-label="Visualización de compradores">
+        <button type="button" class="technical-view-button" [class.active]="viewMode() === 'tabla'"
+          [attr.aria-pressed]="viewMode() === 'tabla'" (click)="viewMode.set('tabla')">Tabla</button>
+        <button type="button" class="technical-view-button" [class.active]="viewMode() === 'tarjetas'"
+          [attr.aria-pressed]="viewMode() === 'tarjetas'" (click)="viewMode.set('tarjetas')">Tarjetas</button>
+      </div>
+    </div>
+    @if (loading()) { <app-loading-state title="Cargando compradores" [rows]="5" /> }
+    @else if (error()) { <app-error-state [message]="error() || 'No se pudo consultar.'" (retry)="load()" /> }
+    @else if (items().length === 0) { <app-empty-state title="Sin compradores" message="No hay compradores para los filtros seleccionados." /> }
+    @else if (viewMode() === 'tabla') {
+      <div class="admin-table-wrap apappss-buyers-table-wrap" tabindex="0" role="region" aria-label="Tabla de compradores, desplazamiento horizontal">
+        <table class="admin-table apappss-buyers-table">
+          <thead><tr><th>Comprador</th><th>Documento</th><th>Tipo</th><th>Teléfono</th><th>Correo</th><th class="text-right">Acciones</th></tr></thead>
+          <tbody>
+            @for (buyer of items(); track buyer.compradorId) {
+              <tr>
+                <td><div class="admin-entity"><span class="admin-entity-icon"><fa-icon [icon]="buyer.tipo === 'EMPRESA' ? companyIcon : personIcon" /></span><strong class="apappss-buyer-name">{{ buyer.nombre }}</strong></div></td>
+                <td><span class="apappss-buyer-document">{{ buyer.tipoDocumento }}: {{ buyer.documento }}</span></td>
+                <td><span class="admin-status">{{ buyer.tipo === 'EMPRESA' ? 'Empresa' : 'Persona natural' }}</span></td>
+                <td>{{ buyer.telefono || '—' }}</td>
+                <td><span class="apappss-buyer-email">{{ buyer.correo || '—' }}</span></td>
+                <td class="text-right"><div class="admin-row-actions apappss-buyer-actions">
+                  <button type="button" class="admin-icon-button" title="Ver detalles" [attr.aria-label]="'Ver detalles de ' + buyer.nombre" (click)="openDetail(buyer)"><fa-icon [icon]="detailIcon" /></button>
+                  <button type="button" class="admin-icon-button" [disabled]="!canEdit()" [attr.title]="canEdit() ? 'Editar comprador' : 'Sin permiso para editar compradores'" [attr.aria-label]="'Editar ' + buyer.nombre" (click)="openEdit(buyer)"><fa-icon [icon]="editIcon" /></button>
+                </div></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <div class="desco-record-grid apappss-buyers-grid">
+        @for (buyer of items(); track buyer.compradorId) {
+          <app-record-card>
+            <header class="apappss-buyer-card-heading">
+              <span class="apappss-buyer-avatar"><fa-icon [icon]="buyer.tipo === 'EMPRESA' ? companyIcon : personIcon" /></span>
+              <span class="admin-status">{{ buyer.tipo === 'EMPRESA' ? 'Empresa' : 'Persona natural' }}</span>
+            </header>
+            <div class="apappss-buyer-card-identity">
+              <h3>{{ buyer.nombre }}</h3>
+              <span class="apappss-buyer-card-document">{{ buyer.tipoDocumento }} · {{ buyer.documento }}</span>
+            </div>
+            <dl class="apappss-buyer-card-contacts">
+              <div class="apappss-buyer-card-contact"><dt>Teléfono</dt><dd class="apappss-buyer-card-phone" [attr.title]="buyer.telefono || null">{{ buyer.telefono || '—' }}</dd></div>
+              <div class="apappss-buyer-card-contact"><dt>Correo</dt><dd class="apappss-buyer-card-email" [attr.title]="buyer.correo || null">{{ buyer.correo || '—' }}</dd></div>
+            </dl>
+            <footer class="apappss-buyer-card-footer">
+              <button type="button" class="admin-secondary-button" (click)="openDetail(buyer)"><fa-icon [icon]="detailIcon" /> Detalles</button>
+              <button type="button" class="admin-primary-button" [disabled]="!canEdit()" [attr.title]="canEdit() ? 'Editar comprador' : 'Sin permiso para editar compradores'" (click)="openEdit(buyer)"><fa-icon [icon]="editIcon" /> Editar</button>
+            </footer>
+          </app-record-card>
+        }
+      </div>
+    }
+    @if (!loading() && !error()) {
+      <app-paginator [page]="page()" [size]="size()" [totalRecords]="total()" [totalPages]="totalPages()"
+        (pageChange)="load($event)" (sizeChange)="changePageSize($event)" />
+    }
+  </section>
+
+  <dialog #detailDialog class="modal desco-modal apappss-buyer-dialog" (cancel)="$event.preventDefault();closeDetail()">
+    <div class="modal-box admin-modal-box apappss-buyer-modal-box">
+      <header class="admin-modal-header">
+        <div class="admin-modal-title-group"><span class="admin-modal-icon"><fa-icon [icon]="personIcon" /></span>
+          <div><p>Compradores</p><h2>Detalle del comprador</h2></div>
+        </div>
+        <button type="button" class="admin-icon-button apappss-buyer-close" aria-label="Cerrar" (click)="closeDetail()"><fa-icon [icon]="closeIcon" /></button>
+      </header>
+      <div class="apappss-buyer-modal-scroll">
+        @if (detailLoading()) { <app-loading-state title="Cargando comprador" [rows]="3" /> }
+        @else if (detail(); as buyer) {
+          <section class="apappss-buyer-detail">
+            <div class="apappss-buyer-detail-identity">
+              <span class="apappss-buyer-avatar"><fa-icon [icon]="buyer.tipo === 'EMPRESA' ? companyIcon : personIcon" /></span>
+              <div><strong>{{ buyer.nombre }}</strong><span>{{ buyer.tipoDocumento }} · {{ buyer.documento }}</span></div>
+            </div>
+            <dl class="apappss-buyer-detail-fields">
+              @if (buyer.tipo === 'PERSONA') {
+                <div><dt>Nombres</dt><dd>{{ buyer.nombres || '—' }}</dd></div>
+                <div><dt>Apellido paterno</dt><dd>{{ buyer.apellidoPaterno || '—' }}</dd></div>
+                <div><dt>Apellido materno</dt><dd>{{ buyer.apellidoMaterno || '—' }}</dd></div>
+                <div><dt>Fecha de nacimiento</dt><dd>{{ buyer.fechaNacimiento || '—' }}</dd></div>
+              } @else {
+                <div><dt>Razón social</dt><dd>{{ buyer.razonSocial || '—' }}</dd></div>
+                <div><dt>Nombre comercial</dt><dd>{{ buyer.nombreComercial || '—' }}</dd></div>
+              }
+              <div><dt>Teléfono</dt><dd>{{ buyer.telefono || '—' }}</dd></div>
+              <div><dt>Correo</dt><dd>{{ buyer.correo || '—' }}</dd></div>
+              <div><dt>Distrito</dt><dd>{{ buyer.distritoCodigo || '—' }}</dd></div>
+              <div><dt>Dirección o referencia</dt><dd>{{ buyer.referencia || '—' }}</dd></div>
+            </dl>
+          </section>
+        }
+      </div>
+      <footer class="admin-modal-actions apappss-buyer-footer">
+        <button type="button" class="admin-secondary-button" (click)="closeDetail()">Cerrar</button>
+        <button type="button" class="admin-primary-button" [disabled]="!canEdit() || detailLoading() || !selected()"
+          (click)="beginEdit()"><fa-icon [icon]="editIcon" /> Editar datos</button>
+      </footer>
+    </div>
+  </dialog>
+  <app-entity-registration-modal #entityModal />
+</section>

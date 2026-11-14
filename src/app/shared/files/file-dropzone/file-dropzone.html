@@ -1,0 +1,31 @@
+<section class="e3-dropzone" [class.e3-dropzone--busy]="uploading">
+ <div class="e3-dropzone-target" [class.e3-dropzone-target--over]="dragging"
+  (dragover)="dragOver($event)" (dragleave)="dragLeave($event)" (drop)="drop($event)">
+  <div class="e3-dropzone-header">
+   <span class="e3-dropzone-symbol" aria-hidden="true">+</span>
+   <div class="e3-dropzone-heading"><strong>{{title}}</strong><small>Arrastre los archivos o selecciónelos</small></div>
+   <button type="button" class="e3-dropzone-pick" [disabled]="disabled||uploading" (click)="open()">Añadir {{multiple?'archivos':'archivo'}}</button>
+  </div>
+  @if(previews.length){
+   <ul class="e3-dropzone-list" aria-label="Archivos seleccionados">
+    @for(item of previews;track item.file.name+'-'+item.file.lastModified+'-'+$index){
+     <li class="e3-dropzone-item">
+      @if(item.imagen&&item.url){<img class="e3-dropzone-thumb" [src]="item.url" [alt]="'Vista previa de '+item.file.name"/>}
+      @else{<span class="e3-dropzone-doc" aria-hidden="true">{{item.file.name.split('.').pop()?.slice(0,4)?.toUpperCase()||'DOC'}}</span>}
+      <div class="e3-dropzone-info"><strong [title]="item.file.name">{{item.file.name}}</strong><small>{{size(item.file.size)}}</small></div>
+      <button type="button" class="e3-dropzone-remove" [disabled]="disabled||uploading" [attr.aria-label]="'Quitar '+item.file.name" (click)="remove($index)">×</button>
+     </li>
+    }
+   </ul>
+  }@else{
+   <p class="e3-dropzone-placeholder">Sin archivos seleccionados</p>
+  }
+  <small class="e3-dropzone-help">{{fileTypesHint}} · {{maxSizeMb}} MB máx.</small>
+  <input #fileInput type="file" class="e3-dropzone-input" [attr.accept]="accept" [multiple]="multiple"
+   [disabled]="disabled||uploading" (change)="onInput($event)" tabindex="-1" aria-label="Seleccionar archivos"/>
+ </div>
+ @if(uploading){<div class="e3-dropzone-uploading" role="status" aria-live="polite">
+  <span class="e3-dropzone-loader" aria-hidden="true"></span>Guardando archivos…
+  <span class="e3-dropzone-progress" aria-hidden="true"><span></span></span>
+ </div>}
+</section>

@@ -9,6 +9,7 @@
  @if(loading()){<app-loading-state title="Cargando socio" message="Consultando predios del convenio."/>}
  @else if(error()){<app-error-state [message]="error()||'No se pudo consultar el socio.'" (retry)="cargar()"/>}
  @else if(socio();as s){
+  @if(accionError()){<p class="gp-inline-error" role="alert">{{accionError()}}</p>}
   <div class="admin-detail-grid">
    <article class="admin-detail-card"><span>Documento</span><strong>{{s.tipoDocumento}} {{s.numeroDocumento}}</strong></article>
    <article class="admin-detail-card"><span>Código de socio</span><strong>{{s.codigoSocio||'Sin código'}}</strong></article>
@@ -16,13 +17,77 @@
    <article class="admin-detail-card"><span>Situación</span><strong>{{s.situacionMembresia||'Sin especificar'}}</strong></article>
   </div>
   <section class="admin-surface apappss-detail-section">
-    <div class="gp-section-title"><div><h2>Predios del socio</h2><p>Un socio puede tener varios predios dentro del convenio.</p></div></div>
-    <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Predio</th><th>Titularidad</th><th>Desde</th><th class="text-right">Acciones</th></tr></thead><tbody>
-     @for(p of predios();track p.predioId){<tr><td><div class="admin-stack-copy"><strong>{{p.nombre}}</strong><span>{{p.codigo}}</span></div></td><td>{{p.tipoTitularidad||'—'}}</td><td>{{p.fechaDesde?(p.fechaDesde|date:'dd/MM/yyyy'):'—'}}</td><td class="text-right"><a class="admin-secondary-button" [routerLink]="['/convenios/apappss/predios',p.predioId]" [queryParams]="{convenioId:convenioId,socioId:socioId}">Detalles</a></td></tr>}
-     @empty{<tr><td colspan="4" class="admin-table-empty">El socio aún no tiene predios vinculados a este convenio.</td></tr>}
-    </tbody></table></div>
-
+   <div class="gp-section-title"><div><h2>Predios del socio</h2></div></div>
+   <div class="gp-filter-toolbar apappss-predios-toolbar">
+    <label class="admin-field gp-search" for="apappss-buscar-predio">
+     <span>Buscar predio</span>
+     <input id="apappss-buscar-predio" class="admin-input" type="search" [value]="busqueda()" (input)="buscarPredio($any($event.target).value)" placeholder="Nombre o código"/>
+    </label>
+    <div class="gp-view-toggle" role="group" aria-label="Vista de predios">
+     <button type="button" [class.active]="vista()==='tabla'" [attr.aria-pressed]="vista()==='tabla'" (click)="cambiarVista('tabla')"><fa-icon [icon]="tablaIcon"/> Tabla</button>
+     <button type="button" [class.active]="vista()==='tarjetas'" [attr.aria-pressed]="vista()==='tarjetas'" (click)="cambiarVista('tarjetas')"><fa-icon [icon]="tarjetasIcon"/> Tarjetas</button>
+    </div>
+   </div>
+   @if(!prediosFiltrados().length){<app-empty-state [title]="busqueda().trim()?'Sin resultados':'Sin predios'"/>}
+   @else if(vista()==='tabla'){
+    <div class="admin-table-wrap"><table class="admin-table">
+     <thead><tr><th>Predio</th><th>Titularidad</th><th>Desde</th><th class="text-right">Acciones</th></tr></thead>
+     <tbody>@for(p of prediosPagina();track p.predioId){<tr>
+      <td><div class="admin-entity"><span class="admin-entity-icon"><fa-icon [icon]="predioIcon"/></span><div><strong>{{p.nombre}}</strong><span>{{p.codigo}}</span></div></div></td>
+      <td>{{p.tipoTitularidad||'—'}}</td>
+      <td>{{p.fechaDesde?(p.fechaDesde|date:'dd/MM/yyyy'):'—'}}</td>
+      <td><div class="admin-row-actions apappss-predio-actions">
+       <a class="admin-icon-button" [routerLink]="['/convenios/apappss/predios',p.predioId]" [queryParams]="{convenioId:convenioId,socioId:socioId}" [attr.aria-label]="'Detalles de '+p.nombre" title="Detalles"><fa-icon [icon]="detalleIcon"/></a>
+       @if(puedeEditar()){
+        <button type="button" class="admin-icon-button" [attr.aria-label]="'Editar '+p.nombre" title="Editar" (click)="editarPredio(p.predioId)"><fa-icon [icon]="editarIcon"/></button>
+        @if(aptitud(p.predioId);as a){
+         <button type="button" class="admin-icon-button" [class.apappss-produccion-habilitada]="a.habilitado"
+          [disabled]="accionEnCurso()!==null" [title]="a.habilitado?'Deshabilitar producción':'Habilitar producción'"
+          [attr.aria-label]="(a.habilitado?'Deshabilitar producción de ':'Habilitar producción de ')+p.nombre"
+          (click)="cambiarAptitud(p.predioId)"><fa-icon [icon]="a.habilitado?disabledIcon:productionIcon"/></button>
+        }@else{
+         <button type="button" class="admin-icon-button" disabled [title]="aptitudesErrores()[p.predioId]||'Consultando producción'"
+          [attr.aria-label]="'Producción no disponible de '+p.nombre"><fa-icon [icon]="productionIcon"/></button>
+        }
+       }
+       @if(puedeRetirar()){
+        <button type="button" class="admin-icon-button" [disabled]="accionEnCurso()!==null"
+         [attr.aria-label]="'Eliminar '+p.nombre" title="Eliminar fundo" (click)="eliminarFundo(p.predioId)"><fa-icon [icon]="deleteIcon"/></button>
+       }
+      </div></td>
+     </tr>}</tbody>
+    </table></div>
+   }@else{
+    <div class="desco-record-grid apappss-predios-cards">
+     @for(p of prediosPagina();track p.predioId){<app-record-card>
+      <header><strong>{{p.nombre}}</strong><span>{{p.codigo}}</span></header>
+      <dl class="technical-record-data"><div><dt>Titularidad</dt><dd>{{p.tipoTitularidad||'—'}}</dd></div>
+       <div><dt>Desde</dt><dd>{{p.fechaDesde?(p.fechaDesde|date:'dd/MM/yyyy'):'—'}}</dd></div></dl>
+      <footer><div class="admin-row-actions apappss-predio-actions">
+       <a class="admin-icon-button" [routerLink]="['/convenios/apappss/predios',p.predioId]" [queryParams]="{convenioId:convenioId,socioId:socioId}" [attr.aria-label]="'Detalles de '+p.nombre" title="Detalles"><fa-icon [icon]="detalleIcon"/></a>
+       @if(puedeEditar()){
+        <button type="button" class="admin-icon-button" [attr.aria-label]="'Editar '+p.nombre" title="Editar" (click)="editarPredio(p.predioId)"><fa-icon [icon]="editarIcon"/></button>
+        @if(aptitud(p.predioId);as a){
+         <button type="button" class="admin-icon-button" [class.apappss-produccion-habilitada]="a.habilitado"
+          [disabled]="accionEnCurso()!==null" [title]="a.habilitado?'Deshabilitar producción':'Habilitar producción'"
+          [attr.aria-label]="(a.habilitado?'Deshabilitar producción de ':'Habilitar producción de ')+p.nombre"
+          (click)="cambiarAptitud(p.predioId)"><fa-icon [icon]="a.habilitado?disabledIcon:productionIcon"/></button>
+        }@else{
+         <button type="button" class="admin-icon-button" disabled [title]="aptitudesErrores()[p.predioId]||'Consultando producción'"
+          [attr.aria-label]="'Producción no disponible de '+p.nombre"><fa-icon [icon]="productionIcon"/></button>
+        }
+       }
+       @if(puedeRetirar()){
+        <button type="button" class="admin-icon-button" [disabled]="accionEnCurso()!==null"
+         [attr.aria-label]="'Eliminar '+p.nombre" title="Eliminar fundo" (click)="eliminarFundo(p.predioId)"><fa-icon [icon]="deleteIcon"/></button>
+       }
+      </div></footer>
+     </app-record-card>}
+    </div>
+   }
+   <app-paginator [page]="pagina()" [size]="tamano()" [totalRecords]="prediosFiltrados().length" [totalPages]="totalPaginas()" (pageChange)="cambiarPagina($event)" (sizeChange)="cambiarTamano($event)"/>
   </section>
  }
  <app-apappss-predio-alta/>
+ <app-action-confirm-dialog/>
 </div>

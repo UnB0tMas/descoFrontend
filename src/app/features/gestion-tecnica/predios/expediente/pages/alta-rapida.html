@@ -19,20 +19,9 @@
       @if (busquedaRealizada() && encontrados().length === 0) {
         <p class="text-sm">No se encontró una identidad. Regístrala una sola vez para continuar.</p>
       }
-      <details class="e1-details"><summary>Registrar persona nueva</summary>
-        <div class="e1-person-complete" style="max-width: 680px; margin: 1rem auto;">
-          <app-person-data-fields [form]="personForm" idPrefix="e1-persona" [documentTypes]="documentTypes"
-            [documentMaxLength]="personDocumentLength()" [documentInputMode]="personForm.controls.tipoDocumento.value === 'DNI' ? 'numeric' : 'text'"
-            [districtCode]="personDistrict()" [populationCenterId]="personCenter()"
-            [minBirthDate]="minBirthDate" [maxBirthDate]="maxBirthDate"
-            [referenceLabel]="'Dirección o referencia'"
-            (documentTypeChanged)="onPersonDocumentChange()" (documentChanged)="onPersonNumberChange()"
-            (nameChanged)="onPersonNameChange($event)" (phoneChanged)="onPersonPhoneChange()"
-            (geographyChanged)="onPersonDistrictChange($event)" />
-        </div>
-        <div class="e1-actions"><button class="admin-primary-button" type="button"
-          [disabled]="guardando() || personForm.invalid" (click)="registrarPersona()">Guardar y seleccionar persona</button></div>
-      </details>
+      <div class="e1-actions">
+        <button class="admin-primary-button" type="button" (click)="registrarPersona()">Registrar o recuperar persona</button>
+      </div>
     }
   </section>
   @if (seleccionado()) {
@@ -64,3 +53,4 @@
     </section>
   }
 </div>
+<app-entity-registration-modal />

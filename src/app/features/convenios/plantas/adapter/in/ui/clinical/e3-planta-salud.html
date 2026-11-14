@@ -1,0 +1,183 @@
+<section class="e3-clinical" aria-label="Historial fitosanitario de la planta">
+ <header class="admin-section-header e3-clinical-head"><div><h2>{{modo==='enfermedades'?'Enfermedades':modo==='tratamientos'?'Tratamientos y seguimiento':'Comentarios'}}</h2></div>
+  <div class="e3-clinical-actions"><button type="button" class="admin-secondary-button" [disabled]="cargando()" (click)="actualizar()">Actualizar</button>
+   @if(modo==='enfermedades'&&puedeModificar()){<button type="button" class="admin-primary-button" (click)="abrirDiagnostico()">Agregar enfermedad</button>}
+   @if(modo==='comentarios'&&puedeModificar()){<button type="button" class="admin-primary-button" (click)="abrirComentario()">Agregar comentario</button>}</div></header>
+ @if(error()){<p class="e3-clinical-error" role="alert">{{error()}}</p>}
+ @if(cargando()){<p role="status">Cargando expediente sanitario…</p>}
+ @if(modo==='enfermedades'){
+  @if(analisis();as a){<div class="e3-clinical-metrics" aria-label="Indicadores fitosanitarios">
+   <article class="admin-detail-card"><span>Vigentes</span><strong>{{a.enfermedadesVigentes}}</strong></article>
+   <article class="admin-detail-card"><span>Controladas</span><strong>{{a.enfermedadesRecuperadas}}</strong></article>
+  </div>}
+  <div class="e3-clinical-subhead"><h3>Historial</h3><app-list-view-switch [view]="vista()" label="Vista de enfermedades" (viewChange)="vista.set($event)"/></div>
+  @if(!cargando()&&!enfermedades().length){<div class="e3-clinical-empty">Sin enfermedades registradas.</div>}
+  @else if(vista()==='table'){
+   <div class="admin-table-wrap e3-clinical-table-scroll" tabindex="0" aria-label="Tabla con desplazamiento horizontal"><table class="admin-table e3-clinical-data-table"><thead><tr><th>Enfermedad</th><th>Estado</th><th>Diagnosticada</th><th>Registró</th><th>Tratamientos</th><th>Acciones</th></tr></thead>
+    <tbody>@for(e of enfermedades();track e.episodioId){<tr><td data-label="Enfermedad"><strong>{{e.enfermedad}}</strong></td>
+     <td data-label="Estado"><span class="admin-status" [class.admin-status--active]="e.estado==='RECUPERADA'" [class.admin-status--warning]="e.estado==='VIGENTE'">{{e.estado==='VIGENTE'?(estadoPlanta==='MUERTA'?'No controlada':'Vigente'):e.estado==='RECUPERADA'?'Controlada':'Retirada'}}</span></td>
+     <td data-label="Diagnóstico">{{e.fechaDiagnostico|date:'dd/MM/yyyy'}}</td><td data-label="Registró">{{e.registradoPor||'Usuario registrado'}}</td><td data-label="Tratamientos">{{e.totalTratamientos}}</td>
+     <td data-label="Acciones"><div class="e3-clinical-row-actions">
+      <button type="button" class="admin-icon-button" title="Detalles" [attr.aria-label]="'Detalles de '+e.enfermedad" (click)="abrirEnfermedad(e.episodioId)"><fa-icon [icon]="viewIcon"/></button>
+      <button type="button" class="admin-icon-button" title="Tratamientos" [attr.aria-label]="'Tratamientos de '+e.enfermedad" (click)="mostrarTratamientos(e.episodioId)"><fa-icon [icon]="treatmentIcon"/></button>
+      @if(e.estado==='VIGENTE'&&puedeModificar()){
+       <button type="button" class="admin-icon-button" title="Editar enfermedad" [attr.aria-label]="'Editar '+e.enfermedad" (click)="abrirEnfermedad(e.episodioId,'editar')"><fa-icon [icon]="editIcon"/></button>
+       @if(e.totalTratamientos>0){<button type="button" class="admin-icon-button" title="Marcar como controlada" [attr.aria-label]="'Controlar '+e.enfermedad" (click)="abrirEnfermedad(e.episodioId,'recuperar')"><fa-icon [icon]="controlIcon"/></button>}
+       <button type="button" class="admin-icon-button" title="Retirar enfermedad" [attr.aria-label]="'Retirar '+e.enfermedad" (click)="abrirEnfermedad(e.episodioId,'eliminar')"><fa-icon [icon]="removeIcon"/></button>
+      }
+     </div></td>
+    </tr>}</tbody></table></div>
+  }@else{
+   <div class="e3-clinical-cards">@for(e of enfermedades();track e.episodioId){<app-record-card>
+    <div class="e3-clinical-card-head"><strong>{{e.enfermedad}}</strong>
+     <span class="admin-status" [class.admin-status--warning]="e.estado==='VIGENTE'" [class.admin-status--active]="e.estado==='RECUPERADA'">{{e.estado==='VIGENTE'?(estadoPlanta==='MUERTA'?'No controlada':'Vigente'):e.estado==='RECUPERADA'?'Controlada':'Retirada'}}</span></div>
+    <dl class="e3-clinical-facts"><div><dt>Diagnóstico</dt><dd>{{e.fechaDiagnostico|date:'dd/MM/yyyy'}}</dd></div>
+     <div><dt>Tratamientos</dt><dd>{{e.totalTratamientos}}</dd></div></dl>
+    <small>Registró: {{e.registradoPor||'Usuario registrado'}}</small>
+    <footer class="e3-clinical-card-footer"><button type="button" class="admin-secondary-button" (click)="mostrarTratamientos(e.episodioId)">Tratamientos</button>
+     <button type="button" class="admin-secondary-button" (click)="abrirEnfermedad(e.episodioId)">Detalles</button>
+     @if(e.estado==='VIGENTE'&&puedeModificar()){
+      <button type="button" class="admin-icon-button" title="Editar" [attr.aria-label]="'Editar '+e.enfermedad" (click)="abrirEnfermedad(e.episodioId,'editar')"><fa-icon [icon]="editIcon"/></button>
+      @if(e.totalTratamientos>0){<button type="button" class="admin-icon-button" title="Controlar" [attr.aria-label]="'Controlar '+e.enfermedad" (click)="abrirEnfermedad(e.episodioId,'recuperar')"><fa-icon [icon]="controlIcon"/></button>}
+      <button type="button" class="admin-icon-button" title="Retirar" [attr.aria-label]="'Retirar '+e.enfermedad" (click)="abrirEnfermedad(e.episodioId,'eliminar')"><fa-icon [icon]="removeIcon"/></button>
+     }</footer>
+   </app-record-card>}</div>
+  }
+ }
+ @if(modo==='tratamientos'){
+  @if(enfermedades().length){<label class="admin-field e3-clinical-selector">Enfermedad
+   <select class="admin-select" [ngModel]="enfermedadSeleccionada()" (ngModelChange)="seleccionarEnfermedad($event)">
+    <option [ngValue]="0">Seleccione una enfermedad</option>
+    @for(e of enfermedades();track e.episodioId){<option [ngValue]="e.episodioId">{{e.enfermedad}} · {{e.estado==='VIGENTE'?(estadoPlanta==='MUERTA'?'No controlada':'Vigente'):e.estado==='RECUPERADA'?'Controlada':'Retirada'}}</option>}
+   </select></label>}
+  @if(cargandoTratamientos()){<p role="status">Cargando tratamientos y notas…</p>}
+  @else if(detalleTratamientos();as d){
+   <div class="e3-clinical-title"><div><h4>{{d.enfermedad}}</h4><p>Diagnóstico: {{d.fechaDiagnostico|date:'dd/MM/yyyy'}} · Registrado por {{d.registradoPor||'Usuario registrado'}}</p></div>
+    <div class="e3-clinical-actions"><span class="admin-status" [class.admin-status--warning]="d.estado==='VIGENTE'" [class.admin-status--active]="d.estado==='RECUPERADA'">{{d.estado==='VIGENTE'?(estadoPlanta==='MUERTA'?'No controlada':'Vigente'):d.estado==='RECUPERADA'?'Controlada':'Retirada'}}</span>
+     @if(d.estado==='VIGENTE'&&puedeTratar()){<button type="button" class="admin-primary-button" (click)="abrirTratamiento()">Agregar tratamiento</button>}
+    </div>
+   </div>
+   <div class="e3-clinical-subhead"><h3>Tratamientos aplicados ({{d.tratamientos.length}})</h3><app-list-view-switch [view]="vista()" label="Vista de tratamientos" (viewChange)="vista.set($event)"/></div>
+   @if(!d.tratamientos.length){<p class="e3-clinical-empty">Sin tratamientos registrados.</p>}
+   @else if(vista()==='table'){
+    <div class="admin-table-wrap e3-clinical-table-scroll" tabindex="0" aria-label="Tabla de tratamientos con desplazamiento horizontal">
+     <table class="admin-table e3-clinical-data-table"><thead><tr><th>Tratamiento</th><th>Aplicación</th><th>Resultado</th><th>Observación</th><th>Registrado por</th><th>Acciones</th></tr></thead>
+      <tbody>@for(t of d.tratamientos;track t.tratamientoId){<tr>
+       <td data-label="Tratamiento"><strong>{{t.descripcion}}</strong></td><td data-label="Aplicación">{{t.fechaAplicacion|date:'dd/MM/yyyy'}}</td>
+       <td data-label="Resultado">{{t.resultado||'—'}}</td><td data-label="Observación">{{t.comentario||'—'}}</td><td data-label="Registrado por">{{t.usuarioNombre||'Usuario registrado'}}
+        @if(t.modificadoPorNombre){<small class="e3-treatment-edited">Editó: {{t.modificadoPorNombre}} · {{t.modificadoEn|date:'dd/MM/yyyy HH:mm'}}</small>}</td>
+       <td data-label="Acciones"><div class="e3-clinical-row-actions">
+        @if(d.estado==='VIGENTE'&&puedeTratar()){
+         <button type="button" class="admin-icon-button" title="Editar tratamiento" [attr.aria-label]="'Editar '+t.descripcion" (click)="abrirEditarTratamiento(t)"><fa-icon [icon]="editIcon"/></button>
+        }
+       </div></td>
+      </tr>}</tbody></table></div>
+   }@else{
+    <div class="e3-clinical-cards">@for(t of d.tratamientos;track t.tratamientoId){<app-record-card>
+     <div class="e3-clinical-card-head"><strong>{{t.descripcion}}</strong><small>{{t.fechaAplicacion|date:'dd/MM/yyyy'}}</small></div>
+     <dl class="e3-clinical-facts"><div><dt>Resultado</dt><dd>{{t.resultado||'—'}}</dd></div><div><dt>Registrado por</dt><dd>{{t.usuarioNombre||'Usuario registrado'}}</dd></div></dl>
+     @if(t.comentario){<p>{{t.comentario}}</p>}
+     @if(t.modificadoPorNombre){<small class="e3-treatment-edited">Editó: {{t.modificadoPorNombre}}</small>}
+     @if(d.estado==='VIGENTE'&&puedeTratar()){<footer class="e3-clinical-card-footer"><button type="button" class="admin-secondary-button" (click)="abrirEditarTratamiento(t)">Editar</button></footer>}
+    </app-record-card>}</div>
+   }
+   @if(notasEnfermedad().length){<section class="e3-clinical-followup" aria-label="Notas de seguimiento">
+    <h3>Notas de seguimiento</h3>
+    @for(n of notasEnfermedad();track n.notaId){<div class="e3-clinical-followup-item"><p>{{n.comentario}}</p>
+     <small>{{n.usuarioNombre||'Usuario registrado'}} · {{n.fechaHora|date:'dd/MM/yyyy HH:mm'}}</small></div>}
+   </section>}
+   @if(d.estado==='VIGENTE'&&puedeAnotar()){
+    <div class="e3-clinical-actions"><button type="button" class="admin-secondary-button" (click)="abrirNota()">Agregar comentario de seguimiento</button></div>
+   }@else if(d.estado!=='VIGENTE'){<p class="e3-clinical-note">Enfermedad cerrada: historial disponible solo para consulta.</p>}
+  }@else if(!cargando()){<p class="e3-clinical-empty">{{enfermedades().length?'Selecciona una enfermedad.':'Sin enfermedades registradas.'}}</p>}
+ }
+ @if(modo==='comentarios'){
+  <div class="e3-clinical-comments">@for(c of comentarios();track c.comentarioId){<app-record-card><p>{{c.comentario}}</p>
+   <small>{{c.usuarioNombre||'Usuario registrado'}} · {{c.fechaHora|date:'dd/MM/yyyy HH:mm'}}</small></app-record-card>
+   }@empty{<div class="e3-clinical-empty">Sin comentarios.</div>}</div>
+ }
+ @if(modo==='enfermedades'){
+  @if(episodioAbierto();as id){<app-e3-enfermedad-detalle [ambito]="ambito" [plantaId]="plantaId" [episodioId]="id" [catalogos]="catalogos"
+   [estadoPlanta]="estadoPlanta" [editable]="editable" [accionInicial]="accionAbrir()" (changed)="cambioGuardado()" (closed)="cerrarEnfermedad()"/>}
+  <dialog #diagnosticoDialog class="modal desco-modal e3-health-dialog" (cancel)="$event.preventDefault();cerrarDiagnostico()">
+   <section class="modal-box admin-modal-box e3-health-box"><header class="admin-modal-header"><div class="admin-modal-title-group"><div><p>Expediente sanitario</p><h2>Agregar enfermedad</h2></div></div>
+    <button type="button" class="admin-icon-button" aria-label="Cerrar" [disabled]="guardando()" (click)="cerrarDiagnostico()">✕</button></header>
+    <div class="desco-fixed-form-body e3-clinical-form"><label class="admin-field">Buscar enfermedad
+     <input class="admin-input" [(ngModel)]="busquedaDiagnostico" placeholder="Buscar en el catálogo de palta" maxlength="100"/></label>
+     @if(!catalogos.diagnosticos.length){<p role="status">Cargando enfermedades del catálogo…</p>}
+     <label class="admin-field">Enfermedades del catálogo
+      <select class="admin-select" [(ngModel)]="diagnosticoId" aria-label="Seleccione la enfermedad del catálogo">
+       <option [ngValue]="0">Seleccione una enfermedad</option>
+       @for(d of diagnosticosFiltrados();track d.id){<option [ngValue]="d.id">{{d.nombre}}</option>}
+      </select></label>
+     <label class="admin-field">Observación del diagnóstico (opcional)<textarea class="admin-textarea" [(ngModel)]="observacionDiagnostico" maxlength="1000" rows="3"></textarea></label>
+    </div>
+    <footer class="gp-modal-footer desco-fixed-form-footer"><button type="button" class="admin-secondary-button" [disabled]="guardando()" (click)="cerrarDiagnostico()">Cancelar</button>
+     <button type="button" class="admin-primary-button" [disabled]="guardando()||diagnosticoId<1" (click)="registrarDiagnostico()">{{guardando()?'Registrando…':'Registrar enfermedad vigente'}}</button></footer>
+   </section>
+  </dialog>
+ }
+ @if(modo==='tratamientos'){
+  <dialog #tratamientoDialog class="modal desco-modal e3-health-dialog" (cancel)="$event.preventDefault();cerrarTratamiento()">
+   <section class="modal-box admin-modal-box e3-health-box"><header class="admin-modal-header"><div class="admin-modal-title-group"><div><p>Tratamientos</p><h2>Registrar tratamientos</h2></div></div>
+    <button type="button" class="admin-icon-button" [disabled]="guardandoTratamiento()" (click)="cerrarTratamiento()" aria-label="Cerrar">✕</button></header>
+    <div class="desco-fixed-form-body e3-clinical-form">
+     <label class="admin-field">Buscar tratamiento<input class="admin-input" [(ngModel)]="busquedaTratamiento" maxlength="100" placeholder="Filtrar tratamientos"/></label>
+     <div class="e3-health-options" role="group" aria-label="Tratamientos disponibles">
+      @for(t of tratamientosPermitidos();track t.id){<label class="e3-health-option" [class.e3-health-option--selected]="seleccionTratamientos().includes(t.id)"><input type="checkbox" [checked]="seleccionTratamientos().includes(t.id)" (change)="marcarTratamiento(t.id,$any($event.target).checked)"/><span class="e3-health-checkbox" aria-hidden="true">✓</span><span>{{t.nombre}}</span></label>}
+      @empty{<p>No hay tratamientos disponibles en el catálogo para este diagnóstico.</p>}
+     </div>
+     <label class="admin-field">Fecha de aplicación<input type="date" class="admin-input" [(ngModel)]="fechaAplicacion" [min]="hoyLocal" [max]="hoyLocal"/></label>
+     <label class="admin-field">Resultado (opcional)<input class="admin-input" [(ngModel)]="resultadoTratamiento" maxlength="600"/></label>
+     <label class="admin-field">Descripción común (opcional)<textarea class="admin-textarea" [(ngModel)]="comentarioTratamiento" maxlength="1000" rows="3"></textarea></label>
+     <app-e3-file-dropzone title="Evidencias (opcional)" [files]="adjuntosTratamiento" [maxFiles]="5" [multiple]="true"
+      [disabled]="guardandoTratamiento()" [uploading]="subiendoAdjuntos()" (filesChange)="seleccionarArchivoTratamiento($event)" (invalid)="error.set($event)"/>
+     @if(adjuntosTratamiento.length){<label class="admin-field">Descripción (opcional)<input class="admin-input" [(ngModel)]="descripcionAdjunto" maxlength="400"/></label>}
+     @if(error()){<p class="e3-clinical-error" role="alert">{{error()}}</p>}
+    </div>
+    <footer class="gp-modal-footer desco-fixed-form-footer"><button type="button" class="admin-secondary-button" [disabled]="guardandoTratamiento()" (click)="cerrarTratamiento()">Cancelar</button>
+     <button type="button" class="admin-primary-button" [disabled]="guardandoTratamiento()||seleccionTratamientos().length===0||seleccionTratamientos().length>20||fechaAplicacion!==hoyLocal" (click)="registrarTratamientos()">{{guardandoTratamiento()?'Guardando…':'Registrar '+seleccionTratamientos().length+' tratamiento(s)'}}</button></footer>
+   </section>
+  </dialog>
+  <dialog #notaDialog class="modal desco-modal e3-health-dialog" (cancel)="$event.preventDefault();cerrarNota()">
+   <section class="modal-box admin-modal-box e3-health-box"><header class="admin-modal-header"><div class="admin-modal-title-group"><div><p>Seguimiento sanitario</p><h2>Agregar comentario</h2></div></div>
+    <button type="button" class="admin-icon-button" [disabled]="guardandoNota()" aria-label="Cerrar" (click)="cerrarNota()">✕</button></header>
+    <div class="desco-fixed-form-body e3-clinical-form"><p class="e3-clinical-note">El comentario quedará asociado a la enfermedad seleccionada.</p>
+     <label class="admin-field">Observación<textarea class="admin-textarea" [(ngModel)]="comentarioEnfermedad" maxlength="1500" rows="4"></textarea></label>
+     @if(error()){<p role="alert" class="admin-inline-error">{{error()}}</p>}</div>
+    <footer class="gp-modal-footer desco-fixed-form-footer"><button type="button" class="admin-secondary-button" [disabled]="guardandoNota()" (click)="cerrarNota()">Cancelar</button>
+     <button type="button" class="admin-primary-button" [disabled]="guardandoNota()||!comentarioEnfermedad.trim()" (click)="registrarNota()">Guardar comentario</button></footer>
+   </section>
+  </dialog>
+ }
+ @if(modo==='comentarios'){
+  <dialog #comentarioDialog class="modal desco-modal e3-health-dialog" (cancel)="$event.preventDefault();cerrarComentario()">
+   <section class="modal-box admin-modal-box e3-health-box"><header class="admin-modal-header"><div class="admin-modal-title-group"><div><p>Comentarios generales</p><h2>Agregar comentario</h2></div></div>
+    <button type="button" class="admin-icon-button" [disabled]="guardando()" aria-label="Cerrar" (click)="cerrarComentario()">✕</button></header>
+    <div class="desco-fixed-form-body e3-clinical-form"><label class="admin-field">Comentario de planta<textarea class="admin-textarea" [(ngModel)]="comentarioGeneral" maxlength="1500" rows="4"></textarea></label>
+     @if(error()){<p role="alert" class="admin-inline-error">{{error()}}</p>}</div>
+    <footer class="gp-modal-footer desco-fixed-form-footer"><button type="button" class="admin-secondary-button" [disabled]="guardando()" (click)="cerrarComentario()">Cancelar</button>
+     <button type="button" class="admin-primary-button" [disabled]="guardando()||!comentarioGeneral.trim()" (click)="registrarComentarioGeneral()">Guardar comentario</button></footer>
+   </section>
+  </dialog>
+ }
+
+  <dialog #editarTratamientoDialog class="modal desco-modal e3-health-dialog" (cancel)="$event.preventDefault();cerrarEditarTratamiento()">
+   <section class="modal-box admin-modal-box e3-health-box">
+    <header class="admin-modal-header"><div class="admin-modal-title-group"><div><p>TRATAMIENTOS</p><h2>Editar tratamiento</h2></div></div>
+     <button type="button" class="admin-icon-button" aria-label="Cerrar" [disabled]="guardandoEdicion()" (click)="cerrarEditarTratamiento()">✕</button>
+    </header>
+    <div class="desco-fixed-form-body e3-clinical-form">
+     <label class="admin-field">Tratamiento<select class="admin-select" [(ngModel)]="tratamientoEditarCatalogoId" [disabled]="guardandoEdicion()">
+      @for(t of tratamientosPermitidos();track t.id){<option [ngValue]="t.id">{{t.nombre}}</option>}
+     </select></label>
+     <label class="admin-field">Fecha de aplicación<input class="admin-input" type="date" [(ngModel)]="tratamientoEditarFecha" [min]="detalleTratamientos()?.fechaDiagnostico?.slice(0,10)" [max]="hoyLocal" [disabled]="guardandoEdicion()"/></label>
+     <label class="admin-field">Resultado (opcional)<input class="admin-input" [(ngModel)]="tratamientoEditarResultado" maxlength="600" [disabled]="guardandoEdicion()"/></label>
+     <label class="admin-field">Observación (opcional)<textarea class="admin-textarea" [(ngModel)]="tratamientoEditarComentario" maxlength="1000" rows="3" [disabled]="guardandoEdicion()"></textarea></label>
+     @if(error()){<p class="e3-clinical-error" role="alert">{{error()}}</p>}
+    </div>
+    <footer class="gp-modal-footer desco-fixed-form-footer"><button type="button" class="admin-secondary-button" [disabled]="guardandoEdicion()" (click)="cerrarEditarTratamiento()">Cancelar</button>
+     <button type="button" class="admin-primary-button" [disabled]="guardandoEdicion()||!tratamientoEditarCatalogoId||!tratamientoEditarFecha||tratamientoEditarFecha>hoyLocal" (click)="guardarEditarTratamiento()">Guardar cambios</button></footer>
+   </section>
+  </dialog>
+</section>

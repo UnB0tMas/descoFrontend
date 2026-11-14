@@ -38,6 +38,17 @@ export interface CatalogoGrupo {
 
 export const CATALOGOS_ADMINISTRABLES: readonly Catalogo[] = [
   {
+    codigo: 'TIPO_DOCUMENTO_COMPRADOR',
+    nombre: 'Tipos de documento de comprador',
+    descripcion: 'Documentos habilitados para identificar compradores de APAPPSS.',
+    requiereCategoria: false,
+    grupoCodigo: 'ADMINISTRACION',
+    grupoNombre: 'Administración',
+    codigoMaxLength: 15,
+    nombreMaxLength: 120,
+    admiteDescripcion: true,
+  },
+  {
     codigo: 'CARGO_EMPLEADO',
     nombre: 'Cargos de empleado',
     descripcion: 'Cargos disponibles para la asignación de empleados a áreas.',
@@ -92,6 +103,17 @@ export const CATALOGOS_ADMINISTRABLES: readonly Catalogo[] = [
     codigoMaxLength: 40,
     nombreMaxLength: 140,
     admiteDescripcion: false,
+  },
+  {
+    codigo: 'SANCION_VENTA',
+    nombre: 'Sanciones de venta',
+    descripcion: 'Motivos administrables de sanción comercial.',
+    requiereCategoria: false,
+    grupoCodigo: 'GESTION_COMERCIAL',
+    grupoNombre: 'Gestión comercial',
+    codigoMaxLength: 40,
+    nombreMaxLength: 120,
+    admiteDescripcion: true,
   },
   {
     codigo: 'MODALIDAD_VENTA',

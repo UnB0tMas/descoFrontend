@@ -21,6 +21,7 @@ import { finalize, Observable } from 'rxjs';
 import { mapOpenApiError } from '../../../../../../../../infrastructure/openapi/openapi-http-error.mapper';
 import { ToastService } from '../../../../../../../../shared/feedback/toast-center/toast.service';
 import { FormErrorComponent } from '../../../../../../../../shared/forms/form-error/form-error';
+import { EntityRegistrationModalComponent } from '../../../../../../../../shared/forms/person-registration/entity-registration-modal';
 import {
   GeographyCascadeComponent,
   GeographySelection,
@@ -90,12 +91,15 @@ interface AreaModalOptions extends OrganizationFormOptions {
     FaIconComponent,
     FormErrorComponent,
     GeographyCascadeComponent,
+    EntityRegistrationModalComponent,
   ],
   templateUrl: './organizacion-form.html',
   styleUrl: './organizacion-form.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OrganizacionFormComponent {
+  @ViewChild(EntityRegistrationModalComponent) private identityModal!: EntityRegistrationModalComponent;
+  readonly identityCaptured = signal(false);
   @ViewChild('dialog', { static: true })
   private readonly dialogRef!: ElementRef<HTMLDialogElement>;
 
@@ -205,6 +209,7 @@ export class OrganizacionFormComponent {
     this.detail.set(detail);
     this.currentCompany.set(detail?.organizacion ?? null);
     this.resetCompanyForm(detail, options.preferredUotId);
+    this.identityCaptured.set(!!detail);
     return this.show();
   }
 
@@ -217,6 +222,7 @@ export class OrganizacionFormComponent {
     this.detail.set(detail);
     this.currentCompany.set(detail?.organizacion ?? null);
     this.resetCompanyForm(detail, options.preferredUotId);
+    this.identityCaptured.set(!!detail);
     return this.show();
   }
 
@@ -253,6 +259,33 @@ export class OrganizacionFormComponent {
     this.detail.set(detail);
     this.currentCompany.set(detail.organizacion);
     return this.show();
+  }
+
+  /** Captura única de los datos de empresa; contratos, asociación y UOT siguen en este formulario. */
+  async openSharedCompanyIdentity():Promise<void> {
+    if (this.saving() || this.identityLoading() || this.currentCompany()) return;
+    const result=await this.identityModal.open({
+      eyebrow:this.kind()==='association'?'Asociaciones':'Organizaciones',
+      title:'Datos de la empresa',saveLabel:'Continuar',
+      documents:[{value:'RUC',label:'RUC'}],rucKind:'EMPRESA',
+      captureOnly:true,requireDistrictForManual:true,
+      startDocument:{type:'RUC',number:this.companyForm.controls.ruc.value},
+    });
+    if (!result?.data) return;
+    const data=result.data;
+    this.companyForm.patchValue({
+      ruc:data.numeroDocumento,razonSocial:data.razonSocial,
+      nombreComercial:data.nombreComercial,telefono:data.telefono,
+      correo:data.correo,distritoCodigo:data.distritoCodigo,
+      centroPobladoId:data.centroPobladoId,referencia:data.referencia,
+    });
+    this.initialDistrictCode.set(data.distritoCodigo);
+    this.initialPopulationCenterId.set(data.centroPobladoId||null);
+    this.verifiedIdentityKey.set(this.companyIdentityKey(data.numeroDocumento));
+    this.identityBlocked.set(false);
+    this.identityMessage.set(null);
+    this.identityCaptured.set(true);
+    this.errorMessage.set(null);
   }
 
   setGeography(selection: GeographySelection): void {
@@ -494,6 +527,11 @@ export class OrganizacionFormComponent {
       emitEvent: false,
     });
     this.companyForm.markAllAsTouched();
+
+    if (!this.currentCompany() && !this.identityCaptured()) {
+      this.errorMessage.set('Registre primero los datos de la empresa.');
+      return;
+    }
 
     if (this.companyForm.invalid) {
       const message = this.organizationValidationMessage();

@@ -1,0 +1,140 @@
+<section class="e4-seca" aria-label="Materia seca del fundo">
+ <div class="e4-seca-head">
+  <div><h3>Materia seca</h3><p class="e4-seca-subtitle">Historial de mediciones del predio</p></div>
+  <div class="e4-seca-actions">
+   <button type="button" class="admin-secondary-button" [disabled]="cargando()||guardando()" (click)="cargar()">Actualizar</button>
+   @if(puedeCrear()){<button type="button" class="admin-primary-button" [disabled]="guardando()||!global()||!global()?.totalPlantasActivas" (click)="abrirNuevo()">
+    <fa-icon [icon]="addIcon"/> Añadir materia seca</button>}
+  </div>
+ </div>
+ @if(error()&&!cargando()&&!global()&&editarId()===null){
+  <div class="admin-detail-card" role="alert">
+   <p>{{error()}}</p>
+   <button type="button" class="admin-secondary-button" (click)="cargar()">Reintentar</button>
+  </div>
+ }
+ @if(cargando()){<p role="status">Cargando historial de materia seca…</p>}
+ @else if(global();as datos){
+  <div class="e4-seca-overview">
+   <div class="e4-seca-summary" aria-label="Indicadores de materia seca">
+   <article class="admin-detail-card e4-seca-kpi e4-seca-kpi--primary">
+    <span>Último resultado</span>
+    @if(ultimoActivo();as ultimo){
+     <strong>{{ultimo.porcentaje==null?'—':(ultimo.porcentaje|number:'1.1-3')+' %'}}</strong>
+     <small>Muestreo: {{ultimo.fechaMuestreo?(ultimo.fechaMuestreo|date:'dd/MM/yyyy'):'Sin fecha'}}</small>
+    }@else{<strong>—</strong><small>Sin mediciones registradas</small>}
+   </article>
+   <article class="admin-detail-card e4-seca-kpi"><span>Mediciones activas</span><strong>{{totalActivos()}}</strong><small>Registros vigentes del predio</small></article>
+   </div>
+   <div class="e4-seca-toolbar">
+    <app-list-view-switch [view]="vista()" label="Vista de materia seca" (viewChange)="vista.set($event)"/>
+   </div>
+  </div>
+  @if(datos.totalPlantasActivas===0){<p class="e4-seca-note" role="status">No hay plantas activas.</p>}
+  @if(vista()==='table'){
+   <div class="admin-table-wrap e4-seca-table-wrap">
+    <table class="admin-table e4-seca-table">
+     <thead><tr>
+      <th scope="col">Fecha</th><th scope="col">Materia seca</th><th scope="col">Muestra</th><th scope="col">Método</th>
+      <th scope="col">Registrado por</th><th scope="col">Observación</th><th scope="col" class="e4-seca-actions-col">Acciones</th>
+     </tr></thead>
+     <tbody>
+      @for(m of registrosPagina();track m.informeId){<tr>
+       <td class="e4-seca-date">{{m.fechaMuestreo|date:'dd/MM/yyyy'}}</td>
+       <td><strong class="e4-seca-value">{{m.porcentaje|number:'1.1-3'}} %</strong>
+        <span class="e4-seca-badge" [class.e4-seca-badge--total]="m.cobertura==='TOTAL'">{{m.cobertura==='TOTAL'?'Total':'Parcial'}}</span></td>
+       <td><strong class="e4-seca-quantity">{{m.cantidadPlantas}} / {{m.totalPlantasAlRegistro}} plantas</strong><small>{{m.cantidadFrutos??'—'}} frutos analizados</small></td>
+       <td><span class="e4-seca-method">{{m.metodo??'No informado'}}</span></td>
+       <td class="e4-seca-user"><strong>{{m.usuarioNombre||('Usuario #'+m.usuarioId)}}</strong>
+        <small>{{m.fechaRegistro|date:'dd/MM/yyyy HH:mm'}}</small>
+        @if(m.fechaModificacion){<small>Modificado por {{m.modificadoPorNombre||'Usuario registrado'}} · {{m.fechaModificacion|date:'dd/MM/yyyy HH:mm'}}</small>}
+       </td>
+       <td class="e4-seca-observation-cell">
+        @if(m.informe.length>70){<details class="e4-seca-observation"><summary>{{m.informe.slice(0,70)}}…</summary><p>{{m.informe}}</p></details>}
+        @else{<span class="e4-seca-observation-text">{{m.informe}}</span>}
+       </td>
+       <td class="e4-seca-actions-col"><div class="admin-row-actions e4-seca-row-actions">
+        @if(m.activo&&puedeEditar()){<button type="button" class="admin-icon-button" [disabled]="guardando()" title="Editar" [attr.aria-label]="'Editar informe '+m.informeId" (click)="abrirEditar(m)"><fa-icon [icon]="editIcon"/></button>}
+        @if(m.activo&&puedeEliminar()){<button type="button" class="admin-icon-button e4-seca-danger" [disabled]="guardando()" title="Eliminar" [attr.aria-label]="'Eliminar informe '+m.informeId" (click)="eliminar(m)"><fa-icon [icon]="deleteIcon"/></button>}
+        @if(!puedeEditar()&&!puedeEliminar()){<span>—</span>}
+       </div></td>
+      </tr>}
+      @empty{<tr><td class="e4-seca-empty" colspan="7">Aún no hay mediciones de materia seca.</td></tr>}
+     </tbody>
+    </table>
+   </div>
+  }@else{
+   <div class="e4-seca-cards">
+    @for(m of registrosPagina();track m.informeId){<app-record-card>
+     <header class="e4-seca-card-head">
+      <div><span class="e4-seca-card-caption">Materia seca</span><strong>{{m.porcentaje|number:'1.1-3'}} %</strong></div>
+      <span class="e4-seca-badge" [class.e4-seca-badge--total]="m.cobertura==='TOTAL'">{{m.cobertura==='TOTAL'?'Total':'Parcial'}}</span>
+     </header>
+     <p class="e4-seca-card-date">Muestreo: {{m.fechaMuestreo|date:'dd/MM/yyyy'}}</p>
+     <dl>
+      <div><dt>Plantas analizadas</dt><dd>{{m.cantidadPlantas}} / {{m.totalPlantasAlRegistro}}</dd></div>
+      <div><dt>Frutos analizados</dt><dd>{{m.cantidadFrutos??'—'}}</dd></div>
+      <div><dt>Método</dt><dd>{{m.metodo??'No informado'}}</dd></div>
+      <div><dt>Registrado por</dt><dd>{{m.usuarioNombre||('Usuario #'+m.usuarioId)}}</dd></div>
+      <div><dt>Fecha de registro</dt><dd>{{m.fechaRegistro|date:'dd/MM/yyyy HH:mm'}}</dd></div>
+     </dl>
+     <div class="e4-seca-card-observation"><span>Observación</span><p>{{m.informe}}</p></div>
+     @if(m.fechaModificacion){<small>Modificado por {{m.modificadoPorNombre||'Usuario registrado'}} · {{m.fechaModificacion|date:'dd/MM/yyyy HH:mm'}}</small>}
+     <footer class="e4-seca-card-actions">
+      @if(m.activo&&puedeEditar()){<button type="button" class="admin-secondary-button" [disabled]="guardando()" (click)="abrirEditar(m)">Editar</button>}
+      @if(m.activo&&puedeEliminar()){<button type="button" class="admin-secondary-button e4-seca-danger" [disabled]="guardando()" (click)="eliminar(m)">Eliminar</button>}
+     </footer>
+    </app-record-card>}
+    @empty{<p class="e4-seca-empty">Aún no hay mediciones de materia seca.</p>}
+   </div>
+  }
+  @if(registros().length>0){
+   <app-paginator [page]="paginaActual()" [size]="tamanoPagina()" [totalRecords]="registros().length"
+    [totalPages]="totalPaginas()" (pageChange)="cambiarPagina($event)" (sizeChange)="cambiarTamanoPagina($event)"/>
+  }
+ }
+ <dialog #formDialog class="modal desco-modal gp-modal e4-seca-modal" (cancel)="$event.preventDefault();cerrarModal()">
+  <section class="modal-box admin-modal-box admin-modal-box--wide gp-dialog-box e4-seca-modal-box">
+   <header class="admin-modal-header">
+    <div class="admin-modal-title-group"><span class="admin-modal-icon"><fa-icon [icon]="addIcon"/></span>
+     <div><h2>{{editarId()===null?'Añadir materia seca':'Editar materia seca'}}</h2></div></div>
+    <button type="button" class="admin-icon-button" aria-label="Cerrar" [disabled]="guardando()" (click)="cerrarModal()"><fa-icon [icon]="closeIcon"/></button>
+   </header>
+   <form id="e4-seca-form" class="e4-seca-modal-content" (ngSubmit)="guardar()">
+    @if(error()){<p role="alert" class="admin-inline-error">{{error()}}</p>}
+    <div class="e4-seca-grid">
+     <label class="admin-field">Promedio de materia seca (%)
+      <input class="admin-input" type="number" required min="0.001" max="100" step="0.001" name="porcentaje" [(ngModel)]="porcentaje"/></label>
+     <label class="admin-field">Fecha de muestreo
+      <input class="admin-input" type="date" required [max]="hoyLocal" name="fechaMuestreo" [(ngModel)]="fechaMuestreo"/></label>
+     <label class="admin-field">Plantas muestreadas
+      <input class="admin-input" type="number" required min="1" [max]="global()?.totalPlantasActivas??1" [disabled]="todas" name="cantidadPlantas" [ngModel]="cantidadPlantas" (ngModelChange)="cambiarCantidadPlantas($event)"/></label>
+     <label class="admin-field">Cobertura del muestreo (%)
+      <input class="admin-input" type="number" required min="0.01" max="100" step="0.01" name="coberturaPorcentaje" [ngModel]="coberturaPorcentaje" (ngModelChange)="cambiarCobertura($event)"/>
+      <small>Se calcula sobre {{global()?.totalPlantasActivas??0}} plantas activas; se redondea a plantas enteras.</small></label>
+     <label class="admin-field">Número de frutos analizados
+      <input class="admin-input" type="number" required min="1" max="10000" step="1" name="cantidadFrutos" [(ngModel)]="cantidadFrutos"/></label>
+     <label class="admin-field">Método del análisis
+      <select class="admin-select" required name="metodo" [(ngModel)]="metodo">
+       <option value="LABORATORIO">Laboratorio</option><option value="HORNO">Secado en horno</option>
+       <option value="MICROONDAS">Microondas</option><option value="NIR">Espectroscopía NIR</option><option value="OTRO">Otro</option>
+      </select></label>
+     <label class="e4-seca-coverage" [class.e4-seca-coverage--selected]="todas">
+      <input class="e4-seca-coverage-input" type="checkbox" name="todas" [ngModel]="todas" (ngModelChange)="cambiarTodas($event)"/>
+      <span class="e4-seca-coverage-copy"><strong>Todas las plantas</strong><small>{{global()?.totalPlantasActivas??0}} activas</small></span>
+     </label>
+    </div>
+    <label class="admin-field">Observación
+     <textarea class="admin-textarea" rows="3" maxlength="2000" required name="informe" [(ngModel)]="informe"></textarea></label>
+    @if(editarId()!==null){<label class="admin-field">Motivo del cambio
+     <textarea class="admin-textarea" rows="2" maxlength="500" required name="motivoEdicion" [(ngModel)]="motivoEdicion"></textarea></label>}
+    @if(conflictoSemanal()){<p role="alert" class="admin-inline-error">Debe haber 7 días entre mediciones.</p>}
+   </form>
+   <footer class="gp-modal-footer desco-fixed-form-footer e4-seca-modal-footer">
+    <button type="button" class="admin-secondary-button" [disabled]="guardando()" (click)="cerrarModal()">Cancelar</button>
+    <button type="submit" form="e4-seca-form" class="admin-primary-button" [disabled]="!valido()">{{guardando()?'Guardando…':editarId()===null?'Guardar materia seca':'Guardar cambios'}}</button>
+   </footer>
+  </section>
+ </dialog>
+ <app-action-confirm-dialog/>
+</section>

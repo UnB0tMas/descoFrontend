@@ -33,6 +33,7 @@
     }
 
     <form class="admin-form-grid" [formGroup]="form" (ngSubmit)="save()">
+      @if (current()) {
       <div class="employee-form-section admin-field-span-2">
         <span>Identificación</span>
       </div>
@@ -179,6 +180,19 @@
         <app-form-error [control]="form.controls.referencia" fieldLabel="La referencia" />
       </div>
 
+      } @else {
+        <div class="admin-field admin-field-span-2">
+          <span>Datos de la persona</span>
+          @if (identityCaptured()) {
+            <div class="admin-entity"><strong>{{ form.controls.nombres.value }} {{ form.controls.apellidoPaterno.value }}</strong>
+              <span>{{form.controls.tipoDocumento.value}} · {{form.controls.numeroDocumento.value}}</span></div>
+          }
+          <button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="openSharedIdentity()">
+            {{identityCaptured() ? 'Cambiar datos de la persona' : 'Registrar o recuperar persona'}}
+          </button>
+        </div>
+      }
+
       <div class="employee-form-section admin-field-span-2">
         <span>Información laboral</span>
       </div>
@@ -280,3 +294,4 @@
     </form>
   </div>
 </dialog>
+<app-entity-registration-modal />

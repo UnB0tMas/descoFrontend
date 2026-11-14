@@ -1,0 +1,25 @@
+:host{display:block;min-width:0}
+.sanctions-panel{border:1px solid var(--desco-border);border-radius:.875rem;padding:1.05rem 1.15rem;display:grid;gap:.8rem;background:var(--desco-surface);color:var(--desco-text);min-width:0}
+.sanctions-panel--embedded{margin:0}
+.sanctions-header,.sanctions-actions,.sanctions-dialog-head,.sanctions-dialog-actions{display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap}
+.sanctions-header h3{font-size:1rem;font-weight:750;margin:0}
+.sanctions-actions{justify-content:flex-end}
+.sanctions-table-wrap{min-width:0;overflow-x:auto;border-radius:.7rem;border:1px solid var(--desco-border)}
+.sanctions-table{min-width:620px;width:100%}
+.sanctions-table td,.sanctions-table th{padding:.78rem .95rem;white-space:nowrap}
+.sanctions-table td:nth-child(3){white-space:normal;min-width:160px}
+.sanctions-buttons{display:flex;align-items:center;gap:.4rem}
+.sanctions-muted{color:var(--desco-text-muted);font-size:.84rem;margin:0;overflow-wrap:anywhere}
+.sanctions-error{color:var(--desco-error,#ef4444);font-size:.84rem}
+.sanctions-partner-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));gap:.8rem}
+.sanctions-partner-summary>div{display:grid;gap:.25rem}
+.sanctions-partner-summary span{color:var(--desco-text-muted);font-size:.77rem}
+.sanctions-partner-summary strong{font-weight:700;font-size:.875rem;overflow-wrap:anywhere}
+.sanctions-why{border-top:1px solid var(--desco-border);padding-top:.7rem}
+.sanctions-overlay{position:fixed;inset:0;z-index:1100;background:rgba(0,0,0,.72);display:grid;place-items:center;padding:1rem;overflow:auto}
+.sanctions-dialog{width:min(100%,490px);max-height:min(85dvh,780px);overflow:auto;border:1px solid var(--desco-border);border-radius:.95rem;background:var(--desco-surface);color:var(--desco-text);padding:1.15rem}
+.sanctions-dialog-head{margin-bottom:1rem}.sanctions-dialog-head h2{font-size:1.08rem;font-weight:750}
+.sanctions-form{display:grid;gap:1rem}.sanctions-form .admin-field{display:grid;gap:.4rem;min-width:0}
+.sanctions-form :is(input,select,textarea){width:100%;box-sizing:border-box}
+.sanctions-dialog-actions{justify-content:flex-end;border-top:1px solid var(--desco-border);padding-top:1rem}
+@media(max-width:560px){.sanctions-panel{padding:.8rem}.sanctions-dialog{padding:.9rem}.sanctions-header{align-items:flex-start}}

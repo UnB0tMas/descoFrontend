@@ -1,0 +1,214 @@
+:host { display: block; }
+.apappss-buyers { display: grid; gap: 1.25rem; }
+.apappss-buyers-content { padding: 1.25rem; }
+.apappss-buyers-toolbar { display: flex; align-items: end; gap: .8rem; flex-wrap: wrap; margin-bottom: 1.2rem; }
+.apappss-buyers-toolbar .admin-field:first-child { flex: 2 1 270px; }
+.apappss-buyers-toolbar .admin-field:nth-child(2) { flex: 1 1 180px; }
+/* Reutiliza el selector de vistas, la tabla y la tarjeta institucional. */
+.apappss-buyers-content { min-width: 0; }
+.apappss-buyers-viewbar { display: flex; justify-content: flex-end; }
+.apappss-buyers-viewbar .technical-view-control { margin-top: 0; margin-bottom: .85rem; }
+.apappss-buyers-table-wrap { max-width: 100%; }
+.apappss-buyers-table { min-width: max(100%, 46rem); }
+.apappss-buyer-name { overflow-wrap: anywhere; }
+.apappss-buyer-document { white-space: nowrap; }
+.apappss-buyer-email { overflow-wrap: anywhere; }
+.apappss-buyer-actions { justify-content: flex-end; }
+.apappss-buyers-grid { padding: 0 0 1rem; }
+.apappss-buyers-grid app-record-card { min-width: 0; }
+.apappss-buyers-grid .desco-record-card dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.apappss-buyers-grid .desco-record-card footer .admin-row-actions { justify-content: flex-end; }
+.apappss-buyer-detail { display: grid; gap: .7rem; padding: .75rem 0; }
+.apappss-buyers-help { color: var(--desco-text-muted,#64748b); font-size: .82rem; }
+
+/* El dialog nativo ocupa el viewport (top layer) y centra la caja sin depender del padre. */
+.apappss-buyer-dialog[open] {
+  display:grid!important; place-items:center!important; position:fixed!important;
+  inset:0!important; width:100vw!important; height:100dvh!important;
+  max-width:none!important; max-height:none!important;
+  margin:0!important; padding:clamp(.4rem,2vw,1.25rem)!important;
+  overflow:auto!important; border:0!important; box-sizing:border-box;
+  background:transparent!important;
+}
+.apappss-buyer-dialog::backdrop { background:rgba(0,0,0,.7); backdrop-filter:blur(3px); }
+.apappss-buyer-dialog .apappss-buyer-modal-box {
+  display:flex!important; flex-direction:column; min-height:0;
+  width:min(760px,100%)!important; max-width:760px!important;
+  max-height:calc(100dvh - 2.5rem)!important; margin:auto!important;
+  padding:0!important; overflow:hidden!important; box-sizing:border-box;
+  background:var(--desco-surface);font-family:inherit;
+}
+.apappss-buyer-modal-box > .admin-modal-header {
+  position:relative;flex:0 0 auto;z-index:2;margin:0!important;
+  padding:.85rem 1.2rem;background:var(--desco-surface);
+}
+.apappss-buyer-close { display:grid;place-items:center;width:2.25rem;height:2.25rem;flex:0 0 auto; }
+.apappss-buyer-modal-scroll { flex:1 1 auto;min-height:0;padding:1rem 1.2rem;overflow:auto;overscroll-behavior:contain; }
+.apappss-buyer-modal-scroll .admin-field { min-width:0;display:flex;flex-direction:column;gap:.35rem; }
+.apappss-buyer-modal-scroll .admin-field > :is(label,span) { font-weight:600;font-size:.875rem;line-height:1.4; }
+.apappss-buyer-modal-scroll :is(.admin-input,.admin-select) { width:100%;min-width:0;max-width:100%;box-sizing:border-box;font:inherit;font-size:.875rem;min-height:2.6rem; }
+/* Búsqueda integrada en el mismo formulario, sin pantalla previa. */
+.apappss-buyer-document-row { display:grid;grid-template-columns:minmax(0,160px) minmax(0,1fr) auto;align-items:end;gap:.7rem; }
+.apappss-buyer-document-row > button { min-height:2.6rem;align-self:end; }
+.apappss-buyer-fields {display:grid;gap:.85rem;scroll-margin-top:1rem;}
+.apappss-buyer-form { display:grid;gap:1rem;min-width:0; }
+.apappss-buyer-form .person-data-fields { min-width:0; }
+.apappss-buyer-company-form {padding:0!important;gap:.85rem;align-items:start;}
+.apappss-buyer-extra-field {max-width:18rem;}
+.apappss-buyer-detail { padding:0; }
+.apappss-buyer-footer { position:relative;flex:0 0 auto;margin:0!important;padding:.85rem 1.2rem!important;
+  border-top:1px solid var(--desco-border);background:var(--desco-surface); }
+.apappss-buyer-footer > button { min-height:2.55rem; }
+@media(max-width:560px){
+  .apappss-buyer-dialog[open] { padding:.4rem!important; }
+  .apappss-buyer-dialog .apappss-buyer-modal-box { max-height:calc(100dvh - .8rem)!important; }
+  .apappss-buyer-modal-scroll { padding:.85rem; }
+  .apappss-buyer-document-row { grid-template-columns:minmax(0,1fr) minmax(0,1.5fr); }
+  .apappss-buyer-document-row > button { grid-column:1/-1; width:100%; }
+  .apappss-buyer-company-form { grid-template-columns:minmax(0,1fr); }
+  .apappss-buyer-company-form .admin-field-span-2 { grid-column:auto; }
+  .apappss-buyer-footer { padding:.8rem .85rem!important; }
+  .apappss-buyer-footer > button { flex:1 1 auto; }
+}
+
+/* Tarjetas de compradores: diseño local. El contenido proyectado se adapta al ancho real. */
+.apappss-buyers-content .apappss-buyers-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));
+  gap:1rem;
+  align-items:stretch;
+  padding:0 0 1rem;
+  min-width:0;
+}
+.apappss-buyers-grid app-record-card { display:block; min-width:0; width:100%; }
+/* El artículo interior pertenece a RecordCardComponent: limitar ::ng-deep a esta página. */
+:host ::ng-deep .apappss-buyers-grid app-record-card .desco-record-card {
+  display:flex;
+  flex-direction:column;
+  gap:0;
+  width:100%;
+  min-height:246px;
+  padding:1.1rem;
+  border-radius:1rem;
+}
+.apappss-buyers-grid .apappss-buyer-card-heading {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:.75rem;
+  margin:0 0 .85rem;
+  min-width:0;
+}
+.apappss-buyer-avatar {
+  display:inline-grid;
+  place-items:center;
+  width:2.55rem;
+  height:2.55rem;
+  flex:0 0 auto;
+  border-radius:.8rem;
+  color:var(--desco-primary,#3b82f6);
+  background:color-mix(in srgb,var(--desco-primary,#3b82f6) 13%,transparent);
+  font-size:1rem;
+}
+.apappss-buyers-grid .apappss-buyer-card-identity {
+  display:grid;
+  gap:.35rem;
+  min-width:0;
+  padding:0 0 .85rem;
+}
+.apappss-buyer-card-identity h3 {
+  margin:0;
+  font-size:1rem;
+  line-height:1.38;
+  font-weight:750;
+  overflow-wrap:anywhere;
+}
+.apappss-buyer-card-document {
+  color:var(--desco-text-muted,#64748b);
+  font-size:.78rem;
+  font-weight:600;
+  overflow-wrap:anywhere;
+}
+/* Siempre una columna: el valor va debajo de su etiqueta, nunca junto a otro valor. */
+.apappss-buyers-grid dl.apappss-buyer-card-contacts {
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  gap:.8rem;
+  padding:.85rem 0;
+  margin:0;
+  border-top:1px solid var(--desco-border,#334155);
+  min-width:0;
+}
+.apappss-buyers-grid .apappss-buyer-card-contacts > .apappss-buyer-card-contact {
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  gap:.25rem;
+  min-width:0;
+}
+.apappss-buyers-grid .apappss-buyer-card-contacts dt {
+  display:block;
+  margin:0;
+  font-size:.71rem;
+  font-weight:650;
+  line-height:1.35;
+  color:var(--desco-text-muted,#64748b);
+}
+.apappss-buyers-grid .apappss-buyer-card-contacts dd {
+  display:block;
+  margin:0;
+  min-width:0;
+  max-width:100%;
+  font-size:.84rem;
+  line-height:1.45;
+  font-weight:650;
+  color:var(--desco-text,#f8fafc);
+}
+.apappss-buyer-card-phone {
+  font-variant-numeric:tabular-nums;
+  white-space:normal;
+  overflow-wrap:break-word;
+  word-break:normal;
+}
+.apappss-buyer-card-email { overflow-wrap:anywhere; word-break:normal; }
+.apappss-buyers-grid footer.apappss-buyer-card-footer {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:.65rem;
+  width:100%;
+  margin-top:auto;
+  padding-top:.85rem;
+  border-top:1px solid var(--desco-border,#334155);
+}
+.apappss-buyers-grid .apappss-buyer-card-footer button {
+  display:inline-flex;
+  width:100%;
+  min-width:0;
+  align-items:center;
+  justify-content:center;
+  min-height:2.35rem;
+  padding:.5rem .6rem;
+  font-size:.78rem;
+  white-space:nowrap;
+  gap:.4rem;
+}
+.apappss-buyers-grid .apappss-buyer-card-footer button:disabled { opacity:.55; cursor:not-allowed; }
+.apappss-buyer-detail-identity {
+  display:flex;
+  align-items:center;
+  gap:.85rem;
+  padding:.3rem 0 1rem;
+  border-bottom:1px solid var(--desco-border,#334155);
+}
+.apappss-buyer-detail-identity > div {display:grid;gap:.3rem;min-width:0;}
+.apappss-buyer-detail-identity strong {font-size:1rem;overflow-wrap:anywhere;}
+.apappss-buyer-detail-identity span:not(.apappss-buyer-avatar) {font-size:.8rem;color:var(--desco-text-muted,#64748b);}
+.apappss-buyer-detail-fields {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;margin:0;padding:.35rem 0 .5rem;}
+.apappss-buyer-detail-fields div {min-width:0;}
+.apappss-buyer-detail-fields dt {font-size:.75rem;color:var(--desco-text-muted,#64748b);margin:0 0 .25rem;}
+.apappss-buyer-detail-fields dd {margin:0;font-size:.85rem;font-weight:650;overflow-wrap:anywhere;}
+@media(max-width:560px) {
+  .apappss-buyers-content .apappss-buyers-grid {grid-template-columns:minmax(0,1fr);}
+  .apappss-buyer-detail-fields {grid-template-columns:minmax(0,1fr);}
+  .apappss-buyers-grid .apappss-buyer-card-footer button {padding:.5rem .3rem;}
+}

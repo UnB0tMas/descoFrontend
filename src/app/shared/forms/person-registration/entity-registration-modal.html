@@ -1,0 +1,93 @@
+<dialog #dialog class="desco-modal entity-registration-dialog" (cancel)="$event.preventDefault(); close()" aria-labelledby="entity-registration-title">
+  <section class="admin-modal-box entity-registration-box">
+    <header class="admin-modal-header entity-registration-header">
+      <div class="admin-modal-title-group">
+        <span class="admin-modal-icon"><fa-icon [icon]="entityKind() === 'EMPRESA' ? iconCompany : iconPerson" /></span>
+        <div><p>{{ config()?.eyebrow }}</p><h2 id="entity-registration-title">{{ config()?.title }}</h2></div>
+      </div>
+      <button type="button" class="admin-icon-button" aria-label="Cerrar" [disabled]="saving()" (click)="close()"><fa-icon [icon]="iconClose" /></button>
+    </header>
+    <div class="entity-registration-scroll">
+      <form id="entity-registration-form" class="entity-registration-form" [formGroup]="form" (ngSubmit)="save()">
+        <div class="entity-registration-document-row">
+          <label class="admin-field"><span>Tipo de documento</span>
+            <select class="admin-select" formControlName="tipoDocumento" [attr.aria-readonly]="documentLocked()" [attr.disabled]="documentLocked() || saving() ? '' : null" (change)="documentTypeChanged()">
+              @for (type of documents(); track type.value) { <option [value]="type.value">{{type.label}}</option> }
+            </select>
+          </label>
+          <label class="admin-field"><span>Número de documento</span>
+            <input class="admin-input" type="text" formControlName="numeroDocumento" [attr.maxlength]="maxDoc()" [attr.inputmode]="inputMode()" [readOnly]="documentLocked() || saving()" (input)="documentChanged()" autocomplete="off" />
+          </label>
+          <button type="button" class="admin-secondary-button" [disabled]="!canSearch()" (click)="search()">{{ busy() ? 'Buscando...' : 'Buscar' }}</button>
+        </div>
+        @if (form.controls.numeroDocumento.invalid && form.controls.numeroDocumento.touched) {
+          <small class="entity-registration-error">Ingrese un documento válido.</small>
+        }
+        @if (warning()) { <p class="entity-registration-message" role="alert">{{ warning() }}</p> }
+
+        @if (entityKind() === 'PERSONA') {
+          <app-person-data-fields idPrefix="entity-reg-person" [form]="form"
+            [identityVisible]="false" [documentTypes]="documents()"
+            [birthDateVisible]="!hidden('birthDate')" [locationVisible]="!hidden('geography')"
+            [hiddenFields]="config()?.hiddenFields ?? []" [disabled]="saving() || busy()"
+            [locks]="locks()" [districtCode]="district()" [populationCenterId]="center()"
+            [sex]="hidden('sexo') ? null : form.controls.sexo.value"
+            [minBirthDate]="minBirth" [maxBirthDate]="maxBirth"
+            [referenceLabel]="'Dirección o referencia'"
+            (nameChanged)="sanitizeName($event)" (phoneChanged)="sanitizePhone()"
+            (geographyChanged)="geography($event)" />
+        } @else {
+          <h3 class="entity-registration-section">Datos de la empresa</h3>
+          <div class="entity-registration-grid">
+            <label class="admin-field entity-registration-full"><span>Razón social</span>
+              <input class="admin-input" formControlName="razonSocial" maxlength="200" [readOnly]="companyLocks().razonSocial || busy() || saving()" />
+            </label>
+            @if (!hidden('nombreComercial')) {
+              <label class="admin-field entity-registration-full"><span>Nombre comercial</span>
+                <input class="admin-input" formControlName="nombreComercial" maxlength="160" [readOnly]="companyLocks().nombreComercial || busy() || saving()" />
+              </label>
+            }
+            @if (!hidden('phone')) {
+              <label class="admin-field"><span>Teléfono</span>
+                <input class="admin-input" formControlName="telefono" type="tel" maxlength="30" [readOnly]="companyLocks().telefono || busy() || saving()" (input)="sanitizePhone()" />
+              </label>
+            }
+            @if (!hidden('email')) {
+              <label class="admin-field"><span>Correo electrónico</span>
+                <input class="admin-input" formControlName="correo" type="email" maxlength="180" [readOnly]="companyLocks().correo || busy() || saving()" />
+              </label>
+            }
+          </div>
+          @if (!hidden('geography')) {
+            <h3 class="entity-registration-section">Ubicación de la empresa</h3>
+            <app-geography-cascade class="entity-registration-geography" [districtCode]="district()"
+              [populationCenterId]="center()" [disabled]="busy() || saving()"
+              [locationLocked]="companyLocks().geography" [populationCenterLocked]="companyLocks().populationCenter"
+              [populationCenterOnly]="companyLocks().geography" (selectionChange)="geography($event)" />
+            @if (!hidden('reference')) {
+              <label class="admin-field"><span>Dirección o referencia</span>
+                <input class="admin-input" formControlName="referencia" maxlength="300" [readOnly]="companyLocks().referencia || busy() || saving()" />
+              </label>
+            }
+          }
+        }
+        @if ((config()?.extras?.length ?? 0) > 0) {
+          <h3 class="entity-registration-section">Datos del registro</h3>
+          <div [formGroup]="extraForm" class="entity-registration-grid">
+            @for (field of config()?.extras ?? []; track field.key) {
+              <label class="admin-field"><span>{{ field.label }}</span>
+                <input class="admin-input" [type]="field.type" [formControlName]="field.key" [attr.max]="field.max || null" />
+              </label>
+            }
+          </div>
+        }
+      </form>
+    </div>
+    <footer class="admin-modal-actions entity-registration-footer">
+      <button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="close()">Cancelar</button>
+      <button type="submit" form="entity-registration-form" class="admin-primary-button" [disabled]="saving() || busy() || blocked()">
+        {{ saving() ? 'Guardando...' : roleId() && !changed() ? 'Continuar' : config()?.saveLabel || 'Guardar' }}
+      </button>
+    </footer>
+  </section>
+</dialog>

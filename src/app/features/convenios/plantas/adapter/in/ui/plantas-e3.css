@@ -38,3 +38,338 @@
 .e3-page .e3-error{color:var(--desco-danger,#b91c1c)}
 
 .e3-modal .e3-modal-box{width:min(98vw,1080px);max-width:1080px;max-height:92vh;overflow-y:auto}.e3-modal .e3-detail-head{position:sticky;top:0;z-index:3;background:var(--desco-surface);padding:.6rem 0}.e3-actions{display:flex;justify-content:flex-end;margin:.55rem 0}.e3-modal .admin-modal-header{margin-bottom:1rem}.e3-modal .e3-expediente{min-width:0;max-width:100%}
+
+.e3-table-actions{display:flex;flex-wrap:wrap;gap:.4rem;min-width:225px}.e3-danger{border-color:var(--desco-danger,#b91c1c)!important;color:var(--desco-danger,#b91c1c)!important}
+.e3-panel-heading{align-items:center}.e3-panel-heading h3{margin:0}.e3-periodo{gap:.75rem}
+.e3-chart{display:flex;gap:.45rem;align-items:end;overflow-x:auto;min-height:165px;padding:.75rem;border:1px solid var(--desco-border);border-radius:.7rem}
+.e3-chart-group{display:grid;gap:.3rem;min-width:44px;justify-items:center}.e3-chart-bars{height:120px;display:flex;align-items:end;gap:3px}
+.e3-bar{display:block;width:10px;min-height:2px;border-radius:4px 4px 0 0}.e3-bar--casos{background:#f59e0b}.e3-bar--sanas{background:#16a34a}.e3-bar--bajas{background:#9ca3af}
+.e3-chart-group small{font-size:.7rem}.e3-chart-legend{display:flex;gap:1.2rem;font-size:.8rem;color:var(--desco-text-muted)}
+.e3-chart-legend span:before{content:'●';margin-right:.3rem}.e3-chart-legend span:nth-child(1):before{color:#f59e0b}.e3-chart-legend span:nth-child(2):before{color:#16a34a}.e3-chart-legend span:nth-child(3):before{color:#9ca3af}
+
+.e3-view-options{display:flex;gap:.35rem}.e3-view-options button.selected{border-color:#3b82f6;color:#93c5fd}
+.e3-plant-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:.85rem;margin-top:.7rem}
+.e3-plant-card{display:flex;flex-direction:column;gap:.85rem;padding:1rem}.e3-plant-card .e3-table-actions{min-width:0;margin-top:auto}
+.e3-plant-card-fields{display:grid;gap:.6rem}.e3-plant-card-fields>div{display:grid;grid-template-columns:1fr auto;gap:.4rem}
+.e3-plant-card-fields span{opacity:.7}.e3-plant-card-fields strong{text-align:right}
+
+.e3-plant-empty{display:grid;justify-items:center;gap:1rem;padding:1rem;text-align:center}
+
+/* Tarjetas de indicadores con la paleta institucional de DESCO. */
+:host .e3-stats--overview{grid-template-columns:repeat(auto-fit,minmax(min(100%,205px),1fr))}
+:host .e3-stats--health{grid-template-columns:repeat(auto-fit,minmax(min(100%,165px),1fr))}
+:host .e3-stat-tile{position:relative;overflow:hidden;padding:1rem 1.1rem;border-radius:.9rem;min-height:92px;background:var(--desco-surface);border:1px solid var(--desco-border);box-shadow:0 6px 18px rgba(0,0,0,.055)}
+:host .e3-stat-tile::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--desco-primary)}
+:host .e3-stat-tile--healthy::before{background:#34d399}
+:host .e3-stat-tile--warning::before{background:#fb923c}
+:host .e3-stat-tile--muted::before{background:#94a3b8}
+:host .e3-stat-tile strong{display:block;margin:.35rem 0;font-size:clamp(1.3rem,2.3vw,1.75rem);letter-spacing:-.03em}
+:host .e3-stat-tile span{color:var(--desco-text-muted)}
+:host .e3-stat-tile small{font-size:.73rem;line-height:1.35;color:var(--desco-text-muted)}
+:host .e3-visuals{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(280px,.85fr);gap:.9rem;margin-top:.55rem;align-items:stretch}
+:host .e3-visuals--single{grid-template-columns:1fr}
+:host .e3-visuals>*{min-width:0}
+:host .e3-empty-graphic{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.7rem;min-height:215px;border:1px dashed var(--desco-border);border-radius:.95rem;background:var(--desco-surface-soft);color:var(--desco-text-muted);font-size:.8rem;text-align:center}
+:host .e3-empty-graphic fa-icon{font-size:1.3rem;color:var(--desco-primary)}
+:host .e3-empty-graphic strong{font-size:.9rem;color:var(--desco-text)}
+/* ChartCard y ApexCharts ya son compartidos; se armonizan aquí sin alterar otros módulos. */
+:host ::ng-deep .e3-visuals app-chart-card article{background:var(--desco-surface)!important;border:1px solid var(--desco-border)!important;border-radius:1rem!important;box-shadow:0 8px 26px rgba(0,0,0,.075)!important;color:var(--desco-text)}
+:host ::ng-deep .e3-visuals app-chart-card article>header{background:var(--desco-surface-soft);border-bottom:1px solid var(--desco-border)}
+:host ::ng-deep .e3-visuals app-chart-card article h3{color:var(--desco-text)!important}
+:host ::ng-deep .e3-visuals app-chart-card article header p{color:var(--desco-text-muted)!important}
+:host ::ng-deep .e3-visuals app-chart-card article>header>div>div:first-child{background:var(--desco-surface);color:var(--desco-primary)}
+:host .e3-plant-cards{margin-top:1rem;grid-template-columns:repeat(auto-fill,minmax(min(100%,265px),1fr))}
+:host .e3-plant-card{border:1px solid var(--desco-border);background:var(--desco-surface);border-radius:.9rem}
+:host .e3-plant-card-fields{color:var(--desco-text)}
+:host .e3-table-actions{min-width:0;justify-content:flex-end}
+:host .e3-table-actions .admin-secondary-button{display:inline-flex;align-items:center;justify-content:center;gap:.4rem}
+:host .e3-panel-heading{justify-content:space-between;align-items:center}
+:host .e3-periodo{gap:1.05rem}
+/* Diálogos de plantas: la misma estructura fija que Registrar/Editar predio. */
+:host dialog.e3-lote-dialog[open],:host dialog.e3-editar-dialog[open]{position:fixed;inset:0;display:grid;place-items:center;width:100vw;height:100dvh;max-width:none;max-height:none;margin:0;padding:clamp(.5rem,2vw,1.5rem);background:transparent;border:0;overflow:auto;box-sizing:border-box}
+:host dialog.e3-lote-dialog::backdrop,:host dialog.e3-editar-dialog::backdrop{background:rgba(2,6,23,.72);backdrop-filter:blur(5px)}
+:host .e3-lote-dialog .e3-lote-box,:host .e3-editar-dialog .e3-editar-box{display:flex;flex-direction:column;box-sizing:border-box;width:min(780px,calc(100vw - 1.5rem))!important;max-width:780px!important;max-height:min(88dvh,820px)!important;margin:auto;padding:0!important;overflow:hidden!important;border:1px solid var(--desco-border);border-radius:1rem;background:var(--desco-surface);box-shadow:0 22px 85px rgba(0,0,0,.35)}
+:host .e3-lote-box>.admin-modal-header,:host .e3-editar-box>.admin-modal-header{position:static!important;flex:none;padding:1rem 1.25rem!important;border-bottom:1px solid var(--desco-border)}
+:host .e3-lote-body,:host .e3-editar-body{box-sizing:border-box;display:grid;gap:1rem;min-width:0;min-height:0;overflow-y:auto;overflow-x:hidden;flex:1 1 auto;padding:1.2rem 1.25rem}
+:host .e3-lote-body label.admin-field,:host .e3-editar-body label.admin-field{display:flex;flex-direction:column;gap:.4rem;min-width:0;font-size:.75rem;font-weight:650}
+:host .e3-lote-body .admin-input,:host .e3-lote-body .admin-select,:host .e3-editar-body .admin-input,:host .e3-editar-body .admin-select{max-width:100%;width:100%;min-width:0;box-sizing:border-box}
+:host .e3-lote-lines{display:grid;gap:.75rem}
+:host .e3-lote-line{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(95px,.55fr) minmax(0,1fr) auto;align-items:end;gap:.65rem;padding:.8rem;border:1px solid var(--desco-border);border-radius:.75rem;background:var(--desco-surface-soft)}
+:host .e3-remove-line{width:2.65rem;height:2.65rem;flex:none}
+:host .e3-add-line{justify-self:start;display:inline-flex;gap:.4rem;align-items:center}
+:host .e3-lote-footer{display:flex;justify-content:flex-end;gap:.65rem;align-items:center;flex:none;box-sizing:border-box;margin:0!important;padding:.85rem 1.25rem!important;border-top:1px solid var(--desco-border);background:var(--desco-surface)}
+:host .e3-lote-footer button{min-height:2.65rem}
+@media(max-width:760px){:host .e3-visuals{grid-template-columns:minmax(0,1fr)}:host .e3-lote-line{grid-template-columns:minmax(0,1fr) minmax(105px,.65fr)}:host .e3-lote-line .admin-field:nth-child(3){grid-column:1/-1}:host .e3-remove-line{grid-column:2;grid-row:2;justify-self:end}}
+@media(max-width:480px){:host .e3-lote-line{grid-template-columns:minmax(0,1fr)}:host .e3-lote-line .admin-field:nth-child(3),:host .e3-remove-line{grid-column:auto;grid-row:auto}:host .e3-remove-line{justify-self:end}:host .e3-lote-footer button{flex:1 1 0}}
+
+/* Las clases GP están encapsuladas en sus vistas de origen: replicar sus reglas aquí. */
+:host .gp-view-toggle{display:inline-flex;align-items:center;gap:.2rem;border:1px solid var(--desco-border);border-radius:.75rem;padding:.2rem;background:var(--desco-surface)}
+:host .gp-view-toggle button{display:inline-flex;align-items:center;justify-content:center;gap:.45rem;border:0;background:transparent;color:var(--desco-text-muted);font-size:.8rem;font-weight:650;padding:.6rem .8rem;border-radius:.55rem;cursor:pointer}
+:host .gp-view-toggle button.active{background:var(--desco-surface-soft);color:var(--desco-primary)}
+:host .gp-view-toggle button:focus-visible{outline:2px solid var(--desco-primary);outline-offset:2px}
+:host .gp-card-actions{display:flex;flex-wrap:wrap;align-items:center;gap:.45rem;margin-top:auto;border-top:1px solid var(--desco-border);padding-top:.8rem}
+:host .gp-cards--institutional .gp-card{box-shadow:0 1px 3px rgba(15,23,42,.04);transition:border-color .15s,transform .15s}
+:host .gp-cards--institutional .gp-card:hover{border-color:var(--desco-primary);transform:translateY(-1px)}
+
+:host .e3-lote-line.e3-lote-line--fixed{grid-template-columns:minmax(0,1fr) minmax(110px,.45fr) auto}
+@media(max-width:760px){:host .e3-lote-line.e3-lote-line--fixed{grid-template-columns:minmax(0,1fr) minmax(105px,.48fr) auto}:host .e3-lote-line.e3-lote-line--fixed .e3-remove-line{grid-column:auto;grid-row:auto}}
+@media(max-width:480px){:host .e3-lote-line.e3-lote-line--fixed{grid-template-columns:minmax(0,1fr) minmax(95px,.52fr)}:host .e3-lote-line.e3-lote-line--fixed .e3-remove-line{grid-column:2;grid-row:2;justify-self:end}}
+
+
+/* Registro masivo: loader real hasta respuesta y primera página consultada. */
+:host .e3-lote-progress{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.7rem;min-height:170px;padding:1.2rem;text-align:center;color:var(--desco-text)}
+:host .e3-lote-progress strong{font-size:1rem;font-weight:750}
+:host .e3-lote-progress span{font-size:.78rem;color:var(--desco-text-muted)}
+:host .e3-progress-spinner{display:inline-flex;color:var(--desco-primary);font-size:1.55rem;animation:e3-rotate .8s linear infinite}
+:host .e3-lote-footer .e3-progress-spinner{font-size:.8rem;margin-right:.4rem}
+@keyframes e3-rotate{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){:host .e3-progress-spinner{animation-duration:2.2s}}
+
+/* Planta individual: tabla y tarjetas con los patrones reutilizables de DESCO. */
+:host .e3-list-table-wrap{width:100%;max-width:100%;overflow-x:auto;overscroll-behavior-inline:contain;border-radius:.65rem}
+:host .e3-list-table{width:100%;min-width:560px;table-layout:auto}
+:host .e3-list-table th{white-space:nowrap;font-weight:730}
+:host .e3-list-table td{vertical-align:middle}
+:host .e3-list-table .e3-code-cell{min-width:190px;max-width:300px}
+:host .e3-list-table .e3-code-cell strong{font-size:.78rem;letter-spacing:.01em;overflow-wrap:anywhere;word-break:normal}
+:host .e3-list-table .e3-select-col{text-align:center;width:68px}
+:host .e3-list-table .e3-actions-col{width:140px;text-align:right;white-space:nowrap}
+:host .e3-table-actions{display:inline-flex;align-items:center;justify-content:flex-end;gap:.38rem;flex-wrap:nowrap;min-width:0}
+:host .e3-table-actions>.admin-icon-button{display:inline-flex;align-items:center;justify-content:center;width:2.25rem;min-width:2.25rem;height:2.25rem;min-height:2.25rem;padding:.38rem;border:1px solid var(--desco-border);border-radius:.6rem;background:var(--desco-surface);color:var(--desco-text-muted)}
+:host .e3-table-actions>.admin-icon-button:hover:not(:disabled){color:var(--desco-primary);border-color:var(--desco-primary);background:var(--desco-surface-soft)}
+:host .e3-table-actions>.admin-icon-button.e3-danger:hover:not(:disabled){color:var(--desco-danger,#f87171);border-color:var(--desco-danger,#f87171)}
+:host .e3-table-actions>.admin-icon-button:focus-visible{outline:2px solid var(--desco-primary);outline-offset:2px}
+:host .e3-list-table .admin-status{display:inline-flex;align-items:center;width:max-content;white-space:nowrap}
+:host .e3-plant-cards{margin:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,265px),1fr));gap:.85rem;align-items:stretch}
+:host .e3-plant-card-heading{align-items:flex-start;gap:.5rem}
+:host .e3-plant-card-heading>strong{overflow-wrap:anywhere;word-break:normal;font-size:.82rem;min-width:0}
+:host .e3-plant-card-heading>.admin-status{flex:none;font-size:.67rem}
+:host .e3-plant-card-fields{grid-template-columns:repeat(2,minmax(0,1fr));gap:.7rem}
+:host .e3-plant-card-fields dt{color:var(--desco-text-muted)}
+:host .e3-plant-card-fields dd{overflow-wrap:anywhere}
+:host .e3-plant-card-footer{margin-top:auto;justify-content:flex-end}
+:host .e3-plant-card-footer .e3-table-actions{width:auto;margin-left:auto;justify-content:flex-end}
+:host .e3-panel>app-paginator{display:block;padding-top:.8rem;border-top:1px solid var(--desco-border)}
+@media(max-width:640px){:host .e3-list-table{min-width:560px}:host .e3-plant-cards{grid-template-columns:1fr}:host .e3-list-table .e3-actions-col{width:125px}}
+
+/* Edición y selección de parcela: modales legibles, sin campos ajenos al contexto */
+:host .e3-editar-dialog .e3-editar-box{width:min(560px,calc(100vw - 2rem));max-height:min(85dvh,850px);overflow:hidden;display:flex;flex-direction:column;border-radius:1rem;padding:0}
+:host .e3-editar-dialog .e3-editar-body{padding:1.2rem 1.5rem;overflow:auto;flex:1;min-height:0}
+:host .e3-editar-dialog .gp-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem 1.2rem;align-items:start}
+:host .e3-editar-dialog .admin-field{min-width:0;display:flex;flex-direction:column;gap:.45rem}
+:host .e3-editar-dialog .admin-select,:host .e3-editar-dialog .admin-input{width:100%;min-width:0;box-sizing:border-box;min-height:42px}
+:host .e3-editar-dialog .admin-modal-header,:host .e3-editar-dialog .gp-modal-footer{flex-shrink:0;padding:1rem 1.5rem}
+:host .e3-editar-context{font-size:.82rem;margin:0 0 1rem;color:var(--text-muted,#94a3b8)}
+:host .e3-parcel-section{display:grid;gap:.9rem}
+:host .e3-parcel-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.75rem}
+:host .e3-parcel-card{display:flex;align-items:center;justify-content:space-between;gap:1rem;min-width:0}
+:host .e3-parcel-card h4{margin:.2rem 0 0;overflow-wrap:anywhere}
+:host .e3-parcel-context{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin:.75rem 0}
+:host .e3-parcel-context span{font-size:.85rem;color:var(--text-muted,#94a3b8)}
+@media(max-width:580px){:host .e3-editar-dialog .gp-form-grid{grid-template-columns:1fr}:host .e3-editar-dialog .e3-editar-body{padding:1rem}:host .e3-parcel-card{flex-wrap:wrap}}
+
+/* Expedientes y comentarios: superficie consistente con las fichas existentes. */
+:host .e3-visuals{grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch}
+:host .e3-visuals app-chart-card{min-width:0;display:block}
+:host .e3-comentarios-dialog[open]{position:fixed;inset:0;display:grid;place-items:center;width:100vw;height:100dvh;max-width:none;max-height:none;margin:0;padding:1rem;border:0;background:transparent;box-sizing:border-box}
+:host .e3-comentarios-dialog::backdrop{background:rgba(2,6,23,.74);backdrop-filter:blur(5px)}
+:host .e3-comentarios-box{display:flex;flex-direction:column;width:min(640px,calc(100vw - 1.5rem));max-height:85dvh;padding:0;overflow:hidden;background:var(--desco-surface);border:1px solid var(--desco-border);border-radius:1rem}
+:host .e3-comentarios-box>.admin-modal-header{padding:1rem 1.2rem;border-bottom:1px solid var(--desco-border)}
+:host .e3-comentarios-body{display:grid;gap:.85rem;overflow:auto;padding:1rem 1.2rem;min-height:0}
+:host .e3-comentario{display:grid;gap:.4rem;overflow-wrap:anywhere;border:1px solid var(--desco-border);border-radius:.75rem;padding:.85rem;background:var(--desco-surface-soft)}
+:host .e3-comentario p{margin:0;white-space:pre-wrap}
+:host .e3-comentario small{color:var(--desco-text-muted);font-size:.75rem}
+:host .e3-comentarios-body .admin-field{display:grid;gap:.45rem}
+:host .e3-comentarios-body .admin-primary-button{justify-self:end}
+:host .e3-table-actions>.admin-icon-button{font-size:.76rem}
+:host .e3-lote-dialog .e3-lote-line--fixed{grid-template-columns:minmax(0,1fr) minmax(110px,.45fr) auto}
+@media(max-width:760px){:host .e3-visuals{grid-template-columns:minmax(0,1fr)}}
+
+:host .e3-treatment-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,240px),1fr));gap:.75rem}
+:host .e3-treatment-cards .admin-detail-card{display:grid;gap:.4rem;border:1px solid var(--desco-border);border-radius:.85rem;padding:1rem}
+:host .e3-treatment-cards span,:host .e3-treatment-cards small{color:var(--desco-text-muted);font-size:.75rem}
+:host .e3-treatment-cards p{margin:0;font-size:.82rem;line-height:1.5}
+
+/* Predio integrado: gráficos visibles sin datos y acción junto al listado. */
+:host .e3-visual-card{min-width:0;display:grid;grid-template-rows:minmax(0,1fr) auto;gap:0}
+:host .e3-visual-card app-chart-card{display:block;min-width:0}
+:host .e3-chart-note{margin:.45rem .5rem .15rem;padding:.5rem .75rem;border:1px solid var(--desco-border);border-radius:.65rem;color:var(--desco-text-muted);font-size:.74rem;line-height:1.4;background:var(--desco-surface-soft)}
+:host .e3-actions--integrated{display:flex;justify-content:flex-end;align-items:center;margin:0;padding-top:.8rem;border-top:1px solid var(--desco-border)}
+@media(max-width:600px){:host .e3-actions--integrated button{width:100%;justify-content:center}}
+
+/* Acciones del listado: selector Tabla/Tarjetas debajo de los filtros, sin desplazar los campos. */
+:host .e3-list-toolbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;margin:.65rem 0 0;padding:.85rem 0 .2rem}
+:host .e3-list-toolbar .gp-view-toggle{flex:0 0 auto}
+:host .e3-list-toolbar .admin-primary-button{margin-left:auto}
+@media(max-width:600px){:host .e3-list-toolbar .gp-view-toggle{max-width:100%}:host .e3-list-toolbar .admin-primary-button{width:100%;margin-left:0}}
+
+/* Expediente de planta como página; evita modal horizontal/centrado y conserva controles. */
+:host .e3-expediente-page{display:block;width:100%;min-width:0;padding:0;border:0;background:transparent}
+:host .e3-expediente-page .e3-expediente{display:grid;gap:1rem;width:100%;max-width:100%;min-width:0;margin:0;padding:1rem;border:1px solid var(--desco-border);border-radius:1rem;background:var(--desco-surface)}
+:host .e3-expediente-page .e3-detail-head{align-items:flex-start}
+:host .e3-expediente-page .e3-tabs{position:static;flex-wrap:wrap;gap:.3rem}
+:host .e3-expediente-page .e3-visuals{grid-template-columns:repeat(2,minmax(0,1fr))}
+:host .e3-editar-dialog[open]{position:fixed;inset:0;display:grid;place-items:center;width:100vw;height:100dvh;max-width:none;max-height:none;margin:0;padding:1rem;border:0;box-sizing:border-box;background:transparent}
+:host .e3-editar-dialog::backdrop{background:rgba(2,6,23,.74);backdrop-filter:blur(4px)}
+:host .e3-editar-box{background:var(--desco-surface);border:1px solid var(--desco-border);border-radius:1rem;color:var(--desco-text)}
+:host .e3-editar-box .admin-modal-header{display:flex;align-items:center;justify-content:space-between;gap:1rem;border-bottom:1px solid var(--desco-border)}
+:host .e3-editar-box .gp-modal-footer{border-top:1px solid var(--desco-border);padding:1rem 1.5rem}
+:host .e3-comentarios-box .admin-icon-button{width:2.25rem;height:2.25rem;border:1px solid var(--desco-border);border-radius:.6rem}
+@media(max-width:750px){:host .e3-expediente-page .e3-visuals{grid-template-columns:1fr}}
+
+/* Encabezado integrado con los paneles shared, sin franja adicional de KPI. */
+:host .e3-embedded .e3-periodo{gap:1rem;padding:1.05rem;border-radius:1rem}
+:host .e3-embedded .e3-panel-heading{padding-bottom:.8rem;border-bottom:1px solid var(--desco-border)}
+:host .e3-embedded .e3-panel-heading h3{font-size:.95rem;font-weight:750}
+:host .e3-overview-note{margin:.3rem 0 0;font-size:.77rem;color:var(--desco-text-muted)}
+
+/* Expediente de planta: componentes y tokens compartidos de DESCO. */
+:host .e3-expediente-page{display:block;width:100%;min-width:0;margin:0;padding:0}
+:host .e3-expediente-shell{display:flex;flex-direction:column;min-width:0;width:100%;overflow:hidden;padding:0!important;border:1px solid var(--desco-border);border-radius:1rem;background:var(--desco-surface);box-shadow:0 4px 16px rgba(0,0,0,.04)}
+:host .e3-expediente-head{display:flex;align-items:center;justify-content:space-between;gap:1.1rem;flex-wrap:wrap;padding:1.15rem 1.35rem 1rem;background:var(--desco-surface)}
+:host .e3-expediente-identidad{display:grid;gap:.5rem;flex:1 1 340px;min-width:0}
+:host .e3-expediente-title-row{display:flex;align-items:center;gap:.7rem;flex-wrap:wrap;min-width:0}
+:host .e3-expediente-code-block{display:grid;gap:.22rem;min-width:0}
+:host .e3-expediente-code-block>span{font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;font-weight:800;color:var(--desco-primary)}
+:host .e3-expediente-code-block h2{min-width:0;margin:0;font-size:clamp(1.04rem,1.75vw,1.25rem);font-weight:790;line-height:1.3;letter-spacing:-.01em;overflow-wrap:anywhere;color:var(--desco-text)}
+:host .e3-expediente-title-row>.admin-status{flex:none;font-size:.7rem}
+:host .e3-expediente-identity-meta{display:flex;flex-wrap:wrap;column-gap:1rem;row-gap:.3rem;color:var(--desco-text-muted);font-size:.76rem;line-height:1.45}
+:host .e3-expediente-identity-meta>span{position:relative;max-width:100%;overflow-wrap:anywhere}
+:host .e3-expediente-identity-meta>span+span::before{content:'·';position:absolute;left:-.6rem;color:var(--desco-text-muted)}
+:host .e3-expediente-head>.admin-secondary-button{flex:none;align-self:center}
+/* Las ocho secciones permanecen en una sola fila, igual que las pestañas GP. */
+:host .gp-sections.e3-expediente-tabs{display:flex;flex-wrap:nowrap!important;align-items:center;justify-content:flex-start;gap:.24rem;min-width:0;max-width:100%;width:100%;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;scroll-snap-type:x proximity;overscroll-behavior-x:contain;margin:0!important;padding:.35rem 1.1rem .6rem;border-bottom:1px solid var(--desco-border);background:var(--desco-surface)}
+:host .gp-sections.e3-expediente-tabs button{display:inline-flex;flex:0 0 auto;align-items:center;justify-content:center;min-height:35px;white-space:nowrap;scroll-snap-align:start;background:transparent;border:0;border-radius:.5rem;padding:.48rem .75rem;font-size:.78rem;font-weight:680;color:var(--desco-text-muted);line-height:1.2;cursor:pointer;transition:background .15s,color .15s}
+:host .gp-sections.e3-expediente-tabs button:hover{background:var(--desco-surface-soft);color:var(--desco-text)}
+:host .gp-sections.e3-expediente-tabs button.selected{background:var(--desco-surface-soft);color:var(--desco-primary);font-weight:760}
+:host .gp-sections.e3-expediente-tabs button:focus-visible{outline:2px solid var(--desco-primary);outline-offset:1px}
+:host .e3-expediente-content{min-width:0;padding:1.2rem 1.35rem 1.4rem}
+:host .e3-expediente-section{display:grid;gap:1rem;min-width:0}
+:host .e3-expediente-section-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.65rem;min-width:0}
+:host .e3-expediente-section-head h3{font-size:1rem;letter-spacing:-.01em;line-height:1.35;font-weight:750;color:var(--desco-text);margin:0}
+:host .e3-expediente-section-head :is(.admin-primary-button,.admin-secondary-button){flex:none}
+:host .e3-expediente-section h4,:host .e3-expediente-card h4{font-size:.83rem;font-weight:760;line-height:1.4;color:var(--desco-text);margin:0}
+:host .e3-expediente-facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin:0;padding:.8rem 0;border-top:1px solid var(--desco-border);border-bottom:1px solid var(--desco-border);gap:.85rem}
+:host .e3-expediente-facts>div{display:grid;gap:.3rem;min-width:0}
+:host .e3-expediente-facts dt{font-size:.7rem;font-weight:600;color:var(--desco-text-muted)}
+:host .e3-expediente-facts dd{min-width:0;font-size:.85rem;font-weight:700;line-height:1.35;color:var(--desco-text);margin:0;overflow-wrap:anywhere}
+:host .e3-expediente-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.7rem}
+:host .e3-expediente-metrics .admin-detail-card{display:flex;flex-direction:column;justify-content:center;gap:.3rem;min-height:76px;min-width:0;padding:.9rem 1rem;border:1px solid var(--desco-border);border-radius:.8rem;background:var(--desco-surface);box-shadow:none}
+:host .e3-expediente-metrics .admin-detail-card span{font-size:.72rem;font-weight:650;color:var(--desco-text-muted)}
+:host .e3-expediente-metrics .admin-detail-card strong{font-size:1.38rem;font-weight:800;line-height:1.2;color:var(--desco-text)}
+:host .e3-expediente-metrics .admin-detail-card small{font-size:.7rem;color:var(--desco-text-muted)}
+:host .e3-expediente-card{min-width:0;display:grid;align-content:start;gap:.85rem;padding:1rem;border:1px solid var(--desco-border);border-radius:.85rem;background:var(--desco-surface)}
+:host .e3-expediente-two-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.85rem;align-items:start}
+:host .e3-expediente-two-columns--production{grid-template-columns:minmax(270px,.85fr) minmax(0,1.15fr)}
+:host .e3-expediente-filters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr)) auto;align-items:end;gap:.7rem;min-width:0}
+:host .e3-expediente-filters .admin-field{display:grid;gap:.36rem;min-width:0;font-size:.73rem;color:var(--desco-text)}
+:host .e3-expediente-filters :is(.admin-input,.admin-select){min-width:0;width:100%;box-sizing:border-box}
+:host .e3-expediente-filters button{min-height:38px}
+:host .e3-expediente-charts{min-width:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.8rem}
+:host .e3-expediente-charts app-chart-card{min-width:0}
+:host .e3-expediente-empty{display:flex;justify-content:center;align-items:center;min-width:0;min-height:76px;max-width:100%;padding:1.05rem;border:1px dashed var(--desco-border);border-radius:.75rem;background:var(--desco-surface-soft);color:var(--desco-text-muted);font-size:.8rem;text-align:center;line-height:1.5}
+:host .e3-expediente-timeline{display:grid;gap:.7rem;list-style:none;margin:0;padding:0;min-width:0}
+:host .e3-expediente-timeline--columns{grid-template-columns:repeat(auto-fit,minmax(min(100%,290px),1fr))}
+:host .e3-expediente-timeline li{display:grid;align-content:start;gap:.35rem;min-width:0;padding:.8rem .95rem;border:1px solid var(--desco-border);border-left:3px solid var(--desco-primary);border-radius:.65rem;background:var(--desco-surface-soft)}
+:host .e3-expediente-timeline li>div{display:flex;justify-content:space-between;align-items:baseline;gap:.65rem;flex-wrap:wrap}
+:host .e3-expediente-timeline strong{font-size:.82rem;font-weight:740;color:var(--desco-text)}
+:host .e3-expediente-timeline time,:host .e3-expediente-timeline small{font-size:.72rem;color:var(--desco-text-muted)}
+:host .e3-expediente-timeline p{margin:0;font-size:.79rem;line-height:1.55;color:var(--desco-text);overflow-wrap:anywhere}
+:host .e3-expediente-files{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,280px),1fr));gap:.75rem}
+:host .e3-expediente-files app-record-card{display:block;min-width:0}
+:host .e3-expediente-file{display:flex;align-items:center;justify-content:space-between;gap:.75rem;min-width:0}
+:host .e3-expediente-file>div{display:grid;gap:.22rem;min-width:0}
+:host .e3-expediente-file strong{font-size:.82rem;overflow-wrap:anywhere}
+:host .e3-expediente-file small{font-size:.7rem;color:var(--desco-text-muted)}
+:host .e3-expediente-file>a{flex:none}
+:host .e3-expediente-head-actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:.5rem}
+/* Tablas compartidas: sin scroll horizontal artificial a 500–900 px. */
+:host .e3-expediente-section .admin-table-wrap{min-width:0;max-width:100%;overflow-x:auto;border-radius:.6rem}
+:host .e3-expediente-section table.admin-table{width:100%!important;min-width:0!important;table-layout:auto;border-collapse:collapse}
+:host .e3-expediente-section .admin-table :is(th,td){font-size:.77rem;line-height:1.4;vertical-align:middle;padding:.65rem .65rem;white-space:normal;overflow-wrap:anywhere}
+:host .e3-expediente-section .admin-table th{font-size:.7rem;font-weight:740;white-space:nowrap}
+:host .e3-expediente-dialog[open]{position:fixed;inset:0;width:100vw;height:100dvh;max-width:none;max-height:none;display:grid;place-items:center;padding:clamp(.5rem,2vw,1.5rem);margin:0;box-sizing:border-box;overflow:auto;border:0;background:transparent}
+:host .e3-expediente-dialog::backdrop{background:rgba(2,6,23,.75);backdrop-filter:blur(4px)}
+:host .e3-expediente-dialog-box{display:flex;flex-direction:column;box-sizing:border-box;width:min(640px,calc(100vw - 1.5rem))!important;max-width:640px!important;max-height:min(90dvh,840px)!important;min-height:0;margin:auto;padding:0!important;overflow:hidden!important;border:1px solid var(--desco-border);border-radius:1rem;background:var(--desco-surface);color:var(--desco-text)}
+:host .e3-expediente-dialog-box>.admin-modal-header{padding:1rem 1.25rem;border-bottom:1px solid var(--desco-border);flex:none}
+:host .e3-expediente-dialog-body{display:grid;gap:.85rem;min-height:0;overflow:auto;padding:1.1rem 1.25rem;flex:1}
+:host .e3-expediente-dialog-body .admin-field{display:grid;gap:.4rem;min-width:0;font-size:.78rem}
+:host .e3-expediente-dialog-body :is(.admin-input,.admin-select,.admin-textarea){width:100%;min-width:0;box-sizing:border-box}
+:host .e3-expediente-dialog-box>.gp-modal-footer{flex:none;justify-content:flex-end;gap:.65rem;margin:0;padding:1rem 1.25rem;border-top:1px solid var(--desco-border);background:var(--desco-surface)}
+:host .e3-expediente-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.85rem}
+:host .e3-expediente-muted{font-size:.78rem;line-height:1.5;color:var(--desco-text-muted);margin:0}
+@media(max-width:1250px){:host .e3-expediente-two-columns,:host .e3-expediente-two-columns--production{grid-template-columns:1fr}}
+@media(max-width:1050px){
+ :host .e3-expediente-section .admin-table-wrap{overflow:visible}
+ :host .e3-expediente-section table.e3-expediente-table-responsive,:host .e3-expediente-table-responsive tbody{display:block;width:100%!important;min-width:0!important}
+ :host .e3-expediente-table-responsive thead{display:none}
+ :host .e3-expediente-table-responsive tr{display:grid;gap:0;padding:.3rem .75rem;margin-bottom:.6rem;border:1px solid var(--desco-border);border-radius:.65rem;background:var(--desco-surface-soft)}
+ :host .e3-expediente-table-responsive td{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;max-width:100%;border:0!important;text-align:right!important;padding:.45rem 0!important;white-space:normal!important}
+ :host .e3-expediente-table-responsive td+td{border-top:1px solid var(--desco-border)!important}
+ :host .e3-expediente-table-responsive td::before{content:attr(data-label);font-size:.71rem;font-weight:650;color:var(--desco-text-muted);text-align:left;flex:0 0 41%}
+}
+@media(max-width:760px){
+ :host .e3-expediente-head{padding:.95rem 1rem}
+ :host .e3-expediente-content{padding:1rem}
+ :host .gp-sections.e3-expediente-tabs{padding:.3rem .75rem .6rem}
+ :host .gp-sections.e3-expediente-tabs button{font-size:.76rem;padding:.48rem .62rem}
+ :host .e3-expediente-facts{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:1rem}
+ :host .e3-expediente-charts{grid-template-columns:1fr}
+}
+@media(max-width:520px){
+ :host .e3-expediente-head>.admin-secondary-button{width:100%;justify-content:center}
+ :host .e3-expediente-metrics{grid-template-columns:repeat(3,minmax(0,1fr));gap:.4rem}
+ :host .e3-expediente-metrics .admin-detail-card{min-height:72px;padding:.75rem .6rem}
+ :host .e3-expediente-metrics .admin-detail-card span{font-size:.65rem}
+ :host .e3-expediente-metrics .admin-detail-card strong{font-size:1.18rem}
+ :host .e3-expediente-filters{grid-template-columns:repeat(2,minmax(0,1fr))}
+ :host .e3-expediente-filters button{grid-column:1/-1}
+ :host .e3-expediente-section-head>.admin-primary-button,:host .e3-expediente-section-head>.e3-expediente-head-actions{width:100%;justify-content:flex-start}
+ :host .e3-expediente-form-grid{grid-template-columns:1fr}
+}
+
+/* Expediente APAPPSS: gráficos CSS, registros y archivos por contexto. */
+.e3-expediente-refresh{align-self:end;display:inline-flex;align-items:center;justify-content:center;min-width:42px;min-height:42px;padding:.5rem;border-radius:.65rem}
+.e3-expediente-readonly{border:1px solid var(--desco-border);padding:.8rem 1rem;border-radius:.7rem;font-size:.8rem;color:var(--desco-text-muted);background:var(--desco-surface-soft)}
+.e3-archive-groups{display:grid;gap:1rem;margin-top:1rem}
+.e3-archive-group{min-width:0}
+.e3-archive-group h4{display:flex;gap:.5rem;align-items:center;font-size:.9rem;font-weight:720;margin:0 0 1rem}
+.e3-archive-group h4 small{font-weight:500;color:var(--desco-text-muted)}
+.e3-archive-entry{display:flex;gap:1rem;align-items:center;justify-content:space-between;min-width:0}
+.e3-archive-entry>div{display:grid;gap:.35rem;min-width:0}
+.e3-archive-entry strong{overflow-wrap:anywhere}
+.e3-archive-entry small{font-size:.71rem;color:var(--desco-text-muted)}
+.e3-archive-entry p{font-size:.78rem;color:var(--desco-text);margin:0;overflow-wrap:anywhere}
+.e3-expediente-production-kpis{margin:1rem 0}
+.e3-expediente-section>app-e3-expediente-graficos{display:block;margin:1rem 0}
+@media(max-width:580px){.e3-archive-entry{flex-direction:column;align-items:stretch}.e3-archive-entry .admin-secondary-button{align-self:flex-start}}
+
+/* Archivo del expediente: una categoría visible por vez y tarjetas uniformes. */
+:host .e3-archive-tabs{display:flex;gap:.4rem;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--desco-border);padding:.2rem 0 .7rem}
+:host .e3-archive-tabs button{display:inline-flex;align-items:center;gap:.55rem;padding:.55rem .85rem;min-height:40px;border-radius:.6rem;border:1px solid transparent;color:var(--desco-text-muted);background:transparent;font-weight:680;font-size:.79rem;cursor:pointer}
+:host .e3-archive-tabs button.active{color:var(--desco-primary);background:var(--desco-surface-soft);border-color:var(--desco-border)}
+:host .e3-archive-tabs button:hover:not(.active){background:var(--desco-surface-soft)}
+:host .e3-archive-tabs button:focus-visible{outline:2px solid var(--desco-primary);outline-offset:2px}
+:host .e3-archive-tabs button span{display:grid;place-items:center;min-width:1.35rem;height:1.35rem;padding:0 .3rem;border-radius:99px;background:var(--desco-surface);border:1px solid var(--desco-border);font-size:.7rem;color:var(--desco-text)}
+:host .e3-archive-panel{padding:.2rem 0;min-width:0}
+:host .e3-expediente-files{grid-template-columns:repeat(auto-fill,minmax(min(100%,325px),1fr))}
+:host .e3-archive-icon{flex:none;display:grid;place-items:center;width:2.35rem;height:2.35rem;border:1px solid var(--desco-border);border-radius:.55rem;background:var(--desco-surface-soft);font-size:.65rem;font-weight:800;color:var(--desco-primary)}
+:host .e3-archive-entry{gap:.65rem}
+:host .e3-archive-entry>div{flex:1}
+:host .e3-archive-entry .admin-secondary-button{flex:none}
+/* Separación de acciones del formulario, independiente de estilos globales. */
+:host .e3-expediente-dialog-box>footer.e3-dialog-actions{display:flex!important;justify-content:flex-end!important;align-items:center!important;gap:.85rem!important;padding:1rem 1.25rem!important;margin:0!important}
+:host .e3-expediente-dialog-box>footer.e3-dialog-actions>button{min-height:40px;flex:none!important}
+@media(max-width:520px){:host .e3-expediente-dialog-box>footer.e3-dialog-actions{gap:.65rem!important}:host .e3-expediente-dialog-box>footer.e3-dialog-actions>button{flex:1 1 0!important}}
+
+/* Sanidad y archivos adaptados al expediente individual. */
+:host .e3-sanidad-metrics{grid-template-columns:repeat(3,minmax(0,1fr));margin:.7rem 0}
+:host .e3-expediente-section-head>.admin-primary-button{margin-left:auto}
+:host .e3-expediente-section .e3-expediente-timeline li{min-width:0}
+@media(max-width:640px){:host .e3-sanidad-metrics{grid-template-columns:1fr 1fr}}
+
+/* Acciones globales del expediente, formularios siempre en modal. */
+.e3-expediente-head-actions{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
+.e3-expediente-head-actions button{white-space:nowrap}
+:host .e3-expediente-dialog .e3-dialog-actions{display:flex;align-items:center;justify-content:flex-end;gap:.85rem;padding:1rem 1.2rem}
+@media(max-width:540px){.e3-expediente-head-actions{width:100%}.e3-expediente-head-actions button{flex:1}}

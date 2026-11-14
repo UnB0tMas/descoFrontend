@@ -19,7 +19,8 @@
   aria-label="Mapa ampliado de la parcela">
   <div class="property-map-fullscreen__content">
     <header class="property-map-fullscreen__header">
-      <div><strong>Ubicación de la parcela</strong><p>Usa el GPS, mueve el marcador o pulsa otro punto del mapa.</p></div>
+      <div><strong>{{ editable ? 'Ubicación del predio' : 'Mapa del fundo' }}</strong>
+    @if(editable){<p>Use el GPS o marque un punto en el mapa.</p>}</div>
       <div class="property-map-fullscreen__actions">
         @if (editable) {
           <button type="button" class="property-map-tool property-map-tool--locate" [disabled]="locating()"

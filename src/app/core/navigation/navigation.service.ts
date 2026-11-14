@@ -29,6 +29,7 @@ const FRONTEND_ENTRIES: readonly FrontendEntry[] = [
 const SPECIAL_ENTRIES: readonly FrontendEntry[] = [
   { id: -7100, code: 'APAPPSS_SOCIOS_PREDIOS', label: 'Socios y predios', route: '/convenios/apappss', icon: 'map', order: 5, permission: 'APAPPSS_SOCIOS_LISTAR', group: 'COMERCIAL' },
   { id: -7101, code: 'CAMPANIAS', label: 'Campañas de venta', route: '/gestion-comercial/campanias', icon: 'calendar-days', order: 10, permission: 'CAMPANIAS_LISTAR', group: 'COMERCIAL' },
+  { id: -7114, code: 'APAPPSS_COMPRADORES', label: 'Compradores', route: '/gestion-comercial/compradores', icon: 'users-round', order: 15, permission: 'APAPPSS_COMPRADORES_LISTAR', group: 'COMERCIAL' },
   { id: -7102, code: 'PARTICIPANTES', label: 'Participantes', route: '/gestion-comercial/participantes', icon: 'users', order: 20, permission: 'PARTICIPANTES_LISTAR', group: 'COMERCIAL' },
   { id: -7103, code: 'OPERATIVOS', label: 'Operativos', route: '/gestion-comercial/operativos', icon: 'truck', order: 30, permission: 'OPERATIVOS_LISTAR', group: 'COMERCIAL' },
   { id: -7104, code: 'ENTREGAS', label: 'Acopio y entregas', route: '/gestion-comercial/entregas', icon: 'boxes', order: 40, permission: 'ENTREGAS_LISTAR', group: 'COMERCIAL' },
@@ -38,10 +39,16 @@ const SPECIAL_ENTRIES: readonly FrontendEntry[] = [
   { id: -7107, code: 'INCIDENCIAS', label: 'Incidencias', route: '/gestion-comercial/incidencias', icon: 'triangle-exclamation', order: 70, permission: 'INCIDENCIAS_LISTAR', group: 'COMERCIAL' },
   { id: -7108, code: 'AJUSTES', label: 'Ajustes de precios', route: '/gestion-comercial/ajustes', icon: 'scale-balanced', order: 80, permission: 'AJUSTES_LISTAR', group: 'COMERCIAL' },
   { id: -7109, code: 'GASTOS', label: 'Gastos', route: '/finanzas/gastos', icon: 'receipt', order: 90, permission: 'GASTOS_LISTAR', group: 'COMERCIAL' },
-  { id: -7110, code: 'LIQUIDACIONES', label: 'Liquidaciones', route: '/finanzas/liquidaciones', icon: 'file-invoice', order: 100, permission: 'LIQUIDACIONES_LISTAR', group: 'COMERCIAL' },
-  { id: -7111, code: 'PAGOS', label: 'Pagos a socios', route: '/finanzas/pagos', icon: 'wallet', order: 110, permission: 'PAGOS_LISTAR', group: 'COMERCIAL' },
+  { id: -7110, code: 'LIQUIDACIONES', label: 'Liquidaciones', route: '/gestion-comercial/finanzas-apappss', icon: 'file-invoice', order: 100, permission: 'LIQUIDACIONES_LISTAR', group: 'COMERCIAL' },
+  { id: -7111, code: 'PAGOS', label: 'Pagos a socios', route: '/gestion-comercial/pagos-socios', icon: 'wallet', order: 110, permission: 'PAGOS_LISTAR', group: 'COMERCIAL' },
   { id: -7112, code: 'COBROS', label: 'Cobros', route: '/finanzas/cobros', icon: 'hand-coins', order: 120, permission: 'COBROS_LISTAR', group: 'COMERCIAL' },
 ];
+
+// Se conservan todas las entradas originales para excluirlas del menú general;
+// las operaciones internas permanecen disponibles desde sus páginas y rutas.
+const APAPPSS_MENU_PRINCIPAL = new Set([
+  'APAPPSS_SOCIOS_PREDIOS', 'CAMPANIAS', 'APAPPSS_COMPRADORES', 'LIQUIDACIONES', 'PAGOS',
+]);
 
 const ROUTES: Readonly<Record<string, string>> = {
   INICIO: '/inicio',
@@ -68,6 +75,7 @@ const ROUTES: Readonly<Record<string, string>> = {
   EVALUACIONES: '/gestion-tecnica/evaluaciones',
   SANIDAD: '/gestion-tecnica/sanidad',
   CAMPANIAS: '/gestion-comercial/campanias',
+  APAPPSS_COMPRADORES: '/gestion-comercial/compradores',
   PARTICIPANTES: '/gestion-comercial/participantes',
   OPERATIVOS: '/gestion-comercial/operativos',
   ENTREGAS: '/gestion-comercial/entregas',
@@ -121,10 +129,11 @@ export class NavigationService {
     // Convenios son funciones opcionales; nunca se muestran solo por el rol.
     if (this.uot.isSpecific() && this.convenios.has('COMERCIALIZACION_ASOCIATIVA')) {
       const granted = SPECIAL_ENTRIES.filter((entry) =>
-        entry.code === 'APAPPSS_SOCIOS_PREDIOS'
+        APAPPSS_MENU_PRINCIPAL.has(entry.code) &&
+        (entry.code === 'APAPPSS_SOCIOS_PREDIOS'
           ? (this.hasPermission('APAPPSS_SOCIOS_LISTAR') && this.hasPermission('PRODUCTORES_LISTAR')) ||
             (this.hasPermission('APAPPSS_PREDIOS_LISTAR') && this.hasPermission('PREDIOS_LISTAR'))
-          : this.hasPermission(entry.permission),
+          : this.hasPermission(entry.permission)),
       );
       if (granted.length > 0) {
         ordinary.push({

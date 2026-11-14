@@ -1,0 +1,89 @@
+/* Producción del fundo: misma superficie, KPIs y tabla institucional de APAPPSS. */
+:host{display:block;min-width:0}
+.fundo-produccion{
+ display:grid;gap:1.15rem;min-width:0;
+ box-sizing:border-box;width:100%;
+ padding:1.2rem 1.25rem;
+}
+.fundo-produccion>*,.fundo-produccion-head>*,.fundo-produccion-history>*{min-width:0}
+.fundo-produccion-head{display:flex;align-items:end;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+.fundo-produccion-head h2,.fundo-produccion-history h3,.fundo-produccion-declarada h3{margin:0;font-size:1rem;font-weight:750;color:var(--desco-text)}
+.fundo-produccion-head p,.fundo-produccion-declarada p{margin:.28rem 0 0;font-size:.8rem;color:var(--desco-text-muted)}
+.fundo-produccion-toolbar{display:flex;align-items:end;flex-wrap:wrap;gap:.5rem}
+.fundo-produccion-toolbar .admin-field{width:100px;margin:0;display:grid;gap:.3rem;font-size:.75rem}
+.fundo-produccion-toolbar .admin-input{width:100%;box-sizing:border-box}
+.fundo-produccion-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.75rem}
+.fundo-produccion-kpis>.admin-detail-card{
+ display:flex;flex-direction:column;align-items:flex-start;justify-content:center;
+ gap:.4rem;min-width:0;min-height:84px;padding:1rem;
+ border:1px solid var(--desco-border);border-radius:.85rem;background:var(--desco-surface);
+}
+.fundo-produccion-kpis .admin-detail-card span{font-size:.73rem;color:var(--desco-text-muted);font-weight:650}
+.fundo-produccion-kpis .admin-detail-card strong{font-size:1.15rem;line-height:1.3;overflow-wrap:anywhere;color:var(--desco-text)}
+.fundo-produccion-declarada{
+ display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;
+ border:1px solid var(--desco-border);border-radius:.85rem;padding:1rem 1.1rem;
+ background:var(--desco-surface);
+}
+.fundo-produccion-declarada>div{min-width:0}
+.fundo-produccion-estado{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+.fundo-produccion-status{display:inline-flex;align-items:center;min-height:1.55rem;padding:.2rem .55rem;border-radius:999px;border:1px solid var(--desco-border);background:var(--desco-surface-soft);font-size:.72rem;font-weight:720;color:var(--desco-text-muted)}
+.fundo-produccion-status--ok{color:var(--desco-success,#16a34a)}
+.fundo-produccion-status--medio{color:var(--desco-warning,#d97706)}
+.fundo-produccion-cantidad{font-size:.79rem;color:var(--desco-text)}
+.fundo-produccion-history{display:grid;gap:.7rem;min-width:0}
+/* No convertir en tarjetas al reducir el ancho: scroll horizontal como las tablas de predios. */
+.fundo-produccion-scroll{
+ width:100%;max-width:100%;min-width:0;overflow-x:auto;overflow-y:hidden;
+ border:1px solid var(--desco-border);border-radius:.8rem;
+ scrollbar-width:thin;scrollbar-color:var(--desco-border-strong,var(--desco-border)) transparent;
+ overscroll-behavior-x:contain;
+}
+.fundo-produccion-scroll table.fundo-produccion-table{
+ display:table!important;width:100%!important;min-width:620px!important;
+ table-layout:auto;border-collapse:separate;border-spacing:0;background:var(--desco-surface);
+}
+.fundo-produccion-scroll thead{display:table-header-group!important}
+.fundo-produccion-scroll tbody{display:table-row-group!important}
+.fundo-produccion-scroll tr{display:table-row!important;margin:0!important}
+.fundo-produccion-scroll :is(th,td){
+ display:table-cell!important;white-space:nowrap!important;vertical-align:middle!important;
+ text-align:left!important;padding:.85rem 1rem!important;
+ border-bottom:1px solid var(--desco-border-subtle,var(--desco-border))!important;
+}
+.fundo-produccion-scroll th{
+ background:var(--desco-table-head,var(--desco-surface-soft));
+ color:var(--desco-text-muted);text-transform:uppercase;
+ font-size:.69rem!important;letter-spacing:.025em;font-weight:800!important;
+}
+.fundo-produccion-scroll td{height:3.45rem;color:var(--desco-text);font-size:.77rem!important;line-height:1.3}
+.fundo-produccion-scroll td::before{display:none!important;content:none!important}
+.fundo-produccion-scroll tbody tr:hover{background:var(--desco-table-hover,rgba(148,163,184,.07))!important}
+.fundo-produccion-scroll tbody tr:last-child td{border-bottom:0!important}
+.fundo-produccion-scroll .admin-table-empty{padding:1.65rem 1rem!important;text-align:center!important;color:var(--desco-text-muted)!important}
+.fundo-produccion-anio{font-weight:750;color:var(--desco-text)}
+.fundo-produccion-feedback{margin:0;font-size:.8rem;color:var(--desco-text-muted)}
+
+/* El formulario continúa exclusivamente en el modal existente. */
+:host dialog.fundo-produccion-dialog[open]{position:fixed;inset:0;width:100vw;height:100dvh;max-width:none;max-height:none;padding:.75rem;box-sizing:border-box;display:grid;place-items:center;border:0;background:transparent;overflow:auto;margin:0}
+:host dialog.fundo-produccion-dialog::backdrop{background:rgba(2,6,23,.72);backdrop-filter:blur(3px)}
+.fundo-produccion-modal{width:min(530px,calc(100vw - 1.5rem))!important;max-height:90dvh!important;display:flex;flex-direction:column;min-height:0;max-width:530px!important;padding:0!important;border:1px solid var(--desco-border);border-radius:.9rem;overflow:hidden!important;background:var(--desco-surface);margin:auto}
+.fundo-produccion-modal>.admin-modal-header{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1rem 1.15rem;border-bottom:1px solid var(--desco-border);flex:none}
+.fundo-produccion-modal>.admin-modal-header h2{font-size:1rem;margin:0}
+.fundo-produccion-form{display:grid;gap:.9rem;padding:1.15rem;overflow:auto;min-height:0}
+.fundo-produccion-form .admin-field{display:grid;gap:.4rem;font-size:.8rem;min-width:0}
+.fundo-produccion-form :is(.admin-input,.admin-select,.admin-textarea){min-width:0;width:100%;box-sizing:border-box}
+.fundo-produccion-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.85rem}
+.fundo-produccion-suggestion{justify-self:start;font-size:.75rem}
+.fundo-produccion-footer{display:flex;justify-content:flex-end;align-items:center;gap:.75rem;padding:1rem 1.15rem;border-top:1px solid var(--desco-border);flex:none}
+@media(max-width:920px){.fundo-produccion-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:640px){.fundo-produccion{padding:1rem;gap:1rem}.fundo-produccion-scroll :is(th,td){padding:.75rem .85rem!important}}
+@media(max-width:460px){
+ .fundo-produccion{padding:.85rem}
+ .fundo-produccion-head{align-items:stretch}
+ .fundo-produccion-toolbar{width:100%}
+ .fundo-produccion-kpis{grid-template-columns:minmax(0,1fr)}
+ .fundo-produccion-declarada>.admin-primary-button{width:100%}
+ .fundo-produccion-grid{grid-template-columns:minmax(0,1fr)}
+ .fundo-produccion-footer button{flex:1}
+}

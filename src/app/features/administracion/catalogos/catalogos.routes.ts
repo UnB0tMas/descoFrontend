@@ -22,6 +22,11 @@ export const catalogosRoutes: Routes = [
       ),
   },
   {
+    path: 'catalogos/condiciones-comerciales',
+    redirectTo: 'catalogos',
+    pathMatch: 'full',
+  },
+  {
     path: 'catalogos-productivos',
     data: {breadcrumb: 'Catálogos productivos', ...catalogAccess},
     canActivate: [moduleAccessGuard, permissionGuard],

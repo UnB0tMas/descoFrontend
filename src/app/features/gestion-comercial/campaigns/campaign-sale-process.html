@@ -1,0 +1,64 @@
+<section class="desco-page campaign-sale-page">
+  <app-page-header title="Proceso de venta" eyebrow="APAPPSS · Campañas de venta" [icon]="scaleIcon"
+    subtitle="Socios con jabas asignadas" [showBack]="true"
+    (back)="router.navigate(['/gestion-comercial/campanias', id()])">
+    <div pageActions><button type="button" class="admin-secondary-button" [disabled]="loading()" (click)="load()">
+      <fa-icon [icon]="reloadIcon" /> Actualizar
+    </button></div>
+  </app-page-header>
+  @if (loading()) { <app-loading-state title="Cargando proceso de venta" variant="detail" [rows]="5" /> }
+  @else if (error()) { <app-error-state [message]="error() || 'No se pudo cargar la campaña.'" (retry)="load()" /> }
+  @else if (detail(); as campaign) {
+    <section class="admin-surface sale-overview">
+      <div class="sale-header"><div><span class="campaign-code">{{campaign.codigo}}</span><h2>{{campaign.nombre}}</h2>
+        <p>{{campaign.fechaInicio}} a {{campaign.fechaFin}}</p></div>
+        <span class="admin-status" [class.admin-status--active]="campaign.vigente">{{campaign.vigente ? 'Vigente' : 'Fuera de vigencia'}}</span>
+      </div>
+      <div class="sale-metrics">
+        <div><span>Socios</span><strong>{{campaign.socios.length}}</strong></div>
+        <div><span>Jabas asignadas</span><strong>{{totalAssigned()}}</strong></div>
+        <div><span>Jabas recibidas</span><strong>{{totalReceived()}}</strong></div>
+        <div><span>Pendientes</span><strong>{{totalAssigned()-totalReceived()}}</strong></div>
+        <div><span>Peso bruto</span><strong>{{totalGross() | number:'1.2-3'}} kg</strong></div>
+        <div><span>Peso neto</span><strong>{{totalNet() | number:'1.2-3'}} kg</strong></div>
+      </div>
+    </section>
+    <section class="admin-surface sale-partners">
+      <div class="sale-block-heading"><h2>Socios participantes</h2>
+        <app-list-view-switch label="Vista de socios" [view]="view()" (viewChange)="view.set($event)" />
+      </div>
+      <div class="sale-filters">
+        <label class="admin-field"><span>Buscar socio</span><input type="search" class="admin-input" placeholder="Nombre o documento"
+          [value]="search()" (input)="searchFor($any($event.target).value)" /></label>
+        <label class="admin-field"><span>Recepción</span><select class="admin-select" [value]="status()" (change)="setStatus($any($event.target).value)">
+          <option value="all">Todos</option><option value="pending">Por confirmar</option><option value="complete">Confirmada</option>
+        </select></label>
+      </div>
+      @if (!filtered().length) { <app-empty-state title="No hay socios para mostrar" message="Revise la búsqueda o la campaña." /> }
+      @else if (view()==='table') {
+        <div class="sale-table-wrap"><table class="admin-table sale-participants-table">
+          <thead><tr><th>Socio</th><th>Asignadas</th><th>Recibidas</th><th>Peso bruto</th><th>Peso neto</th><th>Estado</th><th>Acciones</th></tr></thead>
+          <tbody>@for(s of visible();track s.participacionId){<tr>
+            <td><strong>{{s.socioNombre}}</strong><small>{{s.documento}}</small></td>
+            <td>{{s.asignadas}}</td><td>{{s.devueltas}} / {{s.asignadas}}</td>
+            <td>{{s.pesoBrutoKg | number:'1.2-3'}} kg</td><td>{{s.pesoNetoKg | number:'1.2-3'}} kg</td>
+            <td>{{s.recepcionConfirmada ? 'Confirmada' : s.devueltas === s.asignadas ? 'Por confirmar' : 'En recepción'}}</td>
+            <td><button type="button" class="admin-secondary-button" (click)="details(s)">
+              <fa-icon [icon]="detailIcon" /> Detalles</button></td>
+          </tr>}</tbody>
+        </table></div>
+      } @else {
+        <div class="desco-record-grid sale-partner-grid">@for(s of visible();track s.participacionId){
+          <app-record-card><article class="sale-partner-card"><div><h3>{{s.socioNombre}}</h3><small>{{s.documento}}</small></div>
+            <div class="sale-partner-facts"><span>{{s.devueltas}} de {{s.asignadas}} jabas recibidas</span>
+              <strong>{{s.pesoBrutoKg | number:'1.2-3'}} kg bruto · {{s.pesoNetoKg | number:'1.2-3'}} kg neto</strong>
+              <span>{{s.recepcionConfirmada ? 'Confirmada' : s.devueltas === s.asignadas ? 'Por confirmar' : 'En recepción'}}</span></div>
+            <button type="button" class="admin-secondary-button" (click)="details(s)"><fa-icon [icon]="detailIcon" /> Detalles</button>
+          </article></app-record-card>
+        }</div>
+      }
+      <app-paginator [page]="page()" [size]="size()" [totalRecords]="filtered().length" [totalPages]="totalPages()"
+        [pageSizes]="[10,20,50]" (pageChange)="goTo($event)" (sizeChange)="setSize($event)" />
+    </section>
+  }
+</section>

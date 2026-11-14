@@ -9,6 +9,7 @@ export class PlantasE3UseCase {
  medir(a:AmbitoE3,id:number,data:MateriaSecaE3){return this.gateway.medir(a,id,data)}
  seguimientoMasivo(a:AmbitoE3,data:SeguimientoMasivoE3){return this.gateway.seguimientoMasivo(a,data)}
  catalogos(a:AmbitoE3){return this.gateway.catalogos(a)}
+ resumen(a:AmbitoE3,desde:string,hasta:string,estado?:string,plantaId?:number){return this.gateway.resumen(a,desde,hasta,estado,plantaId)}
  listar(a:AmbitoE3,f:FiltrosE3){return this.gateway.listar(a,f)}
  ver(a:AmbitoE3,id:number){return this.gateway.ver(a,id)}
  lote(a:AmbitoE3,filas:FilaE3[],socioId?:number){return this.gateway.lote(a,filas,socioId)}

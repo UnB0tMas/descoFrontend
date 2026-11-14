@@ -1,0 +1,143 @@
+<section class="desco-page sale-partner-detail-page">
+  @if (!embedded) { <app-page-header title="Detalle del socio" eyebrow="APAPPSS · Proceso de venta" [icon]="scaleIcon"
+    subtitle="Recepción de jabas" [showBack]="true" (back)="back()">
+    <div pageActions><button type="button" class="admin-secondary-button" [disabled]="loading() || busy()" (click)="load()">
+      <fa-icon [icon]="reloadIcon" /> Actualizar</button></div>
+  </app-page-header> }
+  @if (loading() && !detail()) { <app-loading-state title="Cargando socio" variant="detail" [rows]="5" /> }
+  @else if (error()) { <app-error-state [message]="error() || 'No se pudo cargar el socio.'" (retry)="load()" /> }
+  @else if (detail(); as campaign) {
+    @if (partner(); as socio) {
+      <section class="admin-surface sale-person-summary">
+        <div class="sale-person-heading"><div><span class="sale-person-code">{{campaign.nombre}}</span><h2>{{socio.socioNombre}}</h2><p>{{socio.documento}}</p></div>
+          <span class="admin-status" [class.admin-status--active]="complete()">{{confirmed()?'Confirmada':complete()?'Por confirmar':'En recepción'}}</span></div>
+        <div class="sale-person-metrics">
+          <div><span>Jabas asignadas</span><strong>{{socio.asignadas}}</strong></div>
+          <div><span>Registradas</span><strong>{{socio.devueltas}}</strong></div>
+          <div><span>Pendientes</span><strong>{{socio.asignadas-socio.devueltas}}</strong></div>
+          <div><span>Peso bruto</span><strong>{{socio.pesoBrutoKg | number:'1.2-3'}} kg</strong></div>
+          <div><span>Peso neto</span><strong>{{socio.pesoNetoKg | number:'1.2-3'}} kg</strong></div>
+        </div>
+      </section>
+      @if (campaign.vigente || readOnly) {
+        <app-campaign-sanctions-panel mode="partner" [campaignId]="id()" [participantId]="participationId()"
+          [assigned]="socio.asignadas" [received]="socio.devueltas" [readOnly]="readOnly" (changed)="load()" (infoLoaded)="activeSanction.set($event)" />
+      }
+      @if ((!complete() || correction()) && campaign.vigente && !readOnly) {
+        <section class="admin-surface sale-person-form-section">
+          <div class="sale-person-form-heading"><div><h2>{{correction()?'Corregir pesaje':'Registrar jaba '+nextNumber()+' de '+socio.asignadas}}</h2></div>
+            @if(correction()) { <button type="button" class="admin-secondary-button" [disabled]="busy()" (click)="cancelCorrection()">Cancelar corrección</button> }
+          </div>
+          <form class="sale-person-form" novalidate (submit)="$event.preventDefault();save()">
+            <label class="admin-field"><span>Peso bruto (kg) *</span><input type="number" class="admin-input" required step="0.001" min="0" max="999999"
+              placeholder="0.000" [value]="weight()" [disabled]="busy() || !canWeigh()" (input)="setWeight($any($event.target).value)" /></label>
+            <div class="admin-field sale-person-variety"><span>Variedad *</span>
+              @if (onlyVariety(); as only) {
+                <div class="sale-fixed-choice" aria-label="Variedad única de la campaña"><strong>{{only.nombre}}</strong></div>
+              } @else {
+                <select class="admin-select" aria-label="Seleccionar variedad" [value]="varietyId() ?? ''" [disabled]="busy() || !canWeigh() || weightNumber() === 0" (change)="setVariety($any($event.target).value)">
+                  <option value="">Seleccionar variedad</option>
+                  @for (v of varieties(); track v.id) { <option [value]="v.id">{{v.nombre}}</option> }
+                </select>
+              }
+            </div>
+            <div class="admin-field sale-person-grade"><span>Calibre *</span>
+              @if (onlyGrade(); as only) {
+                <div class="sale-fixed-choice sale-fixed-choice--grade" aria-label="Calibre único para la variedad">
+                  <strong>{{gradeTitle(only)}}</strong><small>{{gradePrice(only)}}</small>
+                </div>
+              } @else {
+                <select class="admin-select" aria-label="Seleccionar calibre" [value]="gradeId() ?? ''" [disabled]="busy() || !canWeigh() || weightNumber() === 0 || !varietyId()" (change)="setGrade($any($event.target).value)">
+                  <option value="">Seleccionar calibre</option>
+                  @for (g of availableGrades(); track g.calibreId) { <option [value]="g.calibreId">{{gradeName(g)}}</option> }
+                </select>
+              }
+            </div>
+            @if (!grades().length) {
+              <p class="sale-person-missing-grades">Esta campaña aún no tiene variedades y calibres. Regístrelos en Campañas de venta.</p>
+            }
+            <label class="admin-field sale-observation"><span>Observación (opcional)</span>
+              <textarea class="admin-textarea" rows="2" maxlength="400" [value]="observation()" [disabled]="busy() || !canWeigh()"
+                (input)="observation.set($any($event.target).value)" placeholder="Observación del pesaje"></textarea></label>
+            @if (correction()) {
+              <label class="admin-field sale-reason"><span>Motivo de corrección *</span>
+                <textarea class="admin-textarea" rows="2" minlength="10" maxlength="500" required [value]="reason()" [disabled]="busy()"
+                  (input)="reason.set($any($event.target).value)" placeholder="Indique el motivo de la corrección"></textarea></label>
+            }
+            @if (weighingBlockMessage(); as message) {
+              <p class="sale-person-note sale-observation">{{message}}</p>
+            }
+            <div class="sale-person-form-actions">
+              <div class="sale-person-weight-summary">
+                <span>Bruto: <strong>{{weightNumber() | number:'1.2-3'}} kg</strong></span>
+                <span>Tara: <strong>{{(weightNumber() > 0 ? (weightNumber() < (campaign.descuentoJabaKg ?? 0) ? weightNumber() : (campaign.descuentoJabaKg ?? 0)) : 0) | number:'1.2-3'}} kg</strong></span>
+                <span>Neto: <strong>{{netWeight() | number:'1.2-3'}} kg</strong></span>
+                @if(sanctionPreview(); as price) {<span title="Precio por kg con sanción, solo para la siguiente jaba">Precio sancionado: <strong>S/ {{price.final | number:'1.2-4'}}/kg</strong></span>}
+              </div>
+              <button type="submit" class="admin-primary-button" [disabled]="!canSave()">{{busy()?'Guardando...':correction()?'Guardar corrección':'Guardar jaba'}}</button></div>
+          </form>
+        </section>
+      }
+      @if (complete()) {
+        <section class="admin-surface sale-person-done">
+          <div><strong>{{confirmed() ? 'Entrega confirmada' : 'Pesajes completos'}}</strong>
+            <span>{{socio.asignadas}} jabas registradas</span></div>
+          @if (!confirmed() && campaign.vigente) {
+            <button type="button" class="admin-primary-button" [disabled]="!canConfirm()" (click)="confirmDelivery()">Confirmar entrega</button>
+          }
+        </section>
+      }
+      @if (socio.devueltas > 0) {
+        <section class="admin-surface sale-person-records">
+          <div class="sale-person-record-header"><h2>Jabas registradas</h2>
+            <app-list-view-switch label="Vista de jabas" [view]="view()" (viewChange)="view.set($event)" /></div>
+          <div class="sale-person-filters">
+            <label class="admin-field"><span>Buscar jaba</span><input type="search" class="admin-input" placeholder="Número u observación"
+              [value]="search()" (input)="searchFor($any($event.target).value)" /></label>
+            <label class="admin-field"><span>Estado</span><select class="admin-select" [value]="filter()" (change)="filter.set($any($event.target).value)">
+              <option value="all">Todas</option><option value="filled">Llenas</option><option value="empty">Vacías</option>
+            </select></label>
+          </div>
+          @if (loading() && !pageInfo()) { <app-loading-state title="Consultando jabas" [rows]="4" /> }
+          @else if (!filteredRecords().length) { <app-empty-state title="Sin jabas para mostrar" message="Revise los filtros." /> }
+          @else if(view()==='table') {
+            <div class="sale-person-table-wrap"><table class="admin-table">
+              <thead><tr><th>Jaba</th><th>Estado</th><th>Calibre</th><th>Bruto</th><th>Tara (kg)</th><th>Neto</th><th>Precio base</th><th>Sanción S/kg</th><th>Precio final</th><th>Total S/</th><th>Observación</th><th>Acciones</th></tr></thead>
+              <tbody>@for(row of filteredRecords();track row.numero){<tr>
+                <td><strong>{{row.numero}}</strong></td><td>{{row.pesoBrutoKg===0?'Vacía':'Llena'}}</td>
+                <td>{{gradeLabel(row.calibreId)}}</td><td>{{row.pesoBrutoKg | number:'1.2-3'}} kg</td>
+                <td>{{row.descuentoKg | number:'1.2-3'}} kg</td><td>{{row.pesoNetoKg | number:'1.2-3'}} kg</td>
+                <td>@if(row.precioOriginalKg != null){S/ {{row.precioOriginalKg | number:'1.2-4'}}}@else{—}</td>
+                <td [title]="row.sancionNombre || ''">@if(row.descuentoSancionKg != null){S/ {{row.descuentoSancionKg | number:'1.2-4'}}}@else{—}</td>
+                <td>@if(row.precioFinalKg != null){S/ {{row.precioFinalKg | number:'1.2-4'}}}@else{—}</td>
+                <td>@if(row.importeFinalSoles != null){S/ {{row.importeFinalSoles | number:'1.2-2'}}}@else{—}</td>
+                <td>{{row.observacion || '—'}}</td>
+                <td><button type="button" class="admin-icon-button" [disabled]="!canWeigh() || busy()"
+                  title="Corregir pesaje" [attr.aria-label]="'Corregir pesaje de jaba '+row.numero" (click)="beginCorrection(row)">
+                  <fa-icon [icon]="editIcon" /></button></td>
+              </tr>}</tbody>
+            </table></div>
+          } @else {
+            <div class="desco-record-grid sale-person-grid">@for(row of filteredRecords();track row.numero){
+              <app-record-card><article class="sale-person-record-card"><h3>Jaba {{row.numero}}</h3>
+                <small>{{row.pesoBrutoKg===0?'Vacía':'Llena'}}</small>
+                <span>Bruto: {{row.pesoBrutoKg | number:'1.2-3'}} kg</span><span>Neto: {{row.pesoNetoKg | number:'1.2-3'}} kg</span>
+                @if(row.precioFinalKg != null){<span>Precio: S/ {{row.precioFinalKg | number:'1.2-4'}} / kg</span>}
+                @if(row.descuentoSancionKg){<small>{{row.sancionNombre}} · -S/ {{row.descuentoSancionKg | number:'1.2-4'}} / kg</small>}
+                @if(row.importeFinalSoles != null){<strong>Total: S/ {{row.importeFinalSoles | number:'1.2-2'}}</strong>}
+                @if(row.observacion){<p>{{row.observacion}}</p>}
+                <button type="button" class="admin-icon-button" [disabled]="!canWeigh() || busy()"
+                  title="Corregir pesaje" [attr.aria-label]="'Corregir pesaje de jaba '+row.numero" (click)="beginCorrection(row)">
+                  <fa-icon [icon]="editIcon" /></button>
+              </article></app-record-card>
+            }</div>
+          }
+          <app-paginator [page]="page()" [size]="size()" [totalRecords]="socio.asignadas" [totalPages]="totalPages()"
+            [pageSizes]="[10,20,50]" (pageChange)="goTo($event)" (sizeChange)="changeSize($event)" />
+        </section>
+      }
+      @if(!campaign.vigente) { <p class="sale-person-note">La campaña está fuera de vigencia.</p> }
+    }
+  }
+  <app-action-confirm-dialog />
+</section>

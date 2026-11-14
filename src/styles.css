@@ -5,6 +5,7 @@
 @import "./styles/vendor-overrides.css";
 @import "./styles/app-utilities.css";
 @import "./styles/dark-overrides.css";
+@import "./app/shared/styles/desco-tabs.css";
 
 /* Tailwind v4 / Flowbite: dark mode controlado por el tema explícito de DESCO. */
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));

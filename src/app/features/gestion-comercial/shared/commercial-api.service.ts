@@ -280,6 +280,17 @@ export class CommercialApiService {
     );
   }
 
+  campaignReferences(): Observable<CommercialReferences> {
+    return forkJoin({
+      varieties: this.catalogsApi.catalogosListar({ catalogo: 'VARIEDAD_PALTA', pagina: 1, tamano: 100 }, 'body', false, { transferCache: false }),
+      modalities: this.catalogsApi.catalogosListar({ catalogo: 'MODALIDAD_VENTA', pagina: 1, tamano: 100 }, 'body', false, { transferCache: false }),
+    }).pipe(map(result => ({
+      associations: [], buyers: [], producers: [], properties: [], campaigns: [],
+      operations: [], conditions: [], varieties: this.catalogOptions(result.varieties),
+      salesModalities: this.catalogOptions(result.modalities), zones: [],
+    })));
+  }
+
   references(): Observable<CommercialReferences> {
     return forkJoin({
       organizations: this.organizationsApi.organizacionesListar({ pagina: 1, tamano: 100 }, 'body', false, { transferCache: false }),

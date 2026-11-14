@@ -243,6 +243,7 @@
           <app-form-error [control]="companyForm.controls.uotId" fieldLabel="La UOT" />
         </div>
 
+        @if (currentCompany()) {
         <div class="admin-field admin-field-span-2">
           <label for="organizationRuc">RUC</label>
           <div class="identity-document-control">
@@ -400,6 +401,19 @@
           />
         </div>
 
+        } @else {
+          <div class="admin-field admin-field-span-2">
+            <span>Datos de la empresa</span>
+            @if (identityCaptured()) {
+              <div class="admin-entity"><strong>{{companyForm.controls.razonSocial.value}}</strong>
+                <span>RUC · {{companyForm.controls.ruc.value}}</span></div>
+            }
+            <button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="openSharedCompanyIdentity()">
+              {{identityCaptured() ? 'Cambiar datos de empresa' : 'Registrar o recuperar empresa'}}
+            </button>
+          </div>
+        }
+
         @if (kind() === 'association') {
           <div class="admin-field">
             <label for="foundationDate">Fecha de constitución</label>
@@ -461,3 +475,4 @@
     }
   </div>
 </dialog>
+<app-entity-registration-modal />

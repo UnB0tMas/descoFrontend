@@ -1,1 +1,187 @@
-.e5-page{display:grid;gap:1rem}.e5-page h2{font-size:1.15rem;font-weight:700;margin:0 0 .75rem}.e5-page h3{font-size:1rem;font-weight:650;margin:1rem 0 .6rem}.e5-panel{padding:1rem;display:grid;gap:1rem}.e5-actions,.e5-head{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}.e5-head{justify-content:space-between}.e5-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(142px,1fr));gap:.7rem}.e5-metrics>div{border:1px solid var(--border-color,#dfe4ec);border-radius:.65rem;padding:.85rem;background:var(--surface-2,#f8fafc);display:flex;flex-direction:column;gap:.3rem}.e5-metrics small{color:var(--text-muted,#65718a);font-size:.8rem}.e5-metrics strong{font-size:1.08rem;font-variant-numeric:tabular-nums}.e5-tabs{display:flex;gap:.4rem;border-bottom:1px solid #dbe1e9;flex-wrap:wrap}.e5-tabs button{padding:.7rem .8rem;border-radius:.5rem .5rem 0 0;border:0;background:transparent;cursor:pointer;color:inherit}.e5-tabs button.selected{font-weight:700;border-bottom:3px solid var(--brand-primary,#267e66);background:var(--surface-2,#f5f7fa)}.e5-scroll{width:100%;overflow-x:auto}.e5-scroll table{border-collapse:collapse;width:max-content;min-width:100%;table-layout:auto;font-size:.87rem}.e5-scroll th,.e5-scroll td{text-align:left;padding:.65rem;border-bottom:1px solid #e2e8f0;vertical-align:top}.e5-scroll th{background:var(--surface-2,#f8fafc);font-weight:650;white-space:nowrap}.e5-scroll tr:hover{background:var(--surface-2,#f8fafc)}.e5-card{padding:1rem;border:1px solid #dbe1e9;border-radius:.65rem;display:grid;gap:.7rem}.e5-form{display:flex;gap:.7rem;flex-wrap:wrap;align-items:end}.e5-form label{flex:1 1 170px}.e5-alert{border-inline-start:4px solid #b45309;padding:.65rem .85rem;background:#fffbeb;color:#7c2d12}.e5-ok{border-inline-start:4px solid #059669;padding:.65rem .85rem;background:#ecfdf5;color:#065f46}button:disabled{cursor:not-allowed;opacity:.55}@media(max-width:650px){.e5-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.e5-panel{padding:.7rem}}
+:host { display:block; }
+/* Mismo sistema visual que Campañas: desco-page, admin-surface, admin-toolbar y tokens DESCO. */
+.e5-page { display:grid; gap:1.2rem; min-width:0; }
+.e5-page :is(h2,h3) { color:var(--desco-text); font-weight:700; line-height:1.35; }
+.e5-page h2 { font-size:1.08rem; }
+.e5-page h3 { font-size:1rem; }
+.e5-panel { display:grid; gap:1rem; padding:1.2rem 1.35rem; min-width:0; border-radius:1rem; }
+.e5-actions,.e5-head { display:flex; align-items:center; flex-wrap:wrap; gap:.65rem; }
+.e5-head { justify-content:space-between; }
+.e5-heading { position:relative; display:grid; gap:.4rem; padding-left:.9rem; min-width:0; }
+.e5-heading::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--desco-primary); }
+.e5-heading h2 { margin:0; font-size:1.15rem; overflow-wrap:anywhere; }
+.e5-heading small,.e5-heading span,.e5-muted { color:var(--desco-text-muted); font-size:.8rem; }
+.e5-metrics { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,165px),1fr)); gap:.75rem; }
+.e5-metrics > div { display:grid; gap:.35rem; padding:.95rem 1rem; min-width:0;
+  border:1px solid var(--desco-border); border-radius:.8rem; background:var(--desco-surface-soft); }
+.e5-metrics small { color:var(--desco-text-muted); font-size:.78rem; }
+.e5-metrics strong { color:var(--desco-text); font-size:1.15rem; font-weight:750;
+  font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+.e5-tabs { display:flex; align-items:stretch; gap:.25rem; margin:0; width:100%;
+  border-bottom:1px solid var(--desco-border); overflow-x:auto; scrollbar-width:thin; }
+.e5-tabs button { display:inline-flex; align-items:center; justify-content:center; gap:.55rem;
+  padding:.85rem 1.05rem; color:var(--desco-text-muted); font-weight:650; font-size:.875rem;
+  border:0; border-bottom:2px solid transparent; background:transparent; white-space:nowrap; }
+.e5-tabs button.selected { color:var(--desco-primary-text); border-bottom-color:var(--desco-primary); }
+.e5-tabs button:focus-visible { outline:2px solid var(--desco-primary); outline-offset:-3px; }
+.e5-segmentadores { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)) auto;
+  gap:.8rem; align-items:end; padding:1rem; border:1px solid var(--desco-border);
+  border-radius:.8rem; background:var(--desco-surface-soft); }
+.e5-segmentadores .admin-field { min-width:0; }
+.e5-segmentadores :is(input,select) { width:100%; min-width:0; }
+.e5-chart-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+.e5-chart-grid > app-chart-card { display:block; min-width:0; }
+.e5-scroll { width:100%; max-width:100%; min-width:0; overflow-x:auto; border:1px solid var(--desco-border); border-radius:.8rem; }
+.e5-scroll .admin-table { width:100%; min-width:680px; border-collapse:collapse; table-layout:auto; }
+.e5-scroll .admin-table :is(th,td) { padding:.8rem .9rem; font-size:.8125rem; line-height:1.4; vertical-align:middle; border-bottom:1px solid var(--desco-border); }
+.e5-scroll .admin-table th { color:var(--desco-text-muted); background:var(--desco-surface-soft); font-size:.73rem; font-weight:750; letter-spacing:.025em; white-space:nowrap; }
+.e5-scroll .admin-table td { color:var(--desco-text); overflow-wrap:anywhere; }
+.e5-scroll .admin-table tbody tr:hover { background:var(--desco-surface-soft); }
+.e5-scroll .admin-table tbody tr:last-child td { border-bottom:0; }
+.e5-scroll .admin-table .e5-number { text-align:right; white-space:nowrap; }
+.e5-scroll .admin-table .e5-row-actions { justify-content:flex-end; flex-wrap:nowrap; }
+.e5-scroll .admin-table .e5-row-actions .admin-icon-button { width:2.15rem; height:2.15rem; min-width:2.15rem; }
+@media(max-width:780px){.e5-scroll .admin-table :is(th,td){padding:.65rem .7rem;}}
+.e5-card { display:grid; gap:.75rem; padding:1rem; border:1px solid var(--desco-border);
+  border-radius:.8rem; background:var(--desco-surface); }
+.e5-card summary { cursor:pointer; font-weight:650; color:var(--desco-text); }
+.e5-form { display:flex; align-items:end; flex-wrap:wrap; gap:.8rem; }
+.e5-form label { flex:1 1 170px; min-width:0; }
+.e5-form :is(input,select,textarea) { width:100%; min-width:0; }
+.e5-alert,.e5-ok,.e5-readonly { padding:.8rem 1rem; border:1px solid var(--desco-border);
+  border-radius:.75rem; background:var(--desco-surface-soft); color:var(--desco-text); }
+.e5-alert { border-inline-start:3px solid var(--desco-danger,#b45309); }
+.e5-ok { border-inline-start:3px solid var(--desco-primary); }
+.e5-readonly { border-inline-start:3px solid var(--desco-border); }
+.e5-danger-button { color:var(--desco-danger-text,var(--desco-text)); }
+.e5-page button:disabled { cursor:not-allowed; opacity:.55; }
+@media (max-width:900px) {
+  .e5-segmentadores { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .e5-chart-grid { grid-template-columns:1fr; }
+}
+@media (max-width:650px) {
+  .e5-panel { padding:.95rem; }
+  .e5-segmentadores { grid-template-columns:1fr; padding:.85rem; }
+  .e5-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .e5-tabs button { padding:.75rem .8rem; font-size:.81rem; }
+}
+@media (max-width:430px) { .e5-metrics { grid-template-columns:1fr; } }
+
+.e5-campaign{border-inline-start:3px solid var(--desco-primary);}
+.e5-status,.e5-state{display:inline-flex;align-items:center;border:1px solid var(--desco-border);border-radius:999px;padding:.24rem .6rem;font-size:.76rem;color:var(--desco-text-muted);background:var(--desco-surface-soft);white-space:nowrap;max-width:100%;}
+.e5-closed{opacity:.68;}.e5-kpis{grid-template-columns:repeat(3,minmax(0,1fr));}.e5-name{font-weight:650;}.e5-number{text-align:right!important;font-variant-numeric:tabular-nums;white-space:nowrap;}.e5-row-actions{display:flex;gap:.3rem;align-items:center;flex-wrap:wrap;}.e5-empty{text-align:center!important;color:var(--desco-text-muted)!important;padding:2rem 1rem!important;}.e5-total{border-inline-start:3px solid var(--desco-primary)!important;}.e5-check{display:flex;align-items:center;gap:.65rem;color:var(--desco-text);}.e5-dialog{width:min(96vw,900px);max-height:90vh;overflow:auto;background:var(--desco-surface);border:1px solid var(--desco-border);color:var(--desco-text);}.e5-liquidacion-modal{width:min(96vw,1100px);}.e5-dialog h3{margin:.65rem 0;font-size:1rem;font-weight:700;}.e5-dialog details{padding:.8rem 0;}.e5-dialog summary{cursor:pointer;color:var(--desco-text);font-weight:600;}.e5-page fa-icon{display:inline-flex;}@media(max-width:640px){.e5-kpis{grid-template-columns:1fr;}.e5-dialog{padding:.85rem;}.e5-actions{justify-content:flex-end;}}
+
+/* Mantener presentación original de Reportes, cuyo HTML no se modifica. */
+.e5-scroll table:not(.admin-table) { border-collapse:collapse; width:100%; min-width:650px; table-layout:auto; font-size:.86rem; }
+.e5-scroll table:not(.admin-table) :is(th,td) { text-align:left; vertical-align:middle; padding:.9rem 1rem; border-bottom:1px solid var(--desco-border); color:var(--desco-text); }
+.e5-scroll table:not(.admin-table) th { font-weight:700; color:var(--desco-text-muted); background:var(--desco-surface-soft); white-space:nowrap; }
+.e5-scroll table:not(.admin-table) tr:hover { background:var(--desco-surface-soft); }
+.e5-scroll table:not(.admin-table) tr:last-child td { border-bottom:0; }
+.e5-campaign .e5-heading h2 { font-size:1.15rem; }
+.e5-campaign .e5-kpis { gap:.7rem; }
+.e5-panel .e5-head > div { min-width:0; }
+.e5-panel .e5-head .e5-muted { display:block; margin-top:.3rem; }
+
+/* Presentación financiera según las tarjetas, modales y tablas existentes en Campañas. */
+.e5-table-action { white-space:nowrap; }
+.e5-liquid-cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr)); gap:.75rem; }
+.e5-liquid-cards article { display:grid; gap:.35rem; min-width:0; padding:1rem; border:1px solid var(--desco-border); border-radius:.8rem; background:var(--desco-surface-soft); }
+.e5-liquid-cards small { color:var(--desco-text-muted); font-size:.78rem; }
+.e5-liquid-cards strong { color:var(--desco-text); font-size:1.05rem; font-variant-numeric:tabular-nums; }
+.e5-modal-group { display:grid; gap:.75rem; min-width:0; }
+.e5-card-list { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr)); gap:.6rem; margin-top:.65rem; }
+.e5-detail-card { display:grid; gap:.35rem; padding:.85rem; border:1px solid var(--desco-border); border-radius:.75rem; background:var(--desco-surface-soft); min-width:0; }
+.e5-detail-card strong { font-size:.85rem; color:var(--desco-text); }
+.e5-detail-card span { font-size:.83rem; color:var(--desco-text); }
+.e5-detail-card small { font-size:.75rem; color:var(--desco-text-muted); }
+.e5-manual-list { max-height:40vh; overflow:auto; display:grid; gap:.5rem; }
+.e5-manual-row { display:grid; grid-template-columns:minmax(0,1fr) 135px; gap:.75rem; align-items:center; padding:.65rem .8rem; border:1px solid var(--desco-border); border-radius:.75rem; }
+.e5-manual-row span { display:flex; gap:.65rem; align-items:center; font-size:.85rem; }
+.e5-manual-totals { display:flex; flex-wrap:wrap; justify-content:space-between; gap:.6rem; border-top:1px solid var(--desco-border); padding-top:.75rem; }
+@media(max-width:600px){.e5-manual-row{grid-template-columns:1fr;}.e5-liquidacion-modal{width:min(96vw,900px);}}
+
+/* Tabla de liquidación: nombre legible, números alineados y acciones compactas. */
+.e5-liquidation-scroll { overflow-x:auto; scrollbar-gutter:stable; }
+.e5-liquidation-scroll .e5-liquidation-table { min-width:1310px; width:100%; table-layout:fixed; }
+.e5-liquidation-scroll .e5-liquidation-table :is(th,td) { padding:.86rem .7rem; }
+.e5-liquidation-scroll .e5-liquidation-table :is(th:first-child,td:first-child) {
+ width:220px; min-width:220px; position:sticky; left:0; z-index:1;
+ background:var(--desco-surface); box-shadow:1px 0 0 var(--desco-border);
+}
+.e5-liquidation-scroll .e5-liquidation-table th:first-child { z-index:2; background:var(--desco-surface-soft); }
+.e5-liquidation-scroll .e5-liquidation-table tbody tr:hover td:first-child { background:var(--desco-surface-soft); }
+.e5-liquidation-scroll .e5-liquidation-table .e5-socio-cell { font-size:.86rem; line-height:1.5; font-weight:650; overflow-wrap:normal; word-break:normal; white-space:normal; }
+.e5-liquidation-scroll .e5-liquidation-table .e5-socio-cell span { display:block; width:100%; }
+.e5-liquidation-scroll .e5-liquidation-table :is(th:nth-child(2),td:nth-child(2)) { width:105px; }
+.e5-liquidation-scroll .e5-liquidation-table :is(th:nth-child(3),td:nth-child(3),th:nth-child(4),td:nth-child(4),th:nth-child(5),td:nth-child(5),th:nth-child(6),td:nth-child(6),th:nth-child(7),td:nth-child(7),th:nth-child(8),td:nth-child(8),th:nth-child(9),td:nth-child(9)) { width:112px; }
+.e5-liquidation-scroll .e5-liquidation-table :is(th:nth-child(10),td:nth-child(10)) { width:105px; }
+.e5-liquidation-scroll .e5-liquidation-table :is(th:last-child,td:last-child) { width:84px; text-align:center; }
+.e5-liquidation-scroll .e5-actions-cell .admin-icon-button { width:2.2rem; height:2.2rem; min-width:2.2rem; }
+
+/* Modal nativo de detalles: mismo patrón encabezado/cuerpo/pie del sistema DESCO. */
+dialog.e5-liquidacion-dialog:not([open]) { display:none; }
+dialog.e5-liquidacion-dialog[open] {
+ display:block; position:fixed; inset:0; margin:auto; padding:0; box-sizing:border-box;
+ width:min(1160px,calc(100vw - 2rem)); max-width:calc(100vw - 2rem);
+ max-height:calc(100dvh - 2rem); overflow:hidden;
+ border:1px solid var(--desco-border); border-radius:1rem;
+ background:var(--desco-surface); color:var(--desco-text);
+ box-shadow:0 22px 70px rgb(0 0 0 / 28%);
+}
+dialog.e5-liquidacion-dialog::backdrop { background:rgb(0 0 0 / 65%); backdrop-filter:blur(2px); }
+.e5-liquidacion-modal {
+ display:flex; flex-direction:column; box-sizing:border-box;
+ width:100%; max-width:none; height:min(80dvh,750px); max-height:calc(100dvh - 2rem);
+ padding:0; margin:0; overflow:hidden; min-width:0;
+ background:var(--desco-surface); color:var(--desco-text);
+}
+.e5-liquidacion-modal > .admin-modal-header {
+ flex:0 0 auto; margin:0; min-width:0; padding:1rem 1.25rem;
+ border-bottom:1px solid var(--desco-border); background:var(--desco-surface);
+}
+.e5-liquidacion-modal .admin-modal-heading { min-width:0; }
+.e5-liquidacion-modal .admin-modal-heading > div { min-width:0; }
+.e5-liquidacion-modal .admin-modal-heading h3 { margin:.1rem 0 0; font-size:1.05rem; overflow-wrap:anywhere; }
+.e5-liquidacion-modal .admin-modal-heading small { color:var(--desco-text-muted); font-size:.75rem; }
+.e5-liquidacion-modal__body {
+ flex:1 1 auto; min-height:0; min-width:0; overflow-y:auto; overflow-x:hidden;
+ padding:1rem 1.25rem 1.25rem; overscroll-behavior:contain; scrollbar-gutter:stable;
+ display:flex; flex-direction:column; gap:1rem;
+}
+.e5-liquidacion-modal__footer {
+ flex:0 0 auto; margin:0; padding:.9rem 1.25rem;
+ display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:.6rem;
+ border-top:1px solid var(--desco-border); background:var(--desco-surface);
+}
+.e5-modal-tabs { display:flex; flex:0 0 auto; min-width:0; gap:.2rem; overflow-x:auto; border-bottom:1px solid var(--desco-border); }
+.e5-modal-tabs button { border:0; border-bottom:2px solid transparent; background:none; color:var(--desco-text-muted); padding:.7rem 1rem; font-weight:650; white-space:nowrap; }
+.e5-modal-tabs button.selected { color:var(--desco-primary-text); border-bottom-color:var(--desco-primary); }
+.e5-modal-tabs button:focus-visible { outline:2px solid var(--desco-primary); outline-offset:-3px; }
+.e5-modal-table { min-width:0; width:100%; overflow-x:auto; border:1px solid var(--desco-border); border-radius:.65rem; }
+.e5-modal-table table { width:100%; min-width:690px; border-collapse:collapse; table-layout:auto; }
+.e5-modal-table :is(th,td) { padding:.82rem .85rem; border-bottom:1px solid var(--desco-border); text-align:left; font-size:.8125rem; }
+.e5-modal-table th { background:var(--desco-surface-soft); color:var(--desco-text-muted); font-size:.75rem; font-weight:700; white-space:nowrap; }
+.e5-modal-table :is(th,td).e5-number { text-align:right; }
+.e5-modal-table tr:last-child td { border-bottom:0; }
+.e5-modal-table tbody tr:hover { background:var(--desco-surface-soft); }
+.e5-liquidacion-modal__summary {
+ display:flex; flex-wrap:wrap; align-items:center; gap:.65rem 1.35rem;
+ padding:.8rem 0 0; border-top:1px solid var(--desco-border);
+ font-size:.82rem; color:var(--desco-text-muted);
+}
+.e5-liquidacion-modal__summary strong { color:var(--desco-text); font-variant-numeric:tabular-nums; }
+.e5-liquidacion-modal__reason { display:grid; gap:.4rem; max-width:650px; }
+.e5-liquidacion-modal__payments { align-self:flex-start; }
+@media(max-width:700px){
+ dialog.e5-liquidacion-dialog[open]{width:calc(100vw - 1rem);max-width:calc(100vw - 1rem);max-height:calc(100dvh - 1rem);}
+ .e5-liquidacion-modal{height:min(90dvh,750px);max-height:calc(100dvh - 1rem);}
+ .e5-liquidacion-modal > .admin-modal-header { padding:.8rem 1rem; }
+ .e5-liquidacion-modal__body{padding:.85rem 1rem;}
+ .e5-liquidacion-modal__footer{padding:.75rem 1rem;}
+ .e5-modal-tabs button{padding:.65rem .8rem;}
+}
+
+/* Operaciones contextuales visibles dentro de la tabla, sin estirar la columna. */
+.e5-liquidation-table .e5-actions-cell .e5-row-actions{display:flex;align-items:center;justify-content:flex-end;gap:.25rem;white-space:nowrap}
+.e5-liquidation-scroll .e5-liquidation-table :is(th:last-child,td:last-child){width:160px}
+.e5-liquidation-scroll .e5-liquidation-table{min-width:1380px}

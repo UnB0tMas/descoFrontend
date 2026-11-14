@@ -1,7 +1,6 @@
 <section class="e3-page" [class.desco-page]="!vistaIntegrada" [class.e3-embedded]="vistaIntegrada">
  @if(!vistaIntegrada){<header class="e3-head"><h2>Plantas de palta · APAPPSS</h2>
-  <p>Socio → Fundo → Plantas → Expediente → Actuaciones. Los datos técnicos se completan cuando se conozcan.</p>
-  @if(visitaId){<span class="e3-context">Visita técnica #{{visitaId}} · Registro con trazabilidad</span>}
+  @if(visitaId){<span class="e3-context">Visita técnica · Registro de actuaciones</span>}
  </header>}
  @if(error()){<p class="e3-error" role="alert">{{error()}}</p>}
  @if(!predioFijo){<section class="admin-surface e3-panel e3-context-row">
@@ -15,67 +14,202 @@
  </section>}
  @if(loading()&&!predioId){<app-loading-state title="Cargando fundos" message="Consultando los predios autorizados."/>}
  @if(predioId){
-  <section class="e3-stats" aria-label="Resumen sanitario del fundo">
-   <article class="admin-detail-card e3-total"><span>Total de plantas</span><strong>{{totalFundo()}}</strong><small>Año productivo: {{page().anioResumen}}</small></article>
-   @for(s of page().resumen;track s.variedadId){<article class="admin-detail-card"><span>{{s.variedad}}</span><strong>{{s.cantidad}} plantas</strong>
-    <small>{{s.sinEvaluar}} sin evaluar · {{s.sanas}} sanas · {{s.enfermas}} enfermas · {{s.muertas}} muertas</small>
+  @if(vistaFundo!=='plantas'&&vistaFundo!=='expediente'){
+  @if(vistaFundo!=='general'){
+  <section class="e3-stats e3-stats--overview" aria-label="Resumen sanitario del fundo">
+   <article class="admin-detail-card e3-stat-tile e3-stat-tile--primary e3-total"><span>Plantas activas</span><strong>{{totalFundo()}}</strong><small>Registradas: {{totalHistorico()}}</small></article>
+   <article class="admin-detail-card e3-stat-tile"><span>Plantas registradas</span><strong>{{totalHistorico()}}</strong><small>Solo este predio</small></article>
+   <article class="admin-detail-card e3-stat-tile"><span>Sin evaluar</span><strong>{{plantasSinEvaluar()}}</strong><small>Pendientes de primera evaluación</small></article>
+   <article class="admin-detail-card e3-stat-tile"><span>Variedades presentes</span><strong>{{variedadesRegistradas()}}</strong><small>Distribución varietal del predio</small></article>
+   @for(s of page().resumen;track s.variedadId){<article class="admin-detail-card e3-stat-tile"><span>{{s.variedad}}</span><strong>{{s.cantidad}} plantas</strong>
+    <small>{{s.sanas}} sanas · {{s.enfermas}} enfermas · {{s.muertas}} bajas</small>
     <small>Estimadas: {{s.plantasConEstimacion}} plantas / {{s.estimadoKg|number:'1.0-2'}} kg</small>
     <small>Cosechadas: {{s.plantasConCosecha}} plantas / {{s.realKg|number:'1.0-2'}} kg</small>
    </article>}
   </section>
-  @if(result();as r){<div class="admin-surface e3-success" role="status"><strong>Se generaron {{r.total}} plantas con identificador permanente.</strong>
-   <div>@for(s of r.resumen;track s.variedadId){<span>{{s.variedad}}: {{s.cantidad}} · </span>}</div></div>}
-  @if(puedeCrear()){
-   <div class="e3-actions"><button type="button" class="admin-primary-button" (click)="abrirLote()">Registrar plantas de palta</button></div>
-   <dialog #loteDialog class="modal desco-modal gp-modal e3-modal" (cancel)="$event.preventDefault();cerrarLote()">
-    <div class="modal-box admin-modal-box admin-modal-box--wide gp-dialog-box e3-modal-box">
-     <header class="admin-modal-header"><div class="admin-modal-title-group"><div><p>Convenios · APAPPSS</p><h2>Registrar plantas por variedad</h2></div></div><button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="cerrarLote()">Cerrar</button></header>
-    <p>Una fila por variedad y cantidad. Edad, estado, ubicación individual y producción son opcionales.</p>
-    @if(catalogs().socios.length>1){<label class="admin-field">Socio titular
-      <select class="admin-select" [(ngModel)]="socioId"><option [ngValue]="0">Seleccionar socio</option>
-       @for(s of catalogs().socios;track s.id){<option [ngValue]="s.id">{{s.nombre}}</option>}
-      </select></label>}
-    @if(catalogs().socios.length===1){<p class="e3-hint">Socio vinculado automáticamente: {{catalogs().socios[0].nombre}}</p>}
-    @for(f of filas;track $index){<div class="e3-row">
-     <label class="admin-field">Variedad<select class="admin-select" [(ngModel)]="f.variedadId"><option [ngValue]="0">Seleccionar variedad</option>
-      @for(v of catalogs().variedades;track v.id){<option [ngValue]="v.id">{{v.nombre}}</option>}</select></label>
-     <label class="admin-field">Cantidad<input class="admin-input" type="number" min="1" max="1000" [(ngModel)]="f.cantidad"/></label>
-     <label class="admin-field">Parcela<select class="admin-select" [(ngModel)]="f.parcelaCultivoId"><option [ngValue]="undefined">Sin parcela individualizada</option>
-      @for(p of catalogs().parcelas;track p.id){<option [ngValue]="p.id">{{p.nombre}}</option>}</select></label>
-     <button type="button" class="admin-secondary-button" [disabled]="filas.length===1" (click)="quitarFila($index)">Quitar</button>
-    </div>}
-    <div class="e3-row"><button type="button" class="admin-secondary-button" (click)="agregarFila()">Añadir variedad</button>
-     <button type="button" class="admin-primary-button" [disabled]="saving()||!validLote()" (click)="crearLote()">Generar identificadores</button></div>
-    @if(!validLote()){<small>Seleccione el socio si corresponde, una variedad y cantidad por fila. Límite: 2000 plantas por operación.</small>}
+  }
+  <section class="admin-surface e3-panel e3-periodo" aria-label="Actividad sanitaria">
+   <div class="e3-row e3-panel-heading">
+    <div><h3>Estado y evolución sanitaria</h3>
+     @if(vistaFundo==='general'){<p class="e3-overview-note">{{totalFundo()}} plantas activas · {{variedadesRegistradas()}} variedades</p>}
     </div>
+   </div>
+   <div class="e3-row e3-filters">
+    <label class="admin-field">Desde<input type="date" class="admin-input" [(ngModel)]="fechaDesde" /></label>
+    <label class="admin-field">Hasta<input type="date" class="admin-input" [(ngModel)]="fechaHasta" /></label>
+    <label class="admin-field">Estado<select class="admin-select" [(ngModel)]="estadoPeriodo"><option value="">Todos</option>
+     <option value="SANA">Sanas</option><option value="ENFERMA">Enfermas</option><option value="MUERTA">Bajas</option></select></label>
+    <button type="button" class="admin-secondary-button" [disabled]="cargandoEstadisticas()" (click)="cargarEstadisticas()">Consultar</button>
+   </div>
+   @if(errorEstadisticas()){<p class="e3-error" role="alert">{{errorEstadisticas()}}</p>}
+   @if(cargandoEstadisticas()){<span role="status">Consultando información…</span>}
+   @if(estadisticas();as e){
+    @if(vistaFundo!=='general'){
+    <div class="e3-stats e3-stats--health"><article class="admin-detail-card e3-stat-tile e3-stat-tile--healthy"><span>Sanas</span><strong>{{e.sanas}}</strong></article>
+     <article class="admin-detail-card e3-stat-tile e3-stat-tile--warning"><span>Enfermas</span><strong>{{e.enfermas}}</strong></article>
+     <article class="admin-detail-card e3-stat-tile e3-stat-tile--muted"><span>Bajas acumuladas</span><strong>{{e.muertas}}</strong></article>
+     <article class="admin-detail-card e3-stat-tile e3-stat-tile--warning"><span>Nuevos casos</span><strong>{{e.casosPeriodo}}</strong></article>
+     <article class="admin-detail-card e3-stat-tile e3-stat-tile--primary"><span>Tratamientos</span><strong>{{e.tratamientosPeriodo}}</strong></article>
+    </div>
+    }
+   }
+   <div class="e3-visuals" aria-label="Gráficos del predio seleccionado">
+    <div class="e3-visual-card">
+     <app-chart-card [data]="graficoSanitario()"/>
+     @if(!tieneMovimientos()){<p class="e3-chart-note" role="status">Sin movimientos sanitarios en el periodo seleccionado.</p>}
+    </div>
+    <div class="e3-visual-card">
+     <app-chart-card [data]="graficoEstados()"/>
+     @if(!totalEstados()){<p class="e3-chart-note" role="status">Todavía no existen plantas evaluadas en este predio.</p>}
+    </div>
+   </div>
+  </section>
+  @if(page().resumenParcelas.length){<details class="admin-surface e3-panel"><summary>Resumen productivo por parcela y variedad</summary>
+   <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Parcela</th><th>Variedad</th><th>Plantas</th><th>Con estimación</th><th>Kg estimados</th><th>Con cosecha</th><th>Kg reales</th></tr></thead>
+    <tbody>@for(r of page().resumenParcelas;track $index){<tr><td>{{nombreParcela(r.parcelaCultivoId)}}</td><td>{{r.variedad}}</td><td>{{r.cantidad}}</td>
+     <td>{{r.plantasConEstimacion}}</td><td>{{r.estimadoKg|number:'1.0-2'}}</td><td>{{r.plantasConCosecha}}</td><td>{{r.realKg|number:'1.0-2'}}</td></tr>}</tbody>
+   </table></div></details>}
+  }
+  @if(vistaFundo!=='general'){
+  @if(vistaFundo!=='expediente'){
+  @if(puedeCrear()){
+   <dialog #loteDialog class="modal desco-modal gp-modal e3-modal e3-lote-dialog" (cancel)="$event.preventDefault();cerrarLote()">
+    <section class="modal-box admin-modal-box admin-modal-box--wide gp-dialog-box e3-modal-box e3-lote-box">
+     <header class="admin-modal-header">
+      <div class="admin-modal-title-group"><span class="admin-modal-icon"><fa-icon [icon]="addIcon"/></span><div><p>Convenios · APAPPSS</p><h2>Registrar plantas</h2></div></div>
+      <button type="button" class="admin-icon-button" aria-label="Cerrar" [disabled]="saving()" (click)="cerrarLote()"><fa-icon [icon]="closeIcon"/></button>
+     </header>
+     <div class="desco-fixed-form-body e3-lote-body" [attr.aria-busy]="generando()">
+      @if(generando()){
+       <div class="e3-lote-progress" role="status" aria-live="polite">
+        <fa-icon [icon]="spinnerIcon" class="e3-progress-spinner" aria-hidden="true"/>
+        <strong>Registrando plantas</strong>
+        <span>Guardando y actualizando el listado…</span>
+       </div>
+      }@else{
+      @if(error()){<p class="admin-inline-error" role="alert">{{error()}}</p>}
+      @if(catalogs().socios.length>1){<label class="admin-field">Socio titular
+       <select class="admin-select" [(ngModel)]="socioId"><option [ngValue]="0">Seleccionar socio</option>
+       @for(s of catalogs().socios;track s.id){<option [ngValue]="s.id">{{s.nombre}}</option>}</select></label>}
+      <div class="e3-lote-lines">
+       @for(f of filas;track $index){<div class="e3-lote-line" [class.e3-lote-line--fixed]="predioFijo">
+        <label class="admin-field">Variedad<select class="admin-select" [(ngModel)]="f.variedadId"><option [ngValue]="0">Seleccionar variedad</option>
+         @for(v of catalogs().variedades;track v.id){<option [ngValue]="v.id">{{v.nombre}}</option>}</select></label>
+        <label class="admin-field">Cantidad<input class="admin-input" type="number" min="1" max="1000" [(ngModel)]="f.cantidad"/></label>
+        @if(!predioFijo){<label class="admin-field">Parcela<select class="admin-select" [(ngModel)]="f.parcelaCultivoId"><option [ngValue]="undefined">Sin parcela</option>
+         @for(p of catalogs().parcelas;track p.id){<option [ngValue]="p.id">{{p.nombre}}</option>}</select></label>}
+        <button type="button" class="admin-icon-button e3-remove-line" aria-label="Quitar variedad" title="Quitar variedad" [disabled]="filas.length===1" (click)="quitarFila($index)"><fa-icon [icon]="deleteIcon"/></button>
+       </div>}
+      </div>
+      <button type="button" class="admin-secondary-button e3-add-line" (click)="agregarFila()"><fa-icon [icon]="addIcon"/> Añadir variedad</button>
+      }
+     </div>
+     <footer class="gp-modal-footer desco-fixed-form-footer e3-lote-footer">
+      <button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="cerrarLote()">Cancelar</button>
+      <button type="button" class="admin-primary-button" [disabled]="saving()||!validLote()" (click)="crearLote()">
+       @if(generando()){<fa-icon [icon]="spinnerIcon" class="e3-progress-spinner" aria-hidden="true"/> Registrando…}
+       @else{Generar plantas}
+      </button>
+     </footer>
+    </section>
    </dialog>
   }
   <section class="admin-surface e3-panel">
-   <h3>Plantas identificadas</h3>
+   <div class="e3-row e3-panel-heading"><h3>Plantas</h3></div>
    <div class="e3-row e3-filters">
     <label class="admin-field">Buscar código<input class="admin-input" [(ngModel)]="buscar" maxlength="100" (keyup.enter)="filtrar()"/></label>
     <label class="admin-field">Variedad<select class="admin-select" [(ngModel)]="variedadFiltro"><option [ngValue]="0">Todas</option>
      @for(v of catalogs().variedades;track v.id){<option [ngValue]="v.id">{{v.nombre}}</option>}</select></label>
     <label class="admin-field">Estado<select class="admin-select" [(ngModel)]="estadoFiltro"><option value="">Todos</option>
-     <option value="SIN_EVALUAR">Sin evaluar</option><option value="SANA">Sana</option><option value="ENFERMA">Enferma</option><option value="MUERTA">Muerta</option></select></label>
-    <button type="button" class="admin-secondary-button" (click)="filtrar()">Aplicar filtros</button>
+     <option value="SIN_EVALUAR">Sin evaluar</option><option value="SANA">Sana</option><option value="ENFERMA">Enferma</option><option value="MUERTA">Muerta</option><option value="ELIMINADA">Eliminada</option></select></label>
+    <button type="button" class="admin-secondary-button" [disabled]="generando()||loading()" (click)="filtrar()">Aplicar filtros</button>
    </div>
-   @if(loading()){<app-loading-state title="Cargando plantas" message="Consultando los expedientes individuales."/>}
-   @else if(!page().items.length){<app-empty-state title="Sin registros" message="Todavía no existen plantas para el filtro seleccionado."/>}
-   @else{<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Seleccionar</th><th>Código</th><th>Variedad</th><th>Estado</th><th>Socio</th><th>Parcela</th><th>Expediente</th></tr></thead>
-    <tbody>@for(p of page().items;track p.plantaId){<tr>
-     <td>@if(puedeActuar()&&p.estado!=='MUERTA'){
-      <input #seleccionPlanta type="checkbox" [checked]="seleccionadas().includes(p.plantaId)"
-       [disabled]="saving()||(!seleccionadas().includes(p.plantaId)&&seleccionadas().length>=100)"
-       (change)="seleccionar(p.plantaId,seleccionPlanta.checked)" [attr.aria-label]="'Seleccionar '+p.codigo"/>
-     }</td>
-     <td><strong>{{p.codigo}}</strong></td><td>{{p.variedad}}</td><td>{{p.estado}}</td>
-     <td>{{p.socioId??'Sin dato'}}</td><td>{{p.parcelaCultivoId??'Sin dato'}}</td>
-     <td><button type="button" class="admin-secondary-button" (click)="abrir(p.plantaId)">Abrir expediente</button></td>
-    </tr>}</tbody></table></div>}
+   <div class="e3-actions e3-actions--integrated e3-list-toolbar">
+    <div class="gp-view-toggle" role="group" aria-label="Vista de plantas">
+     <button type="button" [class.active]="vista==='tabla'" [attr.aria-pressed]="vista==='tabla'" (click)="vista='tabla'"><fa-icon [icon]="tableIcon"/> Tabla</button>
+     <button type="button" [class.active]="vista==='tarjetas'" [attr.aria-pressed]="vista==='tarjetas'" (click)="vista='tarjetas'"><fa-icon [icon]="cardIcon"/> Tarjetas</button>
+    </div>
+    @if(puedeCrear()){
+     @if(mostrarAltaInicial()){
+      <button type="button" class="admin-primary-button" [disabled]="saving()||generando()" (click)="abrirLote()"><fa-icon [icon]="addIcon"/> Registrar plantas por variedad</button>
+     }@else if(mostrarAltaIndividual()){
+      <button type="button" class="admin-primary-button" [disabled]="saving()" (click)="abrirIndividual()"><fa-icon [icon]="addIcon"/> Agregar planta</button>
+     }
+    }
+   </div>
+   @if(loading()){<app-loading-state title="Cargando plantas" message="Consultando el listado."/>}
+   @else if(!listadoConsultado()){
+    <div class="e3-plant-empty"><p>La información no está disponible.</p>
+     <button type="button" class="admin-secondary-button" (click)="filtrar()">Reintentar</button></div>
+   }
+   @else if(!page().items.length){<div class="e3-plant-empty">
+    @if(!buscar.trim()&&!estadoFiltro&&!variedadFiltro){
+      <app-empty-state title="Sin plantas registradas"/>
+    }@else{<app-empty-state title="Sin resultados"/>}
+   </div>}
+   @else if(vista==='tabla'){
+    <div class="admin-table-wrap e3-list-table-wrap"><table class="admin-table e3-list-table" [class.e3-list-table--fixed]="predioFijo">
+     <thead><tr>
+      @if(puedeActuar()){<th class="e3-select-col">Selección</th>}
+      <th>Código</th><th>Variedad</th><th>Estado</th>
+      @if(!predioFijo||catalogs().socios.length>1){<th>Socio</th>}
+      @if(!predioFijo){<th>Parcela</th>}
+      <th class="e3-actions-col">Acciones</th>
+     </tr></thead>
+     <tbody>@for(p of page().items;track p.plantaId){<tr>
+      @if(puedeActuar()){<td class="e3-select-col">@if(p.estado!=='MUERTA'&&p.estado!=='ELIMINADA'){
+       <input #seleccionPlanta type="checkbox" [checked]="seleccionadas().includes(p.plantaId)"
+        [disabled]="saving()||(!seleccionadas().includes(p.plantaId)&&seleccionadas().length>=100)"
+        (change)="seleccionar(p.plantaId,seleccionPlanta.checked)" [attr.aria-label]="'Seleccionar '+p.codigo"/>
+      }</td>}
+      <td class="e3-code-cell"><strong>{{p.codigo}}</strong></td>
+      <td>{{p.variedad}}</td>
+      <td><span class="admin-status" [class.admin-status--active]="p.estado==='SANA'" [class.admin-status--warning]="p.estado==='ENFERMA'" [class.admin-status--inactive]="p.estado==='MUERTA'||p.estado==='ELIMINADA'">{{p.estado==='ELIMINADA'?'Eliminada':p.estado==='MUERTA'?'Muerta':p.estado==='ENFERMA'?'Enferma':p.estado==='SIN_EVALUAR'?'Sin evaluar':'Sana'}}</span></td>
+      @if(!predioFijo||catalogs().socios.length>1){<td>{{nombreSocio(p.socioId)}}</td>}
+      @if(!predioFijo){<td>{{nombreParcela(p.parcelaCultivoId)}}</td>}
+      <td class="e3-actions-col"><div class="e3-table-actions admin-row-actions">
+       <button type="button" class="admin-icon-button" [disabled]="generando()" [attr.aria-label]="'Detalles de '+p.codigo" title="Detalles" (click)="abrir(p.plantaId)"><fa-icon [icon]="viewIcon"/></button>
+       @if(puedeEditar()&&p.estado!=='MUERTA'&&p.estado!=='ELIMINADA'){
+        <button type="button" class="admin-icon-button" [disabled]="generando()" [attr.aria-label]="'Editar '+p.codigo" title="Editar" (click)="editar(p.plantaId)"><fa-icon [icon]="editIcon"/></button>
+       }
+       @if(puedeEditar()&&p.estado!=='MUERTA'&&p.estado!=='ELIMINADA'){
+        <button type="button" class="admin-icon-button" [disabled]="generando()" [attr.aria-label]="'Comentarios de '+p.codigo" title="Comentarios" (click)="abrirComentarios(p.plantaId)"><fa-icon [icon]="commentIcon"/></button>
+       }
+       @if(puedeEditar()&&p.estado!=='MUERTA'&&p.estado!=='ELIMINADA'){
+        <button type="button" class="admin-icon-button e3-danger" [disabled]="generando()" [attr.aria-label]="'Eliminar '+p.codigo" title="Eliminar" (click)="darDeBaja(p)"><fa-icon [icon]="deleteIcon"/></button>
+       }
+      </div></td>
+     </tr>}</tbody>
+    </table></div>
+   }@else{
+    <div class="desco-record-grid e3-plant-cards">
+     @for(p of page().items;track p.plantaId){<app-record-card class="e3-plant-record">
+      <header class="e3-plant-card-heading">
+       <strong>{{p.codigo}}</strong>
+       <span class="admin-status" [class.admin-status--active]="p.estado==='SANA'" [class.admin-status--warning]="p.estado==='ENFERMA'" [class.admin-status--inactive]="p.estado==='MUERTA'||p.estado==='ELIMINADA'">{{p.estado==='ELIMINADA'?'Eliminada':p.estado==='MUERTA'?'Muerta':p.estado==='ENFERMA'?'Enferma':p.estado==='SIN_EVALUAR'?'Sin evaluar':'Sana'}}</span>
+      </header>
+      <dl class="technical-record-data e3-plant-card-fields">
+       <div><dt>Variedad</dt><dd>{{p.variedad}}</dd></div>
+       @if(!predioFijo||catalogs().socios.length>1){<div><dt>Socio</dt><dd>{{nombreSocio(p.socioId)}}</dd></div>}
+       @if(!predioFijo){<div><dt>Parcela</dt><dd>{{nombreParcela(p.parcelaCultivoId)}}</dd></div>}
+      </dl>
+      <footer class="e3-plant-card-footer"><div class="admin-row-actions e3-table-actions">
+       <button type="button" class="admin-icon-button" [disabled]="generando()" [attr.aria-label]="'Detalles de '+p.codigo" title="Detalles" (click)="abrir(p.plantaId)"><fa-icon [icon]="viewIcon"/></button>
+       @if(puedeEditar()&&p.estado!=='MUERTA'&&p.estado!=='ELIMINADA'){
+        <button type="button" class="admin-icon-button" [disabled]="generando()" [attr.aria-label]="'Editar '+p.codigo" title="Editar" (click)="editar(p.plantaId)"><fa-icon [icon]="editIcon"/></button>
+       }
+       @if(puedeEditar()&&p.estado!=='MUERTA'&&p.estado!=='ELIMINADA'){
+        <button type="button" class="admin-icon-button" title="Comentarios" [attr.aria-label]="'Comentarios de '+p.codigo" (click)="abrirComentarios(p.plantaId)"><fa-icon [icon]="commentIcon"/></button>
+       }
+       @if(puedeEditar()&&p.estado!=='MUERTA'&&p.estado!=='ELIMINADA'){
+        <button type="button" class="admin-icon-button e3-danger" [disabled]="generando()" [attr.aria-label]="'Eliminar '+p.codigo" title="Eliminar" (click)="darDeBaja(p)"><fa-icon [icon]="deleteIcon"/></button>
+       }
+      </div></footer>
+     </app-record-card>}
+    </div>
+   }
    @if(puedeActuar()&&seleccionadas().length>0){<div class="e3-group">
     <strong>{{seleccionadas().length}} plantas seleccionadas para la visita #{{visitaId}}</strong>
-    <p>La actuación quedará registrada individualmente en cada planta seleccionada; no cambia diagnósticos ni estados sanitarios.</p>
     <div class="e3-row"><label class="admin-field">Tipo de actuación<select class="admin-select" [(ngModel)]="masivoTipo">
      <option value="PREVENTIVO">Prevención</option><option value="SANITARIO">Seguimiento sanitario</option>
      <option value="PODA">Poda</option><option value="RIEGO">Riego</option><option value="FERTILIZACION">Fertilización</option><option value="OTRO">Otra</option></select></label>
@@ -83,145 +217,285 @@
     <label class="admin-field">Observación común<textarea class="admin-textarea" [(ngModel)]="masivoObservacion" maxlength="1000"></textarea></label>
     <button type="button" class="admin-primary-button" [disabled]="saving()||!masivoObservacion.trim()" (click)="seguimientoSeleccion()">Registrar en plantas seleccionadas</button>
    </div>}
-   @if(puedeEditar()&&!visitaId){<p class="e3-hint">Para actuaciones grupales, abra el predio desde una visita técnica autorizada.</p>}
+
    <app-paginator [page]="pagina" [size]="tamano" [totalRecords]="page().total" [totalPages]="totalPaginas()"
     (pageChange)="pageChanged($event)" (sizeChange)="sizeChanged($event)"/>
   </section>
-  @if(page().resumenParcelas.length){<details class="admin-surface e3-panel"><summary>Resumen productivo por parcela y variedad</summary>
-   <p>Los valores se calculan con registros de plantas identificadas; las cosechas se acumulan y la estimación usa el último valor del año {{page().anioResumen}}.</p>
-   <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Parcela</th><th>Variedad</th><th>Plantas</th><th>Con estimación</th><th>Kg estimados</th><th>Con cosecha</th><th>Kg reales</th></tr></thead>
-    <tbody>@for(r of page().resumenParcelas;track $index){<tr><td>{{r.parcelaCultivoId??'Sin asignar'}}</td><td>{{r.variedad}}</td><td>{{r.cantidad}}</td>
-     <td>{{r.plantasConEstimacion}}</td><td>{{r.estimadoKg|number:'1.0-2'}}</td><td>{{r.plantasConCosecha}}</td><td>{{r.realKg|number:'1.0-2'}}</td></tr>}</tbody>
-   </table></div></details>}
-  <dialog #expedienteDialog class="modal desco-modal gp-modal e3-modal" (cancel)="$event.preventDefault();cerrarDetalle()">
-   @if(detail();as d){<section class="modal-box admin-modal-box admin-modal-box--wide gp-dialog-box e3-modal-box e3-panel e3-expediente">
-   <header class="e3-row e3-detail-head"><div><h3>{{d.codigo}} · {{d.variedad}}</h3>
-    <p><strong>{{d.estado}}</strong> · Edad: {{d.edadActual===null||d.edadActual===undefined?'Sin dato':d.edadActual+' años'}}
-     · Socio #{{d.socioId??'Sin dato'}} · Parcela: {{d.parcelaCultivoId??'Sin dato'}}</p>
-    <small>Registrada: {{d.registradoEn?(d.registradoEn|date:'dd/MM/yyyy HH:mm'):'Sin dato'}} · Responsable: {{d.registradoPorUsuarioId??'Sin dato'}}</small>
-   </div><button type="button" class="admin-secondary-button" (click)="cerrarDetalle()">Cerrar expediente</button></header>
-   <nav class="e3-tabs" aria-label="Apartados del expediente">
-    <button type="button" [class.e3-active]="tab()==='historial'" (click)="cambiarTab('historial')">Ficha e historial</button>
-    <button type="button" [class.e3-active]="tab()==='sanidad'" (click)="cambiarTab('sanidad')">Sanidad</button>
-    <button type="button" [class.e3-active]="tab()==='tratamientos'" (click)="cambiarTab('tratamientos')">Tratamientos y labores</button>
-    <button type="button" [class.e3-active]="tab()==='produccion'" (click)="cambiarTab('produccion')">Producción</button>
-    <button type="button" [class.e3-active]="tab()==='mediciones'" (click)="cambiarTab('mediciones')">Materia seca</button>
-    <button type="button" [class.e3-active]="tab()==='evidencias'" (click)="cambiarTab('evidencias')">Fotografías y archivos</button>
-   </nav>
-   @if(tab()==='historial'){
-    <h4>Historia cronológica</h4><ul class="e3-timeline">@for(e of d.historial;track e.eventoId){<li>
-     <strong>{{e.fechaHora|date:'dd/MM/yyyy HH:mm'}} · {{e.tipo}}</strong>
-     <p>{{e.estadoAnterior||''}} @if(e.estadoNuevo&&e.estadoNuevo!==e.estadoAnterior){→ {{e.estadoNuevo}}} {{e.observacion||''}}</p>
-     <small>Responsable #{{e.usuarioId??'Sin dato'}} @if(e.visitaId){ · Visita #{{e.visitaId}}}</small>
-    </li>}@empty{<li>Sin eventos registrados.</li>}</ul>
-    <h4>Ficha técnica progresiva</h4>
-    @if(puedeEditar()){<div class="e3-row"><label class="admin-field">Fecha de plantación (opcional)<input type="date" class="admin-input" [(ngModel)]="fechaPlantacion"/></label>
-     <label class="admin-field">Edad estimada en años (alternativa)<input type="number" min="0" max="200" class="admin-input" [(ngModel)]="edadReferencia"/></label>
-     <button type="button" class="admin-primary-button" [disabled]="saving()||(!fechaPlantacion&&edadReferencia===null)" (click)="guardarFicha()">Guardar dato conocido</button></div>}
-    <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Actualización</th><th>Plantación</th><th>Edad de referencia</th><th>Responsable</th></tr></thead>
-     <tbody>@for(f of d.fichas;track f.fichaId){<tr><td>{{f.fechaHora|date:'dd/MM/yyyy HH:mm'}}</td><td>{{f.fechaPlantacion??'Sin dato'}}</td>
-      <td>{{f.edadReferenciaAnios===null||f.edadReferenciaAnios===undefined?'Sin dato':f.edadReferenciaAnios+' años'}}</td><td>#{{f.usuarioId}}</td></tr>}
-      @empty{<tr><td colspan="4">La ficha puede completarse posteriormente.</td></tr>}</tbody></table></div>
-   }
-   @if(tab()==='sanidad'){
-    <h4>Episodios sanitarios</h4><ul class="e3-timeline">@for(e of d.episodios;track e.episodioId){<li>
-     <strong>{{e.diagnostico}} · {{e.inicio|date:'dd/MM/yyyy'}}</strong>
-     <p>{{e.fin?'Cerrado: '+(e.fin|date:'dd/MM/yyyy'):'En seguimiento'}} · {{e.observacion||''}}</p>
-    </li>}@empty{<li>Sin enfermedades diagnosticadas.</li>}</ul>
-    @if(puedeEditar()&&d.estado!=='MUERTA'){<div class="e3-row">
+  }
+  @if(vistaFundo==='expediente'){
+   <section class="e3-expediente-page" aria-label="Expediente individual de planta">
+    @if(cargandoDetalle()){<app-loading-state title="Cargando expediente" message="Consultando la planta seleccionada."/>}
+    @else if(errorDetalle()){<div class="admin-surface e3-expediente-empty" role="alert"><p>{{errorDetalle()}}</p>
+     <button type="button" class="admin-secondary-button" (click)="loadPredios()">Reintentar</button></div>}
+    @else if(detail();as d){
+     <section class="admin-surface e3-expediente-shell" aria-label="Expediente individual">
+      <header class="e3-expediente-head">
+       <div class="e3-expediente-identidad">
+        <div class="e3-expediente-title-row">
+         <div class="e3-expediente-code-block"><span>PLANTA</span><h2>{{d.codigo}}</h2></div>
+         <span class="admin-status" [class.admin-status--active]="d.estado==='SANA'" [class.admin-status--warning]="d.estado==='ENFERMA'" [class.admin-status--inactive]="d.estado==='MUERTA'||d.estado==='ELIMINADA'">{{d.estado==='SIN_EVALUAR'?'Sin evaluar':d.estado==='ELIMINADA'?'Eliminada':d.estado==='MUERTA'?'Muerta':d.estado==='ENFERMA'?'Enferma':'Sana'}}</span>
+        </div>
+        <div class="e3-expediente-identity-meta"><span>{{d.variedad}}</span><span>{{nombreSocio(d.socioId)}}</span><span>{{nombreParcela(d.parcelaCultivoId)}}</span></div>
+       </div>
+       @if(puedeEditar()&&d.estado!=='MUERTA'&&d.estado!=='ELIMINADA'){
+        <div class="e3-expediente-head-actions">
+         <button type="button" class="admin-secondary-button" (click)="abrirEvaluacion()"><fa-icon [icon]="editIcon"/> Actualizar sanidad</button>
+         <button type="button" class="admin-secondary-button" (click)="editar(d.plantaId)"><fa-icon [icon]="editIcon"/> Editar ficha</button>
+        </div>}
+      </header>
+      <nav class="desco-tabs" aria-label="Apartados del expediente">
+       <button type="button" [class.selected]="tab()==='general'" [attr.aria-current]="tab()==='general'?'page':null" (click)="cambiarTab('general')">General</button>
+       <button type="button" [class.selected]="tab()==='enfermedades'" [attr.aria-current]="tab()==='enfermedades'?'page':null" (click)="cambiarTab('enfermedades')">Enfermedades</button>
+       <button type="button" [class.selected]="tab()==='tratamientos'" [attr.aria-current]="tab()==='tratamientos'?'page':null" (click)="cambiarTab('tratamientos')">Tratamientos</button>
+       <button type="button" [class.selected]="tab()==='comentarios'" [attr.aria-current]="tab()==='comentarios'?'page':null" (click)="cambiarTab('comentarios')">Comentarios</button>
+       <button type="button" [class.selected]="tab()==='produccion'" [attr.aria-current]="tab()==='produccion'?'page':null" (click)="cambiarTab('produccion')">Producción</button>
+       <button type="button" [class.selected]="tab()==='evidencias'" [attr.aria-current]="tab()==='evidencias'?'page':null" (click)="cambiarTab('evidencias')">Archivos</button>
+      </nav>
+      <div class="e3-expediente-content">
+       @if(tab()==='general'){
+        <section class="e3-expediente-section" aria-label="Información de la planta">
+         <div class="e3-expediente-section-head"><h3>Información general</h3></div>
+         <dl class="e3-expediente-facts">
+          <div><dt>Variedad</dt><dd>{{d.variedad}}</dd></div>
+          <div><dt>Edad</dt><dd>{{d.edadActual===null||d.edadActual===undefined?'Sin dato':d.edadActual+' años'}}</dd></div>
+          <div><dt>Plantación</dt><dd>{{d.fechaPlantacion?(d.fechaPlantacion|date:'dd/MM/yyyy'):'Sin dato'}}</dd></div>
+          <div><dt>Registro</dt><dd>{{d.registradoEn?(d.registradoEn|date:'dd/MM/yyyy'):'Sin dato'}}</dd></div>
+         </dl>
+         @if(d.estado==='MUERTA'){<p class="e3-expediente-readonly" role="status">La planta ha fallecido. El expediente permanece disponible para consulta, sin nuevas operaciones.</p>}
+         <div class="e3-expediente-metrics" aria-label="Actividad de la planta">
+          <article class="admin-detail-card"><span>Enfermedades</span><strong>{{d.episodios.length}}</strong></article>
+          <article class="admin-detail-card"><span>Tratamientos</span><strong>{{d.tratamientos.length}}</strong></article>
+          <article class="admin-detail-card"><span>Producción</span><strong>{{d.producciones.length}}</strong><small>registros</small></article>
+         </div>
+         <section class="e3-expediente-card">
+          <div class="e3-expediente-section-head"><h3>Evolución sanitaria</h3></div>
+          <div class="e3-expediente-filters">
+           <label class="admin-field">Desde<input type="date" class="admin-input" [(ngModel)]="fechaDesde"/></label>
+           <label class="admin-field">Hasta<input type="date" class="admin-input" [(ngModel)]="fechaHasta"/></label>
+           <button type="button" class="admin-secondary-button e3-expediente-refresh" title="Actualizar evolución" aria-label="Actualizar evolución sanitaria" (click)="cargarResumenPlanta(d.plantaId)"><fa-icon [icon]="refreshIcon"/></button>
+          </div>
+          @if(errorResumenPlanta()){<p role="alert" class="admin-inline-error">{{errorResumenPlanta()}}</p>}
+          <app-e3-expediente-graficos [estadisticas]="resumenPlanta()" [produccion]="d.produccionResumen" [desde]="fechaDesde" [hasta]="fechaHasta"/>
+         </section>
+        </section>
+       }
+       @if(tab()==='enfermedades'){
+        @if(ambitoDetalle();as ambito){<app-e3-planta-salud modo="enfermedades" [ambito]="ambito" [plantaId]="d.plantaId" [estadoPlanta]="d.estado" [catalogos]="catalogs()" [editable]="puedeEditar()" (changed)="refreshDetail(d.plantaId)" (verTratamientos)="abrirTratamientos($event)"/>}
+       }
+       @if(tab()==='tratamientos'){
+        @if(ambitoDetalle();as ambito){<app-e3-planta-salud modo="tratamientos" [ambito]="ambito" [plantaId]="d.plantaId" [estadoPlanta]="d.estado" [catalogos]="catalogs()" [editable]="puedeEditar()" [enfermedadInicial]="enfermedadEnFoco()" (changed)="refreshDetail(d.plantaId)"/>}
+       }
+       @if(tab()==='comentarios'){
+        @if(ambitoDetalle();as ambito){<app-e3-planta-salud modo="comentarios" [ambito]="ambito" [plantaId]="d.plantaId" [estadoPlanta]="d.estado" [catalogos]="catalogs()" [editable]="puedeEditar()" (changed)="refreshDetail(d.plantaId)"/>}
+       }
+       @if(tab()==='general'){
+        <section class="e3-expediente-section">
+         <div class="e3-expediente-section-head"><h3>Historial general y cambios de ficha</h3></div>
+         <div class="e3-expediente-two-columns">
+          <section class="e3-expediente-card"><h4>Actuaciones</h4>
+           @if(d.historial.length){<ol class="e3-expediente-timeline">
+            @for(e of d.historial;track e.eventoId){<li><div><strong>{{e.tipo}}</strong><time>{{e.fechaHora|date:'dd/MM/yyyy HH:mm'}}</time></div>
+             <p>{{e.estadoAnterior||''}} @if(e.estadoNuevo&&e.estadoNuevo!==e.estadoAnterior){→ {{e.estadoNuevo}}} {{e.observacion||''}}</p>
+             <small>{{e.usuarioNombre||'Usuario registrado'}} @if(e.visitaId){ · Visita #{{e.visitaId}}}</small></li>}</ol>}
+           @else{<div class="e3-expediente-empty">Sin actuaciones.</div>}
+          </section>
+          <section class="e3-expediente-card"><h4>Actualizaciones de ficha</h4>
+           @if(d.fichas.length){<div class="admin-table-wrap"><table class="admin-table e3-expediente-table-responsive"><thead><tr><th>Fecha</th><th>Plantación</th><th>Edad</th><th>Usuario</th></tr></thead>
+            <tbody>@for(f of d.fichas;track f.fichaId){<tr><td data-label="Fecha">{{f.fechaHora|date:'dd/MM/yyyy HH:mm'}}</td><td data-label="Plantación">{{f.fechaPlantacion?(f.fechaPlantacion|date:'dd/MM/yyyy'):'—'}}</td><td data-label="Edad">{{f.edadReferenciaAnios===null||f.edadReferenciaAnios===undefined?'—':f.edadReferenciaAnios+' años'}}</td><td data-label="Usuario">{{f.usuarioNombre||'Usuario registrado'}}</td></tr>}</tbody></table></div>}
+           @else{<div class="e3-expediente-empty">Sin actualizaciones.</div>}
+          </section>
+         </div>
+        </section>
+       }
+       @if(tab()==='general'){
+        <section class="e3-expediente-section">
+         <div class="e3-expediente-section-head"><h3>Antecedentes sanitarios</h3></div>
+         @if(d.episodios.length){<ol class="e3-expediente-timeline e3-expediente-timeline--columns">@for(e of d.episodios;track e.episodioId){<li>
+          <div><strong>{{e.diagnostico}}</strong><time>{{e.inicio|date:'dd/MM/yyyy'}}</time></div>
+          <p>{{e.fin?'Controlada: '+(e.fin|date:'dd/MM/yyyy'):(d.estado==='MUERTA'?'No controlada':'En seguimiento')}}@if(e.observacion){ · {{e.observacion}}}</p>
+          <small>{{e.usuarioApertura||'Usuario registrado'}} @if(e.fin){ · {{e.usuarioCierre||'Usuario registrado'}}}</small>
+         </li>}</ol>}@else{<div class="e3-expediente-empty">Sin evaluaciones sanitarias.</div>}
+        </section>
+       }
+       @if(tab()==='produccion'){
+        <section class="e3-expediente-section">
+         <div class="e3-expediente-section-head"><h3>Producción</h3>
+          @if(puedeEditar()&&d.estado!=='MUERTA'&&d.estado!=='ELIMINADA'){
+           <button type="button" class="admin-primary-button" (click)="abrirProduccion()"><fa-icon [icon]="addIcon"/> Registrar producción</button>}</div>
+         <div class="e3-expediente-metrics e3-expediente-production-kpis">
+          <article class="admin-detail-card"><span>Producción cosechada acumulada</span><strong>{{produccionRealTotal()|number:'1.0-2'}} kg</strong></article>
+          <article class="admin-detail-card"><span>Promedio anual con cosecha</span><strong>{{produccionRealMedia()|number:'1.0-2'}} kg</strong></article>
+          <article class="admin-detail-card"><span>Años con cosecha registrada</span><strong>{{aniosProduccion()}}</strong></article>
+         </div>
+         <app-e3-expediente-graficos [produccion]="d.produccionResumen" [soloProduccion]="true"/>
+         <div class="e3-expediente-two-columns e3-expediente-two-columns--production">
+          <section class="e3-expediente-card"><h4>Resumen anual</h4>
+           @if(d.produccionResumen.length){<div class="admin-table-wrap"><table class="admin-table e3-expediente-table-responsive"><thead><tr><th>Año</th><th>Estimado (kg)</th><th>Cosechado (kg)</th></tr></thead>
+            <tbody>@for(p of d.produccionResumen;track p.anio){<tr><td data-label="Año"><strong>{{p.anio}}</strong></td><td data-label="Estimado (kg)">{{p.tieneEstimacion?(p.estimadoKg|number:'1.0-3'):'—'}}</td><td data-label="Cosechado (kg)">{{p.tieneReal?(p.realKg|number:'1.0-3'):'—'}}</td></tr>}</tbody></table></div>}
+           @else{<div class="e3-expediente-empty">Sin producción registrada.</div>}
+          </section>
+          <section class="e3-expediente-card"><h4>Movimientos</h4>
+           @if(d.producciones.length){<div class="admin-table-wrap"><table class="admin-table e3-expediente-table-responsive"><thead><tr><th>Fecha</th><th>Tipo</th><th>Kg</th><th>Observación</th></tr></thead>
+            <tbody>@for(p of d.producciones;track p.produccionId){<tr><td data-label="Fecha">{{p.fechaEvento||p.fechaHora|date:'dd/MM/yyyy'}}</td><td data-label="Tipo"><span class="admin-status">{{p.tipo==='COSECHA'?'Cosecha':'Estimación'}}</span></td><td data-label="Kg">{{((p.tipo==='COSECHA'?p.realKg:p.estimadoKg)??0)|number:'1.0-3'}}</td><td data-label="Observación">{{p.observacion||'—'}}</td></tr>}</tbody></table></div>}
+           @else{<div class="e3-expediente-empty">Sin movimientos.</div>}
+          </section>
+         </div>
+        </section>
+       }
+       @if(tab()==='evidencias'){
+        <section class="e3-expediente-section">
+         <div class="e3-expediente-section-head"><h3>Fotografías y archivos</h3>
+          @if(archivoTab()==='general'&&puedeEditar()&&d.estado!=='MUERTA'&&d.estado!=='ELIMINADA'){
+           <button type="button" class="admin-primary-button" (click)="abrirArchivoPredio()"><fa-icon [icon]="addIcon"/> Subir archivo</button>}</div>
+         @if(cargandoArchivos()){<div class="e3-expediente-empty" role="status">Consultando archivos...</div>}
+         @if(errorArchivos()){<p class="admin-inline-error" role="alert">{{errorArchivos()}}</p>}
+         <nav class="desco-tabs" role="tablist" aria-label="Tipo de archivos">
+          <button type="button" role="tab" [attr.aria-selected]="archivoTab()==='general'" [class.active]="archivoTab()==='general'" (click)="archivoTab.set('general')">Generales <span>{{archivosGenerales().length}}</span></button>
+          <button type="button" role="tab" [attr.aria-selected]="archivoTab()==='tratamientos'" [class.active]="archivoTab()==='tratamientos'" (click)="archivoTab.set('tratamientos')">Tratamientos <span>{{archivosTratamientos().length}}</span></button>
+         </nav>
+         @if(archivoTab()==='general'){
+          <section class="e3-archive-panel" aria-label="Archivos generales">
+           @if(archivosGenerales().length){<div class="e3-expediente-files">
+            @for(f of archivosGenerales();track f.archivoId){<app-record-card><div class="e3-expediente-file e3-archive-entry">
+             <span class="e3-archive-icon" aria-hidden="true">{{(f.mimeType||'').startsWith('image/')?'IMG':'DOC'}}</span>
+             <div><strong>{{f.nombre}}</strong><small>{{f.usuarioNombre||'Usuario registrado'}} · {{f.fechaCarga|date:'dd/MM/yyyy'}}</small>
+              @if(f.descripcion){<p>{{f.descripcion}}</p>}</div>
+             @if(f.local){<button class="admin-secondary-button" type="button" (click)="descargarArchivo(f)">Descargar</button>}
+             @else if(f.url){<a class="admin-secondary-button" [href]="f.url" target="_blank" rel="noopener noreferrer">Ver</a>}</div></app-record-card>}
+           </div>}@else{<div class="e3-expediente-empty">Sin archivos generales.</div>}
+          </section>
+         }@else{
+          <section class="e3-archive-panel" aria-label="Archivos de tratamientos">
+           @if(archivosTratamientos().length){<div class="e3-expediente-files">
+            @for(f of archivosTratamientos();track f.archivoId+'-'+f.aplicacionId){<app-record-card><div class="e3-expediente-file e3-archive-entry">
+             <span class="e3-archive-icon" aria-hidden="true">{{(f.mimeType||'').startsWith('image/')?'IMG':'DOC'}}</span>
+             <div><strong>{{f.nombre}}</strong><small>{{f.enfermedad||'Tratamiento'}} · {{f.fechaCarga|date:'dd/MM/yyyy'}}</small>
+              @if(f.descripcion){<p>{{f.descripcion}}</p>}</div>
+             @if(f.local){<button type="button" class="admin-secondary-button" (click)="descargarArchivo(f)">Descargar</button>}
+             @else if(f.url){<a class="admin-secondary-button" [href]="f.url" target="_blank" rel="noopener noreferrer">Ver</a>}</div></app-record-card>}
+           </div>}@else{<div class="e3-expediente-empty">Sin archivos de tratamientos.</div>}
+          </section>
+         }
+        </section>
+       }
+      </div>
+     </section>
+    }@else{<div class="admin-surface e3-expediente-empty"><p>No se encontraron datos para esta planta.</p>
+     <button type="button" class="admin-secondary-button" (click)="loadPredios()">Reintentar</button></div>}
+   </section>
+  }
+  }
+ }
+  <dialog #archivoPredioDialog class="modal desco-modal gp-modal e3-expediente-dialog" (cancel)="$event.preventDefault();cerrarArchivoPredio()">
+   @if(detail();as d){<section class="modal-box admin-modal-box gp-dialog-box e3-expediente-dialog-box">
+    <header class="admin-modal-header"><div class="admin-modal-title-group"><div><p>Expediente de planta</p><h2>Subir fotografía o documento</h2></div></div>
+     <button type="button" class="admin-icon-button" aria-label="Cerrar" [disabled]="saving()" (click)="cerrarArchivoPredio()"><fa-icon [icon]="closeIcon"/></button></header>
+    <div class="desco-fixed-form-body e3-expediente-dialog-body">
+     <app-e3-file-dropzone title="Documento o fotografía" [files]="archivosParaSubir()" [multiple]="true" [maxFiles]="10"
+      [disabled]="saving()" [uploading]="saving()" (filesChange)="seleccionarArchivoNuevo($event)" (invalid)="error.set($event)"/>
+     <label class="admin-field">Descripción (obligatoria) <textarea class="admin-textarea" [(ngModel)]="descripcionArchivo" maxlength="400" rows="3" placeholder="Indique qué muestra o documenta el archivo"></textarea></label>
+     @if(error()){<p class="admin-inline-error" role="alert">{{error()}}</p>}
+    </div>
+    <footer class="gp-modal-footer desco-fixed-form-footer e3-dialog-actions"><button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="cerrarArchivoPredio()">Cancelar</button>
+     <button type="button" class="admin-primary-button" [disabled]="saving()||!archivosParaSubir().length||!descripcionArchivo.trim()" (click)="guardarArchivoNuevo()">Guardar {{archivosParaSubir().length}} archivo(s)</button></footer>
+   </section>}
+  </dialog>
+  <dialog #estadoDialog class="modal desco-modal gp-modal e3-expediente-dialog" (cancel)="$event.preventDefault();cerrarEvaluacion()">
+   @if(detail();as d){<section class="modal-box admin-modal-box gp-dialog-box e3-expediente-dialog-box">
+    <header class="admin-modal-header"><div class="admin-modal-title-group"><span class="admin-modal-icon"><fa-icon [icon]="editIcon"/></span><div><p>Historial sanitario</p><h2>Registrar evaluación</h2></div></div>
+     <button type="button" class="admin-icon-button" aria-label="Cerrar" [disabled]="saving()" (click)="cerrarEvaluacion()"><fa-icon [icon]="closeIcon"/></button></header>
+    <div class="desco-fixed-form-body e3-expediente-dialog-body">
+     <p class="e3-expediente-muted">Planta {{d.codigo}} · Estado actual: {{d.estado}}</p>
      <label class="admin-field">Nuevo estado<select class="admin-select" [(ngModel)]="estadoNuevo">
-      <option value="SANA">Sana</option><option value="ENFERMA">Enferma</option><option value="MUERTA">Muerta</option></select></label>
-     @if(estadoNuevo==='ENFERMA'){<label class="admin-field">Enfermedad o diagnóstico<select class="admin-select" [(ngModel)]="diagnosticoId">
+      <option value="SANA">Sana</option><option value="ENFERMA">Enferma</option><option value="MUERTA" [disabled]="!puedeDeclararMuerta(d)">Muerta</option></select></label>
+     @if(!puedeDeclararMuerta(d)&&d.estado!=='MUERTA'){<p class="e3-expediente-muted">Para registrar una baja por muerte, la planta debe estar enferma y tener una enfermedad vigente.</p>}
+     @if(estadoNuevo==='MUERTA'){<p class="e3-expediente-readonly">Este cambio es definitivo. La planta quedará solo para consulta.</p>}
+     @if(estadoNuevo==='ENFERMA'){<label class="admin-field">Enfermedad confirmada<select class="admin-select" [(ngModel)]="diagnosticoId">
       <option [ngValue]="0">Seleccione diagnóstico</option>@for(x of catalogs().diagnosticos;track x.id){<option [ngValue]="x.id">{{x.nombre}}</option>}</select></label>}
-    </div><label class="admin-field">Observación<textarea class="admin-textarea" [(ngModel)]="observacionEstado" maxlength="1000"></textarea></label>
-     <button type="button" class="admin-primary-button" [disabled]="saving()||(estadoNuevo==='ENFERMA'&&!diagnosticoId)" (click)="cambiarEstado()">Registrar evaluación</button>
-    }@else if(d.estado==='MUERTA'){
-     <p>La planta fallecida no admite transiciones ordinarias.</p>
-     @if(puedeCorregir()){
-      <div class="e3-group"><strong>Rectificación excepcional auditada</strong>
-       <label class="admin-field">Estado rectificado<select class="admin-select" [(ngModel)]="estadoNuevo">
-        <option value="SIN_EVALUAR">Sin evaluar</option><option value="SANA">Sana</option></select></label>
-       <label class="admin-field">Observación<textarea class="admin-textarea" [(ngModel)]="observacionEstado" maxlength="1000"></textarea></label>
-       <label class="admin-field">Motivo autorizado de rectificación<textarea class="admin-textarea" [(ngModel)]="correccionMotivo" maxlength="1000"></textarea></label>
-       <button type="button" class="admin-primary-button" [disabled]="saving()||correccionMotivo.trim().length<15" (click)="cambiarEstado()">Rectificar con auditoría</button>
-      </div>}
-    }
-   }
-   @if(tab()==='tratamientos'){
-    <h4>Tratamientos de episodios</h4><ul class="e3-timeline">@for(t of d.tratamientos;track t.tratamientoId){<li>
-     <strong>{{t.fechaHora|date:'dd/MM/yyyy HH:mm'}} · {{t.descripcion}}</strong>
-     <p>{{t.resultado||'Resultado aún sin registrar'}} · Episodio #{{t.episodioId}} @if(t.visitaId){· Visita #{{t.visitaId}}}</p>
-    </li>}@empty{<li>Sin tratamientos.</li>}</ul>
-    @if(puedeEditar()&&d.estado==='ENFERMA'){
-     <label class="admin-field">Tratamiento aplicado<textarea class="admin-textarea" [(ngModel)]="descripcionTratamiento" maxlength="600"></textarea></label>
-     <label class="admin-field">Resultado (opcional)<textarea class="admin-textarea" [(ngModel)]="resultadoTratamiento" maxlength="600"></textarea></label>
-     <button type="button" class="admin-primary-button" [disabled]="saving()||!descripcionTratamiento.trim()" (click)="tratar()">Añadir tratamiento</button>
-    }
-    <h4>Seguimientos y labores</h4><ul class="e3-timeline">@for(s of d.seguimientos;track s.seguimientoId){<li>
-     <strong>{{s.fechaHora|date:'dd/MM/yyyy HH:mm'}} · {{s.tipo}}</strong><p>{{s.observacion}}</p>
-     @if(s.resultado){<p>Resultado: {{s.resultado}}</p>}
-     <small>Responsable #{{s.usuarioId??'Sin dato'}} @if(s.visitaId){· Visita #{{s.visitaId}}}</small>
-    </li>}@empty{<li>Sin labores individuales registradas.</li>}</ul>
-    @if(puedeEditar()&&d.estado!=='MUERTA'){
-     <div class="e3-row"><label class="admin-field">Tipo de labor<select class="admin-select" [(ngModel)]="seguimientoTipo">
-      <option value="PREVENTIVO">Preventiva</option><option value="SANITARIO">Seguimiento sanitario</option>
-      <option value="PODA">Poda</option><option value="RIEGO">Riego</option><option value="FERTILIZACION">Fertilización</option><option value="OTRO">Otra</option></select></label>
-      <label class="admin-field">Resultado (opcional)<input class="admin-input" [(ngModel)]="seguimientoResultado" maxlength="600"/></label></div>
-     <label class="admin-field">Trabajo realizado / seguimiento<textarea class="admin-textarea" [(ngModel)]="seguimiento" maxlength="1000"></textarea></label>
-     <button type="button" class="admin-primary-button" [disabled]="saving()||!seguimiento.trim()" (click)="seguir()">Registrar actuación</button>
-    }
-   }
-   @if(tab()==='produccion'){
-    <h4>Producción por año</h4><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Año</th><th>Estimado (kg)</th><th>Real cosechado (kg)</th><th>Planta con información</th></tr></thead>
-     <tbody>@for(p of d.produccionResumen;track p.anio){<tr><td>{{p.anio}}</td><td>{{p.tieneEstimacion?p.estimadoKg:'Sin dato'}}</td>
-      <td>{{p.tieneReal?p.realKg:'Sin dato'}}</td><td>{{p.tieneEstimacion?'Estimación · ':''}}{{p.tieneReal?'Cosecha':''}}</td></tr>}
-      @empty{<tr><td colspan="4">Sin registros de producción.</td></tr>}</tbody></table></div>
-    <h4>Registros individuales (estimaciones y cosechas sucesivas)</h4>
-    <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Fecha</th><th>Año</th><th>Tipo</th><th>Kg</th><th>Observación</th></tr></thead>
-     <tbody>@for(p of d.producciones;track p.produccionId){<tr><td>{{p.fechaEvento||p.fechaHora|date:'dd/MM/yyyy'}}</td><td>{{p.anio}}</td>
-      <td>{{p.tipo}}</td><td>{{p.tipo==='COSECHA'?p.realKg:p.estimadoKg}}</td><td>{{p.observacion||'—'}}</td></tr>}
-      @empty{<tr><td colspan="5">Todavía no se han registrado estimaciones ni cosechas.</td></tr>}</tbody></table></div>
-    @if(puedeEditar()){
-     <p>Una estimación sustituye el valor referencial anterior del mismo año. Cada cosecha real suma al total.</p>
-     <div class="e3-row"><label class="admin-field">Tipo<select class="admin-select" [(ngModel)]="tipoProduccion">
+     <label class="admin-field">Observación de evaluación<textarea class="admin-textarea" [(ngModel)]="observacionEstado" maxlength="1000" rows="3"></textarea></label>
+     @if(error()){<p class="admin-inline-error" role="alert">{{error()}}</p>}
+    </div>
+    <footer class="gp-modal-footer desco-fixed-form-footer e3-dialog-actions"><button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="cerrarEvaluacion()">Cancelar</button>
+     <button type="button" class="admin-primary-button" [disabled]="saving()||estadoNuevo===d.estado||(estadoNuevo==='ENFERMA'&&!diagnosticoId)||(estadoNuevo==='MUERTA'&&!puedeDeclararMuerta(d))" (click)="cambiarEstado()">Guardar evaluación</button></footer>
+   </section>}
+  </dialog>
+  <dialog #produccionDialog class="modal desco-modal gp-modal e3-expediente-dialog" (cancel)="$event.preventDefault();cerrarProduccion()">
+   <section class="modal-box admin-modal-box gp-dialog-box e3-expediente-dialog-box">
+    <header class="admin-modal-header"><div class="admin-modal-title-group"><span class="admin-modal-icon"><fa-icon [icon]="addIcon"/></span><div><p>Producción</p><h2>Registrar producción</h2></div></div>
+     <button type="button" class="admin-icon-button" aria-label="Cerrar" [disabled]="saving()" (click)="cerrarProduccion()"><fa-icon [icon]="closeIcon"/></button></header>
+    <div class="desco-fixed-form-body e3-expediente-dialog-body">
+     <div class="e3-expediente-form-grid"><label class="admin-field">Tipo<select class="admin-select" [(ngModel)]="tipoProduccion">
       <option value="ESTIMACION">Estimación</option><option value="COSECHA">Cosecha real</option></select></label>
-      <label class="admin-field">Año<input type="number" min="2000" max="2200" class="admin-input" [(ngModel)]="anio"/></label>
+      <label class="admin-field">Año<input class="admin-input" type="number" min="2000" max="2200" [(ngModel)]="anio"/></label>
       <label class="admin-field">Fecha del registro<input type="date" class="admin-input" [(ngModel)]="fechaProduccion"/></label>
       <label class="admin-field">Kilogramos<input type="number" min="0" step="0.001" class="admin-input" [(ngModel)]="produccionKg"/></label></div>
-     <label class="admin-field">Observación (opcional)<input class="admin-input" [(ngModel)]="observacionProduccion" maxlength="500"/></label>
-     <button type="button" class="admin-primary-button" [disabled]="saving()||produccionKg===null||produccionKg<0||!fechaProduccion||+fechaProduccion.slice(0,4)!==anio" (click)="guardarProduccion()">Guardar {{tipoProduccion==='COSECHA'?'cosecha':'estimación'}}</button>
-    }
-   }
-   @if(tab()==='mediciones'){
-    <h4>Mediciones de materia seca</h4><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Fecha</th><th>% materia seca</th><th>Visita</th><th>Observación</th></tr></thead>
-     <tbody>@for(m of mediciones();track m.medicionId){<tr><td>{{m.fechaHora|date:'dd/MM/yyyy HH:mm'}}</td><td>{{m.porcentaje}} %</td>
-      <td>#{{m.visitaId}}</td><td>{{m.observacion||'—'}}</td></tr>}
-      @empty{<tr><td colspan="4">Sin mediciones.</td></tr>}</tbody></table></div>
-    @if(puedeActuar()&&d.estado!=='MUERTA'){
-     <div class="e3-row"><label class="admin-field">Materia seca (%)<input type="number" min="0" max="100" step="0.001" class="admin-input" [(ngModel)]="materiaSeca"/></label>
-      <label class="admin-field">Observación<input class="admin-input" [(ngModel)]="medicionObservacion" maxlength="1000"/></label>
-      <button type="button" class="admin-primary-button" [disabled]="saving()||materiaSeca===null||materiaSeca<0||materiaSeca>100" (click)="registrarMateriaSeca()">Registrar medición</button></div>
-    }@else if(!visitaId){<p>El control de materia seca se registra desde una visita técnica autorizada.</p>}
-   }
-   @if(tab()==='evidencias'){
-    <h4>Archivos del expediente de la planta</h4><ul class="e3-timeline">@for(f of d.evidencias;track f.archivoId){<li>
-     <strong>{{f.nombre}}</strong>@if(f.eventoId){<small> · Actuación #{{f.eventoId}}</small>}
-     @if(f.url){<a [href]="f.url" target="_blank" rel="noopener noreferrer">Ver archivo</a>}
-    </li>}@empty{<li>Sin archivos vinculados a esta planta.</li>}</ul>
-    @if(puedeEditar()){
-     <app-evidence-panel [context]="{tipo:'PREDIO',id:d.predioId}" title="Tomar fotografía o adjuntar documento del predio"/>
-     <div class="e3-row"><button type="button" class="admin-secondary-button" (click)="loadDocumentos()">Actualizar archivos disponibles</button>
-      <label class="admin-field">Archivo existente en el predio<select class="admin-select" [(ngModel)]="archivoId">
-       <option [ngValue]="null">Seleccione archivo</option>@for(f of documentos();track f.archivoId){<option [ngValue]="f.archivoId">{{f.nombre}}</option>}</select></label>
-      <label class="admin-field">Actuación a evidenciar<select class="admin-select" [(ngModel)]="eventoEvidencia">
-       <option [ngValue]="0">Documento general de la planta</option>
-       @for(e of d.historial;track e.eventoId){<option [ngValue]="e.eventoId">{{e.tipo}} · {{e.fechaHora|date:'dd/MM/yyyy'}}</option>}</select></label>
-      <button type="button" class="admin-primary-button" [disabled]="saving()||!archivoId" (click)="asociarArchivo()">Vincular a planta</button>
-     </div>
-    }
-   }
-  </section>}
+     <label class="admin-field">Observación (opcional)<textarea class="admin-textarea" [(ngModel)]="observacionProduccion" maxlength="500" rows="3"></textarea></label>
+     @if(error()){<p role="alert" class="admin-inline-error">{{error()}}</p>}
+    </div>
+    <footer class="gp-modal-footer desco-fixed-form-footer e3-dialog-actions"><button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="cerrarProduccion()">Cancelar</button>
+     <button type="button" class="admin-primary-button" [disabled]="saving()||produccionKg===null||produccionKg<0||!fechaProduccion||+fechaProduccion.slice(0,4)!==anio" (click)="guardarProduccion()">Guardar {{tipoProduccion==='COSECHA'?'cosecha':'estimación'}}</button></footer>
+   </section>
   </dialog>
- }
+  <dialog #editarDialog class="modal desco-modal gp-modal e3-modal e3-editar-dialog" (cancel)="$event.preventDefault();cerrarEditar()">
+   @if(detail();as d){<section class="modal-box admin-modal-box admin-modal-box--wide gp-dialog-box e3-modal-box e3-editar-box">
+    <header class="admin-modal-header"><div class="admin-modal-title-group"><span class="admin-modal-icon"><fa-icon [icon]="editIcon"/></span>
+     <div><p>Plantas</p><h2>Editar {{d.codigo}}</h2></div></div>
+     <button type="button" class="admin-icon-button" aria-label="Cerrar" [disabled]="saving()" (click)="cerrarEditar()"><fa-icon [icon]="closeIcon"/></button></header>
+    <div class="desco-fixed-form-body e3-editar-body"><div class="gp-form-grid">
+     <label class="admin-field">Variedad<select class="admin-select" [(ngModel)]="variedadEditar">
+      @for(v of catalogs().variedades;track v.id){<option [ngValue]="v.id">{{v.nombre}}</option>}</select></label>
+     <label class="admin-field">Fecha de plantación<input class="admin-input" type="date" [(ngModel)]="fechaPlantacion" /></label>
+     <label class="admin-field">Edad (años)<input class="admin-input" type="number" min="0" max="200" [(ngModel)]="edadReferencia" [disabled]="!!fechaPlantacion"/></label>
+    </div></div>
+    <footer class="gp-modal-footer desco-fixed-form-footer e3-lote-footer">
+     <button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="cerrarEditar()">Cancelar</button>
+     <button type="button" class="admin-primary-button" [disabled]="saving()" (click)="guardarFicha()">Guardar cambios</button>
+    </footer>
+   </section>}
+  </dialog>
+ <dialog #comentariosDialog class="modal desco-modal gp-modal e3-modal e3-comentarios-dialog" (cancel)="$event.preventDefault();cerrarComentarios()">
+  @if(detail();as d){<section class="modal-box admin-modal-box admin-modal-box--wide e3-comentarios-box">
+   <header class="admin-modal-header"><div class="admin-modal-title-group"><div><p>Historial de observaciones</p><h2>Comentarios · {{d.codigo}}</h2></div></div>
+    <button type="button" class="admin-icon-button" aria-label="Cerrar comentarios" [disabled]="saving()" (click)="cerrarComentarios()"><fa-icon [icon]="closeIcon"/></button></header>
+   <div class="e3-comentarios-body">
+    @if(comentariosCargando()){<p role="status">Cargando comentarios…</p>}
+    @else if(!comentarios().length){<p class="e3-hint">Sin comentarios todavía.</p>}
+    @for(c of comentarios();track c.comentarioId){<article class="admin-detail-card e3-comentario">
+     <p>{{c.comentario}}</p><small>{{c.usuarioNombre||'Técnico registrado'}} · {{c.fechaHora|date:'dd/MM/yyyy HH:mm'}}</small>
+    </article>}
+    @if(puedeEditar()&&d.estado!=='MUERTA'&&d.estado!=='ELIMINADA'){
+     <label class="admin-field">Añadir comentario<textarea class="admin-textarea" [(ngModel)]="comentarioNuevo" maxlength="1500" rows="3" placeholder="Observación técnica de esta planta"></textarea></label>
+     <button type="button" class="admin-primary-button" [disabled]="saving()||!comentarioNuevo.trim()" (click)="guardarComentario()">Registrar comentario</button>
+    }
+   </div>
+  </section>}
+ </dialog>
+ <dialog #individualDialog class="modal desco-modal gp-modal e3-modal e3-editar-dialog" (cancel)="$event.preventDefault();cerrarIndividual()">
+  <section class="modal-box admin-modal-box gp-dialog-box e3-editar-box">
+   <header class="admin-modal-header"><div class="admin-modal-title-group"><span class="admin-modal-icon"><fa-icon [icon]="addIcon"/></span>
+    <div><p>Plantas</p><h2>Registrar una planta</h2></div></div>
+    <button type="button" class="admin-icon-button" aria-label="Cerrar" (click)="cerrarIndividual()"><fa-icon [icon]="closeIcon"/></button></header>
+   <div class="e3-editar-body"><div class="gp-form-grid">
+    <label class="admin-field">Variedad<select class="admin-select" [(ngModel)]="variedadNueva"><option [ngValue]="0">Seleccione</option>
+     @for(v of catalogs().variedades;track v.id){<option [ngValue]="v.id">{{v.nombre}}</option>}</select></label>
+    <label class="admin-field">Fecha de plantación<input class="admin-input" type="date" [(ngModel)]="fechaNueva" [disabled]="edadNueva!==null"/></label>
+    <label class="admin-field">Edad (años)<input class="admin-input" type="number" min="0" max="200" [(ngModel)]="edadNueva" [disabled]="!!fechaNueva"/></label>
+    @if(catalogs().socios.length>1){<label class="admin-field">Socio titular<select class="admin-select" [(ngModel)]="socioId"><option [ngValue]="0">Seleccione</option>
+     @for(socio of catalogs().socios;track socio.id){<option [ngValue]="socio.id">{{socio.nombre}}</option>}</select></label>}
+   </div><label class="admin-field">Observación inicial (opcional)<textarea class="admin-textarea" [(ngModel)]="observacionNueva" maxlength="1000" rows="3" placeholder="Datos relevantes de la planta"></textarea></label></div>
+   <footer class="gp-modal-footer"><button type="button" class="admin-secondary-button" (click)="cerrarIndividual()">Cancelar</button>
+    <button type="button" class="admin-primary-button" [disabled]="saving()||variedadNueva<1||(catalogs().socios.length>1&&socioId<1)" (click)="guardarIndividual()">Registrar planta</button></footer>
+  </section>
+ </dialog>
+ <dialog #eliminarDialog class="modal desco-modal gp-modal e3-modal e3-comentarios-dialog" (cancel)="$event.preventDefault();cerrarEliminar()">
+  @if(plantaEliminar();as p){<section class="modal-box admin-modal-box e3-comentarios-box">
+   <header class="admin-modal-header"><div><p class="e3-kicker">Confirmación</p><h2>Eliminar planta</h2></div>
+    <button type="button" class="admin-icon-button" aria-label="Cerrar" (click)="cerrarEliminar()"><fa-icon [icon]="closeIcon"/></button></header>
+   <div class="e3-comentarios-body"><p>¿Eliminar <strong>{{p.codigo}}</strong> del registro activo? Se conservarán sus enfermedades, tratamientos e historial.</p>
+    <label class="admin-field">Motivo de eliminación<textarea class="admin-textarea" [(ngModel)]="motivoEliminar" maxlength="500" rows="3"></textarea></label></div>
+   <footer class="gp-modal-footer"><button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="cerrarEliminar()">Cancelar</button>
+    <button type="button" class="admin-primary-button" [disabled]="saving()||motivoEliminar.trim().length<5" (click)="confirmarEliminar()">Confirmar eliminación</button></footer>
+  </section>}
+ </dialog>
  <app-action-confirm-dialog/>
 </section>

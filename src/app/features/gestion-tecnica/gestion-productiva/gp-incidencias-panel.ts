@@ -2,7 +2,6 @@ import {ConsumoProductoEntregado,UsoProducto} from '../../../shared/forms/consum
 import { ResourceDatePipe } from '../../../shared/formatting/resource-date.pipe';
 import { RecordCardComponent } from '../../../shared/data-display/record-card/record-card';
 import { ChangeDetectionStrategy, Component, ElementRef, EventEmitter, Input, OnChanges, Output, ViewChild, inject, signal, computed } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
 import { faCheck, faEye, faEyeSlash, faPen, faTrash, faMagnifyingGlass, faXmark, faPrescriptionBottleMedical } from '@fortawesome/free-solid-svg-icons';
 import { FormsModule } from '@angular/forms';
@@ -24,7 +23,7 @@ import { PaginatorComponent } from '../../../shared/data-display/paginator/pagin
 import { EmptyStateComponent } from '../../../shared/data-display/empty-state/empty-state';
 
 @Component({selector:'app-gp-incidencias-panel',standalone:true,
- imports: [ConsumoProductoEntregado,ResourceDatePipe,RecordCardComponent, FormsModule,RouterLink,DatePipe,FaIconComponent,PermissionDirective,DataTableComponent,PaginatorComponent,EmptyStateComponent,ActionConfirmDialogComponent],templateUrl:'./gp-incidencias-panel.html',styleUrl:'./gestion-productiva.css',
+ imports: [ResourceDatePipe,RecordCardComponent,ConsumoProductoEntregado,FormsModule,RouterLink,FaIconComponent,PermissionDirective,DataTableComponent,PaginatorComponent,EmptyStateComponent,ActionConfirmDialogComponent],templateUrl:'./gp-incidencias-panel.html',styleUrl:'./gestion-productiva.css',
  changeDetection:ChangeDetectionStrategy.OnPush})
 export class GpIncidenciasPanel implements OnChanges {
  readonly viewIcon=faEye;
@@ -37,6 +36,7 @@ export class GpIncidenciasPanel implements OnChanges {
  readonly closeIcon=faXmark;
  @ViewChild('formDialog') private readonly formDialog?:ElementRef<HTMLDialogElement>;
  @ViewChild(ActionConfirmDialogComponent) private readonly confirmDialog!:ActionConfirmDialogComponent;
+ @ViewChild(ConsumoProductoEntregado) private readonly consumoProducto?:ConsumoProductoEntregado;
  @Input({required:true}) actividad!:GpActividadResponse;
  @Input() modo:'lista'|'detalle'='lista';
  @Input() incidenciaSeleccionadaId:number|null=null;
@@ -98,8 +98,6 @@ export class GpIncidenciasPanel implements OnChanges {
  readonly treatmentColumns:readonly DataTableColumn<GpTratamientoSeguimientoResponse>[]=[
   {key:'eventoId',label:'ID',format:v=>`#${v}`},
   {key:'tratamiento',label:'Tratamiento'},
-    {key:'producto',label:'Producto utilizado'},
-    {key:'cantidadUtilizada',label:'Cantidad utilizada',format:(v,row)=>v?`${v} ${row.unidadUtilizada||''}`:'—'},
   {key:'fechaInicio',label:'Inicio',format:v=>this.fechaHora(v)},
   {key:'fechaFinPrevista',label:'Fin previsto',format:v=>v?this.fechaHora(v):'—'},
   {key:'fechaFinReal',label:'Estado',format:v=>v?'Finalizado':'En curso'},
@@ -148,15 +146,15 @@ export class GpIncidenciasPanel implements OnChanges {
  }
 
  setPage(page:number):void{if(page>=1&&page<=this.pages())this.page.set(page);}
- setSize(size:number):void{this.size.set(size);this.page.set(1);} 
- @ViewChild(ConsumoProductoEntregado) consumoProducto?:ConsumoProductoEntregado;usoProducto:UsoProducto={};
+ setSize(size:number):void{this.size.set(size);this.page.set(1);}
  form:'ninguno'|'incidencia'|'editar'|'tratamiento'|'cerrar'|'finalizar'='ninguno';
  motivo='';
  incidenciaId:number|null=null;eventoTratamientoId:number|null=null;problemaId=0;tratamientoId=0;
+ usoProducto:UsoProducto={};
  afectacion:number|null=null;perdida:number|null=null;descripcion='';fechaFinPrevista='';
  ngOnChanges():void{this.closeForm();this.closeDetail();this.page.set(1);this.incidenceSearchInput='';this.incidenceSearch.set('');if(this.actividad?.actividadId)this.load();}
- reset():void{this.usoProducto={};this.form='ninguno';this.incidenciaId=null;this.eventoTratamientoId=null;this.problemaId=0;this.tratamientoId=0;
-  this.afectacion=null;this.perdida=null;this.descripcion='';this.fechaFinPrevista='';this.motivo='';this.error.set(null);}
+ reset():void{this.form='ninguno';this.incidenciaId=null;this.eventoTratamientoId=null;this.problemaId=0;this.tratamientoId=0;
+  this.afectacion=null;this.perdida=null;this.descripcion='';this.fechaFinPrevista='';this.motivo='';this.usoProducto={};this.error.set(null);}
  problemas(){const a=this.actividad;return this.catalogos.filter(x=>x.tipo===(a.rubro==='CULTIVO'?'PROBLEMA_CULTIVO':'PROBLEMA_CRIANZA')
  && x.padreId===(a.rubro==='CULTIVO'?a.cultivoId:a.especieId));}
  tratamientosDe(id:number){const problemas=this.incidencias().find(i=>i.incidenciaId===id)?.problemaId;
@@ -207,9 +205,13 @@ export class GpIncidenciasPanel implements OnChanges {
    if(fecha && (Number.isNaN(fecha.getTime())||fecha.getTime()<=Date.now())){
       this.error.set('La fecha prevista debe ser posterior a la fecha actual.');return;
    }
-   if(!this.consumoProducto?.valid()){this.error.set('Indique una cantidad utilizada válida del producto entregado.');return;}
-   action=this.gp.aplicarTratamiento(u,a.actividadId,{...this.usoProducto,incidenciaId:this.incidenciaId,tratamientoId:this.tratamientoId,
-    descripcion:obs,fechaFinPrevista:fecha?fecha.toISOString().replace('Z',''):null});
+   if(this.usoProducto.programacionProductoId && !this.consumoProducto?.valid()){
+     this.error.set('Seleccione una cantidad válida del producto entregado.');return;
+   }
+   action=this.gp.aplicarTratamiento(u,a.actividadId,{incidenciaId:this.incidenciaId,tratamientoId:this.tratamientoId,
+    descripcion:obs,fechaFinPrevista:fecha?fecha.toISOString().replace('Z',''):null,
+    programacionProductoId:this.usoProducto.programacionProductoId,
+    cantidadUtilizada:this.usoProducto.cantidadUtilizada});
   }else if(this.form==='finalizar'){
    if(!this.eventoTratamientoId)return;action=this.gp.finalizarTratamiento(u,this.eventoTratamientoId,obs);
   }else if(this.form==='cerrar'){

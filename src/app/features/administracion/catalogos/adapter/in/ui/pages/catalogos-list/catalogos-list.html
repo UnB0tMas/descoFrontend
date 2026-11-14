@@ -32,14 +32,14 @@
       </button>
 
       <button
-        *appPermission="'CATALOGOS_CREAR'"
+        *appPermission="catalogCode() === 'SANCION_VENTA' && !productivosVisible() ? 'SANCIONES_CREAR' : 'CATALOGOS_CREAR'"
         type="button"
         class="admin-primary-button"
         [disabled]="productivosVisible() ? ((productivos?.loading() ?? false) || ((productivos?.disablingKey() ?? null) !== null)) : loading()"
         (click)="create()"
       >
         <fa-icon [icon]="addIcon" />
-        {{ productivosVisible() ? (productivos?.primaryActionLabel() ?? 'Nuevo valor') : createLabel }}
+        {{ productivosVisible() ? (productivos?.primaryActionLabel() ?? 'Nuevo valor') : catalogCode()==='SANCION_VENTA' ? 'Nueva sanción' : createLabel }}
       </button>
     </div>
   </app-page-header>
@@ -97,7 +97,9 @@
       </div>
     }
 
-    @if (productivosVisible()) {
+    @if (!productivosVisible() && catalogCode()==='SANCION_VENTA') {
+      <div class="catalog-content"><app-campaign-sanctions-panel mode="catalog" /></div>
+    } @else if (productivosVisible()) {
       <div class="catalog-content"><app-catalogos-productivos [embedded]="true" [selectedType]="productiveType()" /></div>
     } @else {
     <div class="catalog-content">

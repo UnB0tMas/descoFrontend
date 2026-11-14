@@ -7,18 +7,17 @@ import { PermissionService } from '../../../../../../../core/access/permission.s
 import { UotContextStore } from '../../../../../../uot/state/uot-context.store';
 import { PageHeaderComponent } from '../../../../../../../shared/layout/page-header/page-header';
 import { ProductoresListPage } from '../../../../../../gestion-tecnica/productores/adapter/in/ui/pages/productores-list/productores-list';
-import { PrediosListPage } from '../../../../../../gestion-tecnica/predios/adapter/in/ui/pages/predios-list/predios-list';
 import { ExpedienteE1UseCase } from '../../../../../../gestion-tecnica/predios/expediente/application/expediente-e1.use-case';
 import { provideExpedienteE1 } from '../../../../../../gestion-tecnica/predios/expediente/expediente-e1.providers';
 import { ConvenioE1 } from '../../../../../../gestion-tecnica/predios/expediente/domain/expediente-e1.model';
 import { mapOpenApiError } from '../../../../../../../infrastructure/openapi/openapi-http-error.mapper';
 
-type Section = 'socios' | 'predios';
+type Section = 'socios';
 
 @Component({
   selector: 'app-apappss-workspace', standalone: true,
   imports: [FormsModule, FaIconComponent, PageHeaderComponent,
-    ProductoresListPage, PrediosListPage],
+    ProductoresListPage],
   providers: [...provideExpedienteE1()],
   templateUrl: './apappss-workspace.html', styleUrls: ['../../../../../../gestion-tecnica/gestion-productiva/gestion-productiva.css', './apappss-workspace.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -41,12 +40,10 @@ export class ApappssWorkspacePage implements OnInit {
   readonly current = computed<Section | null>(() => {
     const selected = this.section();
     if (selected === 'socios' && this.showSocios()) return 'socios';
-    if (selected === 'predios' && this.showPredios()) return 'predios';
-    return this.showSocios() ? 'socios' : this.showPredios() ? 'predios' : null;
+    return this.showSocios() ? 'socios' : null;
   });
   ngOnInit(): void {
-    const requested = this.route.snapshot.queryParamMap.get('seccion');
-    if (requested === 'predios' || requested === 'socios') this.section.set(requested);
+    
     this.convenioId = Number(this.route.snapshot.queryParamMap.get('convenioId')) || 0;
     this.cargarConvenios();
   }
@@ -64,7 +61,7 @@ export class ApappssWorkspacePage implements OnInit {
     });
   }
   select(section: Section): void {
-    if (section === 'socios' ? this.showSocios() : this.showPredios())
+    if (this.showSocios())
       this.section.set(section);
   }
   cambiarConvenio(id: number): void { this.convenioId = Number(id) || 0; }

@@ -1,0 +1,100 @@
+:host{display:block;min-width:0}
+.sale-partner-detail-page{display:grid;gap:1rem;min-width:0}
+.sale-person-summary,.sale-person-form-section,.sale-person-records,.sale-person-delivery,.sale-person-done{min-width:0;padding:1rem 1.2rem}
+.sale-person-heading,.sale-person-record-header,.sale-person-form-heading,.sale-person-delivery,.sale-person-done{display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap}
+.sale-person-heading h2{font-size:1.18rem;font-weight:750;color:var(--desco-text);margin:.2rem 0}
+.sale-person-heading p,.sale-person-code,.sale-person-done>span{color:var(--desco-text-muted);font-size:.83rem}
+.sale-person-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:1rem;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--desco-border)}
+.sale-person-metrics>div{display:grid;gap:.3rem}
+.sale-person-metrics span{color:var(--desco-text-muted);font-size:.77rem}
+.sale-person-metrics strong,.sale-person-done strong{color:var(--desco-text);font-weight:750}
+.sale-person-form-section,.sale-person-records{display:grid;gap:1rem}
+.sale-person-form-heading h2,.sale-person-record-header h2{font-weight:750;color:var(--desco-text);font-size:1rem}
+.sale-person-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;align-items:start}
+.sale-person-form .admin-field,.sale-person-filters .admin-field{min-width:0;display:grid;gap:.4rem}
+.sale-person-form .admin-field :is(.admin-input,.admin-select,.admin-textarea),.sale-person-filters .admin-field :is(.admin-input,.admin-select){min-width:0;width:100%;box-sizing:border-box}
+.sale-observation,.sale-reason,.sale-person-form-actions{grid-column:1/-1}
+.sale-person-form-actions{display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;border-top:1px solid var(--desco-border);padding-top:1rem}
+.sale-person-form-actions span{color:var(--desco-text-muted)}
+.sale-person-form-actions strong{color:var(--desco-text)}
+.sale-person-filters{display:flex;gap:1rem;flex-wrap:wrap;align-items:end}
+.sale-person-filters>.admin-field{flex:1 1 200px;max-width:400px}
+.sale-person-table-wrap{min-width:0;overflow-x:auto;border:1px solid var(--desco-border);border-radius:.75rem}
+.sale-person-table-wrap .admin-table{min-width:870px;width:100%}
+.sale-person-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,225px),1fr))}
+.sale-person-record-card{display:grid;gap:.6rem;min-width:0}
+.sale-person-record-card h3{color:var(--desco-text);font-weight:700}
+.sale-person-record-card :is(span,small,p){color:var(--desco-text-muted);overflow-wrap:anywhere}
+.sale-person-note{color:var(--desco-text-muted);font-size:.86rem}
+@media(max-width:650px){.sale-person-summary,.sale-person-form-section,.sale-person-records,.sale-person-delivery,.sale-person-done{padding:.85rem}.sale-person-form{grid-template-columns:minmax(0,1fr)}}
+
+.sale-person-done>div{display:grid;gap:.25rem}
+.sale-person-done>div>span{color:var(--desco-text-muted);font-size:.83rem}
+.sale-person-form-section{scroll-margin-top:1rem}
+
+/* Mismo lenguaje visual del formulario administrativo compartido. */
+.sale-partner-detail-page { font-family:inherit; font-size:.875rem; line-height:1.5; }
+.sale-partner-detail-page :is(input,select,textarea,button) { font-family:inherit; }
+.sale-person-summary,.sale-person-form-section,.sale-person-records,.sale-person-done { padding:1.15rem 1.25rem; }
+.sale-person-form { grid-template-columns:repeat(3,minmax(0,1fr)); column-gap:.9rem; row-gap:1.15rem; }
+.sale-person-form label.admin-field { font-size:.875rem; font-weight:600; line-height:1.4; }
+.sale-person-form label.admin-field>span { display:block; margin:0 0 .45rem; font-size:.8rem; font-weight:650; color:var(--desco-text); }
+.sale-person-form .admin-input,.sale-person-form .admin-select { height:2.85rem; font-size:.875rem; }
+.sale-person-form .admin-textarea { font-size:.875rem; min-height:5.35rem; }
+.sale-person-form-heading h2,.sale-person-record-header h2 { margin:0; font-size:1.02rem; font-weight:750; line-height:1.4; }
+.sale-person-heading h2 { font-size:1.12rem; line-height:1.4; }
+.sale-person-metrics span { font-size:.78rem; }
+.sale-person-weight-summary { display:flex; flex-wrap:wrap; align-items:center; gap:.45rem 1.1rem; }
+.sale-person-weight-summary span { font-size:.83rem; }
+.sale-person-weight-summary strong { font-weight:750; }
+.sale-person-missing-grades { grid-column:1/-1; color:var(--desco-text-muted); font-size:.83rem; margin:0; }
+.sale-person-form-actions { margin-top:.15rem; }
+@media(max-width:980px) { .sale-person-form { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media(max-width:650px) {
+ .sale-person-summary,.sale-person-form-section,.sale-person-records,.sale-person-done{padding:.95rem}
+ .sale-person-form { grid-template-columns:minmax(0,1fr); }
+ .sale-person-weight-summary { gap:.35rem .75rem; }
+}
+/* Modo integrado: los paneles mantienen el ritmo visual de Gestión técnica. */
+:host { width:100%; }
+.sale-partner-detail-page { padding:0; }
+.sale-person-summary,.sale-person-form-section,.sale-person-records,.sale-person-done {
+  border:1px solid var(--desco-border); border-radius:.875rem; box-shadow:none;
+}
+.sale-person-filters { margin-bottom:.35rem; }
+.sale-person-filters>.admin-field { gap:.45rem; }
+.sale-person-table-wrap { margin-top:.15rem; }
+.sale-person-table-wrap .admin-table :is(th,td) { padding:.85rem 1rem; }
+.sale-person-record-card { height:100%; }
+.sale-person-record-header { margin-bottom:.3rem; }
+
+/* Pesajes: preservar scroll horizontal y acciones compactas en tabla/tarjetas. */
+.sale-person-table-wrap .admin-table { min-width:960px; table-layout:auto; }
+.sale-person-table-wrap .admin-table :is(th,td) { white-space:nowrap; overflow-wrap:normal; }
+.sale-person-table-wrap .admin-table td:nth-child(7) { max-width:260px; overflow:hidden; text-overflow:ellipsis; }
+.sale-person-table-wrap .admin-icon-button,.sale-person-record-card .admin-icon-button {
+  display:inline-grid; place-items:center; width:2.35rem; min-width:2.35rem; height:2.35rem; min-height:2.35rem; padding:0;
+}
+.sale-person-record-card .admin-icon-button { justify-self:end; }
+@media(max-width:460px) {
+ .sale-person-table-wrap { max-width:100%; }
+ .sale-person-form-actions { align-items:stretch; }
+ .sale-person-form-actions>button { width:100%; }
+}
+
+/* Campos de solo lectura con el mismo lenguaje neutro de los inputs. */
+.sale-fixed-choice { min-height:2.85rem; display:flex; align-items:center; min-width:0; padding:.6rem .85rem;
+  border:1px solid var(--desco-border); border-radius:.6rem; background:var(--desco-surface);
+  color:var(--desco-text); font-size:.875rem; overflow-wrap:anywhere; }
+.sale-fixed-choice strong { font-weight:650; }
+.sale-fixed-choice--grade { gap:.2rem .75rem; justify-content:space-between; flex-wrap:wrap; }
+.sale-fixed-choice--grade small { color:var(--desco-text-muted); font-size:.78rem; font-weight:600; white-space:nowrap; }
+.sale-person-form-heading h2,.sale-person-weight-summary strong { color:var(--desco-text); }
+.sale-person-weight-summary span:last-child strong { color:var(--desco-primary,#60a5fa); }
+@media(max-width:650px){.sale-fixed-choice{min-height:2.7rem}}
+.sale-person-form .admin-field>span { display:block; margin:0 0 .45rem; font-size:.8rem; font-weight:650; color:var(--desco-text); }
+
+/* Los importes se leen sin comprimir columnas; scroll horizontal conservado. */
+.sale-person-table-wrap .admin-table{min-width:1390px}
+.sale-person-table-wrap .admin-table td:nth-child(7){max-width:none;overflow:visible;text-overflow:clip}
+.sale-person-record-card strong{color:var(--desco-text);font-weight:700}

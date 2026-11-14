@@ -1,6 +1,6 @@
 <div class="desco-page apappss-page gp-page">
   <app-page-header title="Convenio APAPPSS" eyebrow="Convenios · Gestión productiva"
-    subtitle="Socios, predios y expedientes individuales de plantas de palta." [icon]="icon">
+    subtitle="Socios y predios con seguimiento individual de plantas de palta." [icon]="icon">
     <div pageActions class="flex flex-wrap gap-2">
       <button type="button" class="admin-secondary-button" [disabled]="loading()" (click)="cargarConvenios()">Actualizar convenios</button>
     </div>
@@ -21,11 +21,9 @@
     @if (convenioId > 0) {
       <nav class="apappss-tabs gp-sections" aria-label="Secciones APAPPSS">
         @if (showSocios()) { <button type="button" [class.selected]="current()==='socios'" [attr.aria-current]="current()==='socios' ? 'page' : null" (click)="select('socios')"><fa-icon [icon]="sociosIcon" /> Socios</button> }
-        @if (showPredios()) { <button type="button" [class.selected]="current()==='predios'" [attr.aria-current]="current()==='predios' ? 'page' : null" (click)="select('predios')"><fa-icon [icon]="prediosIcon" /> Predios</button> }
       </nav>
       @switch (current()) {
         @case ('socios') { <app-productores-list-page [apappss]="true" [convenioId]="convenioId" /> }
-        @case ('predios') { <app-predios-list-page [apappss]="true" [convenioId]="convenioId" /> }
       }
     } @else if (!loading()) { <div class="admin-surface apappss-empty">No hay un convenio activo seleccionado para la UOT.</div> }
   } @else { <section class="admin-surface apappss-empty">No tiene permisos de consulta APAPPSS.</section> }

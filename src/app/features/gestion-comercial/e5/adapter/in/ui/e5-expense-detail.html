@@ -1,0 +1,21 @@
+<dialog #dialog class="modal e5-expense-detail-dialog" (cancel)="$event.preventDefault();close()">
+ <div class="modal-box e5-expense-detail-box">
+  <header class="admin-modal-header"><div class="admin-modal-heading">
+   <span class="admin-modal-icon"><fa-icon [icon]="viewIcon" /></span><div><h3>Detalle del gasto</h3></div>
+  </div><button class="admin-icon-button" type="button" aria-label="Cerrar" (click)="close()"><fa-icon [icon]="closeIcon" /></button></header>
+  <div class="e5-expense-detail-content">
+   @if(loading()){<p class="e5-detail-loading">Cargando...</p>}
+   @else if(error()){<p class="admin-inline-error">{{error()}}</p>}
+   @else if(info();as d){
+    <dl class="e5-expense-facts">
+     <div><dt>Concepto</dt><dd>{{d.gasto.concepto}}</dd></div>
+     <div><dt>Importe</dt><dd>{{d.gasto.importe | currency:d.gasto.moneda}}</dd></div>
+     <div><dt>Estado</dt><dd>{{d.gasto.estadoProceso}}</dd></div>
+     <div><dt>Fecha</dt><dd>{{d.gasto.fecha | date:'dd/MM/yyyy'}}</dd></div>
+    </dl>
+    @if(context();as c){<app-evidence-panel [context]="c" title="Comprobantes" [readOnly]="true" />}
+   }
+  </div>
+  <footer class="admin-modal-actions"><button type="button" class="admin-secondary-button" (click)="close()">Cerrar</button></footer>
+ </div>
+</dialog>

@@ -1,13 +1,12 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
-import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, OnInit, ViewChild, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { finalize } from 'rxjs';
+import { finalize, map } from 'rxjs';
 import { faMapLocationDot } from '@fortawesome/free-solid-svg-icons';
 import { PageHeaderComponent } from '../../../../../shared/layout/page-header/page-header';
 import { ToastService } from '../../../../../shared/feedback/toast-center/toast.service';
 import { GeographyCascadeComponent, GeographySelection } from '../../../../../shared/forms/geography-cascade/geography-cascade';
-import { PersonDataFieldsComponent } from '../../../../../shared/forms/person-registration/person-data-fields';
-import { dniValidator, notBlankValidator, personNameValidator, notFutureDateValidator, phoneValidator, maxBirthDateIso, minBirthDateIso, sanitizeDocument, sanitizePersonName, sanitizePhone, normalizeText } from '../../../../../shared/forms/validators/desco-input.validators';
+import { EntityRegistrationModalComponent, EntityDraft, EntityLookupData } from '../../../../../shared/forms/person-registration/entity-registration-modal';
 import { UotContextStore } from '../../../../uot/state/uot-context.store';
 import { mapOpenApiError } from '../../../../../infrastructure/openapi/openapi-http-error.mapper';
 import { registroPredioError } from '../../../../../shared/feedback/expediente-error/registro-predio-error';
@@ -17,13 +16,13 @@ import { PersonaE1, PredioE1 } from '../domain/expediente-e1.model';
 
 @Component({
   selector: 'app-predio-alta-rapida', standalone: true,
-  imports: [FormsModule, ReactiveFormsModule, RouterLink, PageHeaderComponent, GeographyCascadeComponent, PredioMapComponent, PersonDataFieldsComponent],
+  imports: [FormsModule, RouterLink, PageHeaderComponent, GeographyCascadeComponent, PredioMapComponent, EntityRegistrationModalComponent],
   templateUrl: './alta-rapida.html', styleUrl: './expediente-e1.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PredioAltaRapidaPage implements OnInit {
+  @ViewChild(EntityRegistrationModalComponent) private entityModal!: EntityRegistrationModalComponent;
   private readonly caso = inject(ExpedienteE1UseCase);
-  private readonly fb = inject(FormBuilder);
   private readonly uot = inject(UotContextStore);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
@@ -50,21 +49,6 @@ export class PredioAltaRapidaPage implements OnInit {
     {value: 'DNI',label: 'DNI'}, {value: 'CE',label: 'Carné de extranjería'},
     {value: 'PASAPORTE',label: 'Pasaporte'},
   ];
-  readonly minBirthDate = minBirthDateIso();
-  readonly maxBirthDate = maxBirthDateIso();
-  readonly personDistrict = signal('');
-  readonly personCenter = signal<number | null>(null);
-  readonly personForm = this.fb.nonNullable.group({
-    tipoDocumento: ['DNI',Validators.required],
-    numeroDocumento: ['', [Validators.required,dniValidator]],
-    nombres: ['', [Validators.required,notBlankValidator,personNameValidator]],
-    apellidoPaterno: ['', [Validators.required,notBlankValidator,personNameValidator]],
-    apellidoMaterno: ['', personNameValidator],
-    fechaNacimiento: ['', notFutureDateValidator],
-    telefono: ['', phoneValidator], correo: ['', Validators.email],
-    distritoCodigo: ['', [Validators.required,Validators.pattern(/^\d{6}$/)]],
-    centroPobladoId: [0], referencia: [''],
-  });
 
   ngOnInit(): void {
     if (!this.uot.selectedId()) {
@@ -112,53 +96,41 @@ export class PredioAltaRapidaPage implements OnInit {
       error: e => this.error.set(mapOpenApiError(e).message),
     });
   }
-  onPersonDocumentChange(): void {
-    const type = this.personForm.controls.tipoDocumento.value;
-    const control = this.personForm.controls.numeroDocumento;
-    control.setValue(sanitizeDocument(type,control.value),{emitEvent:false});
-    control.setValidators(type === 'DNI' ? [Validators.required,dniValidator] :
-      [Validators.required,Validators.pattern(type === 'CE' ? /^[A-Z0-9]{9,12}$/ : /^[A-Z0-9]{6,20}$/)]);
-    control.updateValueAndValidity();
-  }
-  onPersonNumberChange(): void {
-    const control = this.personForm.controls.numeroDocumento;
-    control.setValue(sanitizeDocument(this.personForm.controls.tipoDocumento.value,control.value),{emitEvent:false});
-  }
-  onPersonNameChange(field: 'nombres'|'apellidoPaterno'|'apellidoMaterno'): void {
-    const control = this.personForm.controls[field];
-    control.setValue(sanitizePersonName(control.value),{emitEvent:false});
-  }
-  onPersonPhoneChange(): void {
-    const control=this.personForm.controls.telefono;
-    control.setValue(sanitizePhone(control.value),{emitEvent:false});
-  }
-  onPersonDistrictChange(v: GeographySelection): void {
-    this.personForm.patchValue({distritoCodigo:v.districtCode,centroPobladoId:v.populationCenterId??0});
-  }
-  personDocumentLength(): number {
-    return this.personForm.controls.tipoDocumento.value === 'DNI' ? 8 :
-      this.personForm.controls.tipoDocumento.value === 'CE' ? 12 : 20;
-  }
-  registrarPersona(): void {
-    const id = this.uot.selectedId();
-    this.personForm.markAllAsTouched();
-    if (!id || this.guardando() || this.personForm.invalid) return;
-    const p=this.personForm.getRawValue();
-    this.guardando.set(true);
-    this.error.set(null);
-    this.caso.crearPersona(id, {
-      tipoDocumento:p.tipoDocumento, numeroDocumento:sanitizeDocument(p.tipoDocumento,p.numeroDocumento),
-      nombres:normalizeText(p.nombres), apellidoPaterno:normalizeText(p.apellidoPaterno),
-      apellidoMaterno:normalizeText(p.apellidoMaterno)||undefined,
-      fechaNacimiento:p.fechaNacimiento||undefined,telefono:sanitizePhone(p.telefono)||undefined,
-      correo:p.correo.trim()||undefined,distritoCodigo:p.distritoCodigo,
-      centroPobladoId:p.centroPobladoId>0?p.centroPobladoId:undefined,
-      referencia:normalizeText(p.referencia)||undefined,
-    }).pipe(finalize(() => this.guardando.set(false)))
-      .subscribe({ next: personaId => this.seleccionar({ personaId, tipoDocumento:p.tipoDocumento,
-        numeroDocumento:p.numeroDocumento,nombreCompleto:`${p.nombres} ${p.apellidoPaterno}` }),
-        error: e => this.error.set(mapOpenApiError(e).message),
-      });
+  /** La persona se crea/recupera con el modal único; el fundo sigue su proceso independiente. */
+  async registrarPersona():Promise<void> {
+    const uot=this.uot.selectedId();
+    if (!uot || this.guardando()) return;
+    const lookup={person:null as PersonaE1|null};
+    const result=await this.entityModal.open({
+      eyebrow:'Gestión técnica', title:'Registrar persona',saveLabel:'Guardar persona',
+      documents:this.documentTypes,
+      startDocument:/^\d{8}$/.test(this.busqueda.trim())
+        ? {type:'DNI',number:this.busqueda.trim()} : undefined,
+      requireDistrictForManual:true,
+      lookupLocal:(type,document)=>this.caso.buscarPersonas(uot,document).pipe(map(people=>{
+        lookup.person=people.find(p=>p.tipoDocumento===type && p.numeroDocumento===document)??null;
+        const person=lookup.person;
+        return person ? ({roleId:person.personaId,entityId:person.personaId,
+          data:{tipoDocumento:person.tipoDocumento,numeroDocumento:person.numeroDocumento}
+        } satisfies EntityLookupData) : null;
+      })),
+      save:(data:EntityDraft)=>this.caso.crearPersona(uot,{
+        tipoDocumento:data.tipoDocumento, numeroDocumento:data.numeroDocumento,
+        nombres:data.nombres,apellidoPaterno:data.apellidoPaterno,
+        apellidoMaterno:data.apellidoMaterno||undefined,
+        fechaNacimiento:data.fechaNacimiento||undefined,
+        telefono:data.telefono||undefined,correo:data.correo||undefined,
+        distritoCodigo:data.distritoCodigo,
+        centroPobladoId:data.centroPobladoId||undefined,
+        referencia:data.referencia||undefined,
+      }),
+    });
+    if (!result?.data || result.id<=0) return;
+    const p=result.data;
+    this.seleccionar({personaId:result.id,tipoDocumento:p.tipoDocumento,
+      numeroDocumento:p.numeroDocumento,
+      nombreCompleto:lookup.person?.personaId===result.id?lookup.person.nombreCompleto:
+        [p.nombres,p.apellidoPaterno,p.apellidoMaterno].filter(Boolean).join(' ').trim()});
   }
   ubicacion(v: GeographySelection): void { this.distrito = v.districtCode; }
   punto(v: {latitude:number;longitude:number}): void { this.latitud=v.latitude; this.longitud=v.longitude; }

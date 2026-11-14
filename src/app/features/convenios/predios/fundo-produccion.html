@@ -1,0 +1,69 @@
+<section class="admin-surface fundo-produccion" aria-label="Producción del fundo">
+ <header class="fundo-produccion-head">
+  <div><h2>Producción anual</h2><p>Resumen del fundo seleccionado</p></div>
+  <div class="fundo-produccion-toolbar">
+   <label class="admin-field">Año
+    <input class="admin-input" type="number" min="2000" max="2200" [ngModel]="anioSeleccionado" (ngModelChange)="anioSeleccionado=+$event" [disabled]="loading()||saving()"/>
+   </label>
+   <button class="admin-secondary-button" type="button" (click)="consultarAnio()" [disabled]="loading()||saving()">Consultar</button>
+   <button class="admin-icon-button" type="button" title="Actualizar" aria-label="Actualizar producción" (click)="cargar()" [disabled]="loading()||saving()">↻</button>
+  </div>
+ </header>
+ @if(loading()){<p class="fundo-produccion-feedback" role="status">Cargando producción…</p>}
+ @if(error()){<p role="alert" class="gp-inline-error">{{error()}}</p>}
+ @if(message()){<p role="status" class="fundo-produccion-feedback">{{message()}}</p>}
+ @if(data();as d){
+  <div class="fundo-produccion-kpis">
+   <article class="admin-detail-card"><span>Plantas activas</span><strong>{{d.plantasActivas}}</strong></article>
+   <article class="admin-detail-card"><span>Estimado en plantas</span><strong>{{d.estimadoPlantasKg|number:'1.0-2'}} kg</strong></article>
+   <article class="admin-detail-card"><span>Promedio anual cosechado</span><strong>{{d.promedioCosechaHistoricaKg|number:'1.0-2'}} kg</strong></article>
+   <article class="admin-detail-card"><span>Producción prevista</span><strong>{{d.sugeridoKg|number:'1.0-2'}} kg</strong></article>
+  </div>
+  <section class="fundo-produccion-declarada">
+   <div><h3>Producción disponible</h3>
+    <p class="fundo-produccion-estado"><span class="fundo-produccion-status" [class.fundo-produccion-status--ok]="d.estado==='DISPONIBLE'" [class.fundo-produccion-status--medio]="d.estado==='PARCIAL'">{{d.estado==='DISPONIBLE'?'Disponible':d.estado==='PARCIAL'?'Parcial':d.estado==='NO_DISPONIBLE'?'No disponible':'Sin definir'}}</span>
+     @if(d.cantidadKg!==null){<strong class="fundo-produccion-cantidad">{{d.cantidadKg|number:'1.0-2'}} kg</strong>}</p>
+   </div>
+   @if(editable){<button type="button" class="admin-primary-button" [disabled]="loading()||saving()" (click)="abrirDisponibilidad()">{{d.estado?'Editar producción disponible':'Definir producción disponible'}}</button>}
+  </section>
+  <section class="fundo-produccion-history">
+   <h3>Historial anual</h3>
+   <div class="admin-table-wrap fundo-produccion-scroll" tabindex="0" aria-label="Historial anual con desplazamiento horizontal">
+    <table class="admin-table fundo-produccion-table"><thead><tr>
+     <th scope="col">Año</th><th scope="col">Estimado en plantas</th><th scope="col">Cosecha registrada</th><th scope="col">Entregas del fundo</th>
+    </tr></thead><tbody>
+     @for(r of d.historial;track r.anio){<tr>
+      <td><strong class="admin-table-primary fundo-produccion-anio">{{r.anio}}</strong></td><td>{{r.estimadoPlantasKg|number:'1.0-2'}} kg</td>
+      <td>{{r.cosechaPlantasKg|number:'1.0-2'}} kg</td><td>{{r.entregasKg|number:'1.0-2'}} kg</td>
+     </tr>}@empty{<tr><td class="admin-table-empty" colspan="4">Sin registros de producción.</td></tr>}
+    </tbody></table>
+   </div>
+  </section>
+ }
+</section>
+<dialog #disponibilidadDialog class="modal desco-modal fundo-produccion-dialog" (cancel)="$event.preventDefault();cerrarDisponibilidad()">
+ <section class="modal-box admin-modal-box fundo-produccion-modal">
+  <header class="admin-modal-header"><div class="admin-modal-title-group"><div><p>PRODUCCIÓN</p><h2>Disponibilidad {{anio}}</h2></div></div>
+   <button type="button" class="admin-icon-button" aria-label="Cerrar" [disabled]="saving()" (click)="cerrarDisponibilidad()">✕</button>
+  </header>
+  <div class="desco-fixed-form-body fundo-produccion-form">
+   <div class="fundo-produccion-grid">
+    <label class="admin-field">Estado<select class="admin-select" [ngModel]="estado" (ngModelChange)="cambiarEstado($event)" [disabled]="saving()">
+      <option value="NO_DISPONIBLE">No disponible</option><option value="PARCIAL">Parcial</option><option value="DISPONIBLE">Disponible</option>
+     </select></label>
+    <label class="admin-field">Kilogramos<input class="admin-input" type="number" min="0" step="0.001" [(ngModel)]="cantidadKg" [disabled]="saving()"/></label>
+   </div>
+   <button class="admin-secondary-button fundo-produccion-suggestion" type="button" (click)="utilizarSugerencia()" [disabled]="saving()||!data()?.sugeridoKg">Usar producción prevista ({{data()?.sugeridoKg|number:'1.0-2'}} kg)</button>
+   <div class="fundo-produccion-grid">
+    <label class="admin-field">Desde<input class="admin-input" type="date" [(ngModel)]="fechaDesde" [disabled]="saving()"/></label>
+    <label class="admin-field">Hasta<input class="admin-input" type="date" [(ngModel)]="fechaHasta" [disabled]="saving()"/></label>
+   </div>
+   <label class="admin-field">Observación (opcional)<textarea class="admin-textarea" rows="3" maxlength="400" [(ngModel)]="observacion" [disabled]="saving()"></textarea></label>
+   @if(error()){<p class="gp-inline-error" role="alert">{{error()}}</p>}
+  </div>
+  <footer class="gp-modal-footer desco-fixed-form-footer fundo-produccion-footer">
+   <button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="cerrarDisponibilidad()">Cancelar</button>
+   <button type="button" class="admin-primary-button" [disabled]="saving()||loading()" (click)="guardar()">{{saving()?'Guardando…':'Guardar'}}</button>
+  </footer>
+ </section>
+</dialog>

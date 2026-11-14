@@ -1,0 +1,66 @@
+:host{display:block}
+:host dialog.e3-case-dialog[open]{position:fixed;inset:0;display:grid;place-items:center;width:100vw;height:100dvh;max-width:none;max-height:none;margin:0;padding:1rem;border:0;background:transparent;box-sizing:border-box;overflow:auto;z-index:30}
+:host dialog::backdrop{background:rgba(2,6,23,.76);backdrop-filter:blur(3px)}
+.e3-case-box{display:flex;flex-direction:column;box-sizing:border-box;width:min(880px,calc(100vw - 1.5rem))!important;max-width:880px!important;max-height:90dvh;min-height:0;margin:auto;padding:0!important;overflow:hidden;background:var(--desco-surface);color:var(--desco-text);border:1px solid var(--desco-border);border-radius:1rem}
+.e3-case-head{display:flex;justify-content:space-between;align-items:center;gap:.8rem;padding:1rem 1.25rem;border-bottom:1px solid var(--desco-border)}
+.e3-kicker{font-size:.72rem;color:var(--desco-text-muted);margin:0}.e3-case-head h2{font-size:1.12rem;font-weight:750;margin:.3rem 0}
+.e3-case-body{overflow:auto;min-height:0;flex:1;padding:1.2rem;display:grid;gap:1rem}.e3-case-tabs{display:flex;flex-wrap:wrap;gap:.4rem;border-bottom:1px solid var(--desco-border);padding-bottom:.6rem}
+.e3-case-tabs button,.e3-case-toggle button{background:transparent;border:1px solid var(--desco-border);color:var(--desco-text-muted);border-radius:.55rem;padding:.5rem .75rem;min-height:38px}.e3-case-tabs button.active,.e3-case-toggle button.active{background:var(--desco-surface-soft);border-color:var(--desco-primary);color:var(--desco-primary)}
+.e3-case-facts{margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.7rem}.e3-case-facts>div,.e3-case-form{padding:1rem;border-radius:.7rem;border:1px solid var(--desco-border);background:var(--desco-surface-soft)}.e3-case-facts dt{font-size:.75rem;color:var(--desco-text-muted)}.e3-case-facts dd{font-weight:650;margin:.25rem 0 0;overflow-wrap:anywhere}
+.e3-case-actions{display:flex;justify-content:flex-end;align-items:center;gap:.5rem;flex-wrap:wrap}.e3-case-actions h3{margin-right:auto;font-size:1rem}.e3-case-danger{color:var(--desco-danger)}.e3-case-form{display:grid;gap:.85rem}.e3-case-form h3{font-weight:700}.e3-case-form .admin-field{display:grid;gap:.35rem}.e3-case-inputs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.8rem}.e3-case-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:.8rem}
+.e3-case-error{color:var(--desco-danger,#ef4444);font-weight:600}.e3-case-foot{flex:none;padding:1rem 1.25rem;border-top:1px solid var(--desco-border)}
+@media(max-width:640px){.e3-case-facts,.e3-case-inputs{grid-template-columns:1fr}.e3-case-box{max-height:96dvh}.e3-case-head,.e3-case-body,.e3-case-foot{padding:.8rem}}
+
+/* Ficha de enfermedad: alineación con los modales y tablas de DESCO. */
+.e3-case-tabs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin;gap:.3rem;padding:.2rem 0 .7rem}
+.e3-case-tabs button{flex:none;white-space:nowrap;background:transparent;border:0;border-radius:.55rem;font-size:.78rem;font-weight:650;color:var(--desco-text-muted)}
+.e3-case-tabs button.active{border-color:transparent;background:var(--desco-surface-soft);color:var(--desco-primary)}
+.e3-case-head{flex:none}
+.e3-case-head h2{overflow-wrap:anywhere}
+.e3-case-body{gap:1.05rem;min-width:0}
+.e3-case-cards app-record-card{min-width:0;display:block}
+.e3-case-cards app-record-card strong{font-size:.85rem;line-height:1.4;overflow-wrap:anywhere}
+.e3-case-cards app-record-card small{font-size:.73rem;color:var(--desco-text-muted)}
+.e3-case-cards app-record-card p{font-size:.8rem;line-height:1.5;margin:0;overflow-wrap:anywhere}
+.e3-case-facts>div{background:var(--desco-surface-soft);border-color:var(--desco-border)}
+.e3-case-body .admin-table-wrap{min-width:0;overflow-x:auto;border-radius:.75rem}
+.e3-case-body .admin-table{min-width:550px}
+.e3-case-body .admin-table td{font-size:.78rem}
+.e3-case-actions app-list-view-switch{margin-left:auto}
+
+/* Detalle fitosanitario: mismas densidades y tablas adaptables del expediente. */
+:host .e3-case-tabs{margin:0;gap:.3rem;scroll-snap-type:x proximity}
+:host .e3-case-tabs button{scroll-snap-align:start;min-height:36px;padding:.5rem .7rem}
+:host .e3-case-facts{gap:.65rem}
+:host .e3-case-facts>div{padding:.78rem .9rem}
+:host .e3-case-facts dt{font-size:.7rem}
+:host .e3-case-facts dd{font-size:.83rem}
+:host .e3-case-body .admin-table{width:100%!important;min-width:0!important}
+:host .e3-case-body .admin-table :is(th,td){white-space:normal;font-size:.76rem;padding:.7rem .6rem;overflow-wrap:anywhere}
+:host .e3-case-form h3{font-size:.86rem;margin:0}
+@media(max-width:880px){
+ :host .e3-case-body .admin-table-wrap{overflow:visible}
+ :host .e3-case-body .admin-table,:host .e3-case-body .admin-table tbody{display:block;width:100%!important;min-width:0!important}
+ :host .e3-case-body .admin-table thead{display:none}
+ :host .e3-case-body .admin-table tr{display:grid;padding:.3rem .8rem;margin-bottom:.6rem;border:1px solid var(--desco-border);border-radius:.7rem;background:var(--desco-surface-soft)}
+ :host .e3-case-body .admin-table td{display:flex;justify-content:space-between;gap:.75rem;border:0!important;text-align:right!important;padding:.45rem 0!important}
+ :host .e3-case-body .admin-table td+td{border-top:1px solid var(--desco-border)!important}
+ :host .e3-case-body .admin-table td::before{content:attr(data-label);flex:0 0 38%;font-size:.71rem;font-weight:650;text-align:left;color:var(--desco-text-muted)}
+}
+
+.e3-case-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.6rem}
+.e3-case-kpis .admin-detail-card{min-width:0}
+.e3-case-kpis .admin-detail-card strong{font-size:1.06rem;overflow-wrap:anywhere}
+@media(max-width:600px){.e3-case-kpis{grid-template-columns:1fr}}
+
+/* Detalle de enfermedad: ficha breve; los tratamientos se consultan en su apartado. */
+:host .e3-case-box{width:min(680px,calc(100vw - 1.5rem))!important;max-width:680px!important}
+:host .e3-case-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
+:host .e3-case-kpis .admin-detail-card{padding:.75rem;min-height:70px}
+:host .e3-case-kpis .admin-detail-card strong{font-size:.92rem}
+:host .e3-case-body{padding:1rem;gap:.8rem}
+:host .e3-case-facts{gap:.5rem}
+:host .e3-case-facts>div{padding:.65rem .8rem}
+:host .e3-case-actions{gap:.65rem}
+:host .e3-case-foot{display:flex;justify-content:flex-end}
+@media(max-width:580px){:host .e3-case-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}:host .e3-case-kpis .admin-detail-card{min-width:0;padding:.65rem .4rem}:host .e3-case-kpis .admin-detail-card strong{font-size:.82rem}}

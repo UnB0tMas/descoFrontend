@@ -1,7 +1,9 @@
 import { Injectable, inject } from '@angular/core';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
 import { IdempotencyKeyService } from '../../../../../../core/http/services/idempotency-key.service';
-import { FinanzasAPAPPSSE5Service, E5PagoRequest,E5CierreRequest } from '../../../../../../infrastructure/openapi/generated';
+import { FinanzasAPAPPSSE5Service, E5PagoRequest,E5CierreRequest,E5RepartoResponse,BASE_PATH } from '../../../../../../infrastructure/openapi/generated';
+import { ApiEnvelope,unwrapApiResponse } from '../../../../../../infrastructure/openapi/api-response-unwrapper';
 import { E5Gateway } from '../../../application/port/e5.gateway';
 
 function required<T>(data: T | null | undefined): T {
@@ -11,6 +13,8 @@ function required<T>(data: T | null | undefined): T {
 @Injectable()
 export class E5HttpAdapter implements E5Gateway {
  private readonly api=inject(FinanzasAPAPPSSE5Service);
+ private readonly http=inject(HttpClient);
+ private readonly base=inject(BASE_PATH);
  private readonly keys=inject(IdempotencyKeyService);
  private readonly opts={transferCache:false};
  private write<T>(scope:string,request:unknown,send:(key:string)=>Observable<T>):Observable<T> {
@@ -19,9 +23,20 @@ export class E5HttpAdapter implements E5Gateway {
  tablero(campaniaId:number){return this.api.apappssE5Tablero({campaniaId},'body',false,this.opts).pipe(map(x=>required(x.datos)))}
  gastos(campaniaId:number){return this.api.apappssE5Gastos({campaniaId},'body',false,this.opts).pipe(map(x=>required(x.datos)))}
  repartos(gastoId:number){return this.api.apappssE5Repartos({gastoId},'body',false,this.opts).pipe(map(x=>required(x.datos)))}
- repartir(gastoId:number){return this.write(`REPARTIR:${gastoId}`,{},key=>this.api.apappssE5Repartir({gastoId,xIdempotencyKey:key},'body',false,this.opts).pipe(map(x=>required(x.datos))))}
+ repartir(gastoId:number,cuotas?:readonly {participacionId:number;monto:number}[]){
+  if (!cuotas?.length) return this.write(`REPARTIR:${gastoId}`,{},key=>this.api.apappssE5Repartir({gastoId,xIdempotencyKey:key},'body',false,this.opts).pipe(map(x=>required(x.datos))));
+  const request={cuotas};
+  return this.write(`REPARTIR:${gastoId}`,request,key=>this.http.post<ApiEnvelope<E5RepartoResponse>>(
+    `${this.base}/api/v1/apappss/finanzas-e5/gastos/${gastoId}/repartir`,request,
+    {headers:new HttpHeaders({'X-Idempotency-Key':key})}).pipe(map(unwrapApiResponse)));
+ }
  aprobarReparto(gastoId:number){return this.write(`APROBAR_REPARTO:${gastoId}`,{},key=>this.api.apappssE5AprobarReparto({gastoId,xIdempotencyKey:key},'body',false,this.opts).pipe(map(x=>required(x.datos))))}
- rectificarReparto(gastoId:number,motivo:string){const e5ObservacionRequest={motivo};return this.write(`RECTIFICAR_REPARTO:${gastoId}`,e5ObservacionRequest,key=>this.api.apappssE5RectificarReparto({gastoId,xIdempotencyKey:key,e5ObservacionRequest},'body',false,this.opts).pipe(map(x=>required(x.datos))))}
+ rectificarReparto(gastoId:number,motivo:string,cuotas?:readonly {participacionId:number;monto:number}[]){
+  const request=cuotas?.length ? {motivo,cuotas} : {motivo};
+  return this.write(`RECTIFICAR_REPARTO:${gastoId}`,request,key=>this.http.post<ApiEnvelope<E5RepartoResponse>>(
+    `${this.base}/api/v1/apappss/finanzas-e5/gastos/${gastoId}/repartos/rectificar`,request,
+    {headers:new HttpHeaders({'X-Idempotency-Key':key})}).pipe(map(unwrapApiResponse)));
+ }
  liquidaciones(campaniaId:number){return this.api.apappssE5Liquidaciones({campaniaId},'body',false,this.opts).pipe(map(x=>required(x.datos)))}
  liquidar(participacionId:number,motivoRectificacion?:string){const e5RectificacionRequest=motivoRectificacion?{motivoRectificacion}:undefined;return this.write(`LIQUIDAR:${participacionId}`,e5RectificacionRequest,key=>this.api.apappssE5Liquidar({participacionId,xIdempotencyKey:key,e5RectificacionRequest},'body',false,this.opts).pipe(map(x=>required(x.datos))))}
  liquidacion(liquidacionId:number){return this.api.apappssE5Liquidacion({liquidacionId},'body',false,this.opts).pipe(map(x=>required(x.datos)))}

@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, ElementRef, ViewChild, inject, signal, } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators, } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
 import { faEye, faEyeSlash, faFloppyDisk, faPen, faUserPlus, faXmark, } from '@fortawesome/free-solid-svg-icons';
 import { finalize, Observable } from 'rxjs';
@@ -20,7 +21,7 @@ interface UserFormOptions {
 @Component({
     selector: 'app-usuario-form',
     standalone: true,
-    imports: [ReactiveFormsModule, FaIconComponent, FormErrorComponent],
+    imports: [ReactiveFormsModule, RouterLink, FaIconComponent, FormErrorComponent],
     templateUrl: './usuario-form.html',
     styleUrl: './usuario-form.css',
     changeDetection: ChangeDetectionStrategy.OnPush,

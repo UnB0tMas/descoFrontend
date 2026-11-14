@@ -1,0 +1,7 @@
+/* Patrón de pestañas de Expediente de planta, reutilizable en Finanzas. */
+.desco-tabs{display:flex;flex-wrap:nowrap;align-items:center;justify-content:flex-start;gap:.24rem;min-width:0;max-width:100%;width:100%;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;scroll-snap-type:x proximity;overscroll-behavior-x:contain;margin:0;padding:.35rem .5rem .6rem;border-bottom:1px solid var(--desco-border);background:var(--desco-surface)}
+.desco-tabs>button{display:inline-flex;flex:0 0 auto;align-items:center;justify-content:center;min-height:35px;white-space:nowrap;scroll-snap-align:start;background:transparent;border:0;border-radius:.5rem;padding:.48rem .75rem;font:inherit;font-size:.78rem;font-weight:680;color:var(--desco-text-muted);line-height:1.2;cursor:pointer;transition:background .15s,color .15s}
+.desco-tabs>button:hover{background:var(--desco-surface-soft);color:var(--desco-text)}
+.desco-tabs>button.selected,.desco-tabs>button.active,.desco-tabs>button.is-active,.desco-tabs>button[aria-selected="true"]{background:var(--desco-surface-soft);color:var(--desco-primary);font-weight:760}
+.desco-tabs>button:focus-visible{outline:2px solid var(--desco-primary);outline-offset:1px}
+@media(max-width:530px){.desco-tabs{padding:.3rem .25rem .5rem}.desco-tabs>button{padding:.48rem .65rem}}

@@ -1,0 +1,19 @@
+<section class="ap-nav" aria-label="Cómo llegar al fundo">
+ <div class="ap-nav-head"><h3>Cómo llegar</h3>
+  <div class="ap-nav-actions">
+   @if(!activo()){<button class="admin-primary-button" type="button" [disabled]="iniciando()" (click)="empezar()"><fa-icon [icon]="startIcon"/> {{iniciando()?'Buscando…':'Iniciar GPS'}}</button>}
+   @else{<button type="button" class="admin-secondary-button" (click)="detener()"><fa-icon [icon]="stopIcon"/> Detener</button>
+    <button type="button" class="admin-secondary-button" (click)="calcularRuta()" [attr.aria-label]="'Recalcular ruta'"><fa-icon [icon]="refreshIcon"/> Recalcular</button>}
+   <button type="button" class="admin-secondary-button" (click)="abrirGoogleMaps()"><fa-icon [icon]="mapsIcon"/> Google Maps</button>
+  </div>
+ </div>
+ <div class="ap-nav-map">
+  <app-predio-map [latitude]="latitud" [longitude]="longitud" [editable]="false"
+   [navigationOrigin]="posicion()" [navigationRoute]="ruta()" [navigationFollow]="activo()" height="clamp(300px,44vh,520px)"/>
+  @if(distanciaKm()!==null){<div class="ap-nav-metrics" aria-live="polite">
+   <span><fa-icon [icon]="routeIcon"/> <strong>{{distanciaTexto()}}</strong></span>
+   <span><fa-icon [icon]="clockIcon"/> <strong>{{duracionMin()}} min</strong></span>
+  </div>}
+ </div>
+ @if(error()){<p class="ap-nav-alert" role="status">{{error()}}</p>}
+</section>

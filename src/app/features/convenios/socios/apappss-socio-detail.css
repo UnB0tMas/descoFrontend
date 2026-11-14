@@ -1,1 +1,13 @@
 :host{display:block;min-width:0}.apappss-detail{display:grid;gap:1rem}.apappss-detail-section{padding:1rem;min-width:0}.apappss-detail .admin-detail-grid{margin-top:.25rem}.apappss-detail .gp-sections{margin-bottom:1rem}
+
+.apappss-predio-actions{display:flex;align-items:center;justify-content:flex-end;gap:.4rem;flex-wrap:wrap}
+
+:host .apappss-predios-toolbar{justify-content:space-between;margin-bottom:1rem}
+:host .apappss-predios-toolbar .gp-search{margin:0;max-width:420px}
+:host .apappss-predios-cards{margin:.3rem 0 0;grid-template-columns:repeat(auto-fill,minmax(min(100%,280px),1fr))}
+:host .apappss-predio-actions .admin-icon-button{display:inline-flex;align-items:center;justify-content:center;min-width:2.35rem;min-height:2.35rem}
+:host .apappss-predios-cards .apappss-predio-actions{width:100%;gap:.5rem}
+:host .apappss-predios-cards .apappss-predio-actions :is(a,button){flex:0 0 auto}
+:host .apappss-predio-actions .apappss-produccion-habilitada{color:var(--desco-success,var(--desco-primary))}
+:host .apappss-detail-section app-paginator{display:block;margin-top:1rem;border-top:1px solid var(--desco-border);padding-top:1rem}
+@media(max-width:640px){:host .apappss-predios-toolbar .gp-search{max-width:none;flex-basis:100%}:host .apappss-predios-toolbar .gp-view-toggle{width:100%;justify-content:space-around}}

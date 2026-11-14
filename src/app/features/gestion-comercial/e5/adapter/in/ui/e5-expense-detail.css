@@ -1,0 +1,10 @@
+:host{display:contents}
+.e5-expense-detail-dialog .e5-expense-detail-box{display:flex;flex-direction:column;width:min(860px,calc(100vw - 2rem));max-width:none;max-height:calc(100dvh - 2rem);padding:0;overflow:hidden;background:var(--desco-surface);color:var(--desco-text)}
+.e5-expense-detail-box>.admin-modal-header{flex:0 0 auto;border-bottom:1px solid var(--desco-border);padding:1rem 1.25rem}
+.e5-expense-detail-content{min-height:0;flex:1;overflow:auto;padding:1rem 1.25rem}
+.e5-expense-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.8rem;margin:0 0 1rem}
+.e5-expense-facts div{border:1px solid var(--desco-border);border-radius:.65rem;padding:.7rem .9rem}
+.e5-expense-facts dt{font-size:.75rem;color:var(--desco-text-muted)}
+.e5-expense-facts dd{margin:.25rem 0 0;font-size:.91rem;font-weight:650;color:var(--desco-text)}
+.e5-expense-detail-box>.admin-modal-actions{flex:0 0 auto;margin:0;border-top:1px solid var(--desco-border);padding:.9rem 1.25rem}
+@media(max-width:560px){.e5-expense-facts{grid-template-columns:1fr}}

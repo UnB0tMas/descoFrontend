@@ -27,6 +27,13 @@ export const apappssRoutes: Routes = [
     loadComponent: () => import('./predios/apappss-predio-detail').then(m => m.ApappssPredioDetailPage),
   },
   {
+    path: 'convenios/apappss/predios/:predioId/plantas/:plantaId',
+    canActivate: [convenioModuleGuard, apappssAccessGuard],
+    data: { breadcrumb: 'Detalle de la planta', moduloEspecial: 'COMERCIALIZACION_ASOCIATIVA' },
+    providers: [...provideExpedienteE1(), ...providePlantasE3()],
+    loadComponent: () => import('./plantas/adapter/in/ui/e3-planta-detalle-page').then(m => m.E3PlantaDetallePage),
+  },
+  {
     path: 'convenios/apappss/plantas/:predioId',
     canActivate: [convenioModuleGuard, apappssAccessGuard],
     data: { breadcrumb: 'Plantas de palta', moduloEspecial: 'COMERCIALIZACION_ASOCIATIVA' },

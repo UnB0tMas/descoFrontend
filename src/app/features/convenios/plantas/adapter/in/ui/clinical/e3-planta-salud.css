@@ -1,0 +1,136 @@
+/* La ficha sanitaria reutiliza superficies, tablas, tarjetas y controles compartidos. */
+:host{display:block;min-width:0}
+.e3-clinical{display:grid;gap:1rem;min-width:0}
+.e3-clinical-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.8rem;margin:0;padding:0 0 .85rem;border-bottom:1px solid var(--desco-border)}
+.e3-clinical-head p{margin:0 0 .2rem;color:var(--desco-text-muted);font-size:.72rem;font-weight:650}
+.e3-clinical-head h2{margin:0;color:var(--desco-text);font-size:1rem;font-weight:760}
+.e3-clinical-subhead{display:flex;align-items:center;justify-content:space-between;gap:.8rem;flex-wrap:wrap;min-width:0;margin:.25rem 0 0}
+.e3-clinical-subhead h3{margin:0;color:var(--desco-text);font-size:.88rem;font-weight:750}
+.e3-clinical-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem}
+.e3-clinical-metrics .admin-detail-card{display:grid;gap:.4rem;min-height:88px;padding:.9rem 1rem;border:1px solid var(--desco-border);border-radius:.8rem;background:var(--desco-surface)}
+.e3-clinical-metrics .admin-detail-card span{font-size:.72rem;color:var(--desco-text-muted)}
+.e3-clinical-metrics .admin-detail-card strong{font-size:1.35rem;font-weight:760;color:var(--desco-text)}
+.e3-clinical-actions{display:flex;align-items:center;justify-content:flex-end;gap:.45rem;flex-wrap:wrap}
+.e3-clinical-actions .admin-secondary-button{white-space:nowrap}
+.e3-clinical-title{display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap}
+.e3-clinical-title h4{font-size:.9rem;font-weight:740;margin:0;color:var(--desco-text)}
+.e3-clinical-title p{font-size:.76rem;color:var(--desco-text-muted);margin:.3rem 0 0;line-height:1.5}
+.e3-clinical-cards,.e3-clinical-comments{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,280px),1fr));gap:.8rem;min-width:0}
+.e3-clinical-comments{grid-template-columns:1fr}
+.e3-clinical-cards app-record-card,.e3-clinical-comments app-record-card{min-width:0;display:block}
+.e3-clinical-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:.7rem;flex-wrap:wrap}
+.e3-clinical-card-head strong{overflow-wrap:anywhere;font-size:.86rem;font-weight:750}
+.e3-clinical-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.6rem;margin:.7rem 0}
+.e3-clinical-facts dt{color:var(--desco-text-muted);font-size:.7rem}
+.e3-clinical-facts dd{font-size:.82rem;margin:.18rem 0 0;font-weight:700}
+.e3-clinical-cards small,.e3-clinical-comments small{display:block;font-size:.73rem;color:var(--desco-text-muted);line-height:1.5}
+.e3-clinical-cards p,.e3-clinical-comments p{font-size:.83rem;line-height:1.6;margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.e3-clinical-card-footer{display:flex;gap:.55rem;justify-content:flex-end;flex-wrap:wrap;border-top:1px solid var(--desco-border);margin-top:.85rem;padding-top:.75rem}
+.e3-clinical-selector{max-width:620px;display:grid;gap:.4rem;font-size:.78rem;color:var(--desco-text)}
+.e3-clinical-selector .admin-select{min-width:0;width:100%}
+.e3-clinical-empty{display:flex;justify-content:center;align-items:center;min-height:98px;padding:1.1rem;border:1px dashed var(--desco-border);border-radius:.75rem;background:var(--desco-surface-soft);font-size:.81rem;color:var(--desco-text-muted);text-align:center}
+.e3-clinical-note{margin:0;color:var(--desco-text-muted);font-size:.78rem;line-height:1.55}
+.e3-clinical-error{padding:.75rem;border:1px solid var(--desco-border);border-radius:.7rem;color:var(--desco-danger,#fb7185)}
+.e3-clinical .admin-table-wrap{overflow-x:auto;min-width:0;border-radius:.75rem}
+.e3-clinical .admin-table{min-width:610px}
+.e3-clinical .admin-table td:last-child{min-width:unset}
+.e3-clinical .admin-table td{vertical-align:middle;font-size:.78rem}
+.e3-clinical .admin-table .e3-clinical-actions{justify-content:flex-start;flex-wrap:nowrap}
+.e3-clinical .admin-status{width:fit-content}
+:host dialog.e3-health-dialog[open]{position:fixed;inset:0;width:100vw;height:100dvh;max-width:none;max-height:none;display:grid;place-items:center;padding:clamp(.5rem,2vw,1.5rem);margin:0;border:0;box-sizing:border-box;overflow:auto;background:transparent}
+:host dialog.e3-health-dialog::backdrop{background:rgba(2,6,23,.75);backdrop-filter:blur(4px)}
+.e3-health-box{box-sizing:border-box;display:flex;flex-direction:column;min-height:0;width:min(680px,calc(100vw - 1.5rem))!important;max-width:680px!important;max-height:min(90dvh,840px)!important;margin:auto;padding:0!important;overflow:hidden!important;border:1px solid var(--desco-border);border-radius:1rem;background:var(--desco-surface);color:var(--desco-text)}
+.e3-health-box>.admin-modal-header{flex:none;display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:1rem 1.25rem;border-bottom:1px solid var(--desco-border)}
+.e3-health-box>.admin-modal-header h2{font-size:1rem;font-weight:750;margin:.2rem 0 0;color:var(--desco-text)}
+.e3-health-box>.admin-modal-header p{margin:0;color:var(--desco-text-muted);font-size:.72rem}
+.e3-health-box>.e3-clinical-form{display:grid;gap:.85rem;min-height:0;overflow:auto;flex:1;padding:1.15rem 1.25rem}
+.e3-health-box .admin-field{display:grid;gap:.4rem;font-size:.78rem;min-width:0}
+.e3-health-box :is(.admin-input,.admin-select,.admin-textarea){width:100%;min-width:0;box-sizing:border-box}
+.e3-health-box>.gp-modal-footer{margin:0;padding:1rem 1.25rem;display:flex;gap:.6rem;align-items:center;justify-content:flex-end;flex:none;border-top:1px solid var(--desco-border);background:var(--desco-surface)}
+.e3-health-options{max-height:210px;overflow-y:auto;display:grid;gap:.3rem;border:1px solid var(--desco-border);border-radius:.65rem;padding:.7rem;background:var(--desco-surface-soft)}
+.e3-health-option{display:flex;align-items:center;gap:.65rem;min-height:36px;font-size:.8rem;color:var(--desco-text)}
+@media(max-width:580px){.e3-clinical-metrics{grid-template-columns:1fr 1fr}.e3-clinical-head>.e3-clinical-actions{width:100%;justify-content:flex-start}.e3-clinical-subhead app-list-view-switch{margin-left:0}.e3-health-box>.gp-modal-footer button{flex:1 1 auto}}
+
+/* Integración clínica con el expediente y los componentes shared de DESCO. */
+:host .e3-clinical{display:grid;gap:1rem;min-width:0}
+:host .e3-clinical-head{padding:0 0 .65rem;border-bottom:1px solid var(--desco-border);align-items:center}
+:host .e3-clinical-head h2{font-size:1rem;font-weight:760;letter-spacing:-.01em}
+:host .e3-clinical-head .e3-clinical-actions{gap:.5rem}
+:host .e3-clinical-metrics{display:flex;align-items:center;flex-wrap:wrap;gap:.65rem}
+:host .e3-clinical-metrics .admin-detail-card{display:flex;align-items:center;gap:.65rem;min-height:0;min-width:150px;max-width:100%;padding:.7rem .9rem;background:var(--desco-surface);border:1px solid var(--desco-border);border-radius:.7rem}
+:host .e3-clinical-metrics .admin-detail-card span{font-size:.75rem;font-weight:600;color:var(--desco-text-muted)}
+:host .e3-clinical-metrics .admin-detail-card strong{font-size:1.15rem;font-weight:800;color:var(--desco-text);order:-1}
+:host .e3-clinical-subhead{gap:.7rem;align-items:center;min-height:38px;margin:0}
+:host .e3-clinical-subhead h3{font-size:.84rem;font-weight:750}
+:host .e3-clinical-title{border:1px solid var(--desco-border);border-radius:.8rem;padding:1rem;gap:.7rem}
+:host .e3-clinical-title h4{font-size:.91rem}
+:host .e3-clinical-title p{font-size:.72rem}
+:host .e3-clinical-selector{width:100%;max-width:680px;margin:0;font-size:.75rem;font-weight:650}
+:host .e3-clinical-selector .admin-select{min-height:40px}
+:host .e3-clinical-empty{min-height:76px;padding:1rem;font-size:.79rem}
+:host .e3-clinical-cards,.e3-clinical-comments{gap:.75rem}
+:host .e3-clinical .admin-table-wrap{overflow-x:auto;border:1px solid var(--desco-border);border-radius:.7rem}
+:host .e3-clinical table.admin-table{width:100%!important;min-width:0!important}
+:host .e3-clinical .admin-table :is(th,td){padding:.7rem .6rem;font-size:.76rem;white-space:normal;overflow-wrap:anywhere}
+:host .e3-clinical .admin-table th{font-size:.7rem;white-space:nowrap}
+:host .e3-clinical .admin-table .e3-clinical-actions{flex-wrap:wrap;gap:.35rem}
+:host .e3-clinical .admin-table .e3-clinical-actions button{min-height:34px;padding:.4rem .6rem;font-size:.73rem}
+:host .e3-health-box .admin-modal-header{gap:1rem}
+:host .e3-health-box .admin-modal-header .admin-icon-button{flex:none}
+@media(max-width:620px){
+ :host .e3-clinical-head .e3-clinical-actions{width:auto;justify-content:flex-start}
+ :host .e3-clinical-metrics .admin-detail-card{min-width:0;flex:1 1 140px}
+ :host .e3-clinical-subhead app-list-view-switch{max-width:100%}
+}
+
+/* Tablas reales incluso en pantallas medianas: desplazamiento horizontal accesible. */
+:host .e3-clinical .e3-clinical-table-scroll{width:100%;max-width:100%;overflow-x:auto;overscroll-behavior-inline:contain;border:1px solid var(--desco-border);border-radius:.8rem;scrollbar-width:thin}
+:host .e3-clinical .e3-clinical-table-scroll:focus-visible{outline:2px solid var(--desco-primary);outline-offset:2px}
+:host .e3-clinical .e3-clinical-table-scroll table.e3-clinical-data-table{display:table!important;width:100%!important;min-width:820px!important;border-collapse:collapse}
+:host .e3-clinical .e3-clinical-table-scroll thead{display:table-header-group!important}
+:host .e3-clinical .e3-clinical-table-scroll tbody{display:table-row-group!important}
+:host .e3-clinical .e3-clinical-table-scroll tr{display:table-row!important;background:transparent;margin:0;padding:0;border:0}
+:host .e3-clinical .e3-clinical-table-scroll :is(th,td){display:table-cell!important;text-align:left!important;vertical-align:middle!important;white-space:normal!important;min-width:0!important;padding:.8rem .75rem!important;border-bottom:1px solid var(--desco-border)!important}
+:host .e3-clinical .e3-clinical-table-scroll th{font-size:.72rem!important;color:var(--desco-text-muted);background:var(--desco-surface-soft);font-weight:750}
+:host .e3-clinical .e3-clinical-table-scroll td{font-size:.79rem!important;overflow-wrap:anywhere}
+:host .e3-clinical .e3-clinical-table-scroll td::before{content:none!important;display:none!important}
+:host .e3-clinical .e3-clinical-table-scroll tbody tr:last-child td{border-bottom:0!important}
+:host .e3-clinical .e3-clinical-table-scroll tbody tr:hover{background:var(--desco-surface-soft)}
+:host .e3-clinical .e3-clinical-table-scroll .e3-clinical-actions{justify-content:flex-start;flex-wrap:nowrap}
+/* Opciones seleccionables con área de clic completa. */
+:host .e3-health-options{padding:.45rem;gap:.4rem;max-height:235px}
+:host .e3-health-option{position:relative;display:flex;align-items:center;gap:.65rem;cursor:pointer;min-height:45px;padding:.55rem .65rem;border:1px solid transparent;border-radius:.6rem;line-height:1.35}
+:host .e3-health-option:hover{background:var(--desco-surface)}
+:host .e3-health-option--selected{background:color-mix(in srgb,var(--desco-primary) 9%,var(--desco-surface));border-color:color-mix(in srgb,var(--desco-primary) 50%,var(--desco-border))}
+:host .e3-health-option input{position:absolute;opacity:0;width:1px;height:1px}
+:host .e3-health-checkbox{flex:none;width:1.1rem;height:1.1rem;display:grid;place-items:center;border:1.5px solid var(--desco-border);border-radius:.3rem;color:transparent;background:var(--desco-surface);font-size:.75rem;font-weight:800}
+:host .e3-health-option--selected .e3-health-checkbox{background:var(--desco-primary);color:#fff;border-color:var(--desco-primary)}
+:host .e3-health-option:focus-within{outline:2px solid var(--desco-primary);outline-offset:1px}
+:host .e3-clinical-followup{display:grid;gap:.55rem;margin-top:.3rem}
+:host .e3-clinical-followup h3{font-size:.83rem;font-weight:720;margin:0}
+:host .e3-clinical-followup-item{display:grid;gap:.3rem;padding:.75rem .85rem;background:var(--desco-surface-soft);border:1px solid var(--desco-border);border-radius:.65rem}
+:host .e3-clinical-followup-item p{font-size:.8rem;margin:0;overflow-wrap:anywhere}
+:host .e3-clinical-followup-item small{font-size:.71rem;color:var(--desco-text-muted)}
+:host .e3-clinical-cards app-record-card{height:100%}
+:host .e3-clinical-cards .e3-clinical-card-head small{color:var(--desco-text-muted);font-size:.7rem}
+
+/* Tablas del expediente: encabezado, columnas y acciones iguales al listado de plantas. */
+:host .e3-clinical .e3-clinical-table-scroll{scrollbar-width:thin;scrollbar-color:var(--desco-border) transparent}
+:host .e3-clinical .e3-clinical-table-scroll table.e3-clinical-data-table{min-width:900px!important}
+:host .e3-clinical .e3-clinical-table-scroll tbody tr:hover{background:color-mix(in srgb,var(--desco-primary) 5%,var(--desco-surface))}
+:host .e3-clinical .e3-clinical-table-scroll th:last-child{width:112px}
+:host .e3-clinical-row-actions{display:flex;align-items:center;gap:.35rem;flex-wrap:nowrap}
+:host .e3-clinical-row-actions .admin-icon-button{width:34px;height:34px;min-width:34px;display:inline-flex;align-items:center;justify-content:center}
+:host .e3-clinical-row-actions .admin-icon-button:hover{border-color:var(--desco-primary);color:var(--desco-primary)}
+/* Mostrar varias alternativas completas al elegir tratamientos. */
+:host .e3-health-box{max-height:min(94dvh,920px)!important}
+:host .e3-health-options{height:206px;min-height:206px;max-height:206px;overflow-y:auto;overflow-x:hidden;align-content:start;scrollbar-width:thin;flex-shrink:0}
+:host .e3-health-option{flex:none;min-height:44px}
+@media(max-height:700px){:host .e3-health-options{height:160px;min-height:160px;max-height:160px}}
+
+/* Acciones compactas y autoría de tratamientos. */
+:host .e3-clinical .e3-clinical-table-scroll th:last-child{width:auto}
+:host .e3-clinical-row-actions{gap:.25rem;white-space:nowrap}
+:host .e3-clinical-card-footer{display:flex;flex-wrap:wrap;align-items:center;gap:.35rem}
+:host .e3-clinical-card-footer .admin-icon-button{width:32px;min-width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center}
+:host .e3-treatment-edited{display:block;color:var(--desco-text-muted);margin-top:.25rem;font-size:.68rem}

@@ -1,0 +1,154 @@
+<section class="desco-page e5-socio-detail">
+  <app-page-header title="Detalle de liquidación" eyebrow="APAPPSS" />
+  <nav class="e5-detail-nav" aria-label="Navegación">
+    @if(origenPagos || !campaniaId){
+      <a class="admin-secondary-button" routerLink="/gestion-comercial/pagos-socios" [queryParams]="{campaniaId:campaniaId}">← Pagos a socios</a>
+    } @else {
+      <a class="admin-secondary-button" [routerLink]="['/gestion-comercial/finanzas-apappss',campaniaId]">← Finanzas</a>
+    }
+
+  </nav>
+  @if(loading()){<app-loading-state title="Cargando" variant="detail" [rows]="5" />}
+  @else if(error()){<div class="admin-surface e5-detail-error" role="alert">{{error()}}</div>}
+  @else if(liquidacion();as d){
+    <header class="admin-surface e5-detail-hero">
+      <div class="e5-detail-hero-main">
+        <div class="e5-detail-eyebrow">Liquidación #{{d.liquidacionId}} <span>·</span> v{{d.version}}</div>
+        <h2>{{beneficiario()?.nombre || 'Socio #'+d.participacionId}}</h2>
+        <div class="e5-detail-tags">
+          @if(beneficiario()?.documento){<span class="e5-detail-chip">{{beneficiario()?.documento}}</span>}
+          <span class="e5-detail-chip" [class.e5-detail-chip--success]="d.estado==='PAGADA'">{{d.estado}}</span>
+          @if((d.saldo??0)<=0 && (d.pagado??0)>0){<span class="e5-detail-chip e5-detail-chip--success">Pagado</span>}
+        </div>
+      </div>
+      <div class="e5-detail-hero-total"><small>Neto liquidado</small><strong>{{d.neto??0|currency:'PEN':'S/ ':'1.2-2'}}</strong></div>
+    </header>
+
+
+    <nav class="e5-detail-tabs" role="tablist" aria-label="Detalle de liquidación">
+      @for (item of tabs; track item.id; let i=$index) {
+        <button type="button" role="tab" class="e5-detail-tab" [class.is-active]="tab()===item.id"
+          [attr.id]="'e5-tab-'+item.id" [attr.aria-controls]="'e5-panel-'+item.id"
+          [attr.aria-selected]="tab()===item.id" [attr.tabindex]="tab()===item.id?0:-1"
+          (click)="tab.set(item.id)" (keydown)="onTabKeydown($event,i)">{{item.label}}</button>
+      }
+    </nav>
+    @if (tab()==='general') {
+      <div id="e5-panel-general" role="tabpanel" aria-labelledby="e5-tab-general" class="e5-detail-content">
+    <div class="e5-detail-kpis">
+      <article class="admin-surface"><small>Kg aceptados</small><strong>{{d.kilogramos??0|number:'1.3-3'}}</strong></article>
+      <article class="admin-surface"><small>Jabas</small><strong>{{jabas().length || venta()?.asignadas || 0}}</strong></article>
+      <article class="admin-surface"><small>Pagado</small><strong>{{d.pagado??0|currency:'PEN':'S/ ':'1.2-2'}}</strong></article>
+      <article class="admin-surface"><small>Saldo</small><strong>{{d.saldo??0|currency:'PEN':'S/ ':'1.2-2'}}</strong></article>
+    </div>
+
+    <div class="e5-detail-charts">
+      <div class="e5-detail-chart e5-detail-chart--paid">
+        <app-chart-card [data]="avanceChart()" />
+        <div class="e5-detail-chart-footer"><span>Pagado <strong>{{d.pagado??0|currency:'PEN':'S/ ':'1.2-2'}}</strong></span>
+          <span>Saldo <strong>{{d.saldo??0|currency:'PEN':'S/ ':'1.2-2'}}</strong></span></div>
+      </div>
+      <div class="e5-detail-chart e5-detail-chart--weights">
+        <div class="e5-detail-chart-scroll"><div [style.minWidth.px]="chartWidth()"><app-chart-card [data]="jabasChart()" /></div></div>
+        <div class="e5-detail-chart-footer"><span>{{jabas().length}} jabas</span>
+          <span>Peso neto registrado: <strong>{{totalPeso()|number:'1.3-3'}} kg</strong></span></div>
+      </div>
+    </div>
+      </div>
+    }
+    @if (tab()==='jabas') {
+      <section id="e5-panel-jabas" role="tabpanel" aria-labelledby="e5-tab-jabas" class="admin-surface e5-detail-panel">
+        <div class="e5-detail-section-head"><h3>Jabas entregadas</h3><span class="e5-detail-count">{{jabas().length}}</span></div>
+        <div class="e5-detail-adaptive-layout e5-detail-jabas-layout">
+          <div class="e5-detail-primary">
+            <app-data-table appearance="admin" [columns]="jabaColumns" [rows]="jabas()"
+              trackByKey="unidadId" emptyMessage="Sin jabas registradas." />
+          </div>
+          @if ((entregas()?.entregas??[]).length) {
+            <aside class="e5-detail-aside e5-detail-delivery-aside" aria-label="Resumen por entrega">
+              <h4>Por entrega</h4>
+              <div class="e5-detail-delivery-list">
+                @for (entrega of entregas()?.entregas??[]; track entrega.entregaId) {
+                  <article class="e5-detail-delivery-item">
+                    <div class="e5-detail-delivery-heading">
+                      <strong>{{entrega.lote || 'Entrega #'+entrega.entregaId}}</strong>
+                      <span>{{entrega.jabas}} jabas</span>
+                    </div>
+                    <dl class="e5-detail-facts">
+                      <div><dt>Bruto</dt><dd>{{entrega.pesoBruto|number:'1.3-3'}} kg</dd></div>
+                      <div><dt>Tara</dt><dd>{{entrega.tara|number:'1.3-3'}} kg</dd></div>
+                      <div><dt>Rechazado</dt><dd>{{entrega.rechazado|number:'1.3-3'}} kg</dd></div>
+                      <div><dt>Aceptado</dt><dd>{{entrega.aceptado|number:'1.3-3'}} kg</dd></div>
+                    </dl>
+                  </article>
+                }
+              </div>
+            </aside>
+            <details class="e5-detail-collapsible e5-detail-mobile-summary">
+              <summary>Resumen por entrega</summary>
+              <app-data-table appearance="admin" [columns]="entregaColumns" [rows]="entregas()?.entregas??[]"
+                trackByKey="entregaId" />
+            </details>
+          }
+        </div>
+      </section>
+    }
+    @if (tab()==='liquidacion') {
+      <section id="e5-panel-liquidacion" role="tabpanel" aria-labelledby="e5-tab-liquidacion" class="admin-surface e5-detail-panel">
+        <div class="e5-detail-section-head"><h3>Liquidación</h3><span class="e5-detail-count">v{{d.version}}</span></div>
+        <div class="e5-detail-adaptive-layout e5-detail-liquidacion-layout">
+          <div class="e5-detail-primary">
+            <app-data-table appearance="admin" [columns]="lineaColumns" [rows]="d.detalle??[]"
+              trackByKey="detalleId" emptyMessage="Sin conceptos adicionales." />
+          </div>
+          <aside class="e5-detail-aside e5-detail-liquidacion-aside" aria-label="Importes de liquidación">
+            <h4>Importes</h4>
+            <div class="e5-detail-breakdown">
+              <div><small>Bruto</small><strong>{{d.bruto??0|currency:'PEN':'S/ ':'1.2-2'}}</strong></div>
+              <div><small>Ajuste de precio</small><strong>{{d.ajustePrecio??0|currency:'PEN':'S/ ':'1.2-2'}}</strong></div>
+              <div><small>Gastos</small><strong>{{d.gastos??0|currency:'PEN':'S/ ':'1.2-2'}}</strong></div>
+              <div><small>Descuentos</small><strong>{{d.descuentos??0|currency:'PEN':'S/ ':'1.2-2'}}</strong></div>
+              <div><small>Cargos</small><strong>{{d.cargos??0|currency:'PEN':'S/ ':'1.2-2'}}</strong></div>
+              <div><small>Bonificaciones</small><strong>{{d.bonificaciones??0|currency:'PEN':'S/ ':'1.2-2'}}</strong></div>
+            </div>
+          </aside>
+        </div>
+      </section>
+    }
+    @if (tab()==='pagos') {
+      <section id="e5-panel-pagos" role="tabpanel" aria-labelledby="e5-tab-pagos" class="admin-surface e5-detail-panel">
+        <div class="e5-detail-section-head"><h3>Pagos</h3><span class="e5-detail-count">{{pagos().length}}</span></div>
+        <ng-template #fechaCell let-p>{{(pagoPorId().get(p.pagoId??0)?.fecha || p.fecha)|date:'dd/MM/yyyy HH:mm'}}</ng-template>
+        <ng-template #comprobanteCell let-p>
+          @if(pagoPorId().get(p.pagoId??0)?.comprobanteArchivoId){
+            <button type="button" class="admin-icon-button e5-proof-open" title="Ver comprobante"
+              [attr.aria-label]="'Ver comprobante del pago ' + p.pagoId"
+              [disabled]="openingProof()!==null" (click)="openProof(p.pagoId)">
+              <fa-icon [icon]="proofIcon" />
+            </button>
+          } @else { <span class="e5-detail-proof-empty">—</span> }
+        </ng-template>
+        <ng-template #receptorCell let-p><strong>{{pagoPorId().get(p.pagoId??0)?.nombre || 'No registrado'}}</strong>
+          @if(pagoPorId().get(p.pagoId??0)?.motivoEntrega){
+            <small class="e5-detail-note">{{pagoPorId().get(p.pagoId??0)?.motivoEntrega}}</small>
+          }
+        </ng-template>
+        <div class="e5-detail-adaptive-layout e5-detail-pagos-layout">
+          <div class="e5-detail-primary">
+            <app-data-table appearance="admin" [columns]="pagoColumns" [rows]="pagos()"
+              [cellTemplates]="{fecha:fechaCell,receptor:receptorCell,comprobante:comprobanteCell}" trackByKey="pagoId"
+              emptyMessage="Sin pagos registrados." />
+          </div>
+          <aside class="e5-detail-aside e5-detail-pagos-aside" aria-label="Resumen de pagos">
+            <h4>Resumen</h4>
+            <div class="e5-detail-payment-summary">
+              <div><small>Pagado</small><strong>{{d.pagado??0|currency:'PEN':'S/ ':'1.2-2'}}</strong></div>
+              <div><small>Saldo</small><strong>{{d.saldo??0|currency:'PEN':'S/ ':'1.2-2'}}</strong></div>
+              <div><small>Registros</small><strong>{{pagos().length}}</strong></div>
+            </div>
+          </aside>
+        </div>
+      </section>
+    }
+  }
+</section>

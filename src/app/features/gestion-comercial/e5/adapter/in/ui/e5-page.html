@@ -1,142 +1,158 @@
 <section class="desco-page e5-page">
- <app-page-header title="Balance y liquidaciones · APAPPSS" eyebrow="Gestión comercial y finanzas">
+ <app-page-header title="Liquidaciones de campaña" eyebrow="APAPPSS · Comercialización asociativa">
   <div pageActions class="e5-actions">
-   <a routerLink="/gestion-comercial/acopio-rapido" class="admin-secondary-button">Acopio y jabas</a>
-   <a routerLink="/finanzas/gastos" class="admin-secondary-button">Gestión de gastos</a>
-   <a routerLink="/finanzas/cobros" class="admin-secondary-button">Cobros compradores</a>
-   <button type="button" class="admin-secondary-button" (click)="refresh()" [disabled]="!campaignId">Actualizar</button>
+   <a routerLink="/gestion-comercial/finanzas-apappss" class="admin-secondary-button">Volver</a>
+   <button type="button" class="admin-icon-button" title="Actualizar" aria-label="Actualizar" (click)="load()" [disabled]="!campaignId"><fa-icon [icon]="icons.refresh" /></button>
   </div>
  </app-page-header>
  @if(error()){<p class="e5-alert" role="alert">{{error()}}</p>}
- @if(notice()){<p class="e5-ok" role="status">{{notice()}}</p>}
- <section class="admin-surface e5-panel">
-  <label class="admin-field">Campaña APAPPSS
-   <select class="admin-select" [(ngModel)]="campaignId" (ngModelChange)="load()">
-    <option [ngValue]="0">Seleccione campaña</option>
-    @for(c of options();track c.value){<option [ngValue]="c.value">{{c.label}}</option>}
-   </select>
-  </label>
+ <section class="admin-surface e5-panel e5-campaign">
+  <div class="e5-head">
+   <div class="e5-heading"><small>Campaña seleccionada</small><h2>{{tablero()?.nombre??'Campaña'}}</h2></div>
+   @if(tablero();as b){<span class="e5-status" [class.e5-closed]="b.cerrada">{{b.cerrada?'Cerrada':b.estado}}</span>}
+  </div>
   @if(tablero();as b){
-   <div class="e5-metrics">
-    <div><small>Kg aceptados</small><strong>{{b.kilogramos??0 | number:'1.3-3'}}</strong></div>
-    <div><small>Venta original</small><strong>{{b.bruto??0 | currency:'PEN':'symbol':'1.2-2'}}</strong></div>
-    <div><small>Venta ajustada</small><strong>{{b.ventaAjustada??0 | currency:'PEN':'symbol':'1.2-2'}}</strong></div>
-    <div><small>Neto aprobado</small><strong>{{b.netoAprobado??0 | currency:'PEN':'symbol':'1.2-2'}}</strong></div>
-    <div><small>Pagado a socios</small><strong>{{b.pagado??0 | currency:'PEN':'symbol':'1.2-2'}}</strong></div>
-    <div><small>Jabas faltantes</small><strong>{{b.jabasFaltantes??0}}</strong></div>
+   <div class="e5-metrics e5-kpis">
+    <div><small>Venta efectiva</small><strong>{{b.ventaAjustada??0 | currency:'PEN'}}</strong></div>
+    <div><small>Neto a socios</small><strong>{{b.netoAprobado??0 | currency:'PEN'}}</strong></div>
+    <div><small>Pagado a socios</small><strong>{{b.pagado??0 | currency:'PEN'}}</strong></div>
    </div>
   }
  </section>
  @if(campaignId){
- <nav class="e5-tabs" aria-label="Flujo financiero APAPPSS">
-  <button type="button" [class.selected]="tab()==='balance'" (click)="changeTab('balance')">Balance</button>
-  @if(canViewGastos()){<button type="button" [class.selected]="tab()==='gastos'" (click)="changeTab('gastos')">Gastos y reparto</button>}
-  @if(canViewLiquidaciones()){<button type="button" [class.selected]="tab()==='liquidaciones'" (click)="changeTab('liquidaciones')">Liquidaciones</button>}
-  @if(can('PAGOS_VER')){<button type="button" [class.selected]="tab()==='pagos'" (click)="changeTab('pagos')">Pagos</button>}
+ <nav class="desco-tabs" aria-label="Secciones financieras">
+  <button type="button" [class.selected]="tab()==='balance'" (click)="changeTab('balance')">General</button>
+  @if(canViewGastos()){<button type="button" [class.selected]="tab()==='gastos'" (click)="changeTab('gastos')">Gastos</button>}
+  @if(canViewLiquidaciones()){<button type="button" [class.selected]="tab()==='liquidaciones'" (click)="changeTab('liquidaciones')">Liquidación</button>}
+  @if(canViewCobros()){<button type="button" [class.selected]="tab()==='cobros'" (click)="changeTab('cobros')">Cobros</button>}
   @if(can('REPORTES_VER')){<button type="button" [class.selected]="tab()==='reportes'" (click)="changeTab('reportes')">Reportes</button>}
-  <button type="button" [class.selected]="tab()==='cierre'" (click)="changeTab('cierre')">Cierre</button>
  </nav>
  @if(tab()==='balance'){
   <section class="admin-surface e5-panel">
-   <h2>Balance por socio</h2>
+   <div class="e5-head"><h2>Indicadores</h2></div>
+   <div class="e5-segmentadores">
+    <label class="admin-field">Desde<input class="admin-input" type="date" [(ngModel)]="fechaInicio" /></label>
+    <label class="admin-field">Hasta<input class="admin-input" type="date" [(ngModel)]="fechaFin" /></label>
+    <label class="admin-field">Variedad<select class="admin-select" [(ngModel)]="variedadId"><option [ngValue]="0">Todas</option>
+      @for(v of varieties();track v.value){<option [ngValue]="v.value">{{v.label}}</option>}
+    </select></label>
+    <button type="button" class="admin-primary-button" (click)="loadCharts()">Filtrar</button>
+   </div>
+   @if(chartError()){<p class="e5-alert">{{chartError()}}</p>}
+   <div class="e5-chart-grid"><app-chart-card [data]="ventasChart()" /><app-chart-card [data]="variedadesChart()" /></div>
+   <div class="e5-head"><h2>Balance por socio</h2><a class="admin-secondary-button" routerLink="/gestion-comercial/pagos-socios" [queryParams]="{campaniaId:campaignId}">Pagos</a></div>
    <label class="admin-field">Buscar socio<input class="admin-input" [ngModel]="search()" (ngModelChange)="search.set($event)" placeholder="Nombre o identificador" /></label>
-   <div class="e5-scroll"><table><thead><tr><th>Socio</th><th>Kg</th><th>Neto</th><th>Pagado</th><th>Saldo</th><th>Estado</th><th></th></tr></thead><tbody>
+   <div class="admin-table-wrap e5-scroll"><table class="admin-table desco-data-table"><thead><tr><th>Socio</th><th>Kg netos</th><th>Neto</th><th>Pagado</th><th>Saldo</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>
     @for(s of sociosFiltrados();track s.participacionId){<tr>
-     <td>{{s.socio}}</td><td>{{s.kilogramos??0 | number:'1.3-3'}}</td>
-     <td>{{s.neto??0 | currency:'PEN'}}</td><td>{{s.pagado??0 | currency:'PEN'}}</td>
-     <td>{{s.saldo??0 | currency:'PEN'}}</td><td>{{s.liquidacionEstado??'Sin liquidar'}}</td>
-     <td>@if(s.liquidacionId){<button type="button" class="admin-secondary-button" (click)="openLiquidacion(s.liquidacionId!);changeTab('liquidaciones')">Ver</button>}</td>
-    </tr>}@empty{<tr><td colspan="7">No hay participantes registrados.</td></tr>}
+     <td class="e5-name">{{s.socio}}</td><td class="e5-number">{{s.kilogramos??0 | number:'1.3-3'}}</td>
+     <td class="e5-number">{{s.neto??0 | currency:'PEN'}}</td><td class="e5-number">{{s.pagado??0 | currency:'PEN'}}</td>
+     <td class="e5-number">{{s.saldo??0 | currency:'PEN'}}</td><td><span class="e5-state">{{estadoTexto(s.liquidacionEstado)}}</span></td>
+     <td>@if(s.participacionId){<button type="button" class="admin-icon-button" title="Ver detalle" aria-label="Ver detalle" (click)="abrirLiquidacion(s.participacionId!,s.socio??'Socio',s.liquidacionId??null,s.liquidacionEstado??'')"><fa-icon [icon]="icons.view" /></button>}</td>
+    </tr>}@empty{<tr><td colspan="7" class="e5-empty">Sin socios registrados.</td></tr>}
    </tbody></table></div>
   </section>
  }
  @if(tab()==='gastos' && canViewGastos()){
   <section class="admin-surface e5-panel">
-   <div class="e5-head"><h2>Gastos generales</h2><a routerLink="/finanzas/gastos" class="admin-secondary-button">Registrar gasto</a></div>
-   <p>Las cuotas se calculan únicamente entre socios con entregas confirmadas. Se conservan versiones y aprobaciones.</p>
-   <div class="e5-scroll"><table><thead><tr><th>Gasto</th><th>Importe</th><th>Estado</th><th>Vendedores</th><th>Acciones</th></tr></thead><tbody>
+   <div class="e5-head"><h2>Gastos de campaña</h2>
+    @if(can('GASTOS_CREAR')){<button type="button" class="admin-primary-button" [disabled]="busy()||frozen()" (click)="nuevoGasto()"><fa-icon [icon]="icons.add" /> Agregar gasto</button>}
+   </div>
+   @if(frozen()&&!tablero()?.cerrada){<p class="e5-readonly">{{tablero()?.estado==='ACTIVA'?'Gastos bloqueados por pagos registrados.':tablero()?.estado==='PLANIFICACION'?'Activa la campaña para registrar gastos.':'No se pueden registrar gastos en este estado.'}}</p>}
+   @if(tablero()?.cerrada){<p class="e5-readonly">Expediente financiero cerrado automáticamente.</p>}
+   <div class="admin-table-wrap e5-scroll"><table class="admin-table desco-data-table"><thead><tr><th>Concepto</th><th>Importe</th><th>Regla</th><th>Estado</th><th>Socios</th><th>Acciones</th></tr></thead><tbody>
     @for(g of gastos()?.gastos??[];track g.gastoId){<tr>
-     <td>{{g.concepto}}</td><td>{{g.importe | currency:g.moneda}}</td><td>{{g.estado}}</td><td>{{g.vendedores??'—'}}</td>
-     <td class="e5-actions">
-      <button type="button" class="admin-secondary-button" (click)="gastoId=g.gastoId!;chooseGasto()">Historial</button>
-      @if(g.estado==='REGISTRADO' && can('GASTOS_CREAR') && !g.repartoId){<button type="button" class="admin-primary-button" [disabled]="busy()" (click)="gastoId=g.gastoId!;repartir()">Proponer reparto</button>}
-      @if(g.repartoEstado==='PROPUESTO' && can('GASTOS_APROBAR')){<button type="button" class="admin-primary-button" [disabled]="busy()" (click)="gastoId=g.gastoId!;aprobarReparto()">Aprobar cuotas</button>}
-     </td>
-    </tr>}@empty{<tr><td colspan="5">No hay gastos registrados para la campaña.</td></tr>}
+     <td class="e5-name">{{g.concepto}}</td><td class="e5-number">{{g.importe | currency:g.moneda}}</td>
+     <td>{{(g.reglaCodigo==='IGUAL'||g.reglaCodigo?.startsWith('DI-'))?'Igualitaria':g.reglaCodigo==='PESO_ACEPTADO'?'Peso aceptado':g.reglaCodigo==='VENTA_BRUTA'?'Venta bruta':g.reglaCodigo==='MANUAL'?'Manual':'—'}}</td>
+     <td><span class="e5-state">{{g.repartoEstado??g.estado}}</span></td><td>{{g.vendedores??'—'}}</td>
+     <td><div class="e5-row-actions">
+      <button type="button" class="admin-icon-button" title="Subir comprobante" aria-label="Subir comprobante" [disabled]="frozen()||!can('ARCHIVOS_CREAR')" (click)="abrirGastoDocumentos(g.gastoId!,g.concepto??'Gasto')"><fa-icon [icon]="icons.file" /></button>
+      <button type="button" class="admin-icon-button" title="Detalle del gasto" aria-label="Detalle del gasto" (click)="verGasto(g.gastoId!)"><fa-icon [icon]="icons.view" /></button>
+      <button type="button" class="admin-icon-button" title="Ver reparto" aria-label="Ver reparto" (click)="gastoId=g.gastoId!;chooseGasto()"><fa-icon [icon]="icons.view" /></button>
+      @if(!frozen() && (g.estado==='REGISTRADO'||g.estado==='APROBADO') && can('GASTOS_EDITAR')){<button type="button" class="admin-icon-button" title="Editar gasto" aria-label="Editar gasto" (click)="editarGasto(g.gastoId!)"><fa-icon [icon]="icons.edit" /></button>}
+      @if(!frozen() && (g.estado==='REGISTRADO'||g.estado==='APROBADO') && can('GASTOS_RETIRAR')){<button type="button" class="admin-icon-button e5-danger-button" title="Anular gasto" aria-label="Anular gasto" (click)="anularGasto(g.gastoId!)"><fa-icon [icon]="icons.remove" /></button>}
+      @if(g.estado==='REGISTRADO' && !g.repartoId && can('GASTOS_CREAR') && !frozen()){<button type="button" class="admin-icon-button" title="Distribuir gasto" aria-label="Distribuir gasto" [disabled]="busy()" (click)="gastoId=g.gastoId!;repartir()"><fa-icon [icon]="icons.calculate" /></button>}
+      @if(g.repartoEstado==='PROPUESTO' && can('GASTOS_APROBAR') && !frozen()){<button type="button" class="admin-icon-button" title="Aprobar reparto" aria-label="Aprobar reparto" [disabled]="busy()" (click)="gastoId=g.gastoId!;aprobarReparto()"><fa-icon [icon]="icons.approve" /></button>}
+     </div></td>
+    </tr>}@empty{<tr><td colspan="6" class="e5-empty">Sin gastos registrados.</td></tr>}
    </tbody></table></div>
-   @if(repartos();as r){<h3>Historial de repartos · gasto {{r.gastoId}}</h3>
-    @for(v of r.repartos??[];track v.repartoId){<details class="e5-card"><summary>Versión {{v.version}} · {{v.estado}} · {{v.vendedores}} vendedores · {{v.importe | currency:v.moneda}}</summary>
-      <div class="e5-scroll"><table><thead><tr><th>Participación</th><th>Cuota</th></tr></thead><tbody>
-       @for(x of v.socios??[];track x.participacionId){<tr><td>{{x.participacionId}}</td><td>{{x.monto | currency:'PEN'}}</td></tr>}
+   @if(repartos();as r){<div class="e5-head"><h3>Repartos del gasto {{r.gastoId}}</h3><button type="button" class="admin-icon-button" title="Cerrar detalle" aria-label="Cerrar detalle" (click)="repartos.set(null)"><fa-icon [icon]="icons.close" /></button></div>
+    @for(v of r.repartos??[];track v.repartoId){<details class="e5-card"><summary>Versión {{v.version}} · {{v.estado}} · {{v.importe | currency:v.moneda}}</summary>
+      <div class="admin-table-wrap e5-scroll"><table class="admin-table desco-data-table"><thead><tr><th>Participación</th><th>Cuota</th></tr></thead><tbody>
+       @for(x of v.socios??[];track x.participacionId){<tr><td>{{nombreSocio(x.participacionId)}}</td><td class="e5-number">{{x.monto | currency:'PEN'}}</td></tr>}
       </tbody></table></div></details>}
-    @if(can('GASTOS_APROBAR')){
-     <label class="admin-field">Motivo de rectificación
-      <textarea class="admin-input" rows="2" maxlength="500" [(ngModel)]="observacion"></textarea></label>
-     <button type="button" class="admin-secondary-button" (click)="rectificarReparto()" [disabled]="busy()||!observacion.trim()">Rectificar reparto</button>
+    @if(can('GASTOS_APROBAR') && !frozen()){
+     <label class="admin-field">Motivo de rectificación<textarea class="admin-input" rows="2" maxlength="500" [(ngModel)]="observacion"></textarea></label>
+     <button type="button" class="admin-secondary-button" (click)="rectificarReparto()" [disabled]="busy()||!observacion.trim()">Rectificar</button>
     }
    }
   </section>
  }
- @if((tab()==='liquidaciones'||tab()==='pagos') && (canViewLiquidaciones()||can('PAGOS_VER'))){
+ @if(tab()==='liquidaciones' && canViewLiquidaciones()){
   <section class="admin-surface e5-panel">
-   <h2>Liquidaciones y pagos</h2>
-   <p>El cálculo utiliza kilos y precios confirmados de E4. Una sanción ya aplicada al precio no se vuelve a descontar.</p>
-   @if(can('LIQUIDACIONES_CREAR')){
-    <label class="admin-field">Motivo de rectificación (solo para liquidaciones aprobadas)
-     <input class="admin-input" [(ngModel)]="motivoRectificacion" maxlength="500" placeholder="Opcional"/></label>
-   }
-   <div class="e5-scroll"><table><thead><tr><th>Socio</th><th>Kg</th><th>Estado</th><th>Saldo</th><th>Acciones</th></tr></thead><tbody>
-   @for(s of sociosFiltrados();track s.participacionId){@if((s.kilogramos??0)>0){<tr>
-    <td>{{s.socio}}</td><td>{{s.kilogramos | number:'1.3-3'}}</td><td>{{s.liquidacionEstado??'Sin liquidación'}}</td>
-    <td>{{s.saldo??0 | currency:'PEN'}}</td><td class="e5-actions">
-     @if(s.liquidacionId){<button type="button" class="admin-secondary-button" (click)="openLiquidacion(s.liquidacionId!)">Detalle</button>}
-     @if(can('LIQUIDACIONES_CREAR') && (!s.liquidacionId || motivoRectificacion.trim())){
-      <button type="button" class="admin-primary-button" [disabled]="busy()" (click)="liquidar(s.participacionId!)">Calcular</button>}
-    </td>
-   </tr>}}@empty{<tr><td colspan="5">Sin ventas confirmadas.</td></tr>}
+   <div class="e5-head"><h2>Liquidación por socio</h2>
+    @if(can('LIQUIDACIONES_CREAR')){<button type="button" class="admin-primary-button" [disabled]="busy()||!puedeLiquidar()||gastosPendientes()||!pendientesLiquidar().length" (click)="liquidarPendientes()"><fa-icon [icon]="icons.calculate" /> Generar pendientes ({{pendientesLiquidar().length}})</button>}
+   </div>
+   @if(!puedeLiquidar()&&!tablero()?.cerrada){<p class="e5-readonly">{{tablero()?.estado==='ACTIVA'?'Sin ventas confirmadas.':tablero()?.estado==='PLANIFICACION'?'Activa la campaña para generar liquidaciones.':'No se pueden generar liquidaciones en este estado.'}}</p>}
+   @if(gastosPendientes()){<p class="e5-readonly">Hay gastos pendientes de aprobación.</p>}
+   @if(requiereReliquidacion()){<p class="e5-ok">Hay liquidaciones por actualizar.</p>}
+   <label class="admin-field">Buscar socio<input class="admin-input" [ngModel]="search()" (ngModelChange)="search.set($event)" placeholder="Nombre o identificador" /></label>
+   <div class="admin-table-wrap e5-scroll e5-liquidation-scroll"><table class="admin-table desco-data-table e5-liquidation-table"><thead><tr><th>Socio</th><th>Kg aceptados</th><th>Venta bruta</th><th>Venta efectiva</th><th>Gastos</th><th>Cargos</th><th>Neto</th><th>Pagado</th><th>Saldo</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>
+    @for(s of sociosLiquidacion();track s.participacionId){<tr>
+     <td class="e5-socio-cell"><span>{{s.socio}}</span></td><td class="e5-number">{{s.kilogramos??0 | number:'1.3-3'}}</td>
+     <td class="e5-number">{{s.bruto??0 | currency:'PEN'}}</td>
+     <td class="e5-number">{{s.ventaEfectiva??0 | currency:'PEN'}}</td>
+     <td class="e5-number">{{s.gastos??0 | currency:'PEN'}}</td>
+     <td class="e5-number">{{s.cargos??0 | currency:'PEN'}}</td>
+     <td class="e5-number">{{s.liquidacionId?(s.neto??0 | currency:'PEN'):'—'}}</td>
+     <td class="e5-number">{{s.pagado??0 | currency:'PEN'}}</td>
+     <td class="e5-number">{{s.liquidacionId?(s.saldo??0 | currency:'PEN'):'—'}}</td><td><span class="e5-state">{{estadoTexto(s.liquidacionEstado)}}</span></td>
+     <td class="e5-actions-cell"><div class="e5-row-actions">
+      <button type="button" class="admin-icon-button" title="Detalles" aria-label="Detalles" [disabled]="!s.participacionId"
+        (click)="abrirLiquidacion(s.participacionId!,s.socio??'Socio',s.liquidacionId??null,s.liquidacionEstado??'')"><fa-icon [icon]="icons.view" /></button>
+      @if(!s.liquidacionId && (s.kilogramos??0)>0 && can('LIQUIDACIONES_CREAR')){
+       <button type="button" class="admin-icon-button" title="Generar" aria-label="Generar" [disabled]="busy()||gastosPendientes()||!puedeLiquidar()"
+        (click)="generarDesdeTabla(s.participacionId!)"><fa-icon [icon]="icons.calculate" /></button>
+      }
+      @if(s.liquidacionId && s.requiereRegeneracion && (s.pagado??0)<=0 && can('LIQUIDACIONES_CREAR') && can('LIQUIDACIONES_EDITAR')){
+       <button type="button" class="admin-icon-button" title="Regenerar" aria-label="Regenerar" [disabled]="busy()||gastosPendientes()||!puedeLiquidar()"
+        (click)="regenerarDesdeTabla(s.participacionId!)"><fa-icon [icon]="icons.refresh" /></button>
+      }
+      @if(s.liquidacionId && s.liquidacionEstado==='CALCULADA' && !s.requiereRegeneracion && can('LIQUIDACIONES_APROBAR')){
+       <button type="button" class="admin-icon-button" title="Aprobar" aria-label="Aprobar" [disabled]="busy()||gastosPendientes()"
+        (click)="aprobarDesdeTabla(s.liquidacionId!)"><fa-icon [icon]="icons.approve" /></button>
+      }
+      @if(s.liquidacionId && s.liquidacionEstado==='CALCULADA' && can('LIQUIDACIONES_EDITAR')){
+       <button type="button" class="admin-icon-button" title="Observar" aria-label="Observar" [disabled]="busy()"
+        (click)="observarDesdeTabla(s.liquidacionId!)"><fa-icon [icon]="icons.edit" /></button>
+      }
+     </div></td>
+    </tr>}@empty{<tr><td colspan="11" class="e5-empty">Sin socios para liquidar.</td></tr>}
    </tbody></table></div>
-   @if(detalle();as d){<section class="e5-detail e5-card">
-    <div class="e5-head"><h3>Liquidación #{{d.liquidacionId}} · v{{d.version}}</h3><strong>{{d.estado}}</strong></div>
-    <div class="e5-metrics">
-     <div><small>Bruto referencial</small><strong>{{d.bruto??0 | currency:'PEN'}}</strong></div>
-     <div><small>Ajuste de precio (informativo)</small><strong>-{{d.ajustePrecio??0 | currency:'PEN'}}</strong></div>
-     <div><small>Venta efectiva</small><strong>{{d.ventaAjustada??0 | currency:'PEN'}}</strong></div>
-     <div><small>Cargos particulares</small><strong>-{{d.cargos??0 | currency:'PEN'}}</strong></div>
-     <div><small>Gastos comunes</small><strong>-{{d.gastos??0 | currency:'PEN'}}</strong></div>
-     <div><small>Descuentos adicionales</small><strong>-{{d.descuentos??0 | currency:'PEN'}}</strong></div>
-     <div><small>Bonificaciones</small><strong>{{d.bonificaciones??0 | currency:'PEN'}}</strong></div>
-     <div><small>Redondeo monetario</small><strong>{{d.redondeo??0 | currency:'PEN'}}</strong></div>
-     <div><small>Neto liquidable</small><strong>{{d.neto??0 | currency:'PEN'}}</strong></div>
-     <div><small>Pagado</small><strong>{{d.pagado??0 | currency:'PEN'}}</strong></div>
-     <div><small>Saldo</small><strong>{{d.saldo??0 | currency:'PEN'}}</strong></div>
-    </div>
-    <details><summary>Desglose de fuentes y partidas</summary><div class="e5-scroll"><table>
-      <thead><tr><th>Concepto</th><th>Tipo</th><th>Importe</th><th>Origen</th></tr></thead><tbody>
-      @for(l of d.detalle??[];track l.detalleId){<tr><td>{{l.concepto}}</td><td>{{l.tipo}}</td>
-       <td>{{l.importe | currency:'PEN'}}</td><td>{{l.entregaDetalleId??l.gastoLineaId??l.ajusteId??'Cargo E4'}}</td></tr>}
-      </tbody></table></div></details>
-    @if(d.estado==='CALCULADA' && can('LIQUIDACIONES_APROBAR')){
-     <button type="button" class="admin-primary-button" [disabled]="busy()" (click)="aprobarLiquidacion()">Aprobar liquidación</button>
-    }
-    @if(d.estado==='CALCULADA' && can('LIQUIDACIONES_EDITAR')){
-     <label class="admin-field">Motivo de observación<input class="admin-input" maxlength="500" [(ngModel)]="observacion" /></label>
-     <button type="button" class="admin-secondary-button" [disabled]="busy()||!observacion.trim()" (click)="observarLiquidacion()">Observar</button>
-    }
-    @if(d.estado==='APROBADA' && (d.saldo??0)>0 && can('PAGOS_CONFIRMAR')){
-     <h3>Registrar pago</h3><div class="e5-form">
-      <label class="admin-field">Importe (PEN)<input class="admin-input" type="number" min="0.01" step="0.01" [(ngModel)]="importePago" /></label>
-      <button type="button" class="admin-secondary-button" (click)="saldoCompleto()">Pagar saldo completo</button>
-      <label class="admin-field">Medio<select class="admin-select" [(ngModel)]="medioPago"><option value="TRANSFERENCIA">Transferencia</option><option value="DEPOSITO">Depósito</option><option value="EFECTIVO">Efectivo</option></select></label>
-      <label class="admin-field">Referencia / comprobante<input class="admin-input" [(ngModel)]="referenciaPago" maxlength="100"/></label>
-      <button type="button" class="admin-primary-button" (click)="pagar()" [disabled]="busy()||!importePago||importePago<=0||importePago>(d.saldo??0)||((medioPago==='TRANSFERENCIA'||medioPago==='DEPOSITO')&&!referenciaPago.trim())">Confirmar pago</button>
-     </div>
-    }
-    <h3>Historial de pagos</h3><div class="e5-scroll"><table><thead><tr><th>Fecha</th><th>Importe</th><th>Medio</th><th>Referencia</th><th>Estado</th><th></th></tr></thead><tbody>
-     @for(p of d.pagos??[];track p.pagoId){<tr><td>{{p.fecha | date:'short'}}</td><td>{{p.importe | currency:'PEN'}}</td><td>{{p.medioPago}}</td><td>{{p.referencia??'—'}}</td><td>{{p.estado}}</td>
-      <td>@if(p.estado==='CONFIRMADO' && can('PAGOS_RETIRAR')){<button type="button" class="admin-secondary-button" (click)="reversar(p.pagoId!)" [disabled]="busy()||!observacion.trim()">Reversar</button>}</td></tr>}
-    </tbody></table></div>
-    @if(can('PAGOS_RETIRAR')){<label class="admin-field">Motivo de reversión<input class="admin-input" maxlength="500" [(ngModel)]="observacion" /></label>}
-   </section>}
+  </section>
+ }
+ @if(tab()==='cobros' && canViewCobros()){
+  <section class="admin-surface e5-panel">
+   <div class="e5-head"><div><h2>Cobros del comprador</h2><small class="e5-muted">{{compradorNombre()}}</small></div>
+    @if(can('COBROS_CREAR')){<button type="button" class="admin-primary-button" [disabled]="busy()||tablero()?.cerrada||saldoRegistrable()<=0" (click)="nuevoCobro()"><fa-icon [icon]="icons.add" /> Registrar cobro</button>}
+   </div>
+   <div class="e5-metrics">
+    <div><small>Venta al comprador</small><strong>{{cobros()?.ventaComprador??0 | currency:'PEN'}}</strong></div>
+    <div><small>Total cobrado</small><strong>{{cobros()?.cobrado??0 | currency:'PEN'}}</strong></div>
+    <div><small>Saldo por cobrar</small><strong>{{cobros()?.saldoComprador??0 | currency:'PEN'}}</strong></div>
+    <div><small>Disponible para registrar</small><strong>{{saldoRegistrable()|currency:'PEN'}}</strong></div>
+   </div>
+   @if(cobros() && saldoRegistrable()<=0){<p class="e5-muted" role="status">{{(cobros()?.ventaComprador??0)<=0?'Sin ventas confirmadas.':'Saldo totalmente registrado.'}}</p>}
+   <div class="admin-table-wrap e5-scroll"><table class="admin-table desco-data-table"><thead><tr><th>Fecha</th><th>Método</th><th>Referencia</th><th>Importe</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>
+    @for(m of cobrosDetalle()?.movimientos??[];track m.cobroId){<tr>
+     <td>{{m.fecha?(m.fecha | date:'dd/MM/yyyy HH:mm'):'—'}}</td><td>{{m.medioPago}}</td><td>{{m.numeroOperacion??'—'}}</td>
+     <td class="e5-number">{{m.importe | currency:m.moneda}}</td><td><span class="e5-state">{{m.estado}}</span></td>
+     <td><div class="e5-row-actions">
+      <button type="button" class="admin-icon-button" title="Ver comprobantes del cobro" aria-label="Ver comprobantes del cobro" (click)="abrirCobroDocumentos(m.cobroId)"><fa-icon [icon]="icons.file" /></button>
+      @if(m.estado==='REGISTRADO' && can('COBROS_CONFIRMAR') && !tablero()?.cerrada){<button type="button" class="admin-icon-button" title="Confirmar cobro" aria-label="Confirmar cobro" (click)="confirmarCobroRegistrado(m.cobroId)"><fa-icon [icon]="icons.approve" /></button>}
+      @if(m.estado!=='ANULADO' && m.estado!=='CONFIRMADO' && can('COBROS_RETIRAR') && !tablero()?.cerrada){<button type="button" class="admin-icon-button e5-danger-button" title="Anular cobro" aria-label="Anular cobro" (click)="anularCobroRegistrado(m.cobroId)"><fa-icon [icon]="icons.remove" /></button>}
+     </div></td>
+    </tr>}@empty{<tr><td colspan="6" class="e5-empty">Sin cobros registrados.</td></tr>}
+   </tbody></table></div>
   </section>
  }
  @if(tab()==='reportes'){
@@ -144,7 +160,6 @@
    <div class="e5-head"><h2>Reportes de campaña</h2>
     @if(can('REPORTES_EXPORTAR')){<button type="button" class="admin-primary-button" (click)="exportar()">Exportar CSV autorizado</button>}
    </div>
-   <p>La venta comercial no equivale a cobro bancario; las obligaciones con socios se muestran por separado.</p>
    <div class="e5-metrics"><div><small>Venta al comprador</small><strong>{{cobros()?.ventaComprador??0 | currency:'PEN'}}</strong></div>
     <div><small>Cobrado del comprador</small><strong>{{cobros()?.cobrado??0 | currency:'PEN'}}</strong></div>
     <div><small>Saldo comprador</small><strong>{{cobros()?.saldoComprador??0 | currency:'PEN'}}</strong></div>
@@ -155,23 +170,99 @@
    </tbody></table></div>
   </section>
  }
- @if(tab()==='cierre'){
-  <section class="admin-surface e5-panel"><h2>Verificación de cierre</h2>
-   <button type="button" class="admin-secondary-button" (click)="loadCierre()">Revalidar diferencias</button>
-   @if(cierre();as c){<p><strong>{{c.pendientes??0}}</strong> diferencias detectadas.</p>
-    @for(d of c.diferencias??[];track d.codigo){<p class="e5-alert">{{d.codigo}} · {{d.detalle}}</p>}
-    @if((c.pendientes??0)===0){<p class="e5-ok">Sin diferencias registradas por las validaciones de cierre.</p>}
-   }
-   @if(can('CAMPANIAS_ADMINISTRAR')&&!tablero()?.cerrada){
-    <label class="admin-field">Observaciones de cierre<textarea class="admin-input" rows="3" maxlength="800" [(ngModel)]="cierreObservacion"></textarea></label>
-    @if((cierre()?.pendientes??0)>0){
-     <label><input type="checkbox" [(ngModel)]="excepcionAutorizada" /> Solicitar cierre con excepción autorizada</label>
-     @if(excepcionAutorizada){<label class="admin-field">Justificación de excepción<textarea class="admin-input" rows="3" maxlength="800" [(ngModel)]="motivoExcepcion"></textarea></label>}
-    }
-    <button type="button" class="admin-primary-button" (click)="cerrar()" [disabled]="busy()||!cierreObservacion.trim()||((cierre()?.pendientes??0)>0&&(!excepcionAutorizada||!motivoExcepcion.trim()))">Cerrar campaña</button>
-   }
-   @if(tablero()?.cerrada){<p class="e5-ok">Campaña cerrada. Se conserva el balance congelado y la consulta histórica.</p>}
-  </section>
- }
  }
 </section>
+<app-gasto-form />
+<app-e5-expense-detail />
+<app-evidence-uploader />
+<app-cobro-comprador-form />
+<app-action-confirm-dialog />
+<dialog #evidenceDialog class="modal" (close)="evidencia.set(null)">
+ <div class="modal-box e5-dialog">
+  <div class="e5-head"><h2>{{evidencia()?.tipo==='COBRO'?'Comprobantes del cobro':'Comprobantes del gasto'}}</h2><button type="button" class="admin-icon-button" title="Cerrar" aria-label="Cerrar" (click)="cerrarGastoDocumentos()"><fa-icon [icon]="icons.close" /></button></div>
+  @if(evidencia();as e){<app-evidence-panel [context]="e" [title]="e.etiqueta??'Gasto'" [readOnly]="!!tablero()?.cerrada" />}
+ </div>
+</dialog>
+<dialog #manualDialog class="modal" (cancel)="$event.preventDefault()" (close)="manualGasto.set(null)">
+ <div class="modal-box e5-dialog e5-manual-dialog">
+  <header class="admin-modal-header"><div class="admin-modal-heading"><span class="admin-modal-icon"><fa-icon [icon]="icons.expense" /></span>
+   <div><h3>{{manualGasto()?.rectificacion?'Rectificar distribución manual':'Distribución manual'}}</h3><small>{{manualGasto()?.concepto}}</small></div></div>
+   <button type="button" class="admin-icon-button" [disabled]="busy()" aria-label="Cerrar" (click)="cerrarManual()"><fa-icon [icon]="icons.close" /></button>
+  </header>
+  <p class="e5-muted">Selecciona los socios que asumirán el gasto e indica cuánto se cobrará a cada uno. El importe debe coincidir exactamente.</p>
+  <div class="e5-manual-list">
+   @for(s of tablero()?.socios??[];track s.participacionId){
+    @if(s.participacionId && (s.kilogramos??0)>0){
+     <label class="e5-manual-row"><span><input type="checkbox" [checked]="seleccionadoManual(s.participacionId)"
+       (change)="seleccionarManual(s.participacionId,$any($event.target).checked)" /> {{s.socio}}</span>
+      <input class="admin-input" type="number" step="0.01" min="0" [disabled]="!seleccionadoManual(s.participacionId)"
+        [ngModel]="montoManual(s.participacionId)" (ngModelChange)="cambiarMontoManual(s.participacionId,$event)" aria-label="Importe por socio" />
+     </label>
+    }
+   }
+  </div>
+  <div class="e5-manual-totals"><span>Asignado: <strong>{{totalManual()|currency:'PEN'}}</strong></span><span>Total gasto: <strong>{{manualGasto()?.importe??0|currency:'PEN'}}</strong></span></div>
+  @if(manualCuotas().length&&!manualValido()){<p class="e5-readonly">La suma de cuotas debe igualar el gasto y cada cuota debe ser mayor que cero.</p>}
+  <footer class="admin-modal-actions"><button class="admin-secondary-button" type="button" [disabled]="busy()" (click)="cerrarManual()">Cancelar</button>
+   <button class="admin-primary-button" type="button" [disabled]="busy()||!manualValido()" (click)="confirmarRepartoManual()">{{manualGasto()?.rectificacion?'Rectificar reparto':'Proponer reparto'}}</button></footer>
+ </div>
+</dialog>
+<dialog #liquidacionDialog class="e5-liquidacion-dialog" aria-labelledby="e5-liquidacion-titulo"
+  (cancel)="$event.preventDefault();cerrarLiquidacion()" (close)="socioModal.set(null)">
+ <div class="e5-liquidacion-modal">
+  <header class="admin-modal-header">
+   <div class="admin-modal-heading"><span class="admin-modal-icon"><fa-icon [icon]="icons.calculate" /></span>
+    <div><small>Detalle de liquidación</small><h3 id="e5-liquidacion-titulo">{{socioModal()?.socio??'Socio'}}</h3></div>
+   </div>
+   <button type="button" class="admin-icon-button" title="Cerrar" aria-label="Cerrar detalle de liquidación"
+    [disabled]="busy()" (click)="cerrarLiquidacion()"><fa-icon [icon]="icons.close" /></button>
+  </header>
+
+  <div class="e5-liquidacion-modal__body">
+   @if(entregasError()){<p class="e5-alert" role="alert">{{entregasError()}}</p>}
+   @if(entregas();as e){
+    <nav class="desco-tabs" role="tablist" aria-label="Información de producción y ventas">
+     <button type="button" role="tab" [attr.aria-selected]="modalTab()==='partidas'" [class.selected]="modalTab()==='partidas'" (click)="modalTab.set('partidas')">Partidas ({{(e.partidas??[]).length}})</button>
+     <button type="button" role="tab" [attr.aria-selected]="modalTab()==='entregas'" [class.selected]="modalTab()==='entregas'" (click)="modalTab.set('entregas')">Entregas ({{(e.entregas??[]).length}})</button>
+     <button type="button" role="tab" [attr.aria-selected]="modalTab()==='jabas'" [class.selected]="modalTab()==='jabas'" (click)="modalTab.set('jabas')">Jabas ({{(e.jabas??[]).length}})</button>
+    </nav>
+    <div class="e5-modal-table" role="tabpanel">
+     @if(modalTab()==='partidas'){
+      <table class="admin-table desco-data-table"><thead><tr><th>Variedad</th><th>Condición</th><th class="e5-number">Kg vendidos</th><th class="e5-number">Precio base</th><th class="e5-number">Precio aplicado</th><th class="e5-number">Importe</th></tr></thead><tbody>
+       @for(x of e.partidas??[];track x.detalleId){<tr><td>{{x.variedad}}</td><td>{{x.condicion}}</td><td class="e5-number">{{x.kilogramos|number:'1.3-3'}}</td><td class="e5-number">{{x.precioBase|currency:'PEN'}}</td><td class="e5-number">{{x.precioEfectivo|currency:'PEN'}}</td><td class="e5-number">{{x.importe|currency:'PEN'}}</td></tr>}
+       @empty{<tr><td colspan="6" class="e5-empty">Sin partidas confirmadas.</td></tr>}
+      </tbody></table>
+     } @else if(modalTab()==='entregas'){
+      <table class="admin-table desco-data-table"><thead><tr><th>Lote</th><th class="e5-number">Jabas</th><th class="e5-number">Peso bruto</th><th class="e5-number">Tara</th><th class="e5-number">Rechazo</th><th class="e5-number">Neto kg</th></tr></thead><tbody>
+       @for(x of e.entregas??[];track x.entregaId){<tr><td>{{x.lote}}</td><td class="e5-number">{{x.jabas}}</td><td class="e5-number">{{x.pesoBruto|number:'1.3-3'}}</td><td class="e5-number">{{x.tara|number:'1.3-3'}}</td><td class="e5-number">{{x.rechazado|number:'1.3-3'}}</td><td class="e5-number">{{x.aceptado|number:'1.3-3'}}</td></tr>}
+       @empty{<tr><td colspan="6" class="e5-empty">Sin entregas confirmadas.</td></tr>}
+      </tbody></table>
+     } @else {
+      <table class="admin-table desco-data-table"><thead><tr><th>Jaba</th><th class="e5-number">Bruto kg</th><th class="e5-number">Tara kg</th><th class="e5-number">Neto kg</th></tr></thead><tbody>
+       @for(x of e.jabas??[];track x.unidadId){<tr><td>Jaba {{x.numero}}</td><td class="e5-number">{{x.pesoBruto|number:'1.3-3'}}</td><td class="e5-number">{{x.tara|number:'1.3-3'}}</td><td class="e5-number">{{x.pesoNeto|number:'1.3-3'}}</td></tr>}
+       @empty{<tr><td colspan="4" class="e5-empty">Sin jabas pesadas.</td></tr>}
+      </tbody></table>
+     }
+    </div>
+   } @else if(!entregasError()){
+    <p class="e5-muted" role="status">Cargando producción y ventas confirmadas...</p>
+   }
+
+   @if(detalle();as d){
+    <div class="e5-liquidacion-modal__summary">
+     <span>Liquidación {{d.version ? 'v'+d.version : ''}} · <strong>{{estadoTexto(d.estado)}}</strong></span>
+     <span>Neto: <strong>{{d.neto??0|currency:'PEN'}}</strong></span>
+     <span>Pagado: <strong>{{d.pagado??0|currency:'PEN'}}</strong></span>
+     <span>Saldo: <strong>{{d.saldo??0|currency:'PEN'}}</strong></span>
+    </div>
+   } @else if(!socioModal()?.liquidacionId){
+    @if(!puedeLiquidar()&&!tablero()?.cerrada){<p class="e5-readonly">La campaña aún no admite liquidaciones.</p>}
+    @else if(entregas()&&!(entregas()?.partidas??[]).length){<p class="e5-readonly">Sin ventas confirmadas para liquidar.</p>}
+   }
+  </div>
+
+  <footer class="admin-modal-actions e5-liquidacion-modal__footer">
+   <button type="button" class="admin-secondary-button" (click)="cerrarLiquidacion()">Cerrar</button>
+  </footer>
+ </div>
+</dialog>

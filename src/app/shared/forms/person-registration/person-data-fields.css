@@ -8,3 +8,11 @@
 .person-data-fields small { color: var(--desco-danger, #dc2626); font-size: .8125rem; }
 .person-data-fields [readonly] { background: var(--desco-surface-soft); cursor: default; }
 @media (max-width: 560px) { .person-data-fields { grid-template-columns: minmax(0, 1fr); } .person-data-fields__full { grid-column: 1; } }
+
+/* Normalización transversal de entradas para el formulario compartido de Persona. */
+.person-data-fields > .admin-field { align-self:start; width:100%; }
+.person-data-fields .admin-field > label { display:block; margin:0; line-height:1.35; }
+.person-data-fields .admin-input, .person-data-fields .admin-select {
+  width:100%; max-width:100%; min-height:2.75rem; border-radius:var(--desco-radius-sm,.65rem);
+}
+.person-data-fields input[type="date"] { min-width:0; }

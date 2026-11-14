@@ -12,4 +12,9 @@ export interface E5SocioBalanceResponse {
     neto?: number;
     pagado?: number;
     saldo?: number;
+    bruto?: number;
+    ventaEfectiva?: number;
+    gastos?: number;
+    cargos?: number;
+    requiereRegeneracion?: boolean;
 }

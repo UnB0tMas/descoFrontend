@@ -29,6 +29,7 @@ import { ReferenceDataService } from '../../../../../../../../core/reference-dat
 import { ReferenceItem } from '../../../../../../../../core/reference-data/reference-data.model';
 import { ToastService } from '../../../../../../../../shared/feedback/toast-center/toast.service';
 import { FormErrorComponent } from '../../../../../../../../shared/forms/form-error/form-error';
+import { EntityRegistrationModalComponent } from '../../../../../../../../shared/forms/person-registration/entity-registration-modal';
 import {
   GeographyCascadeComponent,
   GeographySelection,
@@ -110,12 +111,15 @@ function emptyIdentityFieldLocks(): IdentityFieldLocks {
     FaIconComponent,
     FormErrorComponent,
     GeographyCascadeComponent,
+    EntityRegistrationModalComponent,
   ],
   templateUrl: './empleado-form.html',
   styleUrl: './empleado-form.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EmpleadoFormComponent {
+  @ViewChild(EntityRegistrationModalComponent) private identityModal!: EntityRegistrationModalComponent;
+  readonly identityCaptured = signal(false);
   @ViewChild('dialog', { static: true })
   private readonly dialogRef!: ElementRef<HTMLDialogElement>;
 
@@ -269,6 +273,7 @@ export class EmpleadoFormComponent {
     this.current.set(employee);
     this.areas.set(options.areas);
     this.resetIdentityState();
+    this.identityCaptured.set(!!employee);
     this.errorMessage.set(null);
     this.loadCargoOptions();
 
@@ -367,6 +372,37 @@ export class EmpleadoFormComponent {
     return new Promise((resolve) => {
       this.resolver = resolve;
     });
+  }
+
+  /** Identidad común; el empleado se registra solo al confirmar los datos laborales. */
+  async openSharedIdentity():Promise<void> {
+    if (this.saving() || this.identityLoading() || this.current()) return;
+    const result=await this.identityModal.open({
+      eyebrow:'Empleados',title:'Datos de la persona',saveLabel:'Continuar',
+      documents:this.documentTypes.map(item=>({value:item.value,label:item.label})),
+      rucKind:'PERSONA',captureOnly:true,requireDistrictForManual:true,
+      startDocument:{type:this.form.controls.tipoDocumento.value,
+        number:this.form.controls.numeroDocumento.value},
+    });
+    if (!result?.data) return;
+    const data=result.data;
+    this.form.patchValue({
+      tipoDocumento:data.tipoDocumento as TipoDocumentoEmpleado,
+      numeroDocumento:data.numeroDocumento,nombres:data.nombres,
+      apellidoPaterno:data.apellidoPaterno,apellidoMaterno:data.apellidoMaterno,
+      fechaNacimiento:data.fechaNacimiento,telefono:data.telefono,correo:data.correo,
+      distritoCodigo:data.distritoCodigo,centroPobladoId:data.centroPobladoId,
+      referencia:data.referencia,
+    });
+    this.initialDistrictCode.set(data.distritoCodigo);
+    this.initialPopulationCenterId.set(data.centroPobladoId||null);
+    this.resolvedSex.set(data.sexo||null);
+    this.applyDocumentValidators(false);
+    this.verifiedIdentityKey.set(this.identityKey(data.tipoDocumento as TipoDocumentoEmpleado,data.numeroDocumento));
+    this.identityBlocked.set(false);
+    this.identityMessage.set(null);
+    this.identityCaptured.set(true);
+    this.errorMessage.set(null);
   }
 
   setGeography(selection: GeographySelection): void {
@@ -662,6 +698,11 @@ export class EmpleadoFormComponent {
     this.form.markAllAsTouched();
 
     if (this.saving() || this.identityLoading()) {
+      return;
+    }
+
+    if (!current && !this.identityCaptured()) {
+      this.errorMessage.set('Registre primero los datos de la persona.');
       return;
     }
 

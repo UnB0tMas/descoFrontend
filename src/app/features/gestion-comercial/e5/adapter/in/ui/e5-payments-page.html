@@ -1,0 +1,184 @@
+<section class="desco-page e5-payments-page">
+  <app-page-header title="Pagos a socios" eyebrow="APAPPSS" />
+
+  <section class="admin-surface e5-pay-list-surface">
+    <div class="admin-toolbar e5-pay-toolbar">
+      <label class="admin-field"><span>Campaña</span>
+        <select class="admin-select" [ngModel]="campaignId" (ngModelChange)="campaignId=$event;load()">
+          <option [ngValue]="0">Seleccionar campaña</option>
+          @for (c of options(); track c.value) {
+            <option [ngValue]="c.value">{{c.label}} · {{c.estado}}</option>
+          }
+        </select>
+      </label>
+      <label class="admin-field"><span>Buscar</span>
+        <input class="admin-input" type="search" [ngModel]="search()" (ngModelChange)="search.set($event)"
+          placeholder="Socio o liquidación" />
+      </label>
+      <label class="admin-field"><span>Estado del pago</span>
+        <select class="admin-select" [ngModel]="status()" (ngModelChange)="status.set($event)">
+          <option value="TODOS">Todas</option><option value="PENDIENTE">Pendiente</option>
+          <option value="PARCIAL">Pago parcial</option><option value="PAGADO">Pagado</option>
+          <option value="POR_APROBAR">Por aprobar</option>
+        </select>
+      </label>
+      <app-list-view-switch label="Presentación de socios" [view]="view()" (viewChange)="view.set($event)" />
+    </div>
+    @if (campaignId && board()) {
+      <div class="e5-pay-overview">
+        <div class="e5-pay-context">
+          <span class="admin-status" [class.admin-status--active]="!readOnly()">{{campaignState()}}</span>
+          @if (readOnly()) { <span class="e5-pay-lock">Solo lectura</span> }
+        </div>
+        <div class="e5-pay-kpis">
+          <article><span>Socios</span><strong>{{summary().socios}}</strong></article>
+          <article><span>Liquidado</span><strong>{{summary().total|currency:'PEN':'S/ ':'1.2-2'}}</strong></article>
+          <article><span>Pagado</span><strong>{{summary().pagado|currency:'PEN':'S/ ':'1.2-2'}}</strong></article>
+          <article><span>Pendiente</span><strong>{{summary().saldo|currency:'PEN':'S/ ':'1.2-2'}}</strong></article>
+        </div>
+        <button type="button" class="admin-secondary-button e5-pay-refresh" (click)="load()" [disabled]="loading()">Actualizar</button>
+      </div>
+    }
+    @if (error()) { <app-error-state [message]="error() || 'No se pudieron consultar las liquidaciones.'" (retry)="load()" /> }
+    @if (loading()) {
+      <app-loading-state title="Cargando" variant="detail" [rows]="4" />
+    } @else if (!campaignId) {
+      <app-empty-state title="Seleccione una campaña" message="" />
+    } @else if (!error() && !rows().length) {
+      <app-empty-state title="Sin resultados" message="" />
+    } @else if (!error() && view()==='table') {
+      <ng-template #socioCell let-s><div class="admin-stack-copy"><strong>{{s.socio}}</strong>
+        <span>Liquidación #{{s.liquidacionId}}</span></div></ng-template>
+      <ng-template #accionesCell let-s>
+        <div class="admin-row-actions e5-pay-actions">
+          @if(canView()) {
+            <a class="admin-icon-button e5-pay-action e5-pay-action--detail"
+              [routerLink]="['/gestion-comercial/pagos-socios/liquidaciones',s.liquidacionId]"
+              [queryParams]="{campaniaId:campaignId,origen:'pagos'}"
+              [attr.aria-label]="'Ver detalle de ' + s.socio" title="Ver detalle">
+              <fa-icon [icon]="detailIcon" />
+            </a>
+          }
+          @if(showPayAction(s)) {
+            <button type="button" class="admin-icon-button e5-pay-action e5-pay-action--payment"
+              [disabled]="!canPayRow(s)||busy()" [attr.title]="payHint(s)"
+              [attr.aria-label]="payHint(s) + ': ' + s.socio" (click)="abrirPago(s)">
+              <fa-icon [icon]="payIcon" />
+            </button>
+          }
+        </div>
+      </ng-template>
+      <app-data-table appearance="admin" [columns]="columns" [rows]="rows()" trackByKey="liquidacionId"
+        [cellTemplates]="{socio:socioCell,acciones:accionesCell}" />
+    } @else if (!error()) {
+      <div class="desco-record-grid e5-pay-grid">
+        @for (s of rows(); track s.liquidacionId) {
+          <app-record-card>
+            <header class="e5-pay-card-header"><span class="e5-pay-code">Liquidación #{{s.liquidacionId}} · v{{s.version}}</span>
+              <span class="admin-status" [class.admin-status--active]="s.estadoPago==='PAGADO'">{{estadoTexto(s.estadoPago)}}</span>
+            </header>
+            <h2>{{s.socio}}</h2>
+            <div class="e5-pay-facts">
+              <div><span>Kg aceptados</span><strong>{{s.kg|number:'1.3-3'}}</strong></div>
+              <div><span>Neto liquidado</span><strong>{{s.neto|currency:'PEN':'S/ ':'1.2-2'}}</strong></div>
+              <div><span>Pagado</span><strong>{{s.pagado|currency:'PEN':'S/ ':'1.2-2'}}</strong></div>
+              <div><span>Saldo</span><strong>{{s.saldo|currency:'PEN':'S/ ':'1.2-2'}}</strong></div>
+            </div>
+            <footer class="e5-pay-actions">
+              @if(canView()) {
+                <a class="admin-icon-button e5-pay-action e5-pay-action--detail"
+                  [routerLink]="['/gestion-comercial/pagos-socios/liquidaciones',s.liquidacionId]"
+                  [queryParams]="{campaniaId:campaignId,origen:'pagos'}"
+                  [attr.aria-label]="'Ver detalle de ' + s.socio" title="Ver detalle">
+                  <fa-icon [icon]="detailIcon" />
+                </a>
+              }
+              @if(showPayAction(s)) {
+                <button type="button" class="admin-icon-button e5-pay-action e5-pay-action--payment"
+                  [disabled]="!canPayRow(s)||busy()" [attr.title]="payHint(s)"
+                  [attr.aria-label]="payHint(s) + ': ' + s.socio" (click)="abrirPago(s)">
+                  <fa-icon [icon]="payIcon" />
+                </button>
+              }
+            </footer>
+          </app-record-card>
+        }
+      </div>
+    }
+  </section>
+</section>
+
+<dialog #payDialog class="e5-payment-dialog" aria-labelledby="e5-payment-title" (cancel)="onPayCancel($event)">
+  <div class="e5-payment-shell">
+    <header class="e5-payment-head">
+      <div><small>APAPPSS / TESORERÍA</small><h2 id="e5-payment-title">Registrar pago</h2></div>
+      <button type="button" class="admin-icon-button" (click)="closePay()" [disabled]="busy()" aria-label="Cerrar">×</button>
+    </header>
+    <div class="e5-payment-body">
+      <section class="e5-payment-overview" aria-label="Liquidación seleccionada">
+        <div class="e5-payment-socio"><small>Socio</small><strong>{{selected?.socio}}</strong>
+          <span>{{beneficiary()?.documento||'Documento no disponible'}}</span></div>
+        <div class="e5-payment-amount"><small>Total a pagar</small>
+          <strong>{{selected?.saldo??0|currency:'PEN':'S/ ':'1.2-2'}}</strong></div>
+      </section>
+      <section class="e5-payment-section" aria-label="Persona que recibe el pago">
+        <div class="e5-payment-section-title"><h3>Recibe el pago</h3>
+          @if(esTercero()){<span class="e5-payment-flag">Tercero</span>}
+        </div>
+        <div class="e5-payment-receiver">
+          <div class="e5-payment-person"><strong>{{receptor()?.nombre||'Sin receptor'}}</strong>
+            <span>{{receptor()?.documento||'Documento pendiente'}}</span></div>
+          <div class="e5-payment-receiver-actions">
+            <button type="button" class="admin-secondary-button" [disabled]="busy()" (click)="elegirReceptor()">
+              {{esTercero()?'Cambiar':'Otra persona'}}
+            </button>
+            @if(esTercero()){
+              <button type="button" class="admin-secondary-button" [disabled]="busy()" (click)="usarTitular()">Restablecer socio</button>
+            }
+          </div>
+        </div>
+        @if(esTercero()){
+          <label class="admin-field">Motivo de entrega a tercero
+            <textarea class="admin-input" rows="2" maxlength="500" [(ngModel)]="motivoEntrega"
+              placeholder="Autorización o motivo de entrega"></textarea>
+          </label>
+        }
+      </section>
+      <section class="e5-payment-section" aria-label="Datos de pago">
+        <h3>Medio de pago</h3>
+        <div class="e5-payment-fields">
+          <label class="admin-field">Medio
+            <select class="admin-select" [(ngModel)]="medio" (ngModelChange)="referencia=''">
+              <option value="EFECTIVO">Efectivo</option><option value="YAPE">Yape</option>
+              <option value="PLIN">Plin</option><option value="DEPOSITO">Depósito bancario</option>
+            </select>
+          </label>
+          @if(medio!=='EFECTIVO'){
+            <label class="admin-field">Referencia
+              <input class="admin-input" [attr.maxlength]="medio==='YAPE'?3:medio==='PLIN'?60:100"
+                [placeholder]="medio==='YAPE'?'Últimos 3 dígitos':'Código de operación'" [(ngModel)]="referencia" />
+            </label>
+          }
+        </div>
+      </section>
+      <section class="e5-payment-section" aria-label="Comprobante">
+        <div class="e5-payment-section-title"><h3>Comprobante</h3><span class="e5-payment-optional">Opcional</span></div>
+        <app-e3-file-dropzone title="Archivo" [files]="proofFiles()"
+          [multiple]="false" [maxFiles]="1" [maxSizeMb]="10"
+          [accept]="proofAccept" fileTypesHint="PDF, JPG, PNG o WEBP"
+          [disabled]="busy()" [uploading]="busy()&&!!proof()"
+          (filesChange)="changeProof($event)" (invalid)="notifyInvalidProof($event)" />
+      </section>
+    </div>
+    <footer class="e5-payment-footer">
+      <span class="e5-payment-footer-total">Total <strong>{{selected?.saldo??0|currency:'PEN':'S/ ':'1.2-2'}}</strong></span>
+      <div class="e5-payment-footer-actions">
+        <button type="button" class="admin-secondary-button" (click)="closePay()" [disabled]="busy()">Cancelar</button>
+        <button type="button" class="admin-primary-button" [disabled]="!validPayment()" (click)="pay()">
+          {{busy()?'Procesando…':'Confirmar pago'}}
+        </button>
+      </div>
+    </footer>
+  </div>
+</dialog>
+<app-entity-registration-modal #entityModal />

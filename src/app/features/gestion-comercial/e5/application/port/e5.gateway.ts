@@ -10,9 +10,9 @@ export interface E5Gateway {
  tablero(campaniaId:number):Observable<E5TableroResponse>;
  gastos(campaniaId:number):Observable<E5GastosResponse>;
  repartos(gastoId:number):Observable<E5RepartosResponse>;
- repartir(gastoId:number):Observable<E5RepartoResponse>;
+ repartir(gastoId:number,cuotas?:readonly {participacionId:number;monto:number}[]):Observable<E5RepartoResponse>;
  aprobarReparto(gastoId:number):Observable<E5RepartoResponse>;
- rectificarReparto(gastoId:number,motivo:string):Observable<E5RepartoResponse>;
+ rectificarReparto(gastoId:number,motivo:string,cuotas?:readonly {participacionId:number;monto:number}[]):Observable<E5RepartoResponse>;
  liquidaciones(campaniaId:number):Observable<E5LiquidacionesResponse>;
  liquidar(participacionId:number,motivoRectificacion?:string):Observable<E5LiquidacionResponse>;
  liquidacion(liquidacionId:number):Observable<E5LiquidacionResponse>;

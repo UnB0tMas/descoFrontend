@@ -1,0 +1,111 @@
+<section class="sanctions-panel" [class.sanctions-panel--embedded]="mode==='partner'">
+  <header class="sanctions-header">
+    <div>
+      @if (mode==='catalog') { <h3>Sanciones de venta</h3> }
+      @else if (mode==='campaign') { <h3>Sanciones habilitadas</h3> }
+      @else { <h3>Sanción comercial</h3> }
+    </div>
+    <div class="sanctions-actions">
+      @if (mode!=='catalog') { <button type="button" class="admin-icon-button" title="Actualizar sanciones" aria-label="Actualizar sanciones" [disabled]="loading() || busy()" (click)="reload()"><fa-icon [icon]="reloadIcon" /></button> }
+      @if (!readOnly && mode==='campaign' && permission.has('SANCIONES_CONFIGURAR')) {
+        <button class="admin-secondary-button" type="button" (click)="openTariff()"><fa-icon [icon]="addIcon" /> Agregar sanción</button>
+      }
+      @if (!readOnly && mode==='partner' && permission.has('SANCIONES_APLICAR') && remaining()>0) {
+        <button class="admin-icon-button" type="button" [disabled]="!ratesAvailable().length || loading() || busy()"
+          [title]="ratesAvailable().length ? (partnerInfo()?.asignacion?.activo ? 'Editar sanción' : 'Aplicar sanción') : 'Configure sanciones al editar la campaña'"
+          [attr.aria-label]="partnerInfo()?.asignacion?.activo ? 'Editar sanción del socio' : 'Aplicar sanción al socio'" (click)="openPartner()"><fa-icon [icon]="editIcon" /></button>
+      }
+    </div>
+  </header>
+  @if (error()) { <p class="sanctions-error" role="alert">{{error()}}</p> }
+  @if (loading()) { <p class="sanctions-muted">Cargando...</p> }
+  @else if (mode==='catalog') {
+    <div class="sanctions-table-wrap"><table class="admin-table sanctions-table">
+      <thead><tr><th>Código</th><th>Nombre</th><th>Descripción</th><th>Estado</th><th>Acciones</th></tr></thead>
+      <tbody>@for (item of catalog();track item.id) {
+        <tr><td>{{item.codigo}}</td><td><strong>{{item.nombre}}</strong></td><td>{{item.descripcion || '—'}}</td>
+          <td><span class="admin-status" [class.admin-status--active]="item.activo">{{item.activo?'Activa':'Inactiva'}}</span></td>
+          <td class="sanctions-buttons">
+            @if (item.activo && permission.has('SANCIONES_EDITAR')) {
+              <button type="button" class="admin-icon-button" title="Editar" aria-label="Editar sanción" (click)="openCatalog(item)"><fa-icon [icon]="editIcon" /></button>
+            }
+            @if (item.activo && permission.has('SANCIONES_RETIRAR')) {
+              <button type="button" class="admin-icon-button" title="Deshabilitar" aria-label="Deshabilitar sanción" (click)="disableCatalog(item)"><fa-icon [icon]="disableIcon" /></button>
+            }
+          </td></tr>
+      } @empty {<tr><td colspan="5" class="sanctions-muted">Sin sanciones registradas.</td></tr>}</tbody>
+    </table></div>
+  }
+  @else if (mode==='campaign') {
+    <div class="sanctions-table-wrap"><table class="admin-table sanctions-table">
+      <thead><tr><th>Sanción</th><th>Descuento por kg</th><th>Socios</th><th>Estado</th><th>Acciones</th></tr></thead>
+      <tbody>@for (rate of tariffs();track rate.tarifaId) {
+        <tr><td><strong>{{rate.nombre}}</strong></td><td>S/ {{rate.descuentoKg | number:'1.2-4'}}</td>
+          <td>{{rate.socios}}</td><td><span class="admin-status" [class.admin-status--active]="rate.activo">{{rate.activo?'Habilitada':'Deshabilitada'}}</span></td>
+          <td class="sanctions-buttons">@if (!readOnly && rate.activo && permission.has('SANCIONES_CONFIGURAR')) {
+            <button type="button" class="admin-icon-button" title="Editar descuento" aria-label="Editar descuento" (click)="openTariff(rate)"><fa-icon [icon]="editIcon" /></button>
+            <button type="button" class="admin-icon-button" title="Quitar de campaña" aria-label="Quitar sanción de campaña" (click)="disableTariff(rate)"><fa-icon [icon]="disableIcon" /></button>
+          }</td></tr>
+      } @empty {<tr><td colspan="5" class="sanctions-muted">Sin sanciones para esta campaña.</td></tr>}</tbody>
+    </table></div>
+  }
+  @else {
+    @if (partnerInfo()?.asignacion; as applied) {
+      <div class="sanctions-partner-summary">
+        <div><span>Motivo</span><strong>{{applied.nombre}}</strong></div>
+        <div><span>Descuento</span><strong>S/ {{applied.descuentoKg | number:'1.2-4'}} / kg</strong></div>
+        <div><span>Jabas</span><strong>{{applied.alcance==='TODAS'?'Todas las pendientes':applied.desdeNumero+' a '+applied.hastaNumero}}</strong></div>
+        <div><span>Descuento acumulado</span><strong>S/ {{partnerInfo()?.totalDescuentoSoles | number:'1.2-2'}}</strong></div>
+      </div>
+      <p class="sanctions-muted sanctions-why">{{applied.comentario}}</p>
+      @if (!readOnly && applied.activo && permission.has('SANCIONES_APLICAR')) {
+        <button type="button" class="admin-icon-button" title="Retirar sanción no aplicada" aria-label="Retirar sanción" (click)="removeAssignment()"><fa-icon [icon]="disableIcon" /></button>
+      }
+    } @else {
+      <p class="sanctions-muted">Sin sanción aplicada.</p>
+    }
+  }
+</section>
+
+@if (modal()) {
+  <div class="sanctions-overlay" role="presentation" (click)="close()">
+    <section class="sanctions-dialog admin-modal-box" role="dialog" aria-modal="true" aria-label="Configurar sanción" (click)="$event.stopPropagation()">
+      <header class="sanctions-dialog-head"><h2>
+        @switch (modal()) {
+          @case ('catalog') { {{editCatalogId()?'Editar':'Nueva'}} sanción }
+          @case ('tariff') { Descuento por sanción }
+          @case ('partner') { Aplicar sanción al socio }
+          @case ('remove') { Retirar sanción }
+          @case ('disableCatalog') { Deshabilitar sanción }
+          @case ('disableTariff') { Quitar sanción }
+        }
+      </h2><button type="button" class="admin-icon-button" aria-label="Cerrar" [disabled]="busy()" (click)="close()"><fa-icon [icon]="closeIcon" /></button></header>
+      <form class="sanctions-form" (submit)="$event.preventDefault();save()">
+        @if (modal()==='catalog') {
+          <label class="admin-field"><span>Nombre</span><input class="admin-input" required maxlength="120" [value]="newName()" (input)="newName.set($any($event.target).value)" /></label>
+          <label class="admin-field"><span>Descripción</span><textarea class="admin-textarea" maxlength="300" rows="2" [value]="newDescription()" (input)="newDescription.set($any($event.target).value)"></textarea></label>
+        } @else if (modal()==='tariff') {
+          <label class="admin-field"><span>Sanción</span><select class="admin-select" [value]="selectedSanctionId() ?? ''" (change)="selectedSanctionId.set(+$any($event.target).value)">
+            @for (s of available();track s.id) { <option [value]="s.id">{{s.nombre}}</option> }
+          </select></label>
+          <label class="admin-field"><span>Descuento S/ por kg</span><input class="admin-input" type="number" required min="0.0001" step="0.0001" [value]="discount()" (input)="discount.set($any($event.target).value)" /></label>
+        } @else if (modal()==='partner') {
+          <label class="admin-field"><span>Sanción</span><select class="admin-select" [value]="selectedTariffId() ?? ''" (change)="selectedTariffId.set(+$any($event.target).value)">
+            @for (t of ratesAvailable();track t.tarifaId) {<option [value]="t.tarifaId">{{t.nombre}} · S/ {{t.descuentoKg | number:'1.2-4'}} / kg</option>}
+          </select></label>
+          <label class="admin-field"><span>Aplicar a</span><select class="admin-select" [value]="scope()" (change)="setScope($any($event.target).value)">
+            <option value="TODAS">Todas las jabas pendientes</option><option value="CANTIDAD">Una cantidad de jabas</option>
+          </select></label>
+          @if (scope()==='CANTIDAD') {<label class="admin-field"><span>Cantidad (máx. {{remaining()}})</span><input type="number" class="admin-input" required min="1" [max]="remaining()" step="1" [value]="quantity()" (input)="quantity.set($any($event.target).value)" /></label>}
+          <label class="admin-field"><span>Motivo / comentario</span><textarea class="admin-textarea" required minlength="10" maxlength="500" rows="3" [value]="comment()" (input)="comment.set($any($event.target).value)"></textarea></label>
+        } @else if (modal()==='disableCatalog' || modal()==='disableTariff') {
+          <p class="sanctions-muted">¿Confirmar deshabilitación de {{removalName()}}?</p>
+        } @else if (modal()==='remove') {
+          <label class="admin-field"><span>Motivo del retiro</span><textarea class="admin-textarea" required minlength="10" maxlength="500" rows="3" [value]="comment()" (input)="comment.set($any($event.target).value)"></textarea></label>
+        }
+        <footer class="sanctions-dialog-actions"><button type="button" class="admin-secondary-button" [disabled]="busy()" (click)="close()">Cancelar</button>
+          <button type="submit" class="admin-primary-button" [disabled]="busy()">{{busy()?'Guardando...':modal()==='disableCatalog'||modal()==='disableTariff'?'Deshabilitar':'Guardar'}}</button></footer>
+      </form>
+    </section>
+  </div>
+}

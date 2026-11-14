@@ -1,5 +1,5 @@
-<dialog #dialog class="modal desco-modal" (cancel)="$event.preventDefault(); close()" aria-labelledby="gt-productor-form-productor-form-dialog-title-1">
-  <div class="modal-box admin-modal-box admin-modal-box--wide">
+<dialog #dialog class="modal desco-modal producer-dialog" (cancel)="$event.preventDefault(); close()" aria-labelledby="gt-productor-form-productor-form-dialog-title-1">
+  <div class="modal-box admin-modal-box admin-modal-box--wide producer-dialog-panel">
     <header class="admin-modal-header">
       <div class="admin-modal-title-group">
         <span class="admin-modal-icon"><fa-icon [icon]="current() ? editIcon : addIcon" /></span>
@@ -8,38 +8,29 @@
       <button type="button" class="admin-icon-button" aria-label="Cerrar" [disabled]="saving() || identityLoading()" (click)="close()"><fa-icon [icon]="closeIcon" /></button>
     </header>
 
+    <div class="producer-modal-scroll">
     @if (errorMessage()) { <div class="admin-inline-error" role="alert">{{ errorMessage() }}</div> }
+    @if (apappss && !current()) { <p class="identity-help">Ingrese el documento y pulse Buscar para recuperar los datos de DESCO o Factiliza. Los campos faltantes podrán completarse desde aquí.</p> }
 
-    @if (!current() && registrationStep() === 'lookup') {
-      <app-person-lookup idPrefix="socio-buscar" [documentTypes]="documentTypes"
-        [documentType]="form.controls.tipoDocumento.value" [documentNumber]="form.controls.numeroDocumento.value"
-        [maxLength]="documentMaxLength()" [inputMode]="documentInputMode()" [canSearch]="canResolveIdentity()"
-        [searching]="identityLoading()" [disabled]="saving()" [message]="identityMessage()"
-        (documentTypeChange)="form.controls.tipoDocumento.setValue($any($event)); onDocumentTypeChange()"
-        (documentNumberChange)="form.controls.numeroDocumento.setValue($event); onDocumentInput()"
-        (searchRequested)="resolveIdentity()" (manualRequested)="startManualEntry()" />
+    @if (!apappss && !current() && registrationStep() === 'lookup') {
+      <div class="admin-field">
+        <button type="button" class="admin-primary-button" (click)="openSharedTraditionalIdentity()">
+          Registrar o recuperar persona
+        </button>
+      </div>
     } @else {
-      @if (!current()) {
+      @if (!apappss && !current()) {
         <div class="producer-form-mode">
           <span><strong>{{manualEntry() ? 'Registro de persona' : 'Datos de la persona'}}</strong></span>
           <button class="admin-secondary-button" type="button" [disabled]="saving()" (click)="backToLookup()">Volver a búsqueda</button>
         </div>
       }
-    <form class="admin-form-grid producer-person-form" [formGroup]="form" (ngSubmit)="current() || registrationStep() === 'membership' ? save() : continueToMembership()">
-      @if (registrationStep() === 'form' || !!current()) {
-      @if (canToggleIdentityEditing()) {
-        <div class="admin-field-span-2 producer-identity-choice">
-          <label class="admin-check-option producer-identity-toggle">
-            <input class="producer-identity-checkbox" type="checkbox" [checked]="identityEditingEnabled()"
-              (change)="toggleIdentityEditing($any($event.target).checked)" />
-            <span class="producer-identity-toggle-copy"><strong>Editar datos de la persona</strong></span>
-          </label>
-        </div>
-      }
+    <form id="producer-person-form" class="admin-form-grid producer-person-form" [formGroup]="form" (ngSubmit)="apappss || current() || registrationStep() === 'membership' ? save() : continueToMembership()">
+      @if (apappss || registrationStep() === 'form' || !!current()) {
       @if (identityMessage()) { <p class="identity-feedback admin-field-span-2" role="status">{{identityMessage()}}</p> }
       <app-person-data-fields class="admin-field-span-2" idPrefix="socio-persona" [form]="form"
         [documentTypes]="documentTypes" [documentMaxLength]="documentMaxLength()" [documentInputMode]="documentInputMode()"
-        [documentLocked]="!!current() || identityDocumentLocked()" [missingOnly]="!current() && identityRecordLoaded()" [disabled]="saving() || identityLoading()"
+        [documentLocked]="!!current() || identityDocumentLocked()" [missingOnly]="!apappss && !current() && identityRecordLoaded()" [disabled]="saving() || identityLoading()"
         [locks]="effectiveIdentityLocks()" [districtCode]="initialDistrictCode()"
         [populationCenterId]="initialPopulationCenterId()" [sex]="resolvedSex()"
         [minBirthDate]="minBirthDate" [maxBirthDate]="maxBirthDate"
@@ -47,16 +38,16 @@
         (documentTypeChanged)="onDocumentTypeChange()" (documentChanged)="onDocumentInput()"
         (nameChanged)="sanitizePersonInput($event)" (phoneChanged)="sanitizePhoneInput()"
         (geographyChanged)="setGeography($event)" />
-
-      @if (!current()) {
-      <footer class="admin-modal-actions admin-field-span-2">
-        <button type="button" class="admin-secondary-button" (click)="close()">Cancelar</button>
-        <button type="submit" class="admin-primary-button" [disabled]="saving() || identityLoading() || identityBlocked()">Continuar</button>
-      </footer>
+      @if (apappss && !current()) {
+        <div class="admin-field-span-2">
+          <button type="button" class="admin-secondary-button" [disabled]="!canResolveIdentity()" (click)="resolveIdentity()">
+            @if (identityLoading()) { Buscando... } @else { <fa-icon [icon]="searchIcon" /> Buscar documento }
+          </button>
+        </div>
       }
       }
-      @if (registrationStep() === 'membership' || !!current()) {
-        @if (!current()) {
+      @if (apappss || registrationStep() === 'membership' || !!current()) {
+        @if (!apappss && !current()) {
           <div class="producer-form-mode admin-field-span-2"><strong>Datos del socio</strong>
             <button type="button" class="admin-secondary-button" (click)="backToPersonalData()">Volver</button>
           </div>
@@ -104,15 +95,23 @@
       </div>
 
       }
-      <footer class="admin-modal-actions admin-field-span-2">
-        <button type="button" class="admin-secondary-button" [disabled]="saving() || identityLoading()" (click)="close()">Cancelar</button>
-        <button type="submit" class="admin-primary-button" [disabled]="saving() || identityLoading() || identityBlocked()">
-          @if (saving()) { <span class="loading loading-spinner loading-sm"></span> Guardando... }
-          @else { <fa-icon [icon]="saveIcon" /> Guardar }
-        </button>
-      </footer>
       }
     </form>
     }
+    </div>
+    <footer class="admin-modal-actions producer-modal-footer">
+      <button type="button" class="admin-secondary-button" [disabled]="saving() || identityLoading()" (click)="close()">Cancelar</button>
+      @if (!apappss && !current() && registrationStep() === 'form') {
+        <button type="button" class="admin-primary-button" [disabled]="saving() || identityLoading() || identityBlocked()" (click)="continueToMembership()">Continuar</button>
+      } @else if (apappss || !!current() || registrationStep() === 'membership') {
+        <button type="submit" form="producer-person-form" class="admin-primary-button"
+          [disabled]="saving() || identityLoading() || identityBlocked() || form.invalid || (!!current() && !hasEditChanges())">
+          @if (saving()) { <span class="loading loading-spinner loading-sm"></span> Guardando... }
+          @else { <fa-icon [icon]="saveIcon" /> {{current() ? 'Guardar cambios' : 'Guardar'}} }
+        </button>
+      }
+    </footer>
   </div>
 </dialog>
+
+<app-entity-registration-modal #entityModal />

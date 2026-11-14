@@ -1,57 +1,49 @@
 <div class="desco-page gp-page apappss-predio">
- <app-page-header [title]="detalle()?.nombre||'Detalle del predio'" subtitle="Ficha territorial y plantas de palta identificadas en el fundo." eyebrow="Convenios · APAPPSS" [icon]="icon">
+ <app-page-header [title]="detalle()?.nombre||'Detalle del fundo'" subtitle="Ubicación y plantas del predio." eyebrow="Convenios · APAPPSS" [icon]="icon">
   <div pageActions class="flex flex-wrap gap-2">
-   @if(socioId){<a class="admin-secondary-button" [routerLink]="['/convenios/apappss/socios',socioId]" [queryParams]="{convenioId:convenioId}"><fa-icon [icon]="backIcon"/> Volver al socio</a>}
-   @else{<a class="admin-secondary-button" routerLink="/convenios/apappss" [queryParams]="{convenioId:convenioId,seccion:'predios'}"><fa-icon [icon]="backIcon"/> Predios</a>}
+   @if(socioId){<a class="admin-secondary-button" [routerLink]="['/convenios/apappss/socios',socioId]" [queryParams]="{convenioId:convenioId}"><fa-icon [icon]="backIcon"/> Socio</a>}
+   @else{<a class="admin-secondary-button" routerLink="/convenios/apappss" [queryParams]="{convenioId:convenioId,seccion:'socios'}"><fa-icon [icon]="backIcon"/> Socios</a>}
    <button type="button" class="admin-secondary-button" [disabled]="loading()" (click)="cargar()"><fa-icon [icon]="refreshIcon"/> Actualizar</button>
+   @if(puedeEditar()){<button type="button" class="admin-primary-button" [disabled]="loading()" (click)="abrirEdicion()">Editar predio</button>}
   </div>
  </app-page-header>
- @if(loading()){<app-loading-state title="Cargando fundo" message="Consultando la ficha técnica del predio."/>}
- @else if(error()&&!detalle()){<app-error-state [message]="error()||'Error al consultar el predio.'" (retry)="cargar()"/>}
+ @if(loading()){<app-loading-state title="Cargando fundo" message="Consultando el predio."/>}
+ @else if(error()&&!detalle()){<app-error-state [message]="error()||'No se pudo cargar el fundo.'" (retry)="cargar()"/>}
  @else if(detalle();as d){
   @if(error()){<p class="gp-inline-error" role="alert">{{error()}}</p>}
-  <div class="admin-detail-grid">
-   <article class="admin-detail-card"><span>Código</span><strong>{{d.codigo}}</strong></article>
-   <article class="admin-detail-card"><span>Superficie total</span><strong>{{d.areaTotalHa==null?'Pendiente':(d.areaTotalHa|number:'1.2-4')+' ha'}}</strong></article>
-   <article class="admin-detail-card"><span>Distrito</span><strong>{{d.distritoCodigo}}</strong></article>
-   <article class="admin-detail-card"><span>GPS</span><strong>{{d.latitud!=null&&d.longitud!=null?'Registrado':'Pendiente'}}</strong></article>
-  </div>
-  <section class="admin-surface apappss-predio-body">
-   <nav class="gp-sections" aria-label="Información del fundo">
-    <button type="button" [class.selected]="tabPredio()==='ficha'" (click)="cambiarTab('ficha')">Ficha y ubicación</button>
-    <button type="button" [class.selected]="tabPredio()==='plantas'" (click)="cambiarTab('plantas')">Plantas y expedientes</button>
-   </nav>
-   @if(tabPredio()==='ficha'){
-    <div class="gp-section-title"><div><h2>Ubicación del predio</h2><p>Departamento, provincia, distrito y centro poblado desde el catálogo geográfico.</p></div></div>
-    <app-geography-cascade [districtCode]="d.distritoCodigo" [disabled]="true" />
-    @if(d.referencia){<p class="gp-inline-note">Referencia: {{d.referencia}}</p>}
-    @if(d.latitud!=null&&d.longitud!=null){
-     <div class="apappss-gps"><span>Latitud: {{d.latitud}}</span><span>Longitud: {{d.longitud}}</span></div>
-     <app-predio-map [latitude]="d.latitud" [longitude]="d.longitud" />
-    }@else{<p class="gp-inline-note">Este fundo aún no tiene coordenadas GPS registradas.</p>}
-    <div class="gp-section-title apappss-top-gap"><div><h2>Características del fundo</h2><p>Superficie total: {{d.areaTotalHa==null?'Pendiente':(d.areaTotalHa|number:'1.2-4')+' ha'}} · Riego: {{d.tipoRiego||'Sin especificar'}}</p></div></div>
-    @if(puedeEditar()){<div class="apappss-save"><button type="button" class="admin-primary-button" (click)="abrirEdicion()">Editar ficha técnica</button></div>}
-   }@else{
-    <app-plantas-e3-page [convenioId]="convenioId" [predioInicial]="predioId" [predioFijo]="true" [vistaIntegrada]="true" />
-   }
-  </section>
+  <nav class="gp-sections apappss-main-tabs" aria-label="Secciones del fundo">
+   <button type="button" [class.selected]="tabPredio()==='general'" [attr.aria-pressed]="tabPredio()==='general'" (click)="cambiarTab('general')">General</button>
+   <button type="button" [class.selected]="tabPredio()==='ubicacion'" [attr.aria-pressed]="tabPredio()==='ubicacion'" (click)="cambiarTab('ubicacion')">Ubicación</button>
+   <button type="button" [class.selected]="tabPredio()==='plantas'" [attr.aria-pressed]="tabPredio()==='plantas'" (click)="cambiarTab('plantas')">Plantas</button>
+   <button type="button" [class.selected]="tabPredio()==='produccion'" [attr.aria-pressed]="tabPredio()==='produccion'" (click)="cambiarTab('produccion')">Producción</button>
+   <button type="button" [class.selected]="tabPredio()==='materia-seca'" [attr.aria-pressed]="tabPredio()==='materia-seca'" (click)="cambiarTab('materia-seca')">Materia seca</button>
+  </nav>
+  @if(tabPredio()==='general'){
+   <div class="admin-detail-grid apappss-fundo-kpis">
+    <article class="admin-detail-card"><span>Código</span><strong>{{d.codigo}}</strong></article>
+    <article class="admin-detail-card"><span>Área total</span><strong>{{d.areaTotalHa==null?'Pendiente':(d.areaTotalHa|number:'1.2-4')+' ha'}}</strong></article>
+    <article class="admin-detail-card"><span>Área cultivable</span><strong>{{d.areaCultivableHa==null?'No registrada':(d.areaCultivableHa|number:'1.2-4')+' ha'}}</strong></article>
+    <article class="admin-detail-card"><span>Riego</span><strong>{{d.tipoRiego||'No registrado'}}</strong></article>
+    <article class="admin-detail-card"><span>Titulares del predio</span><strong>{{d.titulares.length}}</strong></article>
+   </div>
+   <section class="apappss-plants-summary" aria-label="Indicadores y gráficos exclusivos del predio"><app-plantas-e3-page [convenioId]="convenioId" [predioInicial]="predioId" [socioInicial]="socioId" [predioFijo]="true" [vistaIntegrada]="true" vistaFundo="general"/></section>
+  }@else if(tabPredio()==='ubicacion'){
+   <section class="admin-surface apappss-predio-body">
+    <div class="gp-section-title"><div><h2>Ubicación del predio</h2></div></div>
+    <app-geography-cascade [districtCode]="d.distritoCodigo" [populationCenterId]="d.centroPobladoId??null" [disabled]="true"/>
+    @if(d.referencia){<p class="apappss-reference">{{d.referencia}}</p>}
+    @if(d.latitud!=null&&d.longitud!=null){<app-apappss-navigation [latitud]="d.latitud" [longitud]="d.longitud"/>}
+    @else{<p class="gp-inline-note">Sin ubicación registrada.</p>}
+   </section>
+  }@else if(tabPredio()==='plantas'){
+   <section class="apappss-plants-tab"><app-plantas-e3-page [convenioId]="convenioId" [predioInicial]="predioId" [socioInicial]="socioId" [predioFijo]="true" [vistaIntegrada]="true" vistaFundo="plantas"/></section>
+  }@else if(tabPredio()==='produccion'){
+    <app-fundo-produccion [convenioId]="convenioId" [predioId]="predioId" [editable]="puedeEditar()"/>
+  }@else if(tabPredio()==='materia-seca'){
+   @if(ambitoMateriaSeca();as ambito){<section class="admin-surface apappss-predio-body"><app-e3-materia-seca
+     [ambito]="ambito" [editable]="puedeEditar()"/></section>}
+   @else{<p role="alert" class="gp-inline-error">No se pudo identificar el contexto territorial del predio.</p>}
+  }
  }
- <dialog #fichaDialog class="modal desco-modal gp-modal apappss-ficha-dialog" (cancel)="$event.preventDefault();cerrarEdicion()">
-  <div class="modal-box admin-modal-box admin-modal-box--wide gp-dialog-box desco-fixed-form-modal">
-   <header class="admin-modal-header"><div class="admin-modal-title-group"><span class="admin-modal-icon"><fa-icon [icon]="icon"/></span><div><p>Convenios · APAPPSS</p><h2>Editar ficha del predio</h2></div></div>
-   <button type="button" class="admin-icon-button" [disabled]="saving()" aria-label="Cerrar" (click)="cerrarEdicion()"><fa-icon [icon]="closeIcon"/></button></header>
-   @if(error()){<div class="admin-inline-error" role="alert">{{error()}}</div>}
-   <form (ngSubmit)="guardarFicha()" class="apappss-ficha-form desco-fixed-form-layout">
-    <div class="desco-fixed-form-body">
-    <div class="apappss-ficha-grid">
-     <label class="admin-field">Área total (hectáreas)<input class="admin-input" name="superficieHa" type="number" min="0.0001" step="0.0001" [ngModel]="superficieM2===null?null:superficieM2/10000" (ngModelChange)="setSuperficieHa($event,'total')"/></label>
-     <label class="admin-field">Área cultivable (hectáreas) · opcional<input class="admin-input" name="areaCultivableHa" type="number" min="0" step="0.0001" [ngModel]="superficieCultivableM2===null?null:superficieCultivableM2/10000" (ngModelChange)="setSuperficieHa($event,'cultivable')"/></label>
-     <label class="admin-field">Tipo de riego · opcional<input class="admin-input" name="riego" [(ngModel)]="tipoRiego" maxlength="30"/></label>
-    </div>
-    </div>
-    <footer class="admin-modal-actions desco-fixed-form-footer"><button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="cerrarEdicion()">Cancelar</button>
-    <button type="submit" class="admin-primary-button" [disabled]="saving()||superficieM2===null||superficieM2<=0">{{saving()?'Guardando...':'Guardar ficha'}}</button></footer>
-   </form>
-  </div>
- </dialog>
+ <app-apappss-predio-alta/>
 </div>

@@ -1,0 +1,81 @@
+<section class="desco-page e5-list-page">
+  <app-page-header title="Liquidaciones · APAPPSS" eyebrow="APAPPSS · Comercialización asociativa"
+    [icon]="calendarIcon" subtitle="Consulte el expediente financiero de las campañas de su UOT.">
+    <div pageActions class="flex flex-wrap gap-2">
+      <button type="button" class="admin-secondary-button" [disabled]="loading()" (click)="load()">
+        <fa-icon [icon]="reloadIcon" /> Actualizar
+      </button>
+    </div>
+  </app-page-header>
+
+  @if (loading()) {
+    <app-loading-state title="Cargando campañas" variant="detail" [rows]="6" />
+  } @else if (error()) {
+    <app-error-state [message]="error() || 'No se pudieron cargar las campañas.'" (retry)="load()" />
+  } @else {
+    <section class="admin-surface e5-list-surface" aria-label="Campañas para consulta financiera">
+      <div class="admin-toolbar e5-search-surface">
+        <label class="admin-field"><span>Buscar</span>
+          <input type="search" class="admin-input" [value]="search()"
+            (input)="search.set($any($event.target).value)" placeholder="Nombre o código de campaña" />
+        </label>
+        <label class="admin-field"><span>Estado</span>
+          <select class="admin-select" [value]="state()" (change)="state.set($any($event.target).value)">
+            <option value="">Todos</option>
+            <option value="PLANIFICACION">Planificación</option>
+            <option value="ACTIVA">Activa</option>
+            <option value="VENCIDA">Vencida</option>
+            <option value="CERRADA">Cerrada</option>
+            <option value="CANCELADA">Cancelada</option>
+          </select>
+        </label>
+        <app-list-view-switch label="Presentación de campañas" [view]="view()" (viewChange)="view.set($event)" />
+      </div>
+
+      @if (rows().length === 0) {
+        <app-empty-state title="Sin campañas" message="No hay campañas con los filtros seleccionados." />
+      } @else if (view() === 'table') {
+        <ng-template #campName let-c><div class="admin-stack-copy"><strong>{{c['nombre']}}</strong><span>{{c['codigo']}}</span></div></ng-template>
+        <ng-template #campBuyer let-c>{{buyer(c)}}</ng-template>
+        <ng-template #campStatus let-c>
+          <span class="admin-status" [class.admin-status--active]="c['estadoProceso']==='ACTIVA'">{{c['estadoProceso']}}</span>
+        </ng-template>
+        <ng-template #campActions let-c><div class="admin-row-actions">
+          <a class="admin-secondary-button" [routerLink]="['/gestion-comercial/finanzas-apappss', id(c)]"
+            title="Ver expediente financiero" [attr.aria-label]="'Ver finanzas de ' + c['nombre']">
+            <fa-icon [icon]="eyeIcon" />
+          </a>
+        </div></ng-template>
+        <app-data-table appearance="admin" [columns]="columns" [rows]="rows()" trackByKey="campaniaVentaId"
+          [cellTemplates]="{nombre:campName,comprador:campBuyer,estadoProceso:campStatus,acciones:campActions}" />
+      } @else {
+        <div class="desco-record-grid e5-campaign-grid">
+          @for (c of rows(); track id(c)) {
+            <app-record-card>
+              <header class="e5-campaign-top">
+                <span class="e5-campaign-code">{{c['codigo']}}</span>
+                <span class="admin-status" [class.admin-status--active]="c['estadoProceso']==='ACTIVA'">{{c['estadoProceso']}}</span>
+              </header>
+              <div class="e5-campaign-icon"><fa-icon [icon]="calendarIcon" /></div>
+              <h2>{{c['nombre']}}</h2>
+              <p class="e5-campaign-context">{{association(c)}}</p>
+              <p class="e5-campaign-buyer">Comprador: {{buyer(c)}}</p>
+              <dl class="e5-campaign-dates">
+                <div><dt>Inicio</dt><dd>{{dateText(c['fechaInicio'])}}</dd></div>
+                <div><dt>Fin</dt><dd>{{dateText(c['fechaFin'])}}</dd></div>
+              </dl>
+              <footer class="e5-campaign-actions">
+                <a class="admin-icon-button" [routerLink]="['/gestion-comercial/finanzas-apappss', id(c)]"
+                  title="Ver expediente financiero" [attr.aria-label]="'Ver finanzas de ' + c['nombre']">
+                  <fa-icon [icon]="eyeIcon" />
+                </a>
+              </footer>
+            </app-record-card>
+          }
+        </div>
+      }
+      <app-paginator [page]="result().page" [size]="result().size" [totalRecords]="result().totalRecords"
+        [totalPages]="result().totalPages" (pageChange)="load($event)" (sizeChange)="changeSize($event)" />
+    </section>
+  }
+</section>

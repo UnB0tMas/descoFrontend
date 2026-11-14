@@ -12,4 +12,5 @@ export interface E5GastoResponse {
     version?: number;
     repartoEstado?: string;
     vendedores?: number;
+    reglaCodigo?: string;
 }
