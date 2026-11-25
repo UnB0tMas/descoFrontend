@@ -1,7 +1,18 @@
-:host{display:inline-flex;min-width:0}
-.desco-list-view-switch{display:inline-flex;align-items:center;flex-wrap:wrap;gap:.4rem}
-.desco-list-view-switch .desco-view-option{display:inline-flex;align-items:center;justify-content:center;gap:.45rem;
-  min-height:2.55rem;padding:.5rem .75rem;white-space:nowrap;font-size:.82rem}
-.desco-list-view-switch .desco-view-option.active{border-color:var(--desco-primary);background:var(--desco-primary-soft);color:var(--desco-primary-text)}
-.desco-list-view-switch .desco-view-option:focus-visible{outline:2px solid var(--desco-primary);outline-offset:2px}
-@media(max-width:420px){.desco-list-view-switch .desco-view-option{padding:.5rem .65rem}}
+/* Aspecto original para consumidores existentes. */
+:host { display: inline-flex; min-width: 0; max-width: 100%; }
+.desco-list-view-switch { display: inline-flex; align-items: center; flex-wrap: wrap; gap: .4rem; }
+.desco-list-view-switch .desco-view-option { display: inline-flex; align-items: center; justify-content: center; gap: .45rem;
+  min-height: 2.55rem; padding: .5rem .75rem; white-space: nowrap; font-size: .82rem; }
+.desco-list-view-switch .desco-view-option.active { border-color: var(--desco-primary); background: var(--desco-primary-soft); color: var(--desco-primary-text); }
+.desco-list-view-switch .desco-view-option:focus-visible { outline: 2px solid var(--desco-primary); outline-offset: 2px; }
+
+/* Estilo original de gestión productiva, expuesto como variante reutilizable. */
+.desco-list-view-switch--segmented { flex-wrap: nowrap; gap: .2rem; border: 1px solid var(--desco-border, #e2e8f0);
+  border-radius: .75rem; padding: .2rem; background: var(--desco-surface, #fff); }
+.desco-list-view-switch--segmented .desco-view-option { display: flex; align-items: center; justify-content: center;
+  gap: .45rem; border: 0; min-height: 0; background: transparent; color: var(--desco-text-muted, #64748b);
+  font: inherit; font-size: .8rem; font-weight: 650; padding: .6rem .8rem; border-radius: .55rem; cursor: pointer; }
+.desco-list-view-switch--segmented .desco-view-option.active { background: var(--desco-surface-soft, #eff6ff);
+  color: var(--desco-primary, #2563eb); }
+.desco-list-view-switch--segmented .desco-view-option:disabled { opacity: .55; cursor: not-allowed; }
+@media(max-width:420px) { .desco-list-view-switch .desco-view-option { padding: .5rem .65rem; } }

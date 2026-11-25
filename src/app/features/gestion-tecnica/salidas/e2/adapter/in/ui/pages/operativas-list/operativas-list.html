@@ -24,10 +24,7 @@
       <button type="button" class="admin-icon-button" title="Actualizar" aria-label="Actualizar" (click)="load()" [disabled]="loading()"><fa-icon [icon]="refreshIcon" /></button>
     </div>
     <div class="e2-listbar"><button class="admin-secondary-button" type="button" [class.e2-active-filter]="estado==='SOLICITADA'" [attr.aria-pressed]="estado==='SOLICITADA'" [disabled]="loading()" (click)="showPending()">@if(loading()){<span class="loading loading-spinner loading-xs"></span>}{{estado==='SOLICITADA'?'Ver todas':'Por aprobar ('+pendingCount()+')'}}</button>
-      <div class="technical-view-control" role="group" aria-label="Vista">
-        <button type="button" class="technical-view-button" [class.active]="vista==='tabla'" (click)="vista='tabla'" [attr.aria-pressed]="vista==='tabla'">Tabla</button>
-        <button type="button" class="technical-view-button" [class.active]="vista==='tarjetas'" (click)="vista='tarjetas'" [attr.aria-pressed]="vista==='tarjetas'">Tarjetas</button>
-      </div>
+      <app-list-view-switch class="technical-view-switch" appearance="segmented" label="Vista" [view]="vista==='tabla'?'table':'cards'" (viewChange)="vista=$event==='table'?'tabla':'tarjetas'" />
     </div>
     @if(loading()){<app-loading-state title="Cargando salidas" message="Consultando registros."/>}
     @else if(error()){<app-error-state [message]="error()||'No se pudo consultar.'" (retry)="load()"/>}
@@ -90,3 +87,5 @@
 </dialog>
 
 <app-action-confirm-dialog />
+
+<app-solicitud-salida-tecnica-modal (completed)="load()" />

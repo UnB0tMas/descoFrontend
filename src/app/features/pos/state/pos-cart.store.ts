@@ -266,6 +266,18 @@ export class PosCartStore {
     });
   }
 
+  /** Congela el reparto antes de crear la venta; reintentos reutilizan el mismo desglose. */
+  storeCheckoutPayments(payments: readonly import('../domain/pos.model').PosPaymentAllocation[]): void {
+    const current = this.requireDraft();
+    if (current.checkoutPayments?.length) {
+      if (JSON.stringify(current.checkoutPayments) !== JSON.stringify(payments)) {
+        throw new Error('El reparto de pagos está protegido. Reanude la venta sin modificarlo.');
+      }
+      return;
+    }
+    this.update({ ...current, checkoutPayments: payments.map(payment => ({...payment})) });
+  }
+
   markPendingSale(saleId: number): void {
     const current = this.requireDraft();
 

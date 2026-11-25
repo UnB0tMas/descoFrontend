@@ -1,3 +1,14 @@
-:host {
-  display: block;
-}
+:host { display: block; min-width: 0; }
+.desco-filter-panel { overflow: hidden; border: 1px solid var(--desco-border); border-radius: var(--desco-radius-lg);
+  background: var(--desco-surface); color: var(--desco-text); box-shadow: var(--desco-shadow-sm); }
+.desco-filter-panel__icon { display: grid; place-items: center; width: 2.5rem; height: 2.5rem;
+  flex: 0 0 auto; border-radius: var(--desco-radius-md); background: var(--desco-primary-soft);
+  color: var(--desco-primary-text); }
+.desco-filter-panel__title { color: var(--desco-text); font-size: .86rem; font-weight: 750; }
+.desco-filter-panel__description { margin-top: .2rem; color: var(--desco-text-muted);
+  font-size: .75rem; line-height: 1.5; }
+.desco-filter-panel__body { border-top: 1px solid var(--desco-border-subtle); padding: 1.1rem 1.25rem; }
+.desco-filter-panel__actions { display: flex; justify-content: flex-end; align-items: center;
+  flex-wrap: wrap; gap: .65rem; margin-top: 1rem; padding-top: .9rem;
+  border-top: 1px solid var(--desco-border-subtle); }
+@media(max-width: 550px) { .desco-filter-panel__body { padding: .9rem; } }

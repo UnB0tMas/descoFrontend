@@ -1,0 +1,157 @@
+<div class="desco-page pc-detail">
+  <app-page-header [title]="empleado()?.nombre || 'Horario del empleado'" eyebrow="GESTIÓN COMERCIAL / PERSONAL" [subtitle]="uot.label()" [icon]="icon">
+    <div pageActions class="pc-detail-actions">
+      <a routerLink="/pos/personal" class="admin-secondary-button">Volver</a>
+      <button type="button" class="admin-secondary-button" [disabled]="loading()" (click)="reload()">Actualizar</button>
+    </div>
+  </app-page-header>
+  @if (error()) { <div class="admin-inline-error" role="alert">{{ error() }}</div> }
+  @if (loading() && !sheet()) {
+    <section class="admin-surface pc-detail-panel">Cargando…</section>
+  } @else if (empleado(); as persona) {
+    <section class="admin-surface pc-detail-panel">
+      <header class="pc-detail-heading">
+        <div>
+          <h2>Horario semanal</h2>
+          <p>{{ persona.nombre }} · Horario general: {{ sheet()?.atencion?.horaInicio }}–{{ sheet()?.atencion?.horaFin }}</p>
+        </div>
+        @if (canEdit()) {
+          <button type="button" class="admin-primary-button" [disabled]="saving()" (click)="openBatch()">
+            <fa-icon [icon]="add" /> Asignar varios días
+          </button>
+        }
+      </header>
+      <div class="pc-detail-legend" aria-label="Estados de horario">
+        <span class="pc-detail-legend-item pc-detail-legend-item--mine">Turno asignado</span>
+        <span class="pc-detail-legend-item pc-detail-legend-item--team">Con personal</span>
+        <span class="pc-detail-legend-item pc-detail-legend-item--gap">Sin cobertura</span>
+      </div>
+      <div class="pc-detail-week">
+        @for (day of horario(); track day.dia) {
+          <article class="pc-detail-day" [class.pc-detail-day--assigned]="day.bloques.length > 0" [class.pc-detail-day--empty]="day.bloques.length === 0">
+            <header class="pc-detail-day-head">
+              <strong>{{ day.nombre }}</strong>
+              <span class="pc-detail-day-count">{{ day.bloques.length ? (day.bloques.length + (day.bloques.length === 1 ? ' turno' : ' turnos')) : 'Sin turno' }}</span>
+            </header>
+            <small class="pc-detail-muted">Atención: {{atencionDia(day.dia).horaInicio}}–{{atencionDia(day.dia).horaFin}}</small>
+            <div class="pc-detail-slots">
+              @for (b of day.bloques; track b.horaInicio + '-' + b.horaFin) {
+                <div class="pc-detail-slot">
+                  <div class="pc-detail-slot-label"><strong>{{ nombreTurno(b.horaInicio, b.horaFin) }}</strong><small>{{ b.horaInicio }}–{{ b.horaFin }}</small></div>
+                  @if (canEdit()) {
+                    <div class="pc-detail-slot-actions">
+                      <button type="button" class="pc-detail-slot-action" [disabled]="saving()" (click)="openDay(day.dia, b.horaInicio, b.horaFin)" [attr.aria-label]="'Editar turno del ' + day.nombre + ' de ' + b.horaInicio + ' a ' + b.horaFin" title="Editar turno"><fa-icon [icon]="pencil" /></button>
+                      <button type="button" class="pc-detail-slot-action pc-detail-slot-action--remove" [disabled]="saving()" (click)="borrarFranja(day.dia, b.horaInicio, b.horaFin)" [attr.aria-label]="'Quitar turno del ' + day.nombre + ' de ' + b.horaInicio + ' a ' + b.horaFin" title="Quitar turno"><fa-icon [icon]="remove" /></button>
+                    </div>
+                  }
+                </div>
+              } @empty {
+                <p class="pc-detail-empty">Aún no tiene horario.</p>
+              }
+            </div>
+            @if (day.bloques.length) {
+              <p class="pc-detail-jornada" [class.pc-detail-jornada--complete]="day.completo">
+                {{ day.completo ? 'Jornada completa' : 'Jornada parcial' }}
+              </p>
+            }
+            <div class="pc-detail-team">
+              <div class="pc-detail-team-title">
+                <strong>Cobertura del día</strong>
+                <small>{{ coberturaEquipo()[day.dia - 1].completo ? 'Completa' : 'Incompleta' }}</small>
+              </div>
+              <div class="pc-detail-team-slots">
+                @for (t of coberturaEquipo()[day.dia - 1].tramos; track t.desde + '-' + t.hasta) {
+                  <button type="button" class="pc-detail-coverage-slot"
+                    [class.pc-detail-coverage-slot--mine]="t.propio"
+                    [class.pc-detail-coverage-slot--covered]="!t.propio && t.ocupacion > 0"
+                    [class.pc-detail-coverage-slot--gap]="!t.propio && t.ocupacion === 0"
+                    [disabled]="!canEdit() || saving() || t.propio"
+                    [attr.aria-label]="t.desde + ' a ' + t.hasta + ': ' + (t.propio ? 'turno propio' : t.ocupacion ? t.ocupacion + ' empleados asignados. Asignar aquí' : 'sin cobertura. Asignar aquí')"
+                    (click)="sugerir(day.dia, t.desde, t.hasta)">
+                    <span class="pc-detail-coverage-time">{{ t.desde }}–{{ t.hasta }}</span>
+                    <span class="pc-detail-coverage-state">{{ t.propio ? 'Asignado' : t.ocupacion ? t.ocupacion + (t.ocupacion === 1 ? ' empleado' : ' empleados') : 'Sin cobertura' }}</span>
+                  </button>
+                }
+              </div>
+            </div>
+            @if (canEdit()) {
+              <footer class="pc-detail-row-actions">
+                <button type="button" class="pc-detail-add" [disabled]="saving()" (click)="openAdditional(day.dia)">
+                  <fa-icon [icon]="add" /> {{ day.bloques.length ? 'Agregar turno' : 'Asignar horario' }}
+                </button>
+                @if (day.bloques.length > 0) {
+                  <button type="button" class="pc-detail-remove" [disabled]="saving()" (click)="borrarDia(day.dia)">Quitar día</button>
+                }
+              </footer>
+            }
+          </article>
+        }
+      </div>
+    </section>
+  } @else if (sheet()) {
+    <section class="admin-surface pc-detail-panel">El empleado no tiene acceso comercial habilitado.</section>
+  }
+</div>
+
+<dialog #horarioDialog class="modal desco-modal" (cancel)="$event.preventDefault(); !saving() && horarioDialog.close()">
+  <div class="modal-box admin-modal-box admin-modal-box--wide pc-detail-modal">
+    <header class="admin-modal-header">
+      <div class="admin-modal-title-group"><h2>{{ editor() === 'batch' ? 'Asignar varios días' : agregarFranja() ? 'Agregar turno' : 'Editar turno' }}</h2></div>
+      <button type="button" class="admin-icon-button" [disabled]="saving()" (click)="horarioDialog.close()" aria-label="Cerrar">×</button>
+    </header>
+    @if (modalError()) { <div class="admin-inline-error" role="alert">{{ modalError() }}</div> }
+    <form class="admin-form-grid pc-detail-form" (ngSubmit)="guardar()">
+      @if (editor() === 'batch') {
+        <fieldset class="pc-detail-days admin-field-span-2">
+          <legend>Selecciona los días</legend>
+          @for (day of dias; track day.id) {
+            <button type="button" [class.pc-selected]="selectedDays().includes(day.id)" [attr.aria-pressed]="selectedDays().includes(day.id)" (click)="toggle(day.id)">{{ day.nombre }}</button>
+          }
+          <button type="button" class="pc-all" (click)="seleccionarTodos()">Toda la semana</button>
+        </fieldset>
+      } @else {
+        <p class="pc-detail-modal-day admin-field-span-2">{{ nombreDia(editDay()) }}</p>
+      }
+      <div class="admin-field admin-field-span-2">
+        <label for="pc-tipo-turno">Turno</label>
+        <select id="pc-tipo-turno" class="admin-select" name="tipoTurno" [ngModel]="tipoTurno()" (ngModelChange)="seleccionarPlantilla($event)">
+          <option value="personalizado">Horario personalizado</option>
+          @for (tipo of plantillas(); track tipo.plantillaId) {
+            <option [value]="tipo.plantillaId">{{ tipo.nombre }} · {{ tipo.horaInicio }}–{{ tipo.horaFin }}</option>
+          }
+        </select>
+        @if (plantillaError()) { <small class="pc-detail-muted">{{ plantillaError() }}</small> }
+      </div>
+      <div class="admin-field"><label for="pc-desde">Desde</label><input id="pc-desde" class="admin-input" type="time" name="desde" [(ngModel)]="horaInicio" (ngModelChange)="marcarPersonalizado()" required /></div>
+      <div class="admin-field"><label for="pc-hasta">Hasta</label><input id="pc-hasta" class="admin-input" type="time" name="hasta" [(ngModel)]="horaFin" (ngModelChange)="marcarPersonalizado()" required /></div>
+      @if (!rangoValido() && horaInicio < horaFin && (editor() === 'day' || selectedDays().length)) {
+        <p class="pc-detail-own-conflict admin-field-span-2">El horario debe estar dentro de la atención de los días seleccionados.</p>
+      }
+      @if (rangoValido() && conflictoPropio()) {
+        <p class="pc-detail-own-conflict admin-field-span-2" role="alert">Ya tiene un turno en esas horas.</p>
+      }
+      @if (avisosCoincidencia().length) {
+        <section class="pc-detail-preview admin-field-span-2">
+          <strong>Coincide con horarios del equipo</strong>
+          <p>Puede asignar a varios empleados en las mismas horas.</p>
+          @for (v of avisosCoincidencia(); track v) { <small>{{ v }}</small> }
+          <label class="desco-check-option pc-detail-check">
+            <input class="desco-checkbox" type="checkbox" name="autorizarCoincidencia" [(ngModel)]="autorizarCoincidencia" />
+            <span>Agregar motivo (opcional)</span>
+          </label>
+          @if (autorizarCoincidencia) {
+            <div class="admin-field"><label for="pc-coincidencia">Motivo</label>
+              <textarea id="pc-coincidencia" class="admin-textarea" name="motivoCoincidencia" rows="2" maxlength="300" [(ngModel)]="motivoCoincidencia" placeholder="Describe el motivo"></textarea>
+            </div>
+          }
+        </section>
+      }
+      <footer class="admin-modal-actions admin-field-span-2">
+        <button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="horarioDialog.close()">Cancelar</button>
+        <button type="submit" class="admin-primary-button" [disabled]="saving() || !rangoValido() || conflictoPropio() || (editor() === 'batch' && !selectedDays().length)">Guardar horario</button>
+      </footer>
+    </form>
+  </div>
+</dialog>
+
+<app-action-confirm-dialog />

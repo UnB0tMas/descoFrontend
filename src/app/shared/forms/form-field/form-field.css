@@ -1,0 +1,20 @@
+app-form-field { display: block; min-width: 0; }
+app-form-field .desco-form-field { display: grid; gap: .4rem; min-width: 0; }
+app-form-field .desco-form-field__label { display: block; color: var(--desco-text); font-size: .78rem;
+  font-weight: 700; line-height: 1.35; }
+app-form-field .desco-form-field__label span { color: var(--desco-danger); }
+app-form-field .desco-form-field__control { min-width: 0; }
+app-form-field .desco-form-field__control :is(input, select, textarea) { display: block; width: 100%;
+  min-width: 0; min-height: 2.55rem; padding: .6rem .75rem; border: 1px solid var(--desco-border);
+  border-radius: var(--desco-radius-md); background: var(--desco-control-bg); color: var(--desco-text);
+  font: inherit; font-size: .83rem; }
+app-form-field .desco-form-field__control textarea { min-height: 6rem; resize: vertical; }
+app-form-field .desco-form-field__control :is(input, select, textarea):focus-visible {
+  outline: 2px solid var(--desco-primary); outline-offset: 1px; }
+app-form-field .desco-form-field__control :is(input, select, textarea):disabled {
+  background: var(--desco-control-disabled); opacity: .65; }
+app-form-field .desco-form-field--invalid .desco-form-field__control :is(input, select, textarea) {
+  border-color: var(--desco-danger-border); }
+app-form-field .desco-form-field__hint, app-form-field .desco-form-field__error { margin: 0;
+  font-size: .73rem; line-height: 1.45; color: var(--desco-text-muted); }
+app-form-field .desco-form-field__error { color: var(--desco-danger-text); }

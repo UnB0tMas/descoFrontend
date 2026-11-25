@@ -4,7 +4,7 @@
     <div><h3>{{actividad.rubro==='CULTIVO'?'Plagas y enfermedades del cultivo':'Enfermedades de la crianza'}}</h3>
       <p>{{incidencias().length}} registradas · {{abiertas()}} en seguimiento</p></div>
     @if(actividad.estado && actividad.estadoProceso!=='FINALIZADA'){
-      <button *appPermission="'SANIDAD_CREAR'" type="button" class="admin-primary-button" (click)="open('incidencia')">Nueva incidencia</button>
+      <button [disabled]="!actuacionPermitida()" *appPermission="'SANIDAD_CREAR'" type="button" class="admin-primary-button" (click)="open('incidencia')">Nueva incidencia</button>
     }
   </div>
   @if(error() && form==='ninguno'){<div class="admin-inline-error" role="alert">{{error()}}</div>}
@@ -12,10 +12,7 @@
   @else{
     <div class="gp-panel-top gp-list-tools">
       <h4>Listado</h4>
-      <div class="gp-view-toggle" role="group" aria-label="Vista de incidencias">
-        <button type="button" [class.active]="view()==='tabla'" [attr.aria-pressed]="view()==='tabla'" (click)="view.set('tabla')">Tabla</button>
-        <button type="button" [class.active]="view()==='tarjetas'" [attr.aria-pressed]="view()==='tarjetas'" (click)="view.set('tarjetas')">Tarjetas</button>
-      </div>
+      <app-list-view-switch appearance="segmented" label="Vista de incidencias" [view]="view()==='tabla'?'table':'cards'" (viewChange)="onViewChange('incidencia',$event)" />
     </div>
     <div class="gp-filter-toolbar gp-incidence-search"><div class="admin-field"><label for="gpBuscarIncidencia">Buscar incidencia</label><input id="gpBuscarIncidencia" type="search" class="admin-input" [(ngModel)]="incidenceSearchInput" (keyup.enter)="applyIncidenceSearch()" placeholder="Enfermedad, plaga, descripción o fecha" /></div><button type="button" class="admin-secondary-button" (click)="applyIncidenceSearch()"><fa-icon [icon]="searchIcon" /> Buscar</button></div>
     @if(!incidencias().length){<app-empty-state title="Sin incidencias" message="No se han registrado enfermedades o plagas para esta actividad." />}
@@ -26,37 +23,48 @@
           <div class="admin-row-actions gp-activity-actions">
             <a class="admin-icon-button" [routerLink]="['incidencias',i.incidenciaId]" title="Ver incidencia y tratamientos" [attr.aria-label]="'Ver incidencia #'+i.incidenciaId"><fa-icon [icon]="viewIcon" /></a>
             @if(i.estado==='ABIERTA' && actividad.estado && actividad.estadoProceso!=='FINALIZADA'){
-              <button *appPermission="'SANIDAD_CREAR'" type="button" class="admin-icon-button admin-icon-button--success" title="Registrar tratamiento" aria-label="Registrar tratamiento" [disabled]="saving()" (click)="open('tratamiento',i.incidenciaId)"><fa-icon [icon]="treatmentIcon" /></button>
-              <button *appPermission="'SANIDAD_EDITAR'" type="button" class="admin-icon-button" title="Editar incidencia" aria-label="Editar incidencia" [disabled]="saving()" (click)="open('editar',i.incidenciaId)"><fa-icon [icon]="editIcon" /></button>
-              <button *appPermission="'SANIDAD_RETIRAR'" type="button" class="admin-icon-button admin-icon-button--danger" title="Retirar incidencia" aria-label="Retirar incidencia" [disabled]="saving()" (click)="retirar(i)"><fa-icon [icon]="deleteIcon" /></button>
+              <button *appPermission="'SANIDAD_CREAR'" type="button" class="admin-icon-button admin-icon-button--success" title="Registrar tratamiento" aria-label="Registrar tratamiento" [disabled]="!actuacionPermitida() || saving()" (click)="open('tratamiento',i.incidenciaId)"><fa-icon [icon]="treatmentIcon" /></button>
+              <button *appPermission="'SANIDAD_EDITAR'" type="button" class="admin-icon-button" title="Editar incidencia" aria-label="Editar incidencia" [disabled]="!actuacionPermitida() || saving()" (click)="open('editar',i.incidenciaId)"><fa-icon [icon]="editIcon" /></button>
+              <button *appPermission="'SANIDAD_RETIRAR'" type="button" class="admin-icon-button admin-icon-button--danger" title="Retirar incidencia" aria-label="Retirar incidencia" [disabled]="!actuacionPermitida() || saving()" (click)="retirar(i)"><fa-icon [icon]="deleteIcon" /></button>
             }
           </div>
         </ng-template>
         <app-data-table appearance="admin" [columns]="incidenceColumns" [rows]="visible()" trackByKey="incidenciaId" [cellTemplates]="{acciones:accionesIncidencia}" />
       }@else{
-        <div class="desco-record-grid gp-cards gp-record-cards">
+        <div class="desco-record-grid desco-record-grid--timeline gp-cards gp-record-cards">
           @for(i of visible();track i.incidenciaId){
-            <app-record-card>
-              <span class="gp-code">#{{i.incidenciaId}} · {{eventosDe(i.incidenciaId).length}} tratamiento(s)</span>
-              <div class="gp-record-heading"><strong>{{i.problema}}</strong><span class="admin-status" [class.admin-status--active]="i.estado==='ABIERTA'">{{i.estado==='ABIERTA'?'En seguimiento':'Cerrada'}}</span></div>
-              <dl class="gp-record-data">
-                <div><dt>Registro</dt><dd>{{i.fechaRegistro | resourceDate:'dd/MM/yyyy HH:mm'}}</dd></div>
-                <div><dt>Afectación</dt><dd>{{medida(i.afectadaM2,i.afectadosAnimales)}}</dd></div>
-                <div><dt>Técnico</dt><dd>#{{i.usuarioId}}</dd></div>
+            <app-record-card class="desco-timeline-record">
+              <header class="desco-timeline-head">
+                <div><span class="desco-timeline-kicker">Incidencia · #{{i.incidenciaId}}</span><strong>{{i.problema}}</strong></div>
+                <span class="desco-timeline-status" [class.desco-timeline-status--closed]="i.estado!=='ABIERTA'">{{i.estado==='ABIERTA'?'En seguimiento':'Cerrada'}}</span>
+              </header>
+              <div class="desco-timeline-quantity">
+                <div><span>{{actividad.rubro==='CULTIVO'?'Superficie afectada':'Animales afectados'}}</span>
+                  <strong>{{medida(i.afectadaM2,i.afectadosAnimales)}}</strong></div>
+                <div class="desco-timeline-extra"><span>Tratamientos</span><strong>{{eventosDe(i.incidenciaId).length}}</strong></div>
+              </div>
+              <dl class="desco-timeline-facts">
+                <div><dt>Inicio enfermedad</dt><dd>{{i.fechaRegistro | resourceDate:'dd/MM/yyyy HH:mm'}}</dd></div>
+                <div><dt>Fin enfermedad</dt><dd>{{i.fechaCierre?(i.fechaCierre | resourceDate:'dd/MM/yyyy HH:mm'):'—'}}</dd></div>
+                <div><dt>Duración</dt><dd>{{duracion(i.fechaRegistro,i.fechaCierre)}}</dd></div>
+                <div><dt>Técnico</dt><dd>{{i.usuarioNombre || 'No identificado'}}</dd></div>
               </dl>
-              <div class="gp-card-actions gp-activity-actions"><a class="admin-icon-button" [routerLink]="['incidencias',i.incidenciaId]" title="Ver detalle y tratamientos" aria-label="Ver detalle y tratamientos"><fa-icon [icon]="viewIcon" /></a>
-              @if(i.estado==='ABIERTA' && actividad.estado && actividad.estadoProceso!=='FINALIZADA'){
-                <button *appPermission="'SANIDAD_CREAR'" type="button" class="admin-icon-button admin-icon-button--success" title="Registrar tratamiento" aria-label="Registrar tratamiento" [disabled]="saving()" (click)="open('tratamiento',i.incidenciaId)"><fa-icon [icon]="treatmentIcon" /></button>
-                <button *appPermission="'SANIDAD_EDITAR'" type="button" class="admin-icon-button" title="Editar incidencia" aria-label="Editar incidencia" [disabled]="saving()" (click)="open('editar',i.incidenciaId)"><fa-icon [icon]="editIcon" /></button>
-                <button *appPermission="'SANIDAD_RETIRAR'" type="button" class="admin-icon-button admin-icon-button--danger" title="Retirar incidencia" aria-label="Retirar incidencia" [disabled]="saving()" (click)="retirar(i)"><fa-icon [icon]="deleteIcon" /></button>
-              }</div>
+              @if(i.descripcion){<footer class="desco-timeline-note"><span>Observación</span><p>{{i.descripcion}}</p></footer>}
+              <div class="gp-card-actions gp-activity-actions desco-timeline-actions">
+                <a class="admin-icon-button" [routerLink]="['incidencias',i.incidenciaId]" title="Ver detalle y tratamientos" aria-label="Ver detalle y tratamientos"><fa-icon [icon]="viewIcon" /></a>
+                @if(i.estado==='ABIERTA' && actividad.estado && actividad.estadoProceso!=='FINALIZADA'){
+                  <button *appPermission="'SANIDAD_CREAR'" type="button" class="admin-icon-button admin-icon-button--success" title="Registrar tratamiento" aria-label="Registrar tratamiento" [disabled]="!actuacionPermitida() || saving()" (click)="open('tratamiento',i.incidenciaId)"><fa-icon [icon]="treatmentIcon" /></button>
+                  <button *appPermission="'SANIDAD_EDITAR'" type="button" class="admin-icon-button" title="Editar incidencia" aria-label="Editar incidencia" [disabled]="!actuacionPermitida() || saving()" (click)="open('editar',i.incidenciaId)"><fa-icon [icon]="editIcon" /></button>
+                  <button *appPermission="'SANIDAD_RETIRAR'" type="button" class="admin-icon-button admin-icon-button--danger" title="Retirar incidencia" aria-label="Retirar incidencia" [disabled]="!actuacionPermitida() || saving()" (click)="retirar(i)"><fa-icon [icon]="deleteIcon" /></button>
+                }
+              </div>
             </app-record-card>
           }
         </div>
       }
-      <app-paginator [page]="page()" [size]="size()" [totalRecords]="filteredIncidences().length" [totalPages]="pages()" (pageChange)="setPage($event)" (sizeChange)="setSize($event)" />
     }
-  }
+    <app-paginator [page]="page()" [size]="size()" [totalRecords]="filteredIncidences().length" [totalPages]="pages()" (pageChange)="setPage($event)" (sizeChange)="setSize($event)" />
+    }
 </section>
 }
 @if(modo==='detalle'){
@@ -69,31 +77,62 @@
             <div class="gp-record-heading"><strong>{{i.problema}}</strong><span class="admin-status" [class.admin-status--active]="i.estado==='ABIERTA'">{{i.estado==='ABIERTA'?'En seguimiento':'Cerrada'}}</span></div>
             <span class="gp-code">{{actividad.rubro==='CULTIVO'?'Cultivo':'Crianza'}} · {{eventosDe(i.incidenciaId).length}} tratamiento(s)</span>
           </div>
-          <article class="gp-record-summary">
-
-            <dl class="gp-record-data gp-record-data--wide">
-              <div><dt>Registro</dt><dd>{{i.fechaRegistro | resourceDate:'dd/MM/yyyy HH:mm'}}</dd></div>
-              <div><dt>Técnico</dt><dd>#{{i.usuarioId}}</dd></div>
-              <div><dt>Afectación inicial</dt><dd>{{medida(i.afectadaM2,i.afectadosAnimales)}}</dd></div>
-              <div><dt>Resultado</dt><dd>{{resultado(i)}}</dd></div>
-              <div><dt>{{actividad.rubro==='CULTIVO'?'Superficie perdida':'Animales fallecidos'}}</dt><dd>{{i.estado==='CERRADA'?medida(i.perdidaM2,i.perdidosAnimales):'—'}}</dd></div>
-              <div><dt>Fecha de cierre</dt><dd>{{i.fechaCierre?(i.fechaCierre | resourceDate:'dd/MM/yyyy HH:mm'):'—'}}</dd></div>
-              <div><dt>Técnico del cierre</dt><dd>{{i.usuarioCierreId!=null?'#'+i.usuarioCierreId:'—'}}</dd></div>
-              <div class="gp-record-data-full"><dt>Descripción</dt><dd>{{i.descripcion}}</dd></div>
-              <div class="gp-record-data-full"><dt>Observación del cierre</dt><dd>{{i.descripcionCierre||'—'}}</dd></div>
-            </dl>
+          <article class="gp-record-summary gp-illness-summary" aria-label="Historial sanitario">
+            <header class="gp-illness-summary__head">
+              <div>
+                <span class="gp-illness-summary__eyebrow">Historial sanitario</span>
+                <h3>Evolución de la enfermedad</h3>
+              </div>
+              <span class="admin-status" [class.admin-status--active]="i.estado==='ABIERTA'">{{i.estado==='ABIERTA'?'En seguimiento':'Cerrada'}}</span>
+            </header>
+            <div class="gp-illness-period" aria-label="Período de la enfermedad">
+              <div class="gp-illness-period__point">
+                <span class="gp-illness-period__label">Inicio</span>
+                <strong>{{fechaHora(i.fechaRegistro)}}</strong>
+                <small>Registro inicial</small>
+              </div>
+              <div class="gp-illness-period__duration">
+                <strong>{{duracion(i.fechaRegistro,i.fechaCierre)}}</strong>
+                <span class="gp-illness-period__track" aria-hidden="true"></span>
+                <small>Duración de la enfermedad</small>
+              </div>
+              <div class="gp-illness-period__point gp-illness-period__point--end" [class.gp-illness-period__point--open]="i.estado==='ABIERTA'">
+                <span class="gp-illness-period__label">Fin</span>
+                <strong>{{i.fechaCierre?fechaHora(i.fechaCierre):'En seguimiento'}}</strong>
+                <small>{{i.fechaCierre?'Cierre registrado':'Pendiente de cierre'}}</small>
+              </div>
+            </div>
+            <div class="gp-illness-facts" aria-label="Datos del seguimiento">
+              <app-detail-field label="Técnico del registro" [value]="i.usuarioNombre || 'No identificado'" />
+              <app-detail-field [label]="actividad.rubro==='CULTIVO'?'Superficie afectada':'Animales afectados'" [value]="medida(i.afectadaM2,i.afectadosAnimales)" />
+              <app-detail-field label="Resultado" [value]="resultado(i)" />
+              @if(i.estado==='CERRADA'){
+                <app-detail-field [label]="actividad.rubro==='CULTIVO'?'Superficie perdida':'Animales fallecidos'" [value]="medida(i.perdidaM2,i.perdidosAnimales)" />
+                <app-detail-field label="Técnico del cierre" [value]="i.usuarioCierreNombre || 'No identificado'" />
+              }
+            </div>
+            @if(i.descripcion || i.descripcionCierre){
+              <div class="gp-illness-notes">
+                @if(i.descripcion){
+                  <div class="gp-illness-notes__item"><span>Descripción inicial</span><p>{{i.descripcion}}</p></div>
+                }
+                @if(i.descripcionCierre){
+                  <div class="gp-illness-notes__item gp-illness-notes__item--closing"><span>Observación del cierre</span><p>{{i.descripcionCierre}}</p></div>
+                }
+              </div>
+            }
           </article>
           <div class="gp-panel-top gp-list-tools">
-            <h4>Tratamientos ({{eventosDe(i.incidenciaId).length}})</h4>
-            <div class="gp-view-toggle" role="group" aria-label="Vista de tratamientos">
-              <button type="button" [class.active]="treatmentView()==='tabla'" [attr.aria-pressed]="treatmentView()==='tabla'" (click)="treatmentView.set('tabla')">Tabla</button>
-              <button type="button" [class.active]="treatmentView()==='tarjetas'" [attr.aria-pressed]="treatmentView()==='tarjetas'" (click)="treatmentView.set('tarjetas')">Tarjetas</button>
-            </div>
+            <h4>Tratamientos ({{eventosDe(i.incidenciaId).length}}) · {{tratamientosEnCurso(i.incidenciaId)}} en curso</h4>
+            <app-list-view-switch appearance="segmented" label="Vista de tratamientos" [view]="treatmentView()==='tabla'?'table':'cards'" (viewChange)="onViewChange('tratamiento',$event)" />
           </div>
+          @if(i.estado==='CERRADA'){
+            <p class="gp-subtle" role="status">Incidencia cerrada. El historial es de solo lectura.</p>
+          }
           @if(i.estado==='ABIERTA'&&actividad.estado&&actividad.estadoProceso!=='FINALIZADA'){
             <div class="gp-actions gp-incidence-footer">
-              <button *appPermission="'SANIDAD_CREAR'" class="admin-primary-button" type="button" (click)="open('tratamiento',i.incidenciaId)"><fa-icon [icon]="treatmentIcon" /> Nuevo tratamiento</button>
-              <button *appPermission="'SANIDAD_CREAR'" class="admin-secondary-button" type="button" (click)="open('cerrar',i.incidenciaId)">Cerrar incidencia</button>
+              <button [disabled]="!actuacionPermitida()" *appPermission="'SANIDAD_CREAR'" class="admin-primary-button" type="button" (click)="open('tratamiento',i.incidenciaId)"><fa-icon [icon]="treatmentIcon" /> Nuevo tratamiento</button>
+              <button *appPermission="'SANIDAD_CREAR'" class="admin-secondary-button gp-close-incidence-action" type="button" [disabled]="!actuacionPermitida() || saving()" title="Cerrar incidencia y conservar su historial" (click)="open('cerrar',i.incidenciaId)"><fa-icon [icon]="lockIcon" /> Cerrar incidencia</button>
             </div>
           }
           <div class="gp-filter-toolbar gp-incidence-search gp-detail-search"><div class="admin-field"><label for="gpBuscarTratamiento">Buscar tratamiento</label><input id="gpBuscarTratamiento" type="search" class="admin-input" [(ngModel)]="treatmentSearchInput" (keyup.enter)="applyTreatmentSearch()" placeholder="Tratamiento, resultado o fecha" /></div><button type="button" class="admin-secondary-button" (click)="applyTreatmentSearch()"><fa-icon [icon]="searchIcon" /> Buscar</button></div>
@@ -101,47 +140,71 @@
           @else if(!filteredTreatments().length){<app-empty-state title="Sin resultados" message="No existen tratamientos para la búsqueda indicada." />}
           @else if(treatmentView()==='tabla'){
             <ng-template #accionesTratamiento let-t>
-              @if(i.estado==='ABIERTA'&&!t.fechaFinReal&&actividad.estado&&actividad.estadoProceso!=='FINALIZADA'){<div class="admin-row-actions"><button *appPermission="'SANIDAD_CREAR'" type="button" class="admin-icon-button admin-icon-button--success" title="Finalizar tratamiento" aria-label="Finalizar tratamiento" (click)="open('finalizar',t.eventoId)"><fa-icon [icon]="completeIcon" /></button></div>}
+              @if(i.estado==='ABIERTA'&&t.estado==='EN_CURSO'&&actividad.estado&&actividad.estadoProceso!=='FINALIZADA'){
+                <div class="admin-row-actions gp-activity-actions">
+                  @if(t.estado==='EN_CURSO'){
+                    <button *appPermission="'SANIDAD_CREAR'" type="button" class="admin-icon-button admin-icon-button--success" title="Finalizar tratamiento" aria-label="Finalizar tratamiento" [disabled]="!actuacionPermitida() || saving()" (click)="open('finalizar',t.eventoId)"><fa-icon [icon]="completeIcon" /></button>
+                  }
+                  <button *appPermission="'SANIDAD_RETIRAR'" type="button" class="admin-icon-button admin-icon-button--danger" title="Eliminar tratamiento" aria-label="Eliminar tratamiento" [disabled]="!actuacionPermitida() || saving()" (click)="eliminarTratamiento(t)"><fa-icon [icon]="deleteIcon" /></button>
+                </div>
+              }
             </ng-template>
             <app-data-table appearance="admin" [columns]="treatmentColumns" [rows]="filteredTreatments()" trackByKey="eventoId" [cellTemplates]="{acciones:accionesTratamiento}" />
           }@else{
-            <div class="desco-record-grid gp-cards gp-record-cards gp-treatment-cards">
+            <div class="desco-record-grid desco-record-grid--timeline gp-cards gp-record-cards gp-treatment-cards">
               @for(t of filteredTreatments();track t.eventoId){
-                <app-record-card>
-                  <span class="gp-code">Tratamiento #{{t.eventoId}}</span>
-                  <div class="gp-record-heading"><strong>{{t.tratamiento}}</strong><span class="admin-status" [class.admin-status--active]="!t.fechaFinReal">{{t.fechaFinReal?'Finalizado':'En curso'}}</span></div>
-                  <dl class="gp-record-data">
+                <app-record-card class="desco-timeline-record">
+                  <header class="desco-timeline-head">
+                    <div><span class="desco-timeline-kicker">Tratamiento · #{{t.eventoId}}</span><strong>{{t.tratamiento}}</strong></div>
+                    <span class="desco-timeline-status" [class.desco-timeline-status--closed]="t.estado!=='EN_CURSO'">{{t.estado==='ELIMINADO'?'Eliminado':t.estado==='FINALIZADO'?'Finalizado':'En curso'}}</span>
+                  </header>
+                  <dl class="desco-timeline-facts">
                     <div><dt>Inicio</dt><dd>{{t.fechaInicio | resourceDate:'dd/MM/yyyy HH:mm'}}</dd></div>
                     <div><dt>Fin previsto</dt><dd>{{t.fechaFinPrevista?(t.fechaFinPrevista | resourceDate:'dd/MM/yyyy HH:mm'):'—'}}</dd></div>
-                    <div><dt>Fin real</dt><dd>{{t.fechaFinReal?(t.fechaFinReal | resourceDate:'dd/MM/yyyy HH:mm'):'En curso'}}</dd></div>
-                    <div class="gp-record-data-full"><dt>Descripción</dt><dd>{{t.descripcion||'—'}}</dd></div>
-                    @if(t.cantidadUtilizada){<div class="gp-record-data-full"><dt>Producto utilizado</dt><dd>{{t.producto}} · {{t.cantidadUtilizada}} {{t.unidadUtilizada}}</dd></div>}@if(t.descripcionCierre){<div class="gp-record-data-full"><dt>Resultado</dt><dd>{{t.descripcionCierre}}</dd></div>}
-                    <div><dt>Técnico</dt><dd>#{{t.usuarioId}}</dd></div>
+                    <div><dt>Fin real</dt><dd>{{t.fechaFinReal?(t.fechaFinReal | resourceDate:'dd/MM/yyyy HH:mm'):(t.estado==='ELIMINADO'?'—':'Pendiente')}}</dd></div>
+                    <div><dt>Duración</dt><dd>{{t.estado==='ELIMINADO'?'—':duracion(t.fechaInicio,t.fechaFinReal)}}</dd></div>
+                    <div><dt>Técnico</dt><dd>{{t.usuarioNombre || 'No identificado'}}</dd></div>
+                    @if(t.cantidadUtilizada){<div class="desco-timeline-full"><dt>Producto utilizado</dt><dd>{{t.producto}} · {{t.cantidadUtilizada}} {{t.unidadUtilizada}}</dd></div>}
                   </dl>
-                  @if(i.estado==='ABIERTA'&&!t.fechaFinReal&&actividad.estado&&actividad.estadoProceso!=='FINALIZADA'){<div class="gp-card-actions"><button *appPermission="'SANIDAD_CREAR'" type="button" class="admin-icon-button admin-icon-button--success" title="Finalizar tratamiento" aria-label="Finalizar tratamiento" (click)="open('finalizar',t.eventoId)"><fa-icon [icon]="completeIcon" /></button></div>}
+                  @if(t.descripcion){<footer class="desco-timeline-note"><span>Descripción</span><p>{{t.descripcion}}</p></footer>}
+                  @if(t.descripcionCierre){<div class="desco-timeline-highlight"><span>Resultado</span><strong>{{t.descripcionCierre}}</strong></div>}
+                  @if(i.estado==='ABIERTA'&&t.estado==='EN_CURSO'&&actividad.estado&&actividad.estadoProceso!=='FINALIZADA'){
+                    <div class="gp-card-actions desco-timeline-actions gp-activity-actions">
+                      @if(t.estado==='EN_CURSO'){
+                        <button *appPermission="'SANIDAD_CREAR'" type="button" class="admin-secondary-button" title="Finalizar solo este tratamiento" aria-label="Finalizar tratamiento" [disabled]="!actuacionPermitida() || saving()" (click)="open('finalizar',t.eventoId)"><fa-icon [icon]="completeIcon" /> Finalizar</button>
+                      }
+                      <button *appPermission="'SANIDAD_RETIRAR'" type="button" class="admin-icon-button admin-icon-button--danger" title="Eliminar tratamiento" aria-label="Eliminar tratamiento" [disabled]="!actuacionPermitida() || saving()" (click)="eliminarTratamiento(t)"><fa-icon [icon]="deleteIcon" /></button>
+                    </div>
+                  }
                 </app-record-card>
               }
             </div>
           }
           @if(revisions().length){
-            <div class="gp-panel-top gp-list-tools"><h4>Correcciones ({{revisions().length}})</h4><div class="gp-view-toggle" role="group" aria-label="Vista del historial de correcciones"><button type="button" [class.active]="revisionView()==='tabla'" [attr.aria-pressed]="revisionView()==='tabla'" (click)="revisionView.set('tabla')">Tabla</button><button type="button" [class.active]="revisionView()==='tarjetas'" [attr.aria-pressed]="revisionView()==='tarjetas'" (click)="revisionView.set('tarjetas')">Tarjetas</button></div></div>
+            <div class="gp-panel-top gp-list-tools"><h4>Correcciones ({{revisions().length}})</h4><app-list-view-switch appearance="segmented" label="Vista del historial de correcciones" [view]="revisionView()==='tabla'?'table':'cards'" (viewChange)="onViewChange('revision',$event)" /></div>
             <div class="gp-filter-toolbar gp-incidence-search"><div class="admin-field"><label for="gpBuscarCorreccion">Buscar corrección</label><input id="gpBuscarCorreccion" type="search" class="admin-input" [(ngModel)]="revisionSearchInput" (keyup.enter)="applyRevisionSearch()" placeholder="Motivo, fecha o descripción" /></div><button type="button" class="admin-secondary-button" (click)="applyRevisionSearch()"><fa-icon [icon]="searchIcon" /> Buscar</button></div>
             @if(!filteredRevisions().length){<app-empty-state title="Sin resultados" message="No hay correcciones para esta búsqueda." />}
             @else if(revisionView()==='tabla'){
               <app-data-table appearance="admin" [columns]="revisionColumns" [rows]="filteredRevisions()" trackByKey="revisionId" />
             }@else{
-            <div class="desco-record-grid gp-cards gp-record-cards">
+            <div class="desco-record-grid desco-record-grid--timeline gp-cards gp-record-cards">
               @for(rev of filteredRevisions();track rev.revisionId){
-                <app-record-card>
-                  <div class="gp-record-heading"><strong>{{rev.accion==='RETIRO'?'Retiro lógico':'Corrección'}} #{{rev.revisionId}}</strong>
-                    <span class="gp-subtle">{{rev.fechaRegistro | resourceDate:'dd/MM/yyyy HH:mm'}} · Técnico #{{rev.usuarioId}}</span></div>
-                  <dl class="gp-record-data">
-                    <div><dt>Problema</dt><dd>#{{rev.problemaAnterior}} → #{{rev.problemaNuevo}}</dd></div>
+                <app-record-card class="desco-timeline-record">
+                  <header class="desco-timeline-head">
+                    <div><span class="desco-timeline-kicker">Corrección · #{{rev.revisionId}}</span>
+                      <strong>{{rev.accion==='RETIRO'?'Retiro lógico':'Datos corregidos'}}</strong></div>
+                    <time class="desco-timeline-date">{{rev.fechaRegistro | resourceDate:'dd/MM/yyyy HH:mm'}}</time>
+                  </header>
+                  <div class="desco-timeline-transition">
+                    <div><small>Antes</small><strong>{{rev.descripcionAnterior||'—'}}</strong></div>
+                    <span class="desco-timeline-arrow" aria-hidden="true">→</span>
+                    <div><small>Después</small><strong>{{rev.descripcionNueva||'—'}}</strong></div>
+                  </div>
+                  <dl class="desco-timeline-facts">
                     <div><dt>Afectación</dt><dd>{{rev.afectadaAnterior??rev.animalesAnteriores??'—'}} → {{rev.afectadaNueva??rev.animalesNuevos??'—'}}</dd></div>
-                    <div><dt>Antes</dt><dd>{{rev.descripcionAnterior}}</dd></div>
-                    <div><dt>Después</dt><dd>{{rev.descripcionNueva}}</dd></div>
-                    <div class="gp-record-data-full"><dt>Motivo</dt><dd>{{rev.motivo}}</dd></div>
+                    <div><dt>Técnico</dt><dd>{{rev.usuarioNombre || 'No identificado'}}</dd></div>
                   </dl>
+                  <footer class="desco-timeline-note"><span>Motivo</span><p>{{rev.motivo||'Sin motivo registrado'}}</p></footer>
                 </app-record-card>
               }
             </div>
@@ -164,7 +227,16 @@
          @for(p of problemas();track p.id){<option [ngValue]="p.id">{{p.nombre}}</option>}
        </select></label>
      <label class="admin-field">{{actividad.rubro==='CULTIVO'?'Superficie afectada (m²)':'Animales afectados (unidades)'}}
-       <input class="admin-input" type="number" min="0" [step]="actividad.rubro==='CULTIVO'?'0.01':'1'" [(ngModel)]="afectacion" /></label>
+       @if(actividad.rubro==='CULTIVO'){
+         <input class="admin-input" type="text" inputmode="decimal" autocomplete="off"
+           [value]="afectacion ?? ''" (input)="actualizarSuperficieAfectada($event)" />
+       }@else{
+         <input class="admin-input" type="number" min="0" step="1" [(ngModel)]="afectacion" />
+       }
+     </label>
+     @if(actividad.rubro==='CULTIVO'){
+       <p class="gp-subtle">Máximo: {{maxAfectacion()}} m² de superficie sembrada.</p>
+     }
      
    }@else if(form==='tratamiento'){
 <app-consumo-producto-entregado [(value)]="usoProducto" />
@@ -174,20 +246,21 @@
      <label class="admin-field">Fecha prevista de finalización (opcional)
        <input class="admin-input" type="datetime-local" [(ngModel)]="fechaFinPrevista" /></label>
    }@else if(form==='cerrar'){
+     <p class="gp-subtle">Se cerrará la enfermedad y finalizarán sus tratamientos en curso.</p>
      <label class="admin-field">{{actividad.rubro==='CULTIVO'?'Superficie perdida (m²)':'Animales fallecidos (unidades)'}}
-       <input type="number" class="admin-input" min="0" [step]="actividad.rubro==='CULTIVO'?'0.01':'1'" [(ngModel)]="perdida" /></label>
-     <p class="gp-subtle">Ingresa 0 si no hubo pérdidas. El sistema registrará el resultado sin borrar censos ni historiales.</p>
+       <input type="text" class="admin-input" [attr.inputmode]="actividad.rubro==='CULTIVO'?'decimal':'numeric'" autocomplete="off" spellcheck="false" [value]="perdida" (input)="actualizarPerdida($event)" /></label>
+     <p class="gp-subtle">Máximo: {{maxPerdida()}} {{actividad.rubro==='CULTIVO'?'m²':'animales'}}.</p>
    }
    @if(form==='editar'){
      <label class="admin-field">Motivo de la corrección
        <textarea class="admin-input" [(ngModel)]="motivo" maxlength="1000" rows="3" placeholder="Explica qué dato registrado era incorrecto"></textarea>
      </label>
    }
-   <label class="admin-field">{{form==='finalizar'?'Resultado del tratamiento':form==='cerrar'?'Resultados y observaciones':'Descripción de la actuación'}}
+   <label class="admin-field">{{form==='incidencia'||form==='editar'?'Descripción (opcional)':form==='finalizar'?'Resultado del tratamiento (opcional)':form==='cerrar'?'Observación del cierre (obligatoria)':'Descripción (opcional)'}}
      <textarea class="admin-input" [(ngModel)]="descripcion" maxlength="2000" rows="4" placeholder="Describe lo observado y las medidas adoptadas"></textarea></label>
   </div>
   <footer class="gp-modal-footer"><button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="closeForm()">Cancelar</button>
-   <button type="button" class="admin-primary-button" [disabled]="saving()" (click)="registrar()">{{saving()?'Guardando…':'Guardar registro'}}</button></footer>
+   <button type="button" class="admin-primary-button" [disabled]="!actuacionPermitida() || saving()" (click)="registrar()">{{saving()?'Guardando…':'Guardar registro'}}</button></footer>
  </div>
 </dialog>
 <app-action-confirm-dialog />

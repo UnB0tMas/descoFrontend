@@ -1,9 +1,12 @@
 import {ConsumoProductoEntregado,UsoProducto} from '../../../shared/forms/consumo-producto-entregado';
+import {superficieLimitada} from '../../../shared/forms/limited-surface/limited-surface';
 import { ResourceDatePipe } from '../../../shared/formatting/resource-date.pipe';
 import { RecordCardComponent } from '../../../shared/data-display/record-card/record-card';
+import { DetailFieldComponent } from '../../../shared/data-display/detail-field/detail-field';
+import { ListViewSwitchComponent, ListViewMode } from '../../../shared/data-display/list-view-switch/list-view-switch';
 import { ChangeDetectionStrategy, Component, ElementRef, EventEmitter, Input, OnChanges, Output, ViewChild, inject, signal, computed } from '@angular/core';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
-import { faCheck, faEye, faEyeSlash, faPen, faTrash, faMagnifyingGlass, faXmark, faPrescriptionBottleMedical } from '@fortawesome/free-solid-svg-icons';
+import { faCheck, faEye, faEyeSlash, faPen, faTrash, faMagnifyingGlass, faXmark, faPrescriptionBottleMedical, faLock } from '@fortawesome/free-solid-svg-icons';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { finalize, forkJoin } from 'rxjs';
@@ -23,7 +26,7 @@ import { PaginatorComponent } from '../../../shared/data-display/paginator/pagin
 import { EmptyStateComponent } from '../../../shared/data-display/empty-state/empty-state';
 
 @Component({selector:'app-gp-incidencias-panel',standalone:true,
- imports: [ResourceDatePipe,RecordCardComponent,ConsumoProductoEntregado,FormsModule,RouterLink,FaIconComponent,PermissionDirective,DataTableComponent,PaginatorComponent,EmptyStateComponent,ActionConfirmDialogComponent],templateUrl:'./gp-incidencias-panel.html',styleUrl:'./gestion-productiva.css',
+ imports: [ResourceDatePipe,RecordCardComponent,DetailFieldComponent,ConsumoProductoEntregado,FormsModule,RouterLink,FaIconComponent,PermissionDirective,DataTableComponent,PaginatorComponent,EmptyStateComponent,ActionConfirmDialogComponent,ListViewSwitchComponent],templateUrl:'./gp-incidencias-panel.html',styleUrl:'./gestion-productiva.css',
  changeDetection:ChangeDetectionStrategy.OnPush})
 export class GpIncidenciasPanel implements OnChanges {
  readonly viewIcon=faEye;
@@ -32,6 +35,7 @@ export class GpIncidenciasPanel implements OnChanges {
  readonly deleteIcon=faTrash;
  readonly completeIcon=faCheck;
  readonly treatmentIcon=faPrescriptionBottleMedical;
+ readonly lockIcon=faLock;
  readonly searchIcon=faMagnifyingGlass;
  readonly closeIcon=faXmark;
  @ViewChild('formDialog') private readonly formDialog?:ElementRef<HTMLDialogElement>;
@@ -50,6 +54,7 @@ export class GpIncidenciasPanel implements OnChanges {
  readonly loading=signal(false);readonly saving=signal(false);readonly error=signal<string|null>(null);
  readonly incidencias=signal<GpIncidenciaResponse[]>([]);
  readonly tratamientos=signal<GpTratamientoSeguimientoResponse[]>([]);
+ readonly actuacionPermitida=signal(false);
  readonly abiertas=computed(()=>this.incidencias().filter(i=>i.estado==='ABIERTA').length);
  readonly view=signal<'tabla'|'tarjetas'>('tabla');
  readonly treatmentView=signal<'tabla'|'tarjetas'>('tabla');
@@ -61,10 +66,10 @@ export class GpIncidenciasPanel implements OnChanges {
  readonly revisionSearch=signal('');
  revisionSearchInput='';
  applyRevisionSearch():void{this.revisionSearch.set(this.revisionSearchInput.trim());}
- readonly filteredRevisions=computed(()=>{const q=this.revisionSearch().toLocaleLowerCase('es-PE');return this.revisions().filter(x=>!q||[x.revisionId,x.accion,x.fechaRegistro,x.motivo,x.descripcionAnterior,x.descripcionNueva].some(v=>String(v??'').toLocaleLowerCase('es-PE').includes(q)));});
+ readonly filteredRevisions=computed(()=>{const q=this.revisionSearch().toLocaleLowerCase('es-PE');return this.revisions().filter(x=>!q||[x.revisionId,x.accion,x.fechaRegistro,x.motivo,x.descripcionAnterior,x.descripcionNueva,x.usuarioNombre].some(v=>String(v??'').toLocaleLowerCase('es-PE').includes(q)));});
  readonly filteredIncidences=computed(()=>{
    const term=this.incidenceSearch().trim().toLocaleLowerCase('es-PE');
-   return this.incidencias().filter(i=>!term||[i.incidenciaId,i.problema,i.descripcion,i.estado,i.fechaRegistro,i.descripcionCierre]
+   return this.incidencias().filter(i=>!term||[i.incidenciaId,i.problema,i.descripcion,i.estado,i.fechaRegistro,i.descripcionCierre,i.usuarioNombre,i.usuarioCierreNombre]
      .some(v=>String(v??'').toLocaleLowerCase('es-PE').includes(term)));
  });
  readonly page=signal(1);readonly size=signal(10);
@@ -74,7 +79,7 @@ export class GpIncidenciasPanel implements OnChanges {
  readonly filteredTreatments=computed(()=>{
    const id=this.selectedIncidence();const term=this.treatmentSearch().trim().toLocaleLowerCase('es-PE');
    return this.tratamientos().filter(t=>t.incidenciaId===id && (!term||
-     [t.eventoId,t.tratamiento,t.descripcion,t.descripcionCierre,t.fechaInicio,t.fechaFinReal]
+     [t.eventoId,t.tratamiento,t.estado,t.descripcion,t.descripcionCierre,t.fechaInicio,t.fechaFinReal,t.usuarioNombre]
      .some(v=>String(v??'').toLocaleLowerCase('es-PE').includes(term))));
  });
  readonly revisionColumns:readonly DataTableColumn<GpIncidenciaRevisionResponse>[]=[
@@ -84,14 +89,17 @@ export class GpIncidenciasPanel implements OnChanges {
   {key:'descripcionAnterior',label:'Antes',format:v=>String(v??'—')},
   {key:'descripcionNueva',label:'Después',format:v=>String(v??'—')},
   {key:'motivo',label:'Motivo'},
-  {key:'usuarioId',label:'Técnico',format:v=>`#${v}`},
+  {key:'usuarioNombre',label:'Técnico',format:v=>String(v||'No identificado')},
  ];
  readonly incidenceColumns:readonly DataTableColumn<GpIncidenciaResponse>[]=[
   {key:'incidenciaId',label:'ID',format:v=>`#${v}`},
   {key:'problema',label:'Enfermedad / plaga'},
-  {key:'fechaRegistro',label:'Registro',format:v=>this.fechaHora(v)},
+  {key:'fechaRegistro',label:'Inicio',format:v=>this.fechaHora(v)},
   {key:'afectacion',label:'Afectación',value:i=>this.medida(i.afectadaM2,i.afectadosAnimales)},
+  {key:'fechaCierre',label:'Fin',format:v=>v?this.fechaHora(v):'—'},
+  {key:'duracion',label:'Duración',value:i=>this.duracion(i.fechaRegistro,i.fechaCierre)},
   {key:'estado',label:'Estado',format:v=>v==='ABIERTA'?'En seguimiento':'Cerrada'},
+  {key:'usuarioNombre',label:'Técnico',format:v=>String(v||'No identificado')},
   {key:'tratamientos',label:'Tratamientos',value:i=>this.eventosDe(i.incidenciaId).length},
   {key:'acciones',label:'Acciones',align:'right'},
  ];
@@ -100,10 +108,18 @@ export class GpIncidenciasPanel implements OnChanges {
   {key:'tratamiento',label:'Tratamiento'},
   {key:'fechaInicio',label:'Inicio',format:v=>this.fechaHora(v)},
   {key:'fechaFinPrevista',label:'Fin previsto',format:v=>v?this.fechaHora(v):'—'},
-  {key:'fechaFinReal',label:'Estado',format:v=>v?'Finalizado':'En curso'},
-  {key:'usuarioId',label:'Técnico',format:v=>`#${v}`},
+  {key:'estado',label:'Estado',format:v=>v==='ELIMINADO'?'Eliminado':v==='FINALIZADO'?'Finalizado':'En curso'},
+  {key:'fechaFinReal',label:'Fin real',format:v=>v?this.fechaHora(v):'—'},
+  {key:'duracion',label:'Duración',value:t=>t.estado==='ELIMINADO'?'—':this.duracion(t.fechaInicio,t.fechaFinReal)},
+  {key:'usuarioNombre',label:'Técnico',format:v=>String(v||'No identificado')},
   {key:'acciones',label:'Acciones',align:'right'},
  ];
+ onViewChange(target:'incidencia'|'tratamiento'|'revision',view:ListViewMode):void{
+   const value=view==='table'?'tabla':'tarjetas';
+   if(target==='incidencia')this.view.set(value);
+   else if(target==='tratamiento')this.treatmentView.set(value);
+   else this.revisionView.set(value);
+ }
  fechaHora(value:unknown):string {
   if(!value)return '—';
   const raw=String(value);
@@ -113,9 +129,27 @@ export class GpIncidenciasPanel implements OnChanges {
  medida(superficie?:number|null,animales?:number|null):string{
   return this.actividad.rubro==='CULTIVO'?(superficie==null?'—':`${superficie} m²`):(animales==null?'—':`${animales} animales`);
  }
+ duracion(inicio?:string|null,fin?:string|null):string{
+  if(!inicio)return '—';
+  if(!fin)return 'En curso';
+  const parse=(value:string):number=>{
+   const time=/(?:Z|[+-]\d{2}:?\d{2})$/.test(value)?value:value+'Z';
+   return Date.parse(time);
+  };
+  const transcurrido=parse(fin)-parse(inicio);
+  if(!Number.isFinite(transcurrido)||transcurrido<0)return '—';
+  const minutos=Math.floor(transcurrido/60000);
+  const dias=Math.floor(minutos/1440);
+  const horas=Math.floor(minutos%1440/60);
+  const resto=minutos%60;
+  if(dias)return `${dias} d${horas?` ${horas} h`:''}`;
+  if(horas)return `${horas} h${resto?` ${resto} min`:''}`;
+  return `${minutos} min`;
+ }
+ tratamientosEnCurso(id:number):number{return this.eventosDe(id).filter(t=>t.estado==='EN_CURSO').length;}
  resultado(i:GpIncidenciaResponse):string{
   if(i.estado==='ABIERTA')return 'En seguimiento';
-  return i.resultado==='RECUPERADA'?'Recuperación':i.resultado==='PERDIDA_TOTAL'?'Pérdida total':i.resultado==='PERDIDA_PARCIAL'?'Pérdida parcial':i.resultado||'Cerrada';
+  return i.resultado==='CIERRE_CICLO'?'Cierre por fin de ciclo':i.resultado==='RECUPERADA'?'Recuperación':i.resultado==='PERDIDA_TOTAL'?'Pérdida total':i.resultado==='PERDIDA_PARCIAL'?'Pérdida parcial':i.resultado||'Cerrada';
  }
  applyIncidenceSearch():void{this.incidenceSearch.set(this.incidenceSearchInput.trim());this.page.set(1);}
  applyTreatmentSearch():void{this.treatmentSearch.set(this.treatmentSearchInput.trim());}
@@ -131,7 +165,7 @@ export class GpIncidenciasPanel implements OnChanges {
    this.selectedIncidence.set(null);this.revisions.set([]);
    this.treatmentSearchInput='';this.treatmentSearch.set('');
  }
- can(code:string):boolean{return this.permissions.has(code);}
+ can(code:string):boolean{return this.actuacionPermitida()&&this.permissions.has(code);}
  async retirar(i:GpIncidenciaResponse):Promise<void>{
    const u=this.uot.selectedId();if(!u||this.saving()||i.estado!=='ABIERTA'||!this.can('SANIDAD_RETIRAR'))return;
    const answer=await this.confirmDialog.show({title:'Retirar incidencia',
@@ -151,18 +185,83 @@ export class GpIncidenciasPanel implements OnChanges {
  motivo='';
  incidenciaId:number|null=null;eventoTratamientoId:number|null=null;problemaId=0;tratamientoId=0;
  usoProducto:UsoProducto={};
- afectacion:number|null=null;perdida:number|null=null;descripcion='';fechaFinPrevista='';
+ afectacion:number|null=null;perdida:number|null=0;descripcion='';fechaFinPrevista='';
+ /** La afectación se limita a la superficie vigente de la actividad agrícola. */
+ maxAfectacion():number {
+  const disponible=this.actividad.rubro==='CULTIVO'
+    ?this.actividad.superficieExactaM2:this.actividad.cantidadExacta;
+  return Math.max(0, Number(disponible)||0);
+ }
+ actualizarSuperficieAfectada(event:Event):void {
+  this.afectacion=superficieLimitada(event,this.maxAfectacion());
+ }
+ maxPerdida():number{
+  const incidencia=this.incidencias().find(i=>i.incidenciaId===this.incidenciaId);
+  if(!incidencia)return 0;
+  const maximo=this.actividad.rubro==='CULTIVO'?(incidencia.afectadaM2??0):(incidencia.afectadosAnimales??0);
+  return Math.max(0,Number(maximo)||0);
+ }
+ actualizarPerdida(event:Event):void{
+  const input=event.target as HTMLInputElement;
+  if(!input)return;
+  if(this.actividad.rubro==='CULTIVO'){
+   this.perdida=superficieLimitada(event,this.maxPerdida(),0)??0;
+   return;
+  }
+  const esCrianza=this.actividad.rubro==='CRIANZA';
+  let texto=esCrianza
+    ?input.value.replace(/\D/g,'')
+    :input.value.replace(/,/g,'.').replace(/[^\d.]/g,'');
+  if(!esCrianza){
+   const punto=texto.indexOf('.');
+   if(punto>=0)texto=texto.slice(0,punto+1)+texto.slice(punto+1).replace(/\./g,'').slice(0,2);
+  }
+  texto=texto.replace(/^0+(?=\d)/,'');
+  const numero=Number(texto);
+  const valor=Number.isFinite(numero)?numero:0;
+  const limitado=Math.min(this.maxPerdida(),Math.max(0,valor));
+  this.perdida=esCrianza?Math.floor(limitado):Math.round(limitado*100)/100;
+  // El control visible también se corrige en el mismo evento (incluido pegar).
+  input.value=valor>this.maxPerdida()||texto===''||texto==='.'
+    ?String(this.perdida):texto;
+ }
+
  ngOnChanges():void{this.closeForm();this.closeDetail();this.page.set(1);this.incidenceSearchInput='';this.incidenceSearch.set('');if(this.actividad?.actividadId)this.load();}
  reset():void{this.form='ninguno';this.incidenciaId=null;this.eventoTratamientoId=null;this.problemaId=0;this.tratamientoId=0;
-  this.afectacion=null;this.perdida=null;this.descripcion='';this.fechaFinPrevista='';this.motivo='';this.usoProducto={};this.error.set(null);}
+  this.afectacion=null;this.perdida=0;this.descripcion='';this.fechaFinPrevista='';this.motivo='';this.usoProducto={};this.error.set(null);}
  problemas(){const a=this.actividad;return this.catalogos.filter(x=>x.tipo===(a.rubro==='CULTIVO'?'PROBLEMA_CULTIVO':'PROBLEMA_CRIANZA')
  && x.padreId===(a.rubro==='CULTIVO'?a.cultivoId:a.especieId));}
  tratamientosDe(id:number){const problemas=this.incidencias().find(i=>i.incidenciaId===id)?.problemaId;
   const ids=this.catalogos.filter(x=>x.tipo==='RELACION' && x.padreId===problemas).map(x=>x.id);
   return this.catalogos.filter(x=>x.tipo==='TRATAMIENTO' && ids.includes(x.id));}
  eventosDe(id:number){return this.tratamientos().filter(x=>x.incidenciaId===id);}
+ async eliminarTratamiento(t:GpTratamientoSeguimientoResponse):Promise<void>{
+   const id=this.selectedIncidence();const i=this.selected();const u=this.uot.selectedId();
+   if(!u||!i||i.incidenciaId!==t.incidenciaId||id!==t.incidenciaId||i.estado!=='ABIERTA'||t.estado!=='EN_CURSO'||this.saving()||!this.can('SANIDAD_RETIRAR'))return;
+   const answer=await this.confirmDialog.show({
+     title:'Eliminar tratamiento',
+     message:t.cantidadUtilizada?'¿Eliminar este registro por error? El producto volverá al almacén.':'¿Eliminar este registro por error?',
+     tone:'danger',confirmLabel:'Eliminar'
+   });
+   if(!answer.confirmed||this.saving())return;
+   this.saving.set(true);this.error.set(null);
+   this.gp.eliminarTratamiento(u,t.eventoId,'Registro por error').pipe(finalize(()=>this.saving.set(false))).subscribe({
+     next:()=>{this.toast.success('Tratamiento eliminado');this.load();this.changed.emit();},
+     error:e=>this.error.set(mapOpenApiError(e).message)});
+ }
  open(form:typeof this.form,id:number|null=null):void{
-  this.reset();this.form=form;if(form==='finalizar')this.eventoTratamientoId=id;
+  if(!this.actuacionPermitida())return;
+  this.reset();
+  if((form==='tratamiento'||form==='editar'||form==='cerrar')&&id){
+    const i=this.incidencias().find(x=>x.incidenciaId===id);
+    if(!i||i.estado!=='ABIERTA')return;
+  }
+  if(form==='finalizar'&&id){
+    const t=this.tratamientos().find(x=>x.eventoId===id);
+    const i=t?this.incidencias().find(x=>x.incidenciaId===t.incidenciaId):null;
+    if(!i||i.estado!=='ABIERTA'||t?.estado!=='EN_CURSO')return;
+  }
+  this.form=form;if(form==='finalizar')this.eventoTratamientoId=id;
   else this.incidenciaId=id;
   if(form==='editar'&&id){const i=this.incidencias().find(x=>x.incidenciaId===id);
     if(i){this.problemaId=i.problemaId;this.afectacion=this.actividad.rubro==='CULTIVO'?(i.afectadaM2??null):(i.afectadosAnimales??null);this.descripcion=i.descripcion;}
@@ -170,9 +269,9 @@ export class GpIncidenciasPanel implements OnChanges {
   this.formDialog?.nativeElement.showModal();
  }
  closeForm():void{if(this.saving())return;this.formDialog?.nativeElement.close();this.reset();}
- load():void{const u=this.uot.selectedId();if(!u)return;this.loading.set(true);
-  forkJoin({incidencias:this.gp.incidencias(u,this.actividad.actividadId),tratamientos:this.gp.tratamientosIncidencias(u,this.actividad.actividadId)})
-  .pipe(finalize(()=>this.loading.set(false))).subscribe({next:x=>{this.incidencias.set(x.incidencias);this.tratamientos.set(x.tratamientos);
+ load():void{const u=this.uot.selectedId();if(!u)return;this.loading.set(true);this.actuacionPermitida.set(false);
+  forkJoin({autorizacion:this.gp.puedeActuar(u,this.actividad.predioId),incidencias:this.gp.incidencias(u,this.actividad.actividadId),tratamientos:this.gp.tratamientosIncidencias(u,this.actividad.actividadId)})
+  .pipe(finalize(()=>this.loading.set(false))).subscribe({next:x=>{this.actuacionPermitida.set(x.autorizacion);this.incidencias.set(x.incidencias);this.tratamientos.set(x.tratamientos);
      this.page.set(Math.min(this.page(),this.pages()));
      if(this.modo==='detalle'&&this.incidenciaSeleccionadaId!=null){
        const found=x.incidencias.some(i=>i.incidenciaId===this.incidenciaSeleccionadaId);
@@ -182,15 +281,19 @@ export class GpIncidenciasPanel implements OnChanges {
    error:e=>this.error.set(mapOpenApiError(e).message)});
  }
  registrar():void{
+  if(!this.actuacionPermitida())return;
   const u=this.uot.selectedId();if(!u||this.saving())return;const obs=this.descripcion.trim();
-  if(obs.length<3){this.error.set('Describe el procedimiento o resultado con al menos 3 caracteres.');return;}
+  if(this.form==='cerrar'&&obs.length<3){this.error.set('Escriba una observación de al menos 3 caracteres.');return;}
   const a=this.actividad;let action;
   if(this.form==='incidencia'||this.form==='editar'){
    if(!this.problemas().some(x=>x.id===this.problemaId)||!Number.isFinite(this.afectacion)||this.afectacion===null||this.afectacion<=0){
      this.error.set('Seleccione la enfermedad e indique la afectación exacta.');return;
    }
-   const max=a.rubro==='CULTIVO'?a.superficieExactaM2:a.cantidadExacta;
-   if((max??0)<this.afectacion || (a.rubro==='CRIANZA'&&!Number.isInteger(this.afectacion))){this.error.set('La afectación supera la cantidad vigente.');return;}
+   const max=this.maxAfectacion();
+   if(this.afectacion>max || (a.rubro==='CRIANZA'&&!Number.isInteger(this.afectacion)) ||
+     (a.rubro==='CULTIVO'&&Math.abs(this.afectacion*100-Math.round(this.afectacion*100))>0.0001)){
+     this.error.set(a.rubro==='CULTIVO'?'La superficie afectada supera la superficie sembrada.':'La afectación supera la cantidad vigente.');return;
+   }
    const body={problemaId:this.problemaId,descripcion:obs,
     afectadaM2:a.rubro==='CULTIVO'?this.afectacion:null,afectadosAnimales:a.rubro==='CRIANZA'?this.afectacion:null};
    if(this.form==='editar'){
@@ -216,7 +319,7 @@ export class GpIncidenciasPanel implements OnChanges {
    if(!this.eventoTratamientoId)return;action=this.gp.finalizarTratamiento(u,this.eventoTratamientoId,obs);
   }else if(this.form==='cerrar'){
    const i=this.incidencias().find(x=>x.incidenciaId===this.incidenciaId);
-   if(!i||this.perdida===null||!Number.isFinite(this.perdida)||this.perdida<0||
+   if(!i||i.estado!=='ABIERTA'||this.perdida===null||!Number.isFinite(this.perdida)||this.perdida<0||
      (a.rubro==='CRIANZA'&&!Number.isInteger(this.perdida))||
      this.perdida>(a.rubro==='CULTIVO'?(i.afectadaM2??0):(i.afectadosAnimales??0))){
     this.error.set('Indique la pérdida exacta, sin superar la afectación inicial.');return;

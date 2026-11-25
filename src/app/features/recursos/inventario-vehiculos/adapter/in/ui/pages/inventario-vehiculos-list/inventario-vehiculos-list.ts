@@ -4,6 +4,7 @@ import {
   afterNextRender, ChangeDetectionStrategy,
   Component,
   OnInit,
+  OnDestroy,
   ViewChild,
   computed,
   inject,
@@ -17,8 +18,6 @@ import {
   faClockRotateLeft,
   faEye,
   faFilter,
-  faGrip,
-  faList,
   faMagnifyingGlass,
   faPen,
   faPlus,
@@ -26,7 +25,7 @@ import {
   faTriangleExclamation,
   faWarehouse,
 } from '@fortawesome/free-solid-svg-icons';
-import { finalize } from 'rxjs';
+import { Subscription, finalize } from 'rxjs';
 
 import { PermissionDirective } from '../../../../../../../../core/access/permission.directive';
 import { ReferenceDataService } from '../../../../../../../../core/reference-data/reference-data.service';
@@ -38,6 +37,8 @@ import { EmptyStateComponent } from '../../../../../../../../shared/data-display
 import { ErrorStateComponent } from '../../../../../../../../shared/data-display/error-state/error-state';
 import { LoadingStateComponent } from '../../../../../../../../shared/data-display/loading-state/loading-state';
 import { PaginatorComponent } from '../../../../../../../../shared/data-display/paginator/paginator';
+import { ListViewSwitchComponent, ListViewMode } from '../../../../../../../../shared/data-display/list-view-switch/list-view-switch';
+import { RecordCardComponent } from '../../../../../../../../shared/data-display/record-card/record-card';
 import { PageHeaderComponent } from '../../../../../../../../shared/layout/page-header/page-header';
 import { PageResult, emptyPageResult } from '../../../../../../../../shared/models/page-result.model';
 import { UotContextStore } from '../../../../../../../uot/state/uot-context.store';
@@ -48,17 +49,17 @@ import { RecursoFormComponent } from '../recurso-form/recurso-form';
 import { SuministroFormComponent } from '../suministro-form/suministro-form';
 
 type InventoryTab = 'assets' | 'supplies';
-type InventoryViewMode = 'table' | 'cards';
+type InventoryViewMode = ListViewMode;
 
 @Component({
   selector: 'app-inventario-vehiculos-list-page',
   standalone: true,
-  imports: [ResourceDatePipe,DecimalPipe, RouterLink, FaIconComponent, PermissionDirective, EmptyStateComponent, ErrorStateComponent, LoadingStateComponent, PaginatorComponent, PageHeaderComponent, ResourceImageComponent, RecursoFormComponent, SuministroFormComponent],
+  imports: [ResourceDatePipe,DecimalPipe, RouterLink, FaIconComponent, PermissionDirective, EmptyStateComponent, ErrorStateComponent, LoadingStateComponent, PaginatorComponent, RecordCardComponent, PageHeaderComponent, ListViewSwitchComponent, ResourceImageComponent, RecursoFormComponent, SuministroFormComponent],
   templateUrl: './inventario-vehiculos-list.html',
   styleUrl: './inventario-vehiculos-list.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class InventarioVehiculosListPage implements OnInit {
+export class InventarioVehiculosListPage implements OnInit, OnDestroy {
   @ViewChild(RecursoFormComponent) private assetForm!: RecursoFormComponent;
   @ViewChild(SuministroFormComponent) private supplyForm!: SuministroFormComponent;
 
@@ -68,7 +69,7 @@ export class InventarioVehiculosListPage implements OnInit {
   readonly uot = inject(UotContextStore);
 
   readonly activeTab = signal<InventoryTab>('assets');
-  readonly viewMode = signal<InventoryViewMode>('table');
+  readonly viewMode = signal<InventoryViewMode>('cards');
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
   readonly assets = signal<PageResult<ResourceAssetListItemResponse>>(emptyPageResult(20));
@@ -94,16 +95,13 @@ export class InventarioVehiculosListPage implements OnInit {
   readonly movementIcon = faArrowRightArrowLeft;
   readonly historyIcon = faClockRotateLeft;
   readonly searchIcon = faMagnifyingGlass;
-  readonly tableIcon = faList;
-  readonly cardsIcon = faGrip;
 
   readonly isGeneral = computed(() => this.uot.modo() === 'GENERAL');
   readonly availableUnits = computed(() => this.uot.memberships());
-  readonly filteredSupplies = computed(() => {
-    const query = this.search().trim().toLowerCase();
-    if (!query) return this.supplies().items;
-    return this.supplies().items.filter((item) => [item.codigo, item.nombre, item.unidadMedida, item.uotNombre, item.uotCodigo].some((value) => (value ?? '').toLowerCase().includes(query)));
-  });
+  // Los resultados ya llegan filtrados y paginados desde el servidor.
+  readonly filteredSupplies = computed(() => this.supplies().items);
+  private assetsRequest?: Subscription;
+  private suppliesRequest?: Subscription;
 
   constructor() {
     afterNextRender(() => {
@@ -119,6 +117,11 @@ export class InventarioVehiculosListPage implements OnInit {
     this.load(1);
   }
 
+  ngOnDestroy(): void {
+    this.assetsRequest?.unsubscribe();
+    this.suppliesRequest?.unsubscribe();
+  }
+
   setTab(tab: InventoryTab): void {
     this.activeTab.set(tab); this.search.set(''); this.errorMessage.set(null); this.kardexSupply.set(null); this.kardex.set([]); this.load(1);
   }
@@ -132,15 +135,19 @@ export class InventarioVehiculosListPage implements OnInit {
   }
 
   loadAssets(page = this.assets().page, size = this.assets().size): void {
+    this.assetsRequest?.unsubscribe();
+    this.suppliesRequest?.unsubscribe();
     this.loading.set(true); this.errorMessage.set(null);
-    this.api.listAssets({ uotId: this.effectiveUotId(), search: this.search(), typeId: this.typeFilter() ?? undefined, state: this.stateFilter() || undefined, page, size })
+    this.assetsRequest = this.api.listAssets({ uotId: this.effectiveUotId(), search: this.search(), typeId: this.typeFilter() ?? undefined, state: this.stateFilter() || undefined, page, size })
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({ next: (result) => this.assets.set(result), error: (error) => this.errorMessage.set(mapOpenApiError(error).message) });
   }
 
   loadSupplies(page = this.supplies().page, size = this.supplies().size): void {
+    this.assetsRequest?.unsubscribe();
+    this.suppliesRequest?.unsubscribe();
     this.loading.set(true); this.errorMessage.set(null);
-    this.suppliesApi.list(this.effectiveUotId(), page, size).pipe(finalize(() => this.loading.set(false))).subscribe({
+    this.suppliesRequest = this.suppliesApi.list(this.effectiveUotId(), page, size, this.search()).pipe(finalize(() => this.loading.set(false))).subscribe({
       next: (result) => {
         this.supplies.set(result);
         const selected = this.kardexSupply();
@@ -162,7 +169,7 @@ export class InventarioVehiculosListPage implements OnInit {
   async editSupply(item: SupplySummaryResponse): Promise<void> { const result = await this.supplyForm.openEdit(item); if (result.saved) this.loadSupplies(); }
   async movement(item: SupplySummaryResponse): Promise<void> { const result = await this.supplyForm.openMovement(item); if (result.saved) { this.loadSupplies(); if (this.sameSupply(this.kardexSupply(), item)) this.loadKardex(item); } }
 
-  toggleKardex(item: SupplySummaryResponse): void { if (this.sameSupply(this.kardexSupply(), item)) { this.kardexSupply.set(null); this.kardex.set([]); this.kardexError.set(null); return; } this.loadKardex(item); }
+  toggleKardex(item: SupplySummaryResponse): void { this.viewMode.set('table'); if (this.sameSupply(this.kardexSupply(), item)) { this.kardexSupply.set(null); this.kardex.set([]); this.kardexError.set(null); return; } this.loadKardex(item); }
   loadKardex(item: SupplySummaryResponse): void {
     if (!item.suministroId) return;
     this.kardexSupply.set(item); this.kardexLoading.set(true); this.kardexError.set(null); this.kardex.set([]);

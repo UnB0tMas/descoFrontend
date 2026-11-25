@@ -105,11 +105,16 @@
             <h4>Importes</h4>
             <div class="e5-detail-breakdown">
               <div><small>Bruto</small><strong>{{d.bruto??0|currency:'PEN':'S/ ':'1.2-2'}}</strong></div>
-              <div><small>Ajuste de precio</small><strong>{{d.ajustePrecio??0|currency:'PEN':'S/ ':'1.2-2'}}</strong></div>
-              <div><small>Gastos</small><strong>{{d.gastos??0|currency:'PEN':'S/ ':'1.2-2'}}</strong></div>
-              <div><small>Descuentos</small><strong>{{d.descuentos??0|currency:'PEN':'S/ ':'1.2-2'}}</strong></div>
-              <div><small>Cargos</small><strong>{{d.cargos??0|currency:'PEN':'S/ ':'1.2-2'}}</strong></div>
+              <div><small>Ajuste de precio</small><strong>{{(0-(d.ajustePrecio??0))|currency:'PEN':'S/ ':'1.2-2'}}</strong></div>
+              <div><small>Venta efectiva</small><strong>{{d.ventaAjustada??0|currency:'PEN':'S/ ':'1.2-2'}}</strong></div>
+              <div><small>Gastos</small><strong>{{(0-(d.gastos??0))|currency:'PEN':'S/ ':'1.2-2'}}</strong></div>
+              <div><small>Descuentos</small><strong>{{(0-(d.descuentos??0))|currency:'PEN':'S/ ':'1.2-2'}}</strong></div>
+              <div><small>Cargos</small><strong>{{(0-(d.cargos??0))|currency:'PEN':'S/ ':'1.2-2'}}</strong></div>
               <div><small>Bonificaciones</small><strong>{{d.bonificaciones??0|currency:'PEN':'S/ ':'1.2-2'}}</strong></div>
+              @if((d.redondeo??0)!==0){
+                <div><small>Redondeo</small><strong>{{d.redondeo??0|currency:'PEN':'S/ ':'1.2-2'}}</strong></div>
+              }
+              <div class="e5-detail-breakdown-total"><small>Neto a pagar</small><strong>{{d.neto??0|currency:'PEN':'S/ ':'1.2-2'}}</strong></div>
             </div>
           </aside>
         </div>

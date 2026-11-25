@@ -10,4 +10,4 @@
 :host .apappss-predios-cards .apappss-predio-actions :is(a,button){flex:0 0 auto}
 :host .apappss-predio-actions .apappss-produccion-habilitada{color:var(--desco-success,var(--desco-primary))}
 :host .apappss-detail-section app-paginator{display:block;margin-top:1rem;border-top:1px solid var(--desco-border);padding-top:1rem}
-@media(max-width:640px){:host .apappss-predios-toolbar .gp-search{max-width:none;flex-basis:100%}:host .apappss-predios-toolbar .gp-view-toggle{width:100%;justify-content:space-around}}
+@media(max-width:640px){:host .apappss-predios-toolbar .gp-search{max-width:none;flex-basis:100%}:host .apappss-predios-toolbar app-list-view-switch{width:100%;justify-content:space-around}}

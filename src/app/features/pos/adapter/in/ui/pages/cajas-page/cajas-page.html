@@ -1,0 +1,146 @@
+<div class="desco-page caja-page">
+  <app-page-header title="Gestión de cajas" eyebrow="GESTIÓN COMERCIAL" [subtitle]="uot.label()" [icon]="icon">
+    <div pageActions class="caja-header-actions">
+      <button type="button" class="admin-secondary-button" [disabled]="busy()" (click)="reload()">Actualizar</button>
+      @if(permissions.has('CAJAS_CREAR')){<button type="button" class="admin-primary-button" (click)="openCreate()">+ Nueva caja</button>}
+    </div>
+  </app-page-header>
+  @if(error()){<p class="admin-inline-error" role="alert">{{error()}}</p>}
+  @if(!uotId){<section class="admin-surface caja-panel">Seleccione una UOT específica para gestionar sus cajas.</section>}
+  @else {
+    <section class="caja-kpis" aria-label="Resumen de cajas">
+      <article class="admin-surface"><span>Cajas registradas</span><strong>{{cajas().length}}</strong></article>
+      <article class="admin-surface"><span>Cajas abiertas</span><strong>{{abiertas}}</strong></article>
+      <article class="admin-surface"><span>Disponibles</span><strong>{{libres}}</strong></article>
+      <article class="admin-surface"><span>Turnos históricos</span><strong>{{sesiones().length}}</strong></article>
+    </section>
+    <section class="admin-surface caja-panel">
+      <div class="caja-section-head">
+        <div><h2>Cajas registradas</h2></div>
+        @if(permissions.has('CAJAS_SUPERVISAR')&&permissions.has('CAJAS_LISTAR')){
+          <app-toggle label="Mostrar cajas desactivadas" [checked]="incluirInactivas()" [disabled]="busy()"
+            (checkedChange)="incluirInactivas.set($event); reload()" />
+        }
+      </div>
+      <div class="caja-cards">
+        @for(c of visibles();track c.cajaId){
+          <article class="caja-card">
+            <div class="caja-card-top">
+              <div class="caja-card-name"><span class="caja-mark">▣</span><div><strong>{{c.nombre}}</strong><small>{{c.codigo}}</small></div></div>
+              <span class="caja-status" [class.caja-status--on]="c.estado==='ABIERTA'">{{!c.activa?'Desactivada':c.estado==='ABIERTA'?'En uso':'Disponible'}}</span>
+            </div>
+            <p class="gp-subtle">@if(c.estado==='ABIERTA'){Operador: {{nombreOperador(c.operadorId)}}}@else{Sin turno abierto}</p>
+            <footer class="caja-card-actions">
+              @if(permissions.has('CAJAS_SUPERVISAR')){<a class="admin-icon-button" title="Detalles" [attr.aria-label]="'Detalles de '+c.nombre" [routerLink]="['/pos/cajas',c.cajaId]"><fa-icon [icon]="verIcon" /></a>}
+              @if(permissions.has('CAJAS_ABRIR')&&c.activa&&c.estado!=='ABIERTA'){<button type="button" class="admin-icon-button" title="Abrir caja" aria-label="Abrir caja" (click)="openApertura(c)"><fa-icon [icon]="abrirIcon" /></button>}
+              @if(permissions.has('CAJAS_EDITAR')&&c.activa){<button type="button" class="admin-icon-button" title="Editar" aria-label="Editar caja" [disabled]="c.estado==='ABIERTA'||busy()" (click)="openEdit(c)"><fa-icon [icon]="editarIcon" /></button>}
+              @if(permissions.has('CAJAS_RETIRAR')&&c.activa){<button type="button" class="admin-icon-button caja-danger" title="Desactivar definitivamente" aria-label="Desactivar caja" [disabled]="c.estado==='ABIERTA'||busy()" (click)="retirar(c)"><fa-icon [icon]="borrarIcon" /></button>}
+            </footer>
+          </article>
+        } @empty {<div class="caja-empty"><strong>No hay cajas registradas</strong></div>}
+      </div>
+    </section>
+    <section class="admin-surface caja-panel">
+      <div class="caja-section-head"><div><h2>Últimos movimientos</h2></div></div>
+      <ng-template #estadoTurno let-s>
+        <app-status-badge [label]="s.estado==='ABIERTA'?'Abierta':'Cerrada'"
+          [tone]="s.estado==='ABIERTA'?'success':'neutral'" [dot]="true" />
+      </ng-template>
+      <ng-template #accionesTurno let-s>
+        <div class="caja-row-actions" role="group" [attr.aria-label]="'Acciones del turno '+s.sesionId">
+          @if(permissions.has('CAJAS_SUPERVISAR')) {
+            <a class="admin-icon-button" [routerLink]="['/pos/cajas',s.cajaId]" title="Ver detalle del turno y de la caja"
+              [attr.aria-label]="'Detalle de caja del turno '+s.sesionId"><fa-icon [icon]="verIcon" /></a>
+          }
+          @if(permissions.has('CAJAS_SUPERVISAR')||permissions.has('CAJAS_CERRAR')) {
+            <app-button [icon]="arqueoIcon" [iconOnly]="true" size="small" [disabled]="busy()"
+              [label]="s.estado==='ABIERTA'?'Simular cierre':'Ver balance'" (pressed)="simular(s)"
+              [title]="s.estado==='ABIERTA'?'Simular cierre':'Ver balance'" />
+            @if(s.estado==='CERRADA') {
+              <app-button [icon]="ticketIcon" [iconOnly]="true" size="small" label="Imprimir ticket"
+                title="Imprimir ticket" [disabled]="busy()" (pressed)="imprimir(s)" />
+              <app-button [icon]="pdfIcon" [iconOnly]="true" size="small" label="Descargar PDF A4"
+                title="Descargar PDF A4" [disabled]="busy()" (pressed)="reportePdf(s)" />
+            }
+          }
+          @if(s.estado==='ABIERTA') {
+            @if(permissions.has('CAJAS_ASIGNAR')) {<app-button [icon]="transferIcon" [iconOnly]="true" size="small" label="Cambiar operador" title="Cambiar operador" [disabled]="busy()" (pressed)="openTurno(s,'ASIGNAR')" />}
+            @if(permissions.has('CAJAS_MOVIMIENTOS')) {<app-button [icon]="moverIcon" [iconOnly]="true" size="small" label="Movimiento de caja" title="Movimiento de caja" [disabled]="busy()" (pressed)="openTurno(s,'MOVIMIENTO')" />}
+            @if(permissions.has('CAJAS_CERRAR')) {<app-button [icon]="cerrarIcon" [iconOnly]="true" size="small" label="Cerrar caja" title="Cerrar caja" [disabled]="busy()" (pressed)="openTurno(s,'CERRAR')" />}
+          }
+        </div>
+      </ng-template>
+      <app-data-table class="caja-historial-table" [columns]="columnasTurno" [rows]="sesionesPaginadas()"
+        [loading]="busy()" appearance="admin" density="compact" trackByKey="sesionId"
+        [cellTemplates]="{estado:estadoTurno,acciones:accionesTurno}"
+        emptyMessage="Sin turnos registrados." />
+      @if(sesiones().length>0){
+        <app-paginator [page]="paginaVisible()" [size]="tamanoPagina()" [totalRecords]="sesiones().length"
+          [totalPages]="paginas()" [pageSizes]="[10,20,50]"
+          (pageChange)="cambiarPagina($event)" (sizeChange)="cambiarTamano($event)" />
+      }
+    </section>
+  }
+</div>
+
+<dialog #editorDialog class="modal desco-modal" (cancel)="$event.preventDefault();editorDialog.close()">
+ <div class="modal-box admin-modal-box admin-modal-box--compact">
+  <header class="admin-modal-header"><div class="admin-modal-title-group"><div><p>Gestión comercial</p><h2>{{edited()?'Editar caja':'Registrar caja'}}</h2></div></div><button type="button" class="admin-icon-button" (click)="editorDialog.close()" [disabled]="busy()" aria-label="Cerrar">×</button></header>
+  @if(modalError()){<p class="admin-inline-error">{{modalError()}}</p>}
+  <form class="admin-form-grid" (ngSubmit)="save()">
+    <div class="admin-field"><label for="caja-nombre">Nombre</label><input id="caja-nombre" class="admin-input" name="nombre" [(ngModel)]="nombre" maxlength="120" required placeholder="Caja principal" /></div>
+    <footer class="admin-modal-actions admin-field-span-2"><button type="button" class="admin-secondary-button" (click)="editorDialog.close()">Cancelar</button><button type="submit" class="admin-primary-button" [disabled]="busy()||nombre.trim().length<3">Guardar</button></footer>
+  </form>
+ </div>
+</dialog>
+<dialog #aperturaDialog class="modal desco-modal" (cancel)="$event.preventDefault();aperturaDialog.close()">
+ <div class="modal-box admin-modal-box admin-modal-box--compact">
+  <header class="admin-modal-header"><div class="admin-modal-title-group"><div><p>Gestión de turnos</p><h2>Abrir caja</h2></div></div><button type="button" class="admin-icon-button" (click)="aperturaDialog.close()" [disabled]="busy()" aria-label="Cerrar">×</button></header>
+  @if(modalError()){<p class="admin-inline-error">{{modalError()}}</p>}
+  <form class="admin-form-grid" (ngSubmit)="abrir()">
+    <div class="admin-field"><label for="caja-disponible">Caja disponible</label><select id="caja-disponible" class="admin-select" name="cajaId" [(ngModel)]="cajaId" required><option [ngValue]="0">Seleccionar</option>@for(c of cajas();track c.cajaId){@if(c.activa&&c.estado!=='ABIERTA'){<option [ngValue]="c.cajaId">{{c.codigo}} · {{c.nombre}}</option>}}</select></div>
+    <div class="admin-field admin-field-span-2"><label for="caja-fondo">Fondo inicial (PEN)</label><input id="caja-fondo" class="admin-input" name="monto" type="number" min="0" step="0.01" [(ngModel)]="montoInicial" required /></div>
+
+    <div class="admin-field admin-field-span-2"><label for="apertura-observacion">Observación (opcional)</label><textarea id="apertura-observacion" class="admin-textarea" rows="2" maxlength="500" name="observacionApertura" [(ngModel)]="observacionApertura"></textarea></div>
+    <div class="admin-field admin-field-span-2"><app-e3-file-dropzone title="Imágenes (opcional)" fileTypesHint="JPG, PNG o WebP" accept="image/jpeg,image/png,image/webp" [maxFiles]="5" [maxSizeMb]="8" [files]="fotosAbrir" (filesChange)="fotosAbrir=$event" (invalid)="modalError.set($event)" [uploading]="busy()" /></div>
+    <footer class="admin-modal-actions admin-field-span-2"><button type="button" class="admin-secondary-button" (click)="aperturaDialog.close()">Cancelar</button><button type="submit" class="admin-primary-button" [disabled]="busy()||!cajaId||montoInicial<0">Abrir caja</button></footer>
+  </form>
+ </div>
+</dialog>
+<dialog #turnoDialog class="modal desco-modal" (cancel)="$event.preventDefault();turnoDialog.close()">
+ <div class="modal-box admin-modal-box admin-modal-box--compact">
+  <header class="admin-modal-header"><div class="admin-modal-title-group"><div><p>Turno #{{selected()?.sesionId}}</p><h2>{{accion()==='ASIGNAR'?'Agregar empleado':accion()==='MOVIMIENTO'?'Movimiento de efectivo':'Cerrar y arquear caja'}}</h2></div></div><button type="button" class="admin-icon-button" (click)="turnoDialog.close()" [disabled]="busy()" aria-label="Cerrar">×</button></header>
+  @if(modalError()){<p class="admin-inline-error">{{modalError()}}</p>}
+  <form class="admin-form-grid" (ngSubmit)="saveTurno()">
+    @if(accion()==='ASIGNAR'){
+      <div class="admin-field admin-field-span-2"><label for="caja-nuevo-operador">Agregar empleado</label><select id="caja-nuevo-operador" class="admin-select" name="nuevoOperador" [(ngModel)]="nuevoOperador" required>@for(o of operadores();track o.usuarioId){<option [ngValue]="o.usuarioId">{{o.nombreCompleto}}</option>}</select></div>
+      <div class="admin-field-span-2"><strong>Empleados asignados</strong>
+        @for(o of asignados();track o.usuarioId){
+          <div class="caja-row-actions"><span>{{o.nombreCompleto}}</span>
+           @if(o.usuarioId!==selected()?.usuarioAperturaId){
+             <button type="button" class="admin-secondary-button" [disabled]="busy()"
+               (click)="quitarAsignado(o.usuarioId)">Quitar</button>
+           }
+          </div>
+        }
+      </div>
+    } @else if(accion()==='MOVIMIENTO'){
+      <div class="admin-field"><label for="caja-tipo-mov">Tipo</label><select id="caja-tipo-mov" class="admin-select" name="tipo" [(ngModel)]="tipoMovimiento"><option value="INGRESO">Ingreso</option><option value="EGRESO">Egreso</option></select></div>
+      <div class="admin-field"><label for="caja-importe">Importe (PEN)</label><input id="caja-importe" class="admin-input" name="importe" type="number" min="0.01" step="0.01" [(ngModel)]="montoMovimiento" required /></div>
+      <div class="admin-field admin-field-span-2"><label for="caja-motivo">Motivo</label><textarea id="caja-motivo" class="admin-textarea" name="motivo" rows="3" maxlength="300" [(ngModel)]="motivoMovimiento" required></textarea></div>
+    } @else {
+      <div class="admin-field admin-field-span-2"><label for="caja-contado">Efectivo contado (PEN)</label><input id="caja-contado" type="number" min="0" step="0.01" class="admin-input" name="contado" [(ngModel)]="montoCierre" required /></div>
+      @if (saldoCierre();as balance) {
+        <div class="admin-field admin-field-span-2"><small>Efectivo esperado: PEN {{balance.saldoEsperado|number:'1.2-2'}}</small>
+          <strong>{{diferenciaCierre===0?'Caja cuadrada':diferenciaCierre>0?'Sobrante':'Faltante'}}: PEN {{(diferenciaCierre<0?-diferenciaCierre:diferenciaCierre)|number:'1.2-2'}}</strong></div>
+      }
+      <div class="admin-field admin-field-span-2"><label for="caja-observacion">{{diferenciaCierre===0?'Observación (opcional)':'Motivo de la diferencia (obligatorio)'}}</label><textarea id="caja-observacion" class="admin-textarea" name="observacion" [(ngModel)]="observacion" maxlength="500" rows="3"></textarea></div>
+      <div class="admin-field admin-field-span-2"><app-e3-file-dropzone title="Imágenes (opcional)" fileTypesHint="JPG, PNG o WebP" accept="image/jpeg,image/png,image/webp" [maxFiles]="5" [maxSizeMb]="8" [files]="fotosCerrar" (filesChange)="fotosCerrar=$event" (invalid)="modalError.set($event)" [uploading]="busy()" /></div>
+
+    }
+    <footer class="admin-modal-actions admin-field-span-2"><button type="button" class="admin-secondary-button" (click)="turnoDialog.close()">Cancelar</button><button type="submit" class="admin-primary-button" [disabled]="busy()||(accion()==='ASIGNAR'&&nuevoOperador<=0)||(accion()==='MOVIMIENTO'&&(montoMovimiento<=0||motivoMovimiento.trim().length<5))||(accion()==='CERRAR'&&(montoCierre<0||!saldoCierre()||(diferenciaCierre!==0&&!observacion.trim())))">Confirmar</button></footer>
+  </form>
+ </div>
+</dialog>
+<app-action-confirm-dialog />
+<app-caja-arqueo-panel />

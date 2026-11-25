@@ -1,3 +1,7 @@
+import { ListViewSwitchComponent, ListViewMode } from '../../../../../../../../shared/data-display/list-view-switch/list-view-switch';
+import { RecordCardComponent } from '../../../../../../../../shared/data-display/record-card/record-card';
+import { DataTableComponent } from '../../../../../../../../shared/data-display/data-table/data-table';
+import { DataTableColumn } from '../../../../../../../../shared/data-display/data-table/data-table.types';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -55,6 +59,9 @@ import { PoliticaSeguridadFormComponent } from '../politica-seguridad-form/polit
     ErrorStateComponent,
     EmptyStateComponent,
     PaginatorComponent,
+    DataTableComponent,
+    ListViewSwitchComponent,
+    RecordCardComponent,
     ActionConfirmDialogComponent,
     PageHeaderComponent,
     UsuarioFormComponent,
@@ -91,7 +98,7 @@ export class UsuariosListPage implements OnInit {
   readonly policyLoading = signal(false);
   readonly errorMessage = signal<string | null>(null);
   readonly referencesError = signal<string | null>(null);
-  readonly result = signal<PageResult<Usuario>>(emptyPageResult(20));
+  readonly result = signal<PageResult<Usuario>>(emptyPageResult(10));
 
   readonly companies = signal<readonly AdminSelectOption[]>([]);
   readonly employees = signal<readonly AdminSelectOption[]>([]);
@@ -99,6 +106,18 @@ export class UsuariosListPage implements OnInit {
 
   readonly stateFilter = signal('');
   readonly companyFilter = signal<number | null>(null);
+  readonly usersColumns: readonly DataTableColumn<Usuario>[] = [
+    { key: 'usuario', label: 'Usuario' },
+    { key: 'empleado', label: 'Empleado' },
+    { key: 'organizacion', label: 'Organización' },
+    { key: 'roles', label: 'Roles', align: 'center' },
+    { key: 'sesiones', label: 'Sesiones', align: 'center' },
+    { key: 'estado', label: 'Estado', align: 'center' },
+    { key: 'acciones', label: 'Acciones', align: 'right' }
+  ];
+  readonly viewMode = signal<ListViewMode>('table');
+
+
 
   readonly pageIcon = faUsersGear;
   readonly addIcon = faPlus;

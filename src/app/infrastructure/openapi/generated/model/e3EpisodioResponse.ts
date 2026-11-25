@@ -16,5 +16,5 @@ export interface E3EpisodioResponse {
     inicio?: string;
     fin?: string;
     observacion?: string;
+    estado?: string;
 }
-

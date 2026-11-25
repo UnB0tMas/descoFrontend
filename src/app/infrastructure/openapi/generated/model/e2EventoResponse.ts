@@ -14,6 +14,6 @@ export interface E2EventoResponse {
     tipo?: string;
     detalle?: string;
     usuarioId?: number;
+    usuarioNombre?: string | null;
     fechaHora?: string;
 }
-

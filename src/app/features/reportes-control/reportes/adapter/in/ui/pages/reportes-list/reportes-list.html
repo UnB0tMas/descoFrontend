@@ -1,1 +1,109 @@
-<div class="desco-page"><app-page-header title="Reportes e indicadores" subtitle="Información disponible según tu acceso" [icon]="pageIcon"><button class="admin-secondary-button" type="button" [disabled]="loading()" (click)="load()">@if(loading()){<span class="loading loading-spinner loading-xs"></span>}@else{<fa-icon [icon]="refreshIcon"/>} Actualizar</button></app-page-header><section class="admin-surface">@if(loading()){<app-loading-state title="Cargando reportes" message="Consultando información."/>}@else if(error()){<app-error-state [message]="error()||'No se pudo completar la consulta.'" (retry)="load()"/>}@else if(items().length===0){<app-empty-state title="Sin reportes" message="No hay reportes disponibles."/>}@else{<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Reporte</th><th>Grupo</th><th>Descripción</th><th class="text-right">Acciones</th></tr></thead><tbody>@for(x of items();track x.codigo){<tr><td><strong>{{x.nombre}}</strong></td><td>{{x.grupo||'—'}}</td><td>{{x.descripcion||'—'}}</td><td><a *appPermission="'REPORTES_VER'" class="admin-icon-button" [routerLink]="['/reportes',x.codigo]" title="Ver reporte"><fa-icon [icon]="viewIcon"/></a></td></tr>}</tbody></table></div>}</section></div>
+<div class="desco-page reportes-excel-page">
+  <app-page-header title="Reportes" subtitle="Informes descargables por período" [icon]="pageIcon">
+    <button type="button" class="admin-secondary-button" [disabled]="cargando()" (click)="cargar()">
+      <fa-icon [icon]="reloadIcon"/> Actualizar
+    </button>
+  </app-page-header>
+
+  @if (cargando()) {
+    <section class="admin-surface p-8"><span class="loading loading-spinner loading-sm"></span> Cargando reportes...</section>
+  } @else if (error()) {
+    <section class="admin-surface p-6 text-sm">{{ error() }}
+      <button type="button" class="admin-secondary-button ml-3" (click)="cargar()">Reintentar</button>
+    </section>
+  } @else if (!tabs().length) {
+    <section class="admin-surface p-6 text-sm">No hay reportes disponibles.</section>
+  } @else {
+    <section class="reportes-panel">
+      <nav class="reportes-tabs" aria-label="Áreas de reportes">
+        @for (tab of tabs(); track tab.id) {
+          <button type="button" [class.activo]="area() === tab.id" (click)="cambiarArea(tab.id)">{{ tab.nombre }}</button>
+        }
+      </nav>
+
+      @if(area()==='APAPPSS') {
+        <app-especial-report [area]="'APAPPSS'" />
+      } @else {
+        @if(area()==='TECNICA' && tieneSanidad()) {
+          <nav class="reportes-tabs" aria-label="Formato del informe">
+            <button type="button" [class.activo]="!vistaSanidad()" (click)="vistaSanidad.set(false)">Excel</button>
+            <button type="button" [class.activo]="vistaSanidad()" (click)="vistaSanidad.set(true)">Informe sanitario</button>
+          </nav>
+        }
+        @if(vistaSanidad()) {
+          <app-especial-report [area]="'TECNICA'" />
+        } @else {
+      <div class="reportes-layout">
+        <div class="reportes-catalogo">
+          <div class="reportes-subtitle">Elige un informe</div>
+          <div class="reportes-opciones">
+            @for (item of actuales(); track item.codigo) {
+              <button type="button" class="reportes-item" [class.seleccionado]="elegido()===item.codigo" (click)="seleccionar(item.codigo)">
+                <span class="reportes-radio"></span>
+                <span class="min-w-0"><strong>{{item.nombre}}</strong><small>{{item.descripcion}}</small></span>
+              </button>
+            }
+          </div>
+        </div>
+        <div class="reportes-filtros">
+          <div class="reportes-subtitle"><fa-icon [icon]="filterIcon" /> Período y filtros</div>
+          <div class="reportes-rapidos">
+            <button type="button" (click)="periodo(1)">Hoy</button>
+            <button type="button" (click)="periodo(7)">7 días</button>
+            <button type="button" (click)="periodo(30)">30 días</button>
+            <button type="button" (click)="periodo(90)">90 días</button>
+          </div>
+          <div class="reportes-campos">
+            <label>Desde<input type="date" [value]="inicio()" [max]="today" (change)="desde($event)" /></label>
+            <label>Hasta<input type="date" [value]="fin()" [max]="today" (change)="hasta($event)" /></label>
+            @if (filtraAlmacen()) {
+              <label class="reportes-full">Almacén<select [value]="almacen()" (change)="seleccionarAlmacen($event)">
+                <option value="">Todos los almacenes</option>
+                @for (item of almacenes(); track item.id) { <option [value]="item.id">{{item.nombre}}</option> }
+              </select></label>
+            }
+            @if (filtraPredio()) {
+              <label class="reportes-full">Predio<select [value]="predio()" (change)="seleccionarPredio($event)">
+                <option value="">Todos los predios</option>
+                @for (item of predios(); track item.id) { <option [value]="item.id">{{item.nombre}}</option> }
+              </select></label>
+            }
+          </div>
+          @if (invalid()) { <p class="reportes-ayuda">Revisa el informe y las fechas (máximo 367 días).</p> }
+          <button type="button" class="reportes-generar" [disabled]="invalid() || generando() || !puedeExportar()" (click)="generar()">
+            @if (generando()) { <span class="loading loading-spinner loading-xs"></span> }
+            @else { <fa-icon [icon]="pageIcon" /> }
+            Generar Excel
+          </button>
+        </div>
+      </div>
+        }
+      }
+    </section>
+  }
+
+  @if (reportesRecientes().length) {
+    <section class="admin-surface reportes-historial">
+      <div class="reportes-historial-cabecera">
+        <div><div class="reportes-subtitle">Mis reportes</div><p>Últimas solicitudes</p></div>
+        <button type="button" class="admin-secondary-button" (click)="actualizarTrabajos()"><fa-icon [icon]="reloadIcon" /> Actualizar</button>
+      </div>
+      <div class="reportes-historial-lista">
+        @for (job of reportesRecientes(); track job.id) {
+          <div class="reportes-trabajo">
+            <div><strong>{{excel.nombre(job.codigo)}}</strong><small>{{job.desde}} al {{job.hasta}}</small></div>
+            <span class="reportes-estado" [class.listo]="job.estado==='LISTO'" [class.fallido]="job.estado==='ERROR'">
+              @switch(job.estado) {
+                @case('LISTO') { Listo } @case('ERROR') { No disponible }
+                @case('PROCESANDO') { Preparando } @default { En espera }
+              }
+            </span>
+            @if (job.estado==='LISTO' && puedeExportar()) {
+              <button type="button" class="reportes-descargar" (click)="descargar(job)"><fa-icon [icon]="downloadIcon" /> Descargar</button>
+            }
+          </div>
+        }
+      </div>
+    </section>
+  }
+</div>

@@ -49,6 +49,17 @@ export const CATALOGOS_ADMINISTRABLES: readonly Catalogo[] = [
     admiteDescripcion: true,
   },
   {
+    codigo: 'TIPO_DOCUMENTO_INTERNO',
+    nombre: 'Tipos de documentos internos',
+    descripcion: 'Tipos utilizados en documentos internos.',
+    requiereCategoria: false,
+    grupoCodigo: 'ADMINISTRACION',
+    grupoNombre: 'Administración',
+    codigoMaxLength: 40,
+    nombreMaxLength: 120,
+    admiteDescripcion: true,
+  },
+  {
     codigo: 'CARGO_EMPLEADO',
     nombre: 'Cargos de empleado',
     descripcion: 'Cargos disponibles para la asignación de empleados a áreas.',

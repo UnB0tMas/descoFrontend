@@ -1,0 +1,12 @@
+<article class="desco-detail-card">
+  @if (title || subtitle) {
+    <header class="desco-detail-card__header">
+      @if (icon) { <span class="desco-detail-card__icon"><fa-icon [icon]="icon" /></span> }
+      <div>
+        @if (title) { <h3>{{ title }}</h3> }
+        @if (subtitle) { <p>{{ subtitle }}</p> }
+      </div>
+    </header>
+  }
+  <ng-content />
+</article>

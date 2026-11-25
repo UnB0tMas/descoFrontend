@@ -1,3 +1,4 @@
+import { ListViewSwitchComponent } from '../../../../../../../../../shared/data-display/list-view-switch/list-view-switch';
 import { ChangeDetectionStrategy, Component, OnInit, ViewChild, ElementRef, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -13,6 +14,12 @@ import { ErrorStateComponent } from '../../../../../../../../../shared/data-disp
 import { ActionConfirmDialogComponent } from '../../../../../../../../../shared/feedback/action-confirm-dialog/action-confirm-dialog';
 import { ToastService } from '../../../../../../../../../shared/feedback/toast-center/toast.service';
 import { PermissionDirective } from '../../../../../../../../../core/access/permission.directive';
+import { ModalShellComponent } from '../../../../../../../../../shared/feedback/modal-shell/modal-shell';
+import { verificarDisponibilidadE2 } from '../../../../../domain/salida-operativa-stock';
+import { DecisionModalComponent, DecisionSubmission } from '../../../../../../../../../shared/feedback/decision-modal/decision-modal';
+import { opcionesSalida, esDecisionSalida, estadoSalidaTexto, estadoSalidaTono } from '../../components/salida-decision.config';
+import { PermissionService } from '../../../../../../../../../core/access/permission.service';
+import { AccessStore } from '../../../../../../../../../core/access/access.store';
 import { RecordCardComponent } from '../../../../../../../../../shared/data-display/record-card/record-card';
 import { PaginatorComponent } from '../../../../../../../../../shared/data-display/paginator/paginator';
 import { EvidencePanelComponent } from '../../../../../../../../documentos-evidencias/adapter/in/ui/components/evidence-panel/evidence-panel';
@@ -20,8 +27,10 @@ import { CatalogosE2, CorreccionE2, DetalleE2, DestinoEntradaE2, RecursoEntradaE
 import { SalidasE2UseCase } from '../../../../../application/use-case/salidas-e2.use-case';
 import { provideSalidasE2 } from '../../../../../salidas-e2.providers';
 import { SalidaDocumentoApiService, DocumentoSalida } from '../../../../../../../../../shared/files/salida-documento-api.service';
+import { E3FileDropzoneComponent } from '../../../../../../../../../shared/files/file-dropzone/file-dropzone';
 import { switchMap } from 'rxjs';
 import { PrediosSalidaApi } from '../../../../out/http/predios-salida.api';
+import { SalidasTecnicasApi, VinculoSalidaTecnica } from '../../../../out/http/salidas-tecnicas.api';
 
 function localDateInput(value?: string): string {
   if (!value) return '';
@@ -31,12 +40,15 @@ function localDateInput(value?: string): string {
 }
 
 @Component({selector:'app-operativa-detail',standalone:true,
-  imports:[DatePipe,FormsModule,RouterLink,FaIconComponent,PageHeaderComponent,LoadingStateComponent,ErrorStateComponent,
-    ActionConfirmDialogComponent,PermissionDirective,EvidencePanelComponent,RecordCardComponent,PaginatorComponent],
+  imports:[ListViewSwitchComponent, DatePipe,FormsModule,RouterLink,FaIconComponent,PageHeaderComponent,LoadingStateComponent,ErrorStateComponent,
+    ActionConfirmDialogComponent,ModalShellComponent,DecisionModalComponent,PermissionDirective,EvidencePanelComponent,RecordCardComponent,PaginatorComponent,E3FileDropzoneComponent],
   providers:[...provideSalidasE2()],
   templateUrl:'./operativa-detail.html',styleUrl:'./operativa-detail.css',changeDetection:ChangeDetectionStrategy.OnPush})
 export class OperativaDetailPage implements OnInit {
   private readonly api=inject(SalidasE2UseCase);
+  private readonly documental=inject(SalidasTecnicasApi);
+  private readonly access=inject(AccessStore);
+  private readonly permissions=inject(PermissionService);
   readonly archivos=inject(SalidaDocumentoApiService);
   private readonly prediosApi=inject(PrediosSalidaApi);
   private readonly uot=inject(UotContextStore);
@@ -44,6 +56,8 @@ export class OperativaDetailPage implements OnInit {
   private readonly router=inject(Router);
   private readonly toast=inject(ToastService);
   @ViewChild(ActionConfirmDialogComponent) private confirm!: ActionConfirmDialogComponent;
+  @ViewChild('decisionModal',{static:true}) private decisionModal!:DecisionModalComponent;
+  @ViewChild('generalModal',{static:true}) private generalModal!:ModalShellComponent;
   @ViewChild('operationDialog') private operationDialog!:ElementRef<HTMLDialogElement>;
   readonly icon=faRoute;readonly backIcon=faArrowLeft;readonly addIcon=faPlus;readonly removeIcon=faTrash;readonly searchIcon=faMagnifyingGlass;readonly refreshIcon=faRotate;readonly closeIcon=faXmark;readonly checkIcon=faCheck;readonly editIcon=faPen;
   readonly id=Number(this.route.snapshot.paramMap.get('id'));
@@ -57,7 +71,7 @@ export class OperativaDetailPage implements OnInit {
     {id:'recursos',name:'Recursos',icon:faScrewdriverWrench},{id:'participantes',name:'Participantes',icon:faUserGroup},
     {id:'seguimiento',name:'Seguimiento',icon:faRoute},{id:'documentos',name:'Documentos',icon:faFileLines},
     {id:'evidencias',name:'Evidencias',icon:faCamera},{id:'historial',name:'Historial',icon:faClockRotateLeft}] as const;
-  readonly operation=signal<'cancelar'|'decision'|'destino'|'vincular'|'visita'|'finalizar'|'retorno'|'inspeccion'|'fecha'|null>(null);
+  readonly operation=signal<'cancelar'|'destino'|'vincular'|'visita'|'finalizar'|'retorno'|'inspeccion'|'fecha'|null>(null);
   buscarRecurso='';filtroRecurso='';buscarParticipante='';filtroParticipante='';
   buscarVisita='';
   readonly pendingSelection=signal(false);
@@ -66,12 +80,28 @@ export class OperativaDetailPage implements OnInit {
   readonly docsSearch=signal('');
 
   readonly detail=signal<DetalleE2|null>(null);
+  readonly vinculo=signal<VinculoSalidaTecnica|null>(null);
   readonly documentos=signal<DocumentoSalida[]>([]);
   readonly documentosBusy=signal(false);
+  readonly documentoPorAdjuntar=signal<File[]>([]);
+  readonly documentoError=signal<string|null>(null);
   readonly observacionEntrega=signal<Record<number,string>>({});
   readonly catalogos=signal<CatalogosE2>({motivos:[],tiposVisita:[],bienes:[],participantes:[]});
-  decision:'APROBADA'|'OBSERVADA'|'RECHAZADA'='APROBADA';motivoDecision='';
+  readonly decisionError=signal<string|null>(null);
+  readonly estadoSalidaTexto=estadoSalidaTexto;
+  readonly estadoSalidaTono=estadoSalidaTono;
+  readonly origen=this.route.snapshot.queryParamMap.get('origen');
+  readonly documentoOrigenId=Number(this.route.snapshot.queryParamMap.get('documentoId'))||null;
+  readonly filtrosVisitas={buscar:this.route.snapshot.queryParamMap.get('buscar'),estado:this.route.snapshot.queryParamMap.get('estado'),
+    pagina:Number(this.route.snapshot.queryParamMap.get('pagina'))||1,tamano:Number(this.route.snapshot.queryParamMap.get('tamano'))||20};
+  readonly rutaVolver=this.origen==='mis-salidas'?['/gestion-tecnica/visitas']:
+    this.origen==='mi-actividad'?['/gestion-tecnica/visitas/mis-salidas',this.id]:
+    this.origen==='documento'&&this.documentoOrigenId?['/documentos',this.documentoOrigenId]:['/gestion-tecnica/salidas/operativas'];
+  readonly parametrosVolver=this.origen==='mis-salidas'||this.origen==='mi-actividad'?this.filtrosVisitas:
+    this.convenioId?{convenioId:this.convenioId}:undefined;
   nombreCorreccion='';descripcionCorreccion='';motivoCancelar='';
+  private originalEdicion='';
+  general={nombre:'',descripcion:'',motivo:0,inicio:'',fin:''};
   motivoCorreccion=0;inicioCorreccion='';finCorreccion='';
   destinoEditIndex:number|null=null;predioModal=0;actividadModal='';
   recursoClave='';cantidadNuevo=1;tipoRecurso='TODOS';participanteSeleccionado=0;funcionParticipante='';
@@ -101,9 +131,14 @@ export class OperativaDetailPage implements OnInit {
         this.destinosCorreccion.set(d.destinos.map(x=>({predioId:x.predioId,actividadPrevista:x.actividadPrevista})));
         this.bienesCorreccion.set(d.bienes.map(x=>({bienId:x.bienId,suministroId:x.suministroId,cantidad:x.cantidadSolicitada})));
         this.participantesCorreccion.set(d.participantes.filter(x=>!x.responsable).map(x=>({empleadoId:x.empleadoId,funcion:x.funcion})));
+        this.originalEdicion=this.huellaEdicion();
+        this.pendingSelection.set(false);
         this.cantidadesDevueltas.set(Object.fromEntries(d.bienes.map(x=>[x.solicitudRecursoId,x.cantidadDevueltaValidada ?? x.cantidadDevueltaDeclarada ?? x.cantidadSolicitada])));
         this.observacionesBien.set(Object.fromEntries(d.bienes.map(x=>[x.solicitudRecursoId,x.observacion??''])));
         this.loadDocumentos();
+        if(!this.convenioId) this.documental.expediente(uot,this.id).subscribe({
+          next:v=>this.vinculo.set(v), error:()=>this.vinculo.set(null)
+        });
         this.resultadoDeclarado.set(Object.fromEntries(d.bienes.map(b=>[b.solicitudRecursoId,
          (b.resultadoDeclarado??'CONFORME') as EstadoBienE2['resultado']])));
         this.resultadoInspeccion.set(Object.fromEntries(d.bienes.map(b=>[b.solicitudRecursoId,
@@ -122,14 +157,31 @@ export class OperativaDetailPage implements OnInit {
       .subscribe({next:()=>{this.toast.success('Solicitud Word disponible');this.loadDocumentos();},
         error:e=>this.toast.error('No se pudo generar Word',mapOpenApiError(e).message)});
   }
-  adjuntarDocumento(input:HTMLInputElement,tipo:'SOLICITUD_FIRMADA'|'EVIDENCIA_SALIDA'):void {
-    const file=input.files?.item(0);input.value='';const u=this.uotId();
+  seleccionarDocumento(files:File[]):void {
+    this.documentoPorAdjuntar.set(files);
+    this.documentoError.set(null);
+  }
+  adjuntarDocumento(tipo:'SOLICITUD_FIRMADA'|'EVIDENCIA_SALIDA'):void {
+    const file=this.documentoPorAdjuntar()[0];
+    const u=this.uotId();
     if(!file||!u||this.documentosBusy())return;
-    if(file.size>25*1024*1024||file.size<1){this.toast.error('Archivo permitido hasta 25 MB');return;}
+    if(file.size>25*1024*1024||file.size<1){
+      this.documentoError.set('Selecciona un archivo de hasta 25 MB.');return;
+    }
     this.documentosBusy.set(true);
+    this.documentoError.set(null);
     this.archivos.adjuntar(u,this.id,file,tipo).pipe(finalize(()=>this.documentosBusy.set(false)))
-      .subscribe({next:()=>{this.toast.success('Documento registrado');this.loadDocumentos();},
-        error:e=>this.toast.error('No se pudo subir documento',mapOpenApiError(e).message)});
+      .subscribe({
+        next:()=>{
+          this.documentoPorAdjuntar.set([]);
+          this.toast.success('Documento registrado');
+          this.loadDocumentos();
+        if(!this.convenioId) this.documental.expediente(u,this.id).subscribe({
+          next:v=>this.vinculo.set(v), error:()=>this.vinculo.set(null)
+        });
+        },
+        error:e=>this.documentoError.set(mapOpenApiError(e).message)
+      });
   }
   observacionDeEntrega(id:number,text:string):void {
     this.observacionEntrega.update(items=>({...items,[id]:text}));
@@ -145,7 +197,33 @@ export class OperativaDetailPage implements OnInit {
     });
   }
   motivoNombre(id:number):string {return this.catalogos().motivos.find(x=>x.id===id)?.nombre??('Motivo #'+id);}
-  editable():boolean {return this.detail()?.estado==='BORRADOR';}
+  editable():boolean {
+    const d=this.detail();
+    return !!d && this.permissions.has('SALIDAS_EDITAR')
+      && d.solicitanteEmpleadoId===this.access.user()?.personaId
+      && (d.estado==='BORRADOR'||(!this.convenioId&&['SOLICITADA','OBSERVADA'].includes(d.estado)));
+  }
+  private huellaEdicion():string {
+    return JSON.stringify([this.nombreCorreccion.trim(),this.descripcionCorreccion.trim(),this.motivoCorreccion,
+      this.inicioCorreccion,this.finCorreccion,this.destinosCorreccion(),this.bienesCorreccion(),this.participantesCorreccion()]);
+  }
+  cambiosPendientes():boolean {return this.editable()&&this.huellaEdicion()!==this.originalEdicion;}
+  abrirGeneral():void {
+    if(!this.editable()||this.saving())return;
+    this.general={nombre:this.nombreCorreccion,descripcion:this.descripcionCorreccion,motivo:this.motivoCorreccion,
+      inicio:this.inicioCorreccion,fin:this.finCorreccion};
+    this.generalModal.open();
+  }
+  guardarGeneral():void {
+    if(!this.editable()||this.saving())return;
+    const g=this.general;
+    if(!g.nombre.trim()||!g.motivo||!g.inicio||!g.fin||new Date(g.fin)<=new Date(g.inicio)){
+      this.toast.error('Complete los datos y revise las fechas.');return;
+    }
+    this.nombreCorreccion=g.nombre;this.descripcionCorreccion=g.descripcion;this.motivoCorreccion=g.motivo;
+    this.inicioCorreccion=g.inicio;this.finCorreccion=g.fin;
+    this.pendingSelection.set(true);this.generalModal.close();
+  }
   puedeVerEvidencias():boolean {return ['APROBADA','EN_EJECUCION','EN_RETORNO','CERRADA'].includes(this.detail()?.estado??'');}
   puedeVerSeguimiento():boolean {return this.puedeVerEvidencias();}
   seccionCantidad(tab:typeof this.tabs[number]['id']):number|null {
@@ -181,15 +259,14 @@ export class OperativaDetailPage implements OnInit {
     this.destinosCorreccion.set(this.destinoEditIndex===null?[...actuales,registro]:
       actuales.map((x,i)=>i===this.destinoEditIndex?registro:x));
     this.pendingSelection.set(true);
-    this.corregir(false);
+    this.closeOperation();
   }
   async quitarDestino(index:number):Promise<void> {
     if(!this.editable()||this.saving()||!this.destinosCorreccion()[index])return;
-    const answer=await this.confirm.show({title:'Quitar destino',message:'El predio se retirará de este borrador.',
+    const answer=await this.confirm.show({title:'Quitar destino',message:'El predio se retirará de la solicitud al guardar.',
       confirmLabel:'Quitar destino',tone:'warning'});
     if(!answer.confirmed||this.saving()||!this.editable())return;
     this.removeCorrectionDestination(index);
-    this.corregir(false);
   }
   cambiarTab(tab:typeof this.tabs[number]['id']):void {
     if(tab==='evidencias'&&!this.puedeVerEvidencias())return;
@@ -223,7 +300,7 @@ export class OperativaDetailPage implements OnInit {
     return found?.cantidad??1;
   }
   toggleResource(x:RecursoOpcionE2,checked:boolean):void {
-    if(!this.editable())return;
+    if(!this.editable()||this.saving())return;
     if(checked&&x.disponible<=0){this.toast.error('No hay disponibilidad de este recurso.');return;}
     const key=`${x.tipo==='CONSUMIBLE'?'S':'B'}:${x.id}`;
     if(!checked){this.bienesCorreccion.update(a=>a.filter(b=>this.resourceKey(b)!==key));}
@@ -234,6 +311,7 @@ export class OperativaDetailPage implements OnInit {
     this.pendingSelection.set(true);
   }
   changeResourceQty(x:RecursoOpcionE2,value:number):void {
+    if(!this.editable()||this.saving())return;
     const key=`${x.tipo==='CONSUMIBLE'?'S':'B'}:${x.id}`;
     this.bienesCorreccion.update(a=>a.map(r=>this.resourceKey(r)===key?{...r,cantidad:Number(value)}:r));
     this.pendingSelection.set(true);
@@ -246,7 +324,7 @@ export class OperativaDetailPage implements OnInit {
   }
   selectedParticipant(id:number):boolean{return this.participantesCorreccion().some(p=>p.empleadoId===id);}
   toggleParticipant(id:number,checked:boolean):void {
-    if(!this.editable())return;
+    if(!this.editable()||this.saving())return;
     const owner=this.detail()?.participantes.find(x=>x.responsable)?.empleadoId;
     if(id===owner)return;
     if(checked&&!this.selectedParticipant(id))this.participantesCorreccion.update(a=>[...a,{empleadoId:id,funcion:'Técnico'}]);
@@ -316,6 +394,8 @@ export class OperativaDetailPage implements OnInit {
   corregir(enviar=true):void {
     if(!this.editable())return;
     const u=this.uotId();const d=this.detail();if(!u||!d||this.saving())return;
+    if(d.estado==='SOLICITADA'&&!this.cambiosPendientes())return;
+    if(d.estado!=='BORRADOR')enviar=true;
     if(!this.nombreCorreccion.trim()||!this.inicioCorreccion||!this.finCorreccion||!this.motivoCorreccion){
       this.toast.error('Complete los datos principales.');return;
     }
@@ -331,21 +411,38 @@ export class OperativaDetailPage implements OnInit {
       fechaInicioPrevista:inicio.toISOString(),fechaFinPrevista:fin?.toISOString(),
       destinos:this.destinosCorreccion(),bienes:this.bienesCorreccion(),
       participantes:this.participantesCorreccion(),enviar};
-    if((entrada.bienes??[]).some(b=>!Number.isFinite(b.cantidad)||b.cantidad<=0||
-      (b.suministroId&&b.cantidad>(this.catalogos().bienes.find(x=>x.tipo==='CONSUMIBLE'&&x.id===b.suministroId)?.disponible??0)))){
+    if((entrada.bienes??[]).some(b=>{const opcion=this.resourceOf(b);
+      return !opcion||!verificarDisponibilidadE2(opcion,b.cantidad).valido;})){
       this.toast.error('Revise las cantidades y la disponibilidad de los recursos.');return;
     }
-    this.run(this.api.corregir(u,this.id,entrada,this.convenioId),enviar?'Solicitud enviada para aprobación':'Cambios guardados');
+    const accion = !this.convenioId && enviar
+      ? (d.estado==='BORRADOR' ? this.documental.enviarBorrador(u,this.id,entrada) : this.documental.corregir(u,this.id,entrada))
+      : this.api.corregir(u,this.id,entrada,this.convenioId);
+    this.run(accion,d.estado==='SOLICITADA'||!enviar?'Cambios guardados':'Solicitud enviada para aprobación');
   }
-  async decidir():Promise<void> {const u=this.uotId();if(!u||this.saving())return;
-    if(this.decision!=='APROBADA'&&!this.motivoDecision.trim()){
-      this.toast.error('Ingrese el motivo de la decisión.');return;}
-    const answer=await this.confirm.show({title:'Confirmar decisión',
-      message:this.decision==='APROBADA'?'Se autorizarán la salida y los recursos solicitados.':
-        'Se guardará la decisión y su motivo en el expediente.',confirmLabel:'Confirmar decisión',
-      tone:this.decision==='RECHAZADA'?'warning':'primary'});
-    if(!answer.confirmed||this.saving())return;
-    this.run(this.api.decidir(u,this.id,this.decision,this.motivoDecision.trim()||undefined,this.convenioId),'Decisión registrada');}
+  opcionesDecision(){
+    const autorizado=this.permissions.has('SALIDAS_CONFIRMAR')&&!this.cambiosPendientes();
+    return opcionesSalida(this.detail()?.estado,autorizado,!this.convenioId);
+  }
+  abrirDecision():void {
+    if(this.saving()||!this.opcionesDecision().length)return;
+    this.decisionError.set(null);
+    this.decisionModal.open();
+  }
+  decidir(event:DecisionSubmission):void {
+    const u=this.uotId(),decision=event.decision,motivo=event.reason.trim();
+    const opcion=this.opcionesDecision().find(item=>item.value===decision);
+    if(!u||this.saving()||!esDecisionSalida(decision)||!opcion||(opcion.requiresReason&&!motivo)||motivo.length>1200)return;
+    this.saving.set(true);
+    this.decisionError.set(null);
+    const accion:Observable<unknown>=!this.convenioId
+      ? this.documental.decidir(u,this.id,decision,motivo||undefined)
+      : this.api.decidir(u,this.id,decision,motivo||undefined,this.convenioId);
+    accion.pipe(finalize(()=>this.saving.set(false))).subscribe({
+      next:()=>{this.toast.success('Decisión registrada');this.decisionModal.close(true);this.load();},
+      error:e=>this.decisionError.set(mapOpenApiError(e).message),
+    });
+  }
   async entregar():Promise<void> {
     const u=this.uotId();const d=this.detail();if(!u||!d||this.saving())return;
     const pending=d.bienes.filter(x=>x.estado==='SOLICITADO');
@@ -394,7 +491,9 @@ export class OperativaDetailPage implements OnInit {
       tone:'danger',
     });
     if(!confirmation.confirmed||this.saving())return;
-    this.run(this.api.cancelar(u,this.id,motivo,this.convenioId),'Solicitud cancelada');
+    this.run(!this.convenioId && this.detail()?.estado!=='BORRADOR'
+      ? this.documental.cancelar(u,this.id,motivo)
+      : this.api.cancelar(u,this.id,motivo,this.convenioId),'Solicitud cancelada');
   }
   hasPendingDestinations(detail:DetalleE2):boolean {return detail.destinos.some(x=>!x.predioId);}
   changeDeclarado(id:number,value:EstadoBienE2['resultado']):void {this.resultadoDeclarado.update(s=>({...s,[id]:value}));}

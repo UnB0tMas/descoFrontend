@@ -1,0 +1,99 @@
+<app-modal-shell [title]="reporte()?.estado === 'CERRADA' ? 'Detalle del cierre' : 'Simulación de cierre'" eyebrow="BALANCE DE CAJA" size="wide" [busy]="loading()">
+  @if (reporte(); as r) {
+    <div class="arqueo-panel">
+      <div class="arqueo-head"><strong>{{r.caja}} · Turno #{{r.sesionId}}</strong><small>{{r.fechaApertura | date:'dd/MM/yyyy HH:mm'}} · {{r.estado}}</small></div>
+      <div class="arqueo-kpis">
+        <div><span>Fondo inicial</span><strong>PEN {{r.saldoInicial | number:'1.2-2'}}</strong></div>
+        <div><span>Ventas entregadas</span><strong>PEN {{r.ventasEntregadas | number:'1.2-2'}}</strong></div>
+        <div><span>Pagos en efectivo</span><strong>PEN {{r.efectivo | number:'1.2-2'}}</strong></div>
+        <div><span>Otros medios</span><strong>PEN {{r.otrosMedios | number:'1.2-2'}}</strong></div>
+        <div><span>Ingresos / Egresos</span><strong>{{r.ingresos | number:'1.2-2'}} / {{r.egresos | number:'1.2-2'}}</strong></div>
+        <div class="arqueo-important"><span>Efectivo esperado</span><strong>PEN {{r.saldoEsperado | number:'1.2-2'}}</strong></div>
+      </div>
+      <div class="arqueo-metodos">
+        @for (m of r.metodos; track m.codigo) {
+          <span>{{m.nombre}} <strong>PEN {{m.total | number:'1.2-2'}}</strong></span>
+        } @empty { <span>Sin pagos confirmados</span> }
+      </div>
+      @if (r.ventasPendientes > 0) {
+        <p class="admin-inline-error">{{r.ventasPendientes}} ventas pendientes. Finalízalas antes de cerrar.</p>
+      }
+      <div class="arqueo-filter">
+        <div class="admin-field"><label for="arqueo-medio">Tipo de pago</label><select id="arqueo-medio" class="admin-select" [ngModel]="filtro()" (ngModelChange)="cambiarFiltro($event)">
+          <option value="TODOS">Todos</option>
+          @for (m of r.metodos; track m.codigo) {<option [value]="m.codigo">{{m.nombre}}</option>}
+          <option value="SIN_PAGO">Sin pago</option>
+        </select></div>
+        <div class="admin-field"><label for="arqueo-buscar">Buscar venta</label><input id="arqueo-buscar" class="admin-input" type="search" [ngModel]="buscar()" (ngModelChange)="cambiarBusqueda($event)" placeholder="Número o medio de pago" /></div>
+      </div>
+      <app-data-table [columns]="columns" [rows]="filasPaginadas()" appearance="admin" density="compact"
+        trackByKey="id" emptyMessage="No hay ventas para este filtro." />
+      @if(filas().length>0){
+        <app-paginator [page]="paginaVisible()" [size]="tamanoPagina()"
+          [totalRecords]="filas().length" [totalPages]="paginas()" [pageSizes]="[10,20,50]"
+          (pageChange)="cambiarPagina($event)" (sizeChange)="cambiarTamano($event)" />
+      }
+      <div class="arqueo-subtotal"><span>Total filtrado</span><strong>PEN {{totalFiltrado() | number:'1.2-2'}}</strong></div>
+      @if (r.estado === 'CERRADA') {
+        <p class="arqueo-outcome"><strong>{{estadoCaja()}}</strong> · Efectivo contado: PEN {{r.saldoDeclarado | number:'1.2-2'}}
+        @if (r.diferencia !== 0) { · Diferencia: PEN {{r.diferencia | number:'1.2-2'}} }</p>
+        @if (r.observacion) {<p class="arqueo-note">Motivo: {{r.observacion}}</p>}
+      }
+    </div>
+  }
+  <div modalActions class="arqueo-actions">
+    @if (reporte(); as r) {
+      @if (r.estado === 'CERRADA') {
+        <button type="button" class="admin-secondary-button" [disabled]="loading()" (click)="imprimirCierre(r.sesionId, uotIdActivo())">Imprimir ticket</button>
+        <button type="button" class="admin-primary-button" [disabled]="loading()" (click)="descargarPdf(r.sesionId, uotIdActivo())">PDF A4</button>
+      }
+    }
+    <button type="button" class="admin-secondary-button" (click)="cerrarModal()">Cerrar</button>
+  </div>
+</app-modal-shell>
+
+<!-- Se imprime únicamente el ticket térmico; la vista del modal permanece intacta. -->
+@if (reporte(); as r) {
+  <div class="arqueo-print-host" aria-hidden="true">
+    <div #ticket class="arqueo-ticket">
+      <header class="arqueo-ticket__header">
+        <div class="arqueo-ticket__brand">DESCO</div>
+        <p>GESTIÓN COMERCIAL</p>
+        <h2>CIERRE DE CAJA</h2>
+        <strong>{{r.caja}} · TURNO #{{r.sesionId}}</strong>
+        <p>{{r.uotNombre}}</p>
+      </header>
+      <div class="arqueo-ticket__info">
+        <div class="arqueo-line"><span>Apertura</span><b>{{r.fechaApertura | date:'dd/MM/yy HH:mm'}}</b></div>
+        <div class="arqueo-line"><span>Cierre</span><b>{{r.fechaCierre | date:'dd/MM/yy HH:mm'}}</b></div>
+      </div>
+      <div class="arqueo-ticket__section">RESUMEN DE COBROS</div>
+      <div class="arqueo-line"><span>Ventas entregadas</span><b>{{r.ventasEntregadas | number:'1.2-2'}}</b></div>
+      <div class="arqueo-line arqueo-line--strong"><span>Total cobrado</span><b>{{r.totalCobrado | number:'1.2-2'}}</b></div>
+      <div class="arqueo-line"><span>Efectivo</span><b>{{r.efectivo | number:'1.2-2'}}</b></div>
+      @for (m of r.metodos;track m.codigo) {
+        @if(m.codigo !== 'EFECTIVO') {
+          <div class="arqueo-line arqueo-payment"><span>{{m.nombre}}</span><b>{{m.total | number:'1.2-2'}}</b></div>
+        }
+      }
+      <div class="arqueo-ticket__section">CONCILIACIÓN DE EFECTIVO</div>
+      <div class="arqueo-line"><span>Fondo inicial</span><b>{{r.saldoInicial | number:'1.2-2'}}</b></div>
+      <div class="arqueo-line"><span>Cobros en efectivo</span><b>{{r.efectivo | number:'1.2-2'}}</b></div>
+      <div class="arqueo-line"><span>Ingresos / Egresos</span><b>{{r.ingresos | number:'1.2-2'}} / {{r.egresos | number:'1.2-2'}}</b></div>
+      <div class="arqueo-ticket__sum">
+        <div class="arqueo-line"><strong>Efectivo esperado</strong><b>{{r.saldoEsperado | number:'1.2-2'}}</b></div>
+        <div class="arqueo-line"><strong>Efectivo contado</strong><b>{{r.saldoDeclarado | number:'1.2-2'}}</b></div>
+      </div>
+      <div class="arqueo-ticket__result">
+        <span>{{estadoCaja() | uppercase}}</span>
+        <strong>{{(r.diferencia === null ? 0 : (r.diferencia < 0 ? -r.diferencia : r.diferencia)) | number:'1.2-2'}}</strong>
+      </div>
+      @if(r.observacion){<div class="arqueo-ticket__observation"><strong>Observación</strong><p>{{r.observacion}}</p></div>}
+      <div class="arqueo-ticket__section">VENTAS DEL TURNO ({{r.ventas.length}})</div>
+      @for(v of r.ventas;track v.ventaId){
+        <div class="arqueo-line"><span>#{{v.ventaId}} · {{v.estado}}</span><b>{{v.total | number:'1.2-2'}}</b></div>
+      }
+      <footer class="arqueo-ticket__footer"><p>Todos los importes están expresados en soles (PEN).</p><strong>DOCUMENTO INTERNO · DESCO</strong></footer>
+    </div>
+  </div>
+}

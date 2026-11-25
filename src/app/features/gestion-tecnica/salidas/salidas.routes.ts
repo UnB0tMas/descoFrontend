@@ -32,6 +32,13 @@ export const salidasRoutes: Routes = [
       .then(m => m.OperativaCreatePage),
   },
   {
+    path: 'salidas/responsables',
+    data: {breadcrumb:'Responsables de salidas',module:'SALIDAS',permission:'USUARIOS_EDITAR'},
+    canActivate:[moduleAccessGuard,permissionGuard],
+    loadComponent:()=>import('./e2/adapter/in/ui/pages/responsables-salidas/responsables-salidas')
+      .then(m=>m.ResponsablesSalidasPage),
+  },
+  {
     path: 'salidas/operativas/:id',
     data: {breadcrumb: 'Expediente de salida', module: 'SALIDAS', permission: 'SALIDAS_VER'},
     canActivate: [moduleAccessGuard, permissionGuard],

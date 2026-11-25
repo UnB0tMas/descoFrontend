@@ -3,6 +3,7 @@ import {
   Component,
   DestroyRef,
   inject,
+  input,
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -30,6 +31,10 @@ export class BreadcrumbComponent {
   private readonly breadcrumbService = inject(BreadcrumbService);
   private readonly destroyRef = inject(DestroyRef);
 
+  /** Si no se entregan segmentos, conserva la navegación automática del layout. */
+  readonly segments = input<readonly BreadcrumbItem[] | null>(null);
+  readonly variant = input<'default' | 'compact'>('default');
+  readonly showHome = input(true);
   readonly items = signal<readonly BreadcrumbItem[]>([]);
   readonly homeIcon = faHouse;
   readonly separatorIcon = faChevronRight;

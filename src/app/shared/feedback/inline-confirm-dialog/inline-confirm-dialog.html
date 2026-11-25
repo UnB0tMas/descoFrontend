@@ -1,0 +1,21 @@
+<div class="inline-confirm-backdrop">
+  <section class="inline-confirm-card" role="alertdialog" aria-modal="true"
+    aria-labelledby="inline-confirm-title" aria-describedby="inline-confirm-message">
+    <div class="inline-confirm-header">
+      <span class="inline-confirm-icon" [class.inline-confirm-warning]="tone() === 'warning'">
+        <fa-icon [icon]="iconWarning" aria-hidden="true" />
+      </span>
+      <div class="inline-confirm-text">
+        <h2 id="inline-confirm-title">{{ title() }}</h2>
+        <p id="inline-confirm-message">{{ message() }}</p>
+      </div>
+      <button type="button" class="inline-confirm-close" aria-label="Cerrar aviso"
+        (click)="cancelled.emit()"><fa-icon [icon]="iconClose" /></button>
+    </div>
+    <div class="inline-confirm-actions">
+      <button type="button" class="inline-confirm-cancel" (click)="cancelled.emit()">{{ cancelLabel() }}</button>
+      <button type="button" class="inline-confirm-accept" [class.inline-confirm-accept-warning]="tone() === 'warning'"
+        (click)="confirmed.emit()">{{ confirmLabel() }}</button>
+    </div>
+  </section>
+</div>

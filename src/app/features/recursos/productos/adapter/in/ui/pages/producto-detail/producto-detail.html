@@ -7,7 +7,7 @@
     <div pageActions class="flex flex-wrap gap-2">
       <a
         class="admin-secondary-button"
-        routerLink="/recursos/productos"
+        [routerLink]="backRoute" [queryParams]="backParams"
       >
         <fa-icon [icon]="backIcon" />
         Volver

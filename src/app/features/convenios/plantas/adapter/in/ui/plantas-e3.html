@@ -125,10 +125,7 @@
     <button type="button" class="admin-secondary-button" [disabled]="generando()||loading()" (click)="filtrar()">Aplicar filtros</button>
    </div>
    <div class="e3-actions e3-actions--integrated e3-list-toolbar">
-    <div class="gp-view-toggle" role="group" aria-label="Vista de plantas">
-     <button type="button" [class.active]="vista==='tabla'" [attr.aria-pressed]="vista==='tabla'" (click)="vista='tabla'"><fa-icon [icon]="tableIcon"/> Tabla</button>
-     <button type="button" [class.active]="vista==='tarjetas'" [attr.aria-pressed]="vista==='tarjetas'" (click)="vista='tarjetas'"><fa-icon [icon]="cardIcon"/> Tarjetas</button>
-    </div>
+    <app-list-view-switch appearance="segmented" [view]="vista" label="Vista de plantas" (viewChange)="vista=$event"/>
     @if(puedeCrear()){
      @if(mostrarAltaInicial()){
       <button type="button" class="admin-primary-button" [disabled]="saving()||generando()" (click)="abrirLote()"><fa-icon [icon]="addIcon"/> Registrar plantas por variedad</button>
@@ -147,16 +144,9 @@
       <app-empty-state title="Sin plantas registradas"/>
     }@else{<app-empty-state title="Sin resultados"/>}
    </div>}
-   @else if(vista==='tabla'){
-    <div class="admin-table-wrap e3-list-table-wrap"><table class="admin-table e3-list-table" [class.e3-list-table--fixed]="predioFijo">
-     <thead><tr>
-      @if(puedeActuar()){<th class="e3-select-col">Selección</th>}
-      <th>Código</th><th>Variedad</th><th>Estado</th>
-      @if(!predioFijo||catalogs().socios.length>1){<th>Socio</th>}
-      @if(!predioFijo){<th>Parcela</th>}
-      <th class="e3-actions-col">Acciones</th>
-     </tr></thead>
-     <tbody>@for(p of page().items;track p.plantaId){<tr>
+   @else if(vista==='table'){
+    <app-data-table appearance="admin" [columns]="plantaColumns()" [rows]="page().items" trackByKey="plantaId" [rowTemplate]="plantaRow"/>
+    <ng-template #plantaRow let-p>
       @if(puedeActuar()){<td class="e3-select-col">@if(p.estado!=='MUERTA'&&p.estado!=='ELIMINADA'){
        <input #seleccionPlanta type="checkbox" [checked]="seleccionadas().includes(p.plantaId)"
         [disabled]="saving()||(!seleccionadas().includes(p.plantaId)&&seleccionadas().length>=100)"
@@ -179,8 +169,7 @@
         <button type="button" class="admin-icon-button e3-danger" [disabled]="generando()" [attr.aria-label]="'Eliminar '+p.codigo" title="Eliminar" (click)="darDeBaja(p)"><fa-icon [icon]="deleteIcon"/></button>
        }
       </div></td>
-     </tr>}</tbody>
-    </table></div>
+     </ng-template>
    }@else{
     <div class="desco-record-grid e3-plant-cards">
      @for(p of page().items;track p.plantaId){<app-record-card class="e3-plant-record">
@@ -312,7 +301,7 @@
          <div class="e3-expediente-section-head"><h3>Antecedentes sanitarios</h3></div>
          @if(d.episodios.length){<ol class="e3-expediente-timeline e3-expediente-timeline--columns">@for(e of d.episodios;track e.episodioId){<li>
           <div><strong>{{e.diagnostico}}</strong><time>{{e.inicio|date:'dd/MM/yyyy'}}</time></div>
-          <p>{{e.fin?'Controlada: '+(e.fin|date:'dd/MM/yyyy'):(d.estado==='MUERTA'?'No controlada':'En seguimiento')}}@if(e.observacion){ · {{e.observacion}}}</p>
+          <p>{{e.estado==='NO_CONTROLADA'?'No controlada'+(e.fin?' · '+(e.fin|date:'dd/MM/yyyy'):''):e.estado==='ELIMINADA'?'Retirada':e.estado==='RECUPERADA'?'Controlada: '+(e.fin|date:'dd/MM/yyyy'):'En seguimiento'}}@if(e.observacion){ · {{e.observacion}}}</p>
           <small>{{e.usuarioApertura||'Usuario registrado'}} @if(e.fin){ · {{e.usuarioCierre||'Usuario registrado'}}}</small>
          </li>}</ol>}@else{<div class="e3-expediente-empty">Sin evaluaciones sanitarias.</div>}
         </section>

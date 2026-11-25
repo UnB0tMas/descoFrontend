@@ -33,9 +33,13 @@ export class DataTableComponent<T extends object> {
   /** Apariencia institucional de Administración y Recursos. Sin cambios para otros consumidores. */
   @Input() appearance: 'default' | 'admin' = 'default';
   /** Celdas personalizadas, por ejemplo entidad, estado y acciones. */
+  @Input() rowTemplate: TemplateRef<{ $implicit: T }> | null = null;
   @Input() cellTemplates: Readonly<Record<string, TemplateRef<{$implicit: T}>>> = {};
   @Input() trackByKey: string | null = null;
+  @Input() trackByFn: ((index: number, row: T) => unknown) | null = null;
   @Input() emptyMessage = 'No hay registros disponibles.';
+  @Input() density: 'normal' | 'compact' = 'normal';
+  @Input() caption: string | null = null;
 
   @Output() sortChange = new EventEmitter<DataTableSort>();
   @Output() rowClick = new EventEmitter<T>();
@@ -93,6 +97,7 @@ export class DataTableComponent<T extends object> {
   }
 
   rowIdentity(index: number, row: T): unknown {
+    if (this.trackByFn) return this.trackByFn(index, row);
     if (this.trackByKey) {
       return (row as Record<string, unknown>)[this.trackByKey] ?? index;
     }

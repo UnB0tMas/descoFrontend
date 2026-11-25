@@ -18,11 +18,12 @@ import {
   faRotate,
   faUpload,
 } from '@fortawesome/free-solid-svg-icons';
-import { catchError, finalize, forkJoin, map, of } from 'rxjs';
+import { catchError, concatMap, finalize, forkJoin, from, map, of, reduce } from 'rxjs';
 
 import { mapOpenApiError } from '../../../infrastructure/openapi/openapi-http-error.mapper';
 import { ToastService } from '../../feedback/toast-center/toast.service';
 import { LocalDocumentApiService } from '../local-document-api.service';
+import { E3FileDropzoneComponent } from '../file-dropzone/file-dropzone';
 
 interface FilePreview {
   id: number;
@@ -32,7 +33,7 @@ interface FilePreview {
 @Component({
   selector: 'app-local-file-panel',
   standalone: true,
-  imports: [FaIconComponent],
+  imports: [FaIconComponent, E3FileDropzoneComponent],
   templateUrl: './local-file-panel.html',
   styleUrl: './local-file-panel.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -55,6 +56,7 @@ export class LocalFilePanelComponent implements OnChanges, OnDestroy {
 
   readonly loading = signal(false);
   readonly uploading = signal(false);
+  readonly selectedFiles = signal<File[]>([]);
   readonly previews = signal<readonly FilePreview[]>([]);
   readonly errorMessage = signal<string | null>(null);
 
@@ -106,67 +108,37 @@ export class LocalFilePanelComponent implements OnChanges, OnDestroy {
       });
   }
 
-  upload(input: HTMLInputElement): void {
-    const file = input.files?.item(0) ?? null;
-    input.value = '';
-
-    if (!file || this.uploading() || !this.canUpload) return;
-
-    if (file.size <= 0) {
-      this.toast.error('Archivo vacío', 'Selecciona un archivo con contenido.');
-      return;
-    }
-
-    if (file.size > 15 * 1024 * 1024) {
-      this.toast.error(
-        'Archivo demasiado grande',
-        'El archivo no puede superar 15 MB.',
-      );
-      return;
-    }
-
-    if (
-      this.accept.includes('image') &&
-      !file.type.toLowerCase().startsWith('image/')
-    ) {
-      this.toast.error(
-        'Formato no permitido',
-        'Selecciona una imagen válida.',
-      );
-      return;
-    }
-
+  uploadSelected(files: File[]): void {
+    if (this.uploading() || !this.canUpload) return;
+    this.selectedFiles.set(files);
+    if (!files.length) return;
     if (this.uotId <= 0 || this.linkId <= 0) {
-      this.toast.error(
-        'Contexto incompleto',
-        'No se pudo determinar la UOT o el registro vinculado.',
-      );
+      this.toast.warning('No se pudo identificar el registro.');
+      this.selectedFiles.set([]);
       return;
     }
-
     this.uploading.set(true);
-
-    this.api
-      .upload({
-        uotId: this.uotId,
-        file,
-        category: this.category,
-        linkType: this.linkType,
-        linkId: this.linkId,
-        principal: this.forcePrincipal || this.fileIds.length === 0,
-      })
-      .pipe(finalize(() => this.uploading.set(false)))
-      .subscribe({
-        next: () => {
-          this.toast.success('Archivo guardado');
+    from(files).pipe(
+      concatMap((file, index) => this.api.upload({
+        uotId: this.uotId, file, category: this.category,
+        linkType: this.linkType, linkId: this.linkId,
+        principal: this.forcePrincipal || (this.fileIds.length === 0 && index === 0),
+      }).pipe(map(() => true), catchError(() => of(false)))),
+      reduce((result, success) => ({
+        uploaded: result.uploaded + (success ? 1 : 0),
+        failed: result.failed + (success ? 0 : 1),
+      }), { uploaded: 0, failed: 0 }),
+      finalize(() => { this.uploading.set(false); this.selectedFiles.set([]); }),
+    ).subscribe({
+      next: (result) => {
+        if (result.uploaded) {
+          this.toast.success('Imágenes guardadas');
           this.changed.emit();
-        },
-        error: (error) =>
-          this.toast.error(
-            'No se pudo guardar el archivo',
-            mapOpenApiError(error).message,
-          ),
-      });
+        }
+        if (result.failed) this.toast.warning('No se pudieron guardar algunas imágenes.');
+      },
+      error: (error) => this.toast.error('No se pudo guardar el archivo', mapOpenApiError(error).message),
+    });
   }
 
   open(preview: FilePreview): void {

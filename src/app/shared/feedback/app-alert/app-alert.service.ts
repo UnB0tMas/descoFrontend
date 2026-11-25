@@ -70,6 +70,17 @@ export class AppAlertService {
     });
   }
 
+  /** Confirma una salida voluntaria, con la apariencia crítica compartida. */
+  confirmLogout(): Promise<AppAlertResult> {
+    return this.open({
+      tone: 'danger',
+      title: 'Cerrar sesión',
+      message: '¿Deseas finalizar tu sesión?',
+      confirmLabel: 'Cerrar sesión',
+      cancelLabel: 'Cancelar',
+    });
+  }
+
   confirm(): void {
     this.finish({ confirmed: true });
   }

@@ -7,6 +7,9 @@ import { BASE_PATH } from '../variables';
 import { Configuration } from '../configuration';
 import { BaseService } from '../api.base.service';
 import { GpParcelaResponse } from '../model/gpParcelaResponse';
+import { GpProductorResponse } from '../model/gpProductorResponse';
+import { GpProductorEditarRequest } from '../model/gpProductorEditarRequest';
+import { GpProductorParcelaAltaRequest } from '../model/gpProductorParcelaAltaRequest';
 import { GpParcelaAltaRequest } from '../model/gpParcelaAltaRequest';
 import { GpParcelaEditarRequest } from '../model/gpParcelaEditarRequest';
 import { GpActividadRevisionResponse } from '../model/gpActividadRevisionResponse';
@@ -14,6 +17,7 @@ import { GpCatalogoResponse } from '../model/gpCatalogoResponse';
 import { GpActividadResponse } from '../model/gpActividadResponse';
 import { GpCensoResponse } from '../model/gpCensoResponse';
 import { GpEventoResponse } from '../model/gpEventoResponse';
+import { GpResumenResponse, GpResumenPeriodo, GpResumenTipoEvento } from '../model/gpResumenResponse';
 import { GpIdResponse } from '../model/gpIdResponse';
 import { GpActividadAltaRequest } from '../model/gpActividadAltaRequest';
 import { GpActividadEditarRequest } from '../model/gpActividadEditarRequest';
@@ -27,10 +31,10 @@ import { GpCatalogoTratamientoRequest } from '../model/gpCatalogoTratamientoRequ
 import { GpCatalogoRelacionRequest } from '../model/gpCatalogoRelacionRequest';
 export interface GpIncidenciaResponse {incidenciaId:number;actividadId:number;problemaId:number;problema:string;estado:'ABIERTA'|'CERRADA';
  resultado?:string|null;afectadaM2?:number|null;afectadosAnimales?:number|null;perdidaM2?:number|null;perdidosAnimales?:number|null;
- descripcion:string;fechaRegistro:string;usuarioId:number;fechaCierre?:string|null;descripcionCierre?:string|null;usuarioCierreId?:number|null;}
+ descripcion:string;fechaRegistro:string;usuarioId:number;usuarioNombre?:string|null;fechaCierre?:string|null;descripcionCierre?:string|null;usuarioCierreId?:number|null;usuarioCierreNombre?:string|null;}
 export interface GpIncidenciaRevisionResponse {
   revisionId:number;incidenciaId:number;accion:'EDICION'|'RETIRO';motivo:string;
-  usuarioId:number;fechaRegistro:string;problemaAnterior:number;problemaNuevo:number;
+  usuarioId:number;usuarioNombre?:string|null;fechaRegistro:string;problemaAnterior:number;problemaNuevo:number;
   afectadaAnterior?:number|null;afectadaNueva?:number|null;
   animalesAnteriores?:number|null;animalesNuevos?:number|null;
   descripcionAnterior:string;descripcionNueva:string;
@@ -38,7 +42,7 @@ export interface GpIncidenciaRevisionResponse {
 export interface GpIncidenciaEditarRequest extends GpIncidenciaAltaRequest {motivo:string;}
 export interface GpIncidenciaRetirarRequest {motivo:string;}
 export interface GpTratamientoSeguimientoResponse {producto?:string;cantidadUtilizada?:number;unidadUtilizada?:string;eventoId:number;incidenciaId:number;tratamientoId:number;tratamiento:string;
- descripcion:string;fechaInicio:string;fechaFinPrevista?:string|null;fechaFinReal?:string|null;descripcionCierre?:string|null;usuarioId:number;}
+ estado:'EN_CURSO'|'FINALIZADO'|'ELIMINADO';descripcion:string;fechaInicio:string;fechaFinPrevista?:string|null;fechaFinReal?:string|null;descripcionCierre?:string|null;usuarioId:number;usuarioNombre?:string|null;}
 export interface GpIncidenciaAltaRequest {problemaId:number;afectadaM2?:number|null;afectadosAnimales?:number|null;descripcion:string;}
 export interface GpTratamientoAplicarRequest {programacionProductoId?:number;cantidadUtilizada?:number;incidenciaId:number;tratamientoId:number;descripcion:string;fechaFinPrevista?:string|null;}
 export interface GpIncidenciaCerrarRequest {perdidaM2?:number|null;perdidosAnimales?:number|null;descripcion:string;}
@@ -50,6 +54,27 @@ export class GestionProductivaGeneralService extends BaseService {
   private uri(path:string){ return `${this.configuration.basePath}${this.root}${path}`; }
   private params(uotId:number){return new HttpParams().set('uotId',String(uotId));}
   private headers(key:string){return new HttpHeaders().set('X-Idempotency-Key',key);}
+  gpProductoresListar(uotId:number,buscar?:string):Observable<GpEnvelope<GpProductorResponse[]>>{
+    let params=this.params(uotId);
+    if(buscar)params=params.set('buscar',buscar);
+    return this.http.get<GpEnvelope<GpProductorResponse[]>>(this.uri('/productores'),{params});
+  }
+  gpProductorParcelasListar(uotId:number,personaId:number):Observable<GpEnvelope<GpParcelaResponse[]>>{
+    return this.http.get<GpEnvelope<GpParcelaResponse[]>>(
+      this.uri(`/productores/${personaId}/parcelas`),{params:this.params(uotId)});
+  }
+  gpProductorParcelaCrear(uotId:number,personaId:number,body:GpProductorParcelaAltaRequest,key:string):Observable<GpEnvelope<GpIdResponse>>{
+    return this.http.post<GpEnvelope<GpIdResponse>>(
+      this.uri(`/productores/${personaId}/parcelas`),body,{params:this.params(uotId),headers:this.headers(key)});
+  }
+  gpProductorEditar(uotId:number,personaId:number,body:GpProductorEditarRequest,key:string):Observable<GpEnvelope<GpIdResponse>>{
+    return this.http.put<GpEnvelope<GpIdResponse>>(
+      this.uri(`/productores/${personaId}`),body,{params:this.params(uotId),headers:this.headers(key)});
+  }
+  gpProductorRetirar(uotId:number,personaId:number,motivo:string,key:string):Observable<GpEnvelope<GpIdResponse>>{
+    return this.http.post<GpEnvelope<GpIdResponse>>(
+      this.uri(`/productores/${personaId}/retirar`),{motivo},{params:this.params(uotId),headers:this.headers(key)});
+  }
   gpParcelasListar(uotId:number,predioId:number):Observable<GpEnvelope<GpParcelaResponse[]>>{
     return this.http.get<GpEnvelope<GpParcelaResponse[]>>(this.uri(`/predios/${predioId}/parcelas`),{params:this.params(uotId)});
   }
@@ -66,6 +91,10 @@ export class GestionProductivaGeneralService extends BaseService {
   }
   gpActividadesListar(uotId:number,parcelaId:number):Observable<GpEnvelope<GpActividadResponse[]>>{
     return this.http.get<GpEnvelope<GpActividadResponse[]>>(this.uri(`/parcelas/${parcelaId}/actividades`),{params:this.params(uotId)});
+  }
+  gpResumenObtener(uotId:number,id:number,periodo:GpResumenPeriodo='12M',tipoEvento:GpResumenTipoEvento='TODOS'):Observable<GpEnvelope<GpResumenResponse>>{
+    const params=this.params(uotId).set('periodo',periodo).set('tipoEvento',tipoEvento);
+    return this.http.get<GpEnvelope<GpResumenResponse>>(this.uri(`/actividades/${id}/resumen`),{params});
   }
   gpActividadCrear(uotId:number,body:GpActividadAltaRequest,key:string):Observable<GpEnvelope<GpIdResponse>>{
     return this.http.post<GpEnvelope<GpIdResponse>>(this.uri('/actividades'),body,{params:this.params(uotId),headers:this.headers(key)});
@@ -109,6 +138,9 @@ export class GestionProductivaGeneralService extends BaseService {
   }
   gpIncidenciaTratamientoCrear(u:number,id:number,q:GpTratamientoAplicarRequest,key:string):Observable<GpEnvelope<GpIdResponse>>{
     return this.http.post<GpEnvelope<GpIdResponse>>(this.uri(`/actividades/${id}/incidencias/tratamientos`),q,{params:this.params(u),headers:this.headers(key)});
+  }
+  gpIncidenciaTratamientoEliminar(u:number,id:number,q:{motivo:string},key:string):Observable<GpEnvelope<GpIdResponse>>{
+    return this.http.post<GpEnvelope<GpIdResponse>>(this.uri(`/tratamientos/${id}/eliminar`),q,{params:this.params(u),headers:this.headers(key)});
   }
   gpIncidenciaTratamientoFinalizar(u:number,id:number,q:{descripcion:string},key:string):Observable<GpEnvelope<GpIdResponse>>{
     return this.http.post<GpEnvelope<GpIdResponse>>(this.uri(`/tratamientos/${id}/finalizar`),q,{params:this.params(u),headers:this.headers(key)});

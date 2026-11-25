@@ -1,10 +1,10 @@
-<div class="desco-list-view-switch" role="group" [attr.aria-label]="label">
-  <button type="button" class="admin-secondary-button desco-view-option" [class.active]="view === 'table'"
+<div class="desco-list-view-switch" [class.desco-list-view-switch--segmented]="appearance === 'segmented'" role="group" [attr.aria-label]="label">
+  <button type="button" class="desco-view-option" [class.admin-secondary-button]="appearance === 'default'" [class.active]="view === 'table'"
     [attr.aria-pressed]="view === 'table'" [disabled]="disabled" (click)="change('table')">
-    <fa-icon [icon]="tableIcon" /> <span>Tabla</span>
+    <fa-icon [icon]="appearance === 'segmented' ? segmentedTableIcon : tableIcon" /> <span>Tabla</span>
   </button>
-  <button type="button" class="admin-secondary-button desco-view-option" [class.active]="view === 'cards'"
+  <button type="button" class="desco-view-option" [class.admin-secondary-button]="appearance === 'default'" [class.active]="view === 'cards'"
     [attr.aria-pressed]="view === 'cards'" [disabled]="disabled" (click)="change('cards')">
-    <fa-icon [icon]="cardsIcon" /> <span>Tarjetas</span>
+    <fa-icon [icon]="appearance === 'segmented' ? segmentedCardsIcon : cardsIcon" /> <span>Tarjetas</span>
   </button>
 </div>

@@ -22,19 +22,7 @@
             <app-form-error [control]="productForm.controls.uotContextoId" fieldLabel="La UOT" />
           </div>
         }
-        <div class="admin-field admin-field-span-2">
-          <label for="producto-form-field-3">Nombre</label>
-          <input id="producto-form-field-3" class="admin-input" formControlName="nombre" maxlength="180" />
-          <app-form-error [control]="productForm.controls.nombre" fieldLabel="El nombre" [messages]="{ blank: 'El nombre no puede contener solo espacios.' }" />
-        </div>
-
-        <div class="admin-field">
-          <label for="producto-form-field-4">Unidad de medida</label>
-          <select id="producto-form-field-4" class="admin-select" formControlName="unidadMedida" [disabled]="referencesLoading()">
-            @for (unit of units(); track unit.code) { <option [value]="unit.code">{{ unit.label }}</option> }
-          </select>
-          <app-form-error [control]="productForm.controls.unidadMedida" fieldLabel="La unidad de medida" />
-        </div>
+        <app-resource-identity-fields [nameControl]="productForm.controls.nombre" [unitControl]="productForm.controls.unidadMedida" [units]="units()" [loading]="referencesLoading()" />
         <div class="admin-field">
           <label for="producto-form-field-5">Categoría</label>
           <select id="producto-form-field-5" class="admin-select" formControlName="categoria" [disabled]="referencesLoading()">
@@ -47,21 +35,32 @@
           <textarea id="producto-form-field-6" class="admin-textarea" rows="2" maxlength="700" formControlName="descripcion"></textarea>
         </div>
 
-        <div class="product-form-section admin-field-span-2"><span>Opciones</span></div>
-          <label class="product-switch-card">
-            <input type="checkbox" class="toggle toggle-primary toggle-sm" formControlName="requiereLote" />
-            <span><strong>Control por lote</strong></span>
-          </label>
-          <label class="product-switch-card">
-            <input type="checkbox" class="toggle toggle-primary toggle-sm" formControlName="controlaVencimiento" />
-            <span><strong>Control de vencimiento</strong></span>
-          </label>
-
-        <label class="product-switch-card admin-field-span-2">
-          <input type="checkbox" class="toggle toggle-primary toggle-sm" formControlName="permiteVenta" />
-          <span><strong>Permitir venta</strong></span>
-        </label>
+        <div class="product-form-section admin-field-span-2"><span>Opciones del producto</span></div>
+        <div class="product-switch-card" [class.product-switch-card--active]="productForm.controls.requiereLote.value">
+          <app-toggle label="Control por lote" [checked]="productForm.controls.requiereLote.value"
+            [disabled]="saving()" (checkedChange)="setProductOption('requiereLote', $event)" />
+          <small>Identificar existencias por lote.</small>
+        </div>
+        <div class="product-switch-card" [class.product-switch-card--active]="productForm.controls.controlaVencimiento.value">
+          <app-toggle label="Control de vencimiento" [checked]="productForm.controls.controlaVencimiento.value"
+            [disabled]="saving()" (checkedChange)="setProductOption('controlaVencimiento', $event)" />
+          <small>Registrar y controlar fechas de vencimiento.</small>
+        </div>
+        <div class="product-switch-card admin-field-span-2" [class.product-switch-card--active]="productForm.controls.permiteVenta.value">
+          <app-toggle label="Permitir venta" [checked]="productForm.controls.permiteVenta.value"
+            [disabled]="saving()" (checkedChange)="setProductOption('permiteVenta', $event)" />
+          <small>Habilitar el producto para su comercialización.</small>
+        </div>
         @if (mode() === 'edit') { <p class="product-stock-note admin-field-span-2">Con stock, la unidad y el control de lotes y vencimiento no pueden cambiarse.</p> }
+        @if (canUploadImages()) {
+          <div class="admin-field admin-field-span-2">
+            <app-e3-file-dropzone title="Imágenes del producto (opcional)"
+              [files]="imageFiles()" [multiple]="true" [maxFiles]="5" [maxSizeMb]="15"
+              accept="image/jpeg,image/png,image/webp" fileTypesHint="JPG, PNG o WebP"
+              [disabled]="saving()" [uploading]="saving()"
+              (filesChange)="imageFiles.set($event)" (invalid)="errorMessage.set($event)" />
+          </div>
+        }
 
         <ng-container *ngTemplateOutlet="actions"></ng-container>
       </form>
@@ -90,7 +89,7 @@
     }
 
     <ng-template #actions>
-      <footer class="admin-modal-actions admin-field-span-2 product-form-actions">
+      <footer class="admin-modal-actions admin-field-span-2 product-form-actions" aria-label="Acciones del formulario">
         <button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="close()">Cancelar</button>
         <button type="submit" class="admin-primary-button" [disabled]="saving() || referencesLoading()">
           @if (saving()) { <span class="loading loading-spinner loading-sm"></span> Guardando... }

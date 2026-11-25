@@ -13,6 +13,8 @@ import { EmptyStateComponent } from '../../../shared/data-display/empty-state/em
 import { ErrorStateComponent } from '../../../shared/data-display/error-state/error-state';
 import { LoadingStateComponent } from '../../../shared/data-display/loading-state/loading-state';
 import { PaginatorComponent } from '../../../shared/data-display/paginator/paginator';
+import { DataTableComponent } from '../../../shared/data-display/data-table/data-table';
+import { ListViewSwitchComponent, ListViewMode } from '../../../shared/data-display/list-view-switch/list-view-switch';
 import { RecordCardComponent } from '../../../shared/data-display/record-card/record-card';
 import { ToastService } from '../../../shared/feedback/toast-center/toast.service';
 import { PageHeaderComponent } from '../../../shared/layout/page-header/page-header';
@@ -30,7 +32,7 @@ const DEFAULT_DOCUMENTS: readonly PersonDocumentOption[] = [
 @Component({
   selector:'app-apappss-buyers-page', standalone:true,
   imports:[FaIconComponent,EntityRegistrationModalComponent,PermissionDirective,PageHeaderComponent,
-    LoadingStateComponent,ErrorStateComponent,EmptyStateComponent,PaginatorComponent,RecordCardComponent],
+    LoadingStateComponent,ErrorStateComponent,EmptyStateComponent,PaginatorComponent,RecordCardComponent,ListViewSwitchComponent,DataTableComponent],
   templateUrl:'./apappss-buyers-page.html', styleUrl:'./apappss-buyers-page.css',
   changeDetection:ChangeDetectionStrategy.OnPush,
 })
@@ -58,7 +60,8 @@ export class ApappssBuyersPage implements OnInit {
   readonly search=signal('');
   readonly appliedSearch=signal('');
   readonly filter=signal('');
-  readonly viewMode=signal<'tabla'|'tarjetas'>('tabla');
+  readonly buyerColumns=[{key:'nombre',label:'Comprador'},{key:'documento',label:'Documento'},{key:'tipo',label:'Tipo'},{key:'telefono',label:'Teléfono'},{key:'correo',label:'Correo'},{key:'acciones',label:'Acciones',headerClass:'text-right'}];
+  readonly viewMode=signal<ListViewMode>('table');
   readonly page=signal(1);
   readonly size=signal(20);
   readonly total=signal(0);

@@ -1,0 +1,15 @@
+/* Las tarjetas y el selector de vista provienen de shared. */
+:host {display:block;min-width:0;}
+.proveedores-page,.proveedores-content {min-width:0;max-width:100%;}
+.proveedores-content {margin-top:1rem;padding:1rem;}
+.proveedores-toolbar {display:flex;gap:.75rem;align-items:end;flex-wrap:wrap;min-width:0;margin-bottom:1rem;}
+.proveedores-toolbar .admin-field {flex:1 1 13rem;min-width:min(100%,12rem);}
+.proveedores-toolbar button {flex:0 0 auto;}
+.proveedores-grid {grid-template-columns:repeat(auto-fill,minmax(min(100%,17rem),1fr));}
+.proveedores-card-top {display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;}
+.proveedores-grid h3 {font-size:.98rem;font-weight:750;overflow-wrap:anywhere;margin:.75rem 0 .25rem;}
+.proveedores-grid p {font-size:.78rem;color:var(--desco-text-muted);overflow-wrap:anywhere;}
+.proveedores-grid footer {margin-top:1rem;display:flex;justify-content:flex-end;}
+@media(max-width:580px){.proveedores-content{padding:.75rem;}.proveedores-toolbar .admin-field{flex-basis:100%;}}
+.proveedores-actions {gap:.4rem;justify-content:flex-end;}
+.proveedores-actions .admin-icon-button {width:2.25rem;height:2.25rem;}

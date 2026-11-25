@@ -1,9 +1,13 @@
-<div [class]="appearance === 'admin' ? 'admin-table-wrap' : 'desco-table-scroll desco-scrollbar rounded-2xl border border-slate-200 bg-white shadow-sm'">
-    <table [class]="appearance === 'admin' ? 'admin-table desco-data-table' : 'table desco-data-table'">
+<div tabindex="0" role="region" [attr.aria-label]="caption || 'Tabla de resultados con desplazamiento horizontal'"
+  [class]="appearance === 'admin' ? 'admin-table-wrap desco-table-scroll desco-scrollbar' : 'desco-table-scroll desco-scrollbar rounded-2xl border border-slate-200 bg-white shadow-sm'">
+    <table [class]="appearance === 'admin' ? 'admin-table desco-data-table' : 'table desco-data-table'"
+      [class.desco-data-table--compact]="density === 'compact'">
+      @if (caption) { <caption class="desco-data-table__caption">{{ caption }}</caption> }
       <thead [class]="appearance === 'admin' ? '' : 'bg-slate-50'">
         <tr [class]="appearance === 'admin' ? '' : 'border-b border-slate-200'">
           @for (column of columns; track column.key) {
-            <th [class]="(appearance === 'admin' ? '' : 'whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 ') + alignClass(column.align) + ' ' + (column.headerClass ?? '')" [style.width]="column.width ?? null">
+            <th [class]="(appearance === 'admin' ? '' : 'whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 ') + alignClass(column.align) + ' ' + (column.headerClass ?? '')" [style.width]="column.width ?? null"
+              [attr.aria-sort]="column.sortable ? (sort?.field === column.key ? (sort?.direction === 'asc' ? 'ascending' : 'descending') : 'none') : null">
               @if (column.sortable) {
                 <button type="button" class="inline-flex items-center gap-2 rounded-lg px-1 py-1 transition hover:text-blue-700" (click)="sortBy(column)">
                   {{ column.label }}
@@ -30,12 +34,16 @@
               (click)="rowClickable && rowClick.emit(row)"
               (keydown.enter)="onRowKeydown($event, row)"
               (keydown.space)="onRowKeydown($event, row)">
-              @for (column of columns; track column.key) {
+              @if (rowTemplate) {
+                <ng-container [ngTemplateOutlet]="rowTemplate" [ngTemplateOutletContext]="{ $implicit: row }" />
+              } @else {
+                @for (column of columns; track column.key) {
                 <td [class]="(appearance === 'admin' ? '' : 'px-4 py-3.5 text-sm text-slate-700 ') + alignClass(column.align) + ' ' + (column.cellClass ?? '')">
                   @if (cellTemplates[column.key]; as customCell) {
                     <ng-container [ngTemplateOutlet]="customCell" [ngTemplateOutletContext]="{ $implicit: row }"></ng-container>
                   } @else { {{ display(row, column) }} }
                 </td>
+                }
               }
             </tr>
           } @empty {

@@ -6,4 +6,5 @@ export interface GpActividadResponse {
   cantidadAproximada?: number | null; cantidadExacta?: number | null;
   superficieAproximadaM2?: number | null; superficieExactaM2?: number | null;
   versionActualId?: number | null; fechaUltimoCenso?: string | null;
+  tipoRiego?: string | null; fuenteAgua?: string | null;
 }

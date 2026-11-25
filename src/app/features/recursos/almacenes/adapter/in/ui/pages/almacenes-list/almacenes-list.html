@@ -4,7 +4,7 @@
     [subtitle]="uot.isGeneral() ? 'Vista general de almacenes, stock y Kardex de tus UOT.' : 'Almacenes, stock y Kardex de ' + (uot.selected()?.nombre ?? 'la UOT activa') + '.'"
     [icon]="pageIcon"
   >
-    <div pageActions class="flex flex-wrap gap-2">
+    <div pageActions class="warehouse-header-actions">
       <a *appPermission="'RECURSOS_LISTAR'" class="admin-secondary-button" routerLink="/recursos/programacion-productos">Solicitudes de productos</a>
       <a class="admin-secondary-button" routerLink="/recursos/operaciones-stock">Políticas y transferencias</a>
       <button type="button" class="admin-secondary-button" [disabled]="loading()" (click)="load()">
@@ -106,6 +106,10 @@
           <button type="button" role="tab" [attr.aria-selected]="detailTab() === 'products'" [class.active]="detailTab() === 'products'" (click)="selectDetailTab('products')"><fa-icon [icon]="stockIcon" /> Productos y existencias</button>
           <button *appPermission="'ALMACENES_KARDEX'" type="button" role="tab" [attr.aria-selected]="detailTab() === 'kardex'" [class.active]="detailTab() === 'kardex'" (click)="selectDetailTab('kardex')"><fa-icon [icon]="kardexIcon" /> Historial Kardex</button>
         </div>
+        @if (detailTab() === 'products') {
+          <app-list-view-switch appearance="segmented" label="Vista de productos del almacén"
+            [view]="detailStockView()" (viewChange)="detailStockView.set($event)" />
+        }
         @if (detailTab() === 'kardex' && detailProductId()) {
           <button type="button" class="admin-secondary-button admin-secondary-button--small" (click)="reloadDetailKardex()">Ver todos los movimientos</button>
         }
@@ -130,6 +134,44 @@
         } @else if (visibleDetailStock().length === 0) {
           <app-empty-state title="Sin productos" message="No hay productos que coincidan con la búsqueda en este almacén." />
         } @else {
+          @if (detailStockView() === 'cards') {
+            <div class="desco-record-grid warehouse-product-cards">
+              @for (item of pagedDetailStock(); track item.almacenId + ':' + item.productoId) {
+                <app-record-card>
+                  <div class="warehouse-product-card-heading">
+                    <app-resource-image variant="card" [fileId]="productImage(item.productoId)?.archivoPrincipalId"
+                      [imageUrl]="productImage(item.productoId)?.imagenPrincipalUrl" [alt]="item.producto || 'Producto'" />
+                    <div><strong>{{ item.producto || 'Producto' }}</strong>
+                      <span>{{ productCode(item.productoId) || 'Sin código' }} · {{ item.unidadMedida || 'Unidad' }}</span></div>
+                  </div>
+                  <div class="warehouse-product-card-metrics">
+                    <div><span>Actual</span><strong>{{ (item.stockActual ?? 0) | number:'1.0-3' }}</strong></div>
+                    <div><span>Reservado</span><strong>{{ (item.stockReservado ?? 0) | number:'1.0-3' }}</strong></div>
+                    <div><span>Disponible</span><strong [class]="stockTone(item)">{{ (item.stockDisponible ?? 0) | number:'1.0-3' }}</strong></div>
+                    <div><span>Mínimo</span><strong>{{ (item.stockMinimo ?? 0) | number:'1.0-3' }}</strong></div>
+                  </div>
+                  <div class="warehouse-product-card-footer">
+                    <span class="admin-status" [class.admin-status--active]="stockStatus(item) === 'Disponible'"
+                      [class.admin-status--warning]="stockStatus(item) === 'Reponer'"
+                      [class.admin-status--inactive]="stockStatus(item) === 'Agotado' || stockStatus(item) === 'Inactivo'">{{ stockStatus(item) }}</span>
+                    <div class="admin-row-actions warehouse-actions">
+                      @if (canManageDetail()) {
+                        <button type="button" class="admin-icon-button" title="Editar configuración" aria-label="Editar configuración" (click)="manageProduct(item,'EDITAR')"><fa-icon [icon]="settingsIcon" /></button>
+                        <button type="button" class="admin-icon-button" [disabled]="!!managementBlock(item,item.estado===false?'REACTIVAR':'DESACTIVAR')" [title]="managementBlock(item,item.estado===false?'REACTIVAR':'DESACTIVAR') || (item.estado===false?'Reactivar producto':'Desactivar producto')" (click)="manageProduct(item,item.estado===false?'REACTIVAR':'DESACTIVAR')"><fa-icon [icon]="item.estado===false?refreshIcon:stateIcon" /></button>
+                      }
+                      @if(item.estado !== false && canSetSalePrice(item.productoId)) {
+                        <button *appPermission="'PRODUCTOS_PRECIO'" type="button" class="admin-icon-button" title="Definir precio" (click)="editSalePrice(item)"><fa-icon [icon]="editIcon" /></button>
+                      }
+                      <a *appPermission="'PRODUCTOS_VER'" class="admin-icon-button" [routerLink]="['/recursos/productos',item.productoId]" [queryParams]="{ uotId: detailUotId(), origen: 'almacenes', almacenId: warehouse.almacenId }" title="Ver ficha" aria-label="Ver ficha"><fa-icon [icon]="viewIcon" /></a>
+                      <button *appPermission="'ALMACENES_MOVIMIENTO'" type="button" class="admin-icon-button" [disabled]="warehouse.permiteEntrada===false || item.estado===false" (click)="detailMovement(item,'E')" title="Registrar entrada"><fa-icon [icon]="entryIcon" /></button>
+                      <button *appPermission="'ALMACENES_MOVIMIENTO'" type="button" class="admin-icon-button" [disabled]="warehouse.permiteSalida===false || item.estado===false || (item.stockDisponible??0)<=0" (click)="detailMovement(item,'S')" title="Registrar salida"><fa-icon [icon]="exitIcon" /></button>
+                      <button *appPermission="'ALMACENES_KARDEX'" type="button" class="admin-icon-button" (click)="reloadDetailKardex(item.productoId??null)" title="Ver kardex"><fa-icon [icon]="kardexIcon" /></button>
+                    </div>
+                  </div>
+                </app-record-card>
+              }
+            </div>
+          } @else {
           <div class="admin-table-wrap warehouse-detail-table">
             <table class="admin-table warehouse-data-table">
               <thead><tr>
@@ -146,7 +188,7 @@
                   <tr>
                     <td>
                       <div class="admin-entity warehouse-entity">
-                        <span class="admin-entity-icon"><fa-icon [icon]="configureIcon" /></span>
+                        <app-resource-image class="warehouse-product-thumb" variant="thumb" [fileId]="productImage(item.productoId)?.archivoPrincipalId" [imageUrl]="productImage(item.productoId)?.imagenPrincipalUrl" [alt]="item.producto || 'Producto'" />
                         <div>
                           <strong [title]="item.producto">{{ item.producto || 'Producto' }}</strong>
                           <span><span class="warehouse-code-inline">{{ productCode(item.productoId) || 'Sin código' }}</span> · {{ item.unidadMedida || 'Unidad' }}</span>
@@ -174,7 +216,7 @@
                         @if(item.estado !== false && canSetSalePrice(item.productoId)) {
                           <button *appPermission="'PRODUCTOS_PRECIO'" type="button" class="admin-icon-button" title="Definir precio de venta" (click)="editSalePrice(item)"><fa-icon [icon]="editIcon" /></button>
                         }
-                        <a *appPermission="'PRODUCTOS_VER'" class="admin-icon-button" [routerLink]="['/recursos/productos', item.productoId]" [queryParams]="{ uotId: detailUotId() }" title="Ver ficha del producto" [attr.aria-label]="'Ver ficha de ' + item.producto"><fa-icon [icon]="viewIcon" /></a>
+                        <a *appPermission="'PRODUCTOS_VER'" class="admin-icon-button" [routerLink]="['/recursos/productos', item.productoId]" [queryParams]="{ uotId: detailUotId(), origen: 'almacenes', almacenId: warehouse.almacenId }" title="Ver ficha del producto" [attr.aria-label]="'Ver ficha de ' + item.producto"><fa-icon [icon]="viewIcon" /></a>
                         <button *appPermission="'ALMACENES_MOVIMIENTO'" type="button" class="admin-icon-button" [disabled]="warehouse.permiteEntrada === false || item.estado === false" (click)="detailMovement(item, 'E')" title="Registrar entrada" [attr.aria-label]="'Registrar entrada de ' + item.producto"><fa-icon [icon]="entryIcon" /></button>
                         <button *appPermission="'ALMACENES_MOVIMIENTO'" type="button" class="admin-icon-button" [disabled]="warehouse.permiteSalida === false || item.estado === false || (item.stockDisponible ?? 0) <= 0" (click)="detailMovement(item, 'S')" title="Registrar salida" [attr.aria-label]="'Registrar salida de ' + item.producto"><fa-icon [icon]="exitIcon" /></button>
                         <button *appPermission="'ALMACENES_KARDEX'" type="button" class="admin-icon-button" (click)="reloadDetailKardex(item.productoId ?? null)" title="Ver kardex del producto" [attr.aria-label]="'Ver kardex de ' + item.producto"><fa-icon [icon]="kardexIcon" /></button>
@@ -185,6 +227,7 @@
               </tbody>
             </table>
           </div>
+          }
           <app-paginator
             [page]="detailStockPage()" [size]="detailStockPageSize()"
             [totalRecords]="visibleDetailStock().length" [totalPages]="detailStockTotalPages()"
@@ -300,7 +343,38 @@
       <app-empty-state title="Sin stock" message="No existen saldos para los filtros seleccionados." />
     } @else {
       <section class="admin-surface warehouse-table-shell">
-        <div class="admin-table-wrap">
+        <div class="warehouse-list-toolbar"><app-list-view-switch appearance="segmented" label="Vista de stock"
+          [view]="stockView()" (viewChange)="stockView.set($event)" /></div>
+        @if (stockView() === 'cards') {
+          <div class="desco-record-grid warehouse-product-cards">
+            @for (item of pagedStock(); track item.almacenId + ':' + item.productoId) {
+              <app-record-card>
+                <div class="warehouse-product-card-heading">
+                  <app-resource-image variant="card" [fileId]="productImage(item.productoId)?.archivoPrincipalId" [imageUrl]="productImage(item.productoId)?.imagenPrincipalUrl" [alt]="item.producto || 'Producto'" />
+                  <div><strong>{{ item.producto || 'Producto' }}</strong><span>{{ productCode(item.productoId) || 'Sin código' }} · {{ item.unidadMedida || 'Unidad' }}</span></div>
+                </div>
+                <p class="warehouse-card-location">{{ stockUot(item) }} · {{ item.almacen || 'Almacén' }}</p>
+                <div class="warehouse-product-card-metrics">
+                  <div><span>Actual</span><strong>{{ (item.stockActual ?? 0) | number:'1.0-3' }}</strong></div>
+                  <div><span>Reservado</span><strong>{{ (item.stockReservado ?? 0) | number:'1.0-3' }}</strong></div>
+                  <div><span>Disponible</span><strong [class]="stockTone(item)">{{ (item.stockDisponible ?? 0) | number:'1.0-3' }}</strong></div>
+                  <div><span>Última actualización</span><strong>{{ item.fechaActualizacion | resourceDate:'dd/MM/yyyy' }}</strong></div>
+                </div>
+                <div class="warehouse-product-card-footer">
+                  <span class="admin-status" [class.admin-status--active]="stockStatus(item) === 'Disponible'" [class.admin-status--warning]="stockStatus(item) === 'Reponer'" [class.admin-status--inactive]="stockStatus(item) === 'Agotado' || stockStatus(item) === 'Inactivo'">{{ stockStatus(item) }}</span>
+                  <div class="admin-row-actions">
+                    <a *appPermission="'PRODUCTOS_VER'" class="admin-icon-button" [routerLink]="['/recursos/productos',item.productoId]" [queryParams]="{ uotId: productUotId(item), origen: 'almacenes', almacenId: item.almacenId }" title="Ver ficha"><fa-icon [icon]="viewIcon" /></a>
+                  @if (canManageProduct(item)) {
+                      <button type="button" class="admin-icon-button" (click)="manageProduct(item,'EDITAR')" title="Editar configuración"><fa-icon [icon]="settingsIcon" /></button>
+                      <button type="button" class="admin-icon-button" [disabled]="!!managementBlock(item,item.estado===false?'REACTIVAR':'DESACTIVAR')" [title]="managementBlock(item,item.estado===false?'REACTIVAR':'DESACTIVAR') || (item.estado===false?'Reactivar':'Desactivar')" (click)="manageProduct(item,item.estado===false?'REACTIVAR':'DESACTIVAR')"><fa-icon [icon]="item.estado===false?refreshIcon:stateIcon" /></button>
+                  }
+                  </div>
+                </div>
+              </app-record-card>
+            }
+          </div>
+        } @else {
+          <div class="admin-table-wrap">
           <table class="admin-table warehouse-data-table">
             <thead><tr>
               <th>UOT / almacén</th><th>Producto</th><th>Unidad</th>
@@ -310,7 +384,7 @@
               @for (item of pagedStock(); track item.almacenId + ':' + item.productoId) {
                 <tr>
                   <td><div class="admin-stack-copy"><strong [title]="stockUot(item)">{{ stockUot(item) }}</strong><span [title]="item.almacen || ''">{{ item.almacen || '—' }}</span></div></td>
-                  <td><div class="admin-entity warehouse-entity"><span class="admin-entity-icon"><fa-icon [icon]="configureIcon" /></span><div><strong [title]="item.producto">{{ item.producto || 'Producto' }}</strong><span>{{ productCode(item.productoId) || 'Sin código' }}</span></div></div></td>
+                  <td><div class="admin-entity warehouse-entity"><app-resource-image class="warehouse-product-thumb" variant="thumb" [fileId]="productImage(item.productoId)?.archivoPrincipalId" [imageUrl]="productImage(item.productoId)?.imagenPrincipalUrl" [alt]="item.producto || 'Producto'" /><div><strong [title]="item.producto">{{ item.producto || 'Producto' }}</strong><span>{{ productCode(item.productoId) || 'Sin código' }}</span></div></div></td>
                   <td><span class="admin-muted-badge">{{ item.unidadMedida || '—' }}</span></td>
                   <td class="text-right warehouse-number">{{ (item.stockActual ?? 0) | number:'1.0-3' }}</td>
                   <td class="text-right warehouse-number admin-table-muted">{{ (item.stockReservado ?? 0) | number:'1.0-3' }}</td>
@@ -327,6 +401,7 @@
             </tbody>
           </table>
         </div>
+        }
         <app-paginator
           [page]="stockPage()" [size]="stockPageSize()"
           [totalRecords]="filteredStock().length" [totalPages]="stockTotalPages()"

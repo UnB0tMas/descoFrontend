@@ -25,13 +25,14 @@ export class SupplyApiService {
   private readonly api = inject(SuministrosService);
   private readonly idempotency = inject(IdempotencyKeyService);
 
-  list(uotId?: number, page = 1, size = 100) {
+  list(uotId?: number, page = 1, size = 100, search?: string) {
     return this.api
       .suministrosUotListar(
         {
           uotId,
           pagina: page,
           tamano: size,
+          buscar: search?.trim() || undefined,
         },
         'body',
         false,

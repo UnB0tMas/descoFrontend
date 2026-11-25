@@ -1,0 +1,68 @@
+<div class="desco-page mi-actividad-page">
+  <app-page-header title="Mi actividad" subtitle="Actividades realizadas durante la salida técnica." eyebrow="Gestión técnica" [icon]="icon">
+    <div pageActions class="flex flex-wrap gap-2">
+      @if (detalle() && canViewFicha()) {
+        <a class="admin-secondary-button" [routerLink]="['/gestion-tecnica/salidas/operativas',id]" [queryParams]="fichaParams()">
+          <fa-icon [icon]="fichaIcon" /> Ver ficha de salida
+        </a>
+      }
+      <a class="admin-secondary-button" routerLink="/gestion-tecnica/visitas" [queryParams]="backParams">
+        <fa-icon [icon]="backIcon" /> Mis salidas
+      </a>
+    </div>
+  </app-page-header>
+
+  @if (loading()) {
+    <app-loading-state title="Cargando actividad" message="Consultando tu salida." />
+  } @else if (error()) {
+    <app-error-state [message]="error() || 'No se pudo consultar la salida.'" (retry)="load()" />
+  } @else if (detalle(); as d) {
+    <app-section-panel class="mi-actividad-panel">
+      <div class="admin-section-header"><h2>Resumen de la salida</h2></div>
+      <div class="mi-actividad-title">
+        <div><small>Salida {{d.codigo}}</small><h3>{{d.nombre}}</h3></div>
+        <span class="admin-status" [class.admin-status--active]="d.estado==='CERRADA'||d.estado==='APROBADA'"
+          [class.admin-status--info]="d.estado==='EN_EJECUCION'||d.estado==='SOLICITADA'"
+          [class.admin-status--inactive]="d.estado==='CANCELADA'||d.estado==='RECHAZADA'">{{estadoTexto(d.estado)}}</span>
+      </div>
+      <dl class="mi-actividad-data">
+        <div><dt>Solicitante</dt><dd>{{d.solicitanteNombre || 'Sin registrar'}}</dd></div>
+        <div><dt>Solicitud</dt><dd>{{d.fechaSolicitud | date:'dd/MM/yyyy HH:mm'}}</dd></div>
+        <div><dt>Inicio previsto</dt><dd>{{d.fechaInicioPrevista | date:'dd/MM/yyyy HH:mm'}}</dd></div>
+        <div><dt>Fin previsto</dt><dd>{{d.fechaFinPrevista ? (d.fechaFinPrevista | date:'dd/MM/yyyy HH:mm') : 'Sin definir'}}</dd></div>
+        <div><dt>Inicio real</dt><dd>{{d.fechaInicioReal ? (d.fechaInicioReal | date:'dd/MM/yyyy HH:mm') : 'Sin iniciar'}}</dd></div>
+        <div><dt>Retorno real</dt><dd>{{d.fechaFinReal ? (d.fechaFinReal | date:'dd/MM/yyyy HH:mm') : 'Sin registrar'}}</dd></div>
+      </dl>
+    </app-section-panel>
+
+    <app-section-panel class="mi-actividad-panel">
+      <div class="mi-actividad-content">
+        <div class="admin-section-header"><h2>Actividades realizadas ({{timeline().length}})</h2></div>
+        @if (sinActividad()) {
+          <div class="mi-actividad-empty" role="status">
+            <fa-icon [icon]="icon" />
+            <strong>Sin actividades registradas</strong>
+            <p>{{d.estado==='SOLICITADA' ? 'La salida está pendiente de aprobación.' : 'Todavía no hay actividades registradas en esta salida.'}}</p>
+          </div>
+        } @else {
+        <ol class="mi-actividad-timeline">
+          @for (evento of timeline(); track evento.id) {
+            <li>
+              <div class="mi-actividad-event-header">
+                <strong>{{evento.tipo}}</strong>
+                <time>{{evento.fecha | date:'dd/MM/yyyy HH:mm'}}</time>
+              </div>
+              <p>{{evento.texto}}</p>
+              @if (evento.detalle) { <p class="mi-actividad-detail">{{evento.detalle}}</p> }
+              <div class="mi-actividad-event-footer">
+                @if (evento.predioId != null) {<span>{{predioNombre(evento.predioId)}}</span>}
+                @if (evento.visitaId != null) {<span>Visita {{evento.visitaId}}</span>}
+              </div>
+            </li>
+          }
+        </ol>
+        }
+      </div>
+    </app-section-panel>
+  }
+</div>

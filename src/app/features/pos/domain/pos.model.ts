@@ -77,6 +77,13 @@ export interface PosCartItem {
   imageUrl: string | null;
 }
 
+export interface PosPaymentAllocation {
+  paymentMethodId: number;
+  amount: number;
+  operationNumber?: string;
+  archivoId?: number;
+}
+
 export interface PosCartDraft {
   version: 1;
   userId: number;
@@ -88,6 +95,7 @@ export interface PosCartDraft {
   creationUncertain: boolean;
   createIdempotencyKey: string;
   paymentIdempotencyKey: string;
+  checkoutPayments?: PosPaymentAllocation[];
   deliveryIdempotencyKey: string;
   updatedAt: string;
 }
@@ -114,8 +122,7 @@ export interface PosCheckoutInput {
   warehouseId: number;
   customer: PosCustomer;
   items: readonly PosCartItem[];
-  paymentMethodId: number;
-  paymentOperation?: string;
+  payments: readonly PosPaymentAllocation[];
   observation?: string;
   pendingSaleId: number | null;
   createIdempotencyKey: string;
@@ -143,4 +150,9 @@ export interface PosSaleRecord {
   currency: string; state: string;
 }
 export interface PosSaleLine { product: string; quantity: number; unitPrice: number; subtotal: number; }
-export interface PosSaleDetail { sale: PosSaleRecord; lines: readonly PosSaleLine[]; }
+export interface PosSalePayment {
+  paymentId: number; method: string; amount: number; operationNumber: string | null;
+  status: string; archivoId: number | null;
+}
+export interface PosSaleDetail { sale: PosSaleRecord; lines: readonly PosSaleLine[];
+  payments: readonly PosSalePayment[]; }

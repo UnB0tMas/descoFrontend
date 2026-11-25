@@ -13,6 +13,9 @@
 
     @if (!collapsed) {
       <span class="nav-label">{{ item.label }}</span>
+      @if (item.code === 'DOCS' && documentUnread > 0) {
+        <span class="ml-auto rounded-full bg-red-600 px-2 text-white text-xs" title="Sin revisar">{{ documentUnread }}</span>
+      }
 
       <fa-icon
         class="nav-chevron"
@@ -31,7 +34,7 @@
             <div class="pl-4">
               @for (grandchild of child.children; track grandchild.id) {
                 @if (grandchild.route) {
-                  <a [routerLink]="grandchild.route" routerLinkActive="nav-child-active"
+                  <a [routerLink]="grandchild.route" routerLinkActive="nav-child-active" [routerLinkActiveOptions]="{ exact: true }"
                      class="nav-child" (click)="navigate.emit()">
                     <span class="child-marker"><fa-icon [icon]="childIcon" /></span>
                     <span>{{ grandchild.label }}</span>
@@ -41,7 +44,7 @@
             </div>
           </details>
         } @else if (child.route) {
-          <a [routerLink]="child.route" routerLinkActive="nav-child-active"
+          <a [routerLink]="child.route" routerLinkActive="nav-child-active" [routerLinkActiveOptions]="{ exact: true }"
              class="nav-child" (click)="navigate.emit()">
             <span class="child-marker"><fa-icon [icon]="childIcon" /></span>
             <span>{{ child.label }}</span>
@@ -54,7 +57,7 @@
   <a
     [routerLink]="item.route"
     routerLinkActive="nav-link-active"
-    [routerLinkActiveOptions]="{ exact: item.code === 'INICIO' }"
+    [routerLinkActiveOptions]="{ exact: true }"
     class="nav-link"
     [class.nav-link-collapsed]="collapsed"
     [title]="collapsed ? item.label : null"
@@ -66,7 +69,7 @@
 
     @if (!collapsed) {
       <span class="nav-label">{{ item.label }}</span>
+      @if (item.code === 'DOCS' && documentUnread > 0) { <span class="ml-auto rounded-full bg-red-600 px-2 text-white text-xs" title="Documentos pendientes">{{documentUnread}}</span> }
     }
   </a>
 }
-

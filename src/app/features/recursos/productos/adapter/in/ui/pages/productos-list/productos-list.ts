@@ -2,7 +2,7 @@ import { DecimalPipe } from '@angular/common';
 import { afterNextRender, ChangeDetectionStrategy, Component, OnDestroy, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
-import { faEye, faFilter, faGrip, faList, faMagnifyingGlass, faPen, faPlus, faRotate, faTags } from '@fortawesome/free-solid-svg-icons';
+import { faEye, faFilter, faMagnifyingGlass, faPen, faPlus, faRotate, faTags } from '@fortawesome/free-solid-svg-icons';
 import { Subscription, finalize } from 'rxjs';
 
 import { PermissionDirective } from '../../../../../../../../core/access/permission.directive';
@@ -13,6 +13,7 @@ import { EmptyStateComponent } from '../../../../../../../../shared/data-display
 import { ErrorStateComponent } from '../../../../../../../../shared/data-display/error-state/error-state';
 import { LoadingStateComponent } from '../../../../../../../../shared/data-display/loading-state/loading-state';
 import { PaginatorComponent } from '../../../../../../../../shared/data-display/paginator/paginator';
+import { ListViewSwitchComponent, ListViewMode } from '../../../../../../../../shared/data-display/list-view-switch/list-view-switch';
 import { PageHeaderComponent } from '../../../../../../../../shared/layout/page-header/page-header';
 import { PageResult, emptyPageResult } from '../../../../../../../../shared/models/page-result.model';
 import { UotContextStore } from '../../../../../../../uot/state/uot-context.store';
@@ -20,7 +21,7 @@ import { ResourceApiService } from '../../../../../../shared/resource-api.servic
 import { ResourceImageComponent } from '../../../../../../shared/resource-image/resource-image';
 import { ProductoFormComponent } from '../producto-form/producto-form';
 
-type ProductViewMode = 'table' | 'cards';
+type ProductViewMode = ListViewMode;
 
 @Component({
   selector: 'app-productos-list-page',
@@ -34,6 +35,7 @@ type ProductViewMode = 'table' | 'cards';
     ErrorStateComponent,
     LoadingStateComponent,
     PaginatorComponent,
+    ListViewSwitchComponent,
     PageHeaderComponent,
     ProductoFormComponent,
     ResourceImageComponent,
@@ -61,9 +63,9 @@ export class ProductosListPage implements OnInit, OnDestroy {
   readonly categoryFilter = signal('');
   readonly stateFilter = signal('ACTIVE');
   readonly categories = signal<readonly { code: string; label: string }[]>([]);
-  readonly viewMode = signal<ProductViewMode>('table');
+  readonly viewMode = signal<ProductViewMode>('cards');
   readonly dataVersion = signal(0);
-  readonly visibleItems = computed(() => this.result().items.slice(0, this.pageSize()));
+  readonly visibleItems = computed(() => this.result().items);
   readonly totalPages = computed(() => Math.ceil(this.result().totalRecords / this.pageSize()));
 
   readonly pageIcon = faTags;
@@ -73,8 +75,6 @@ export class ProductosListPage implements OnInit, OnDestroy {
   readonly viewIcon = faEye;
   readonly editIcon = faPen;
   readonly filterIcon = faFilter;
-  readonly tableIcon = faList;
-  readonly cardsIcon = faGrip;
 
   readonly isGeneral = computed(() => this.uot.modo() === 'GENERAL');
   readonly units = computed(() => this.uot.memberships());
@@ -125,8 +125,13 @@ export class ProductosListPage implements OnInit, OnDestroy {
     }).pipe(finalize(() => this.loading.set(false))).subscribe({
       next: (response) => {
         const totalRecords = Math.max(0, Number(response.totalRecords) || 0);
+        // Un filtro y una página sin resultados no pueden dejar al usuario fuera del rango válido.
+        if (requestedPage > 1 && (totalRecords === 0 || requestedPage > Math.ceil(totalRecords / requestedSize))) {
+          this.load(Math.max(1, Math.ceil(totalRecords / requestedSize)), requestedSize);
+          return;
+        }
         this.result.set({
-          items: response.items.slice(0, requestedSize),
+          items: response.items,
           page: requestedPage,
           size: requestedSize,
           totalRecords,

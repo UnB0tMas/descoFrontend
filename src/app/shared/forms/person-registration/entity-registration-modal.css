@@ -31,6 +31,14 @@
 .entity-registration-form { display:grid; gap:1rem; min-width:0; }
 .entity-registration-document-row { display:grid; grid-template-columns:minmax(0,140px) minmax(0,1fr) auto; align-items:end; gap:.7rem; }
 .entity-registration-document-row>button { min-height:2.7rem; }
+.entity-registration-search-button {
+  width:2.7rem; min-width:2.7rem; padding:0!important;
+  display:inline-flex; align-items:center; justify-content:center;
+  color:var(--desco-text); background:var(--desco-surface);
+}
+.entity-registration-search-button:hover:not(:disabled) {
+  background:var(--desco-surface-soft); color:var(--desco-text);
+}
 .entity-registration-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.85rem; }
 .entity-registration-full { grid-column:1/-1; }
 .entity-registration-dialog .admin-field { display:flex; flex-direction:column; gap:.35rem; min-width:0; }
@@ -55,7 +63,7 @@
   .entity-registration-scroll { padding:.85rem; scrollbar-gutter:auto; }
   .entity-registration-header,.entity-registration-footer { padding:.75rem .85rem!important; }
   .entity-registration-document-row { grid-template-columns:minmax(0,1fr) minmax(0,1.5fr); }
-  .entity-registration-document-row>button { grid-column:1/-1; }
+  .entity-registration-document-row>button { grid-column:1/-1; justify-self:end; }
   .entity-registration-grid { grid-template-columns:minmax(0,1fr); }
   .entity-registration-full { grid-column:auto; }
   .entity-registration-footer>button { flex:1 1 auto; }

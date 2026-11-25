@@ -23,16 +23,13 @@
      <span>Buscar predio</span>
      <input id="apappss-buscar-predio" class="admin-input" type="search" [value]="busqueda()" (input)="buscarPredio($any($event.target).value)" placeholder="Nombre o código"/>
     </label>
-    <div class="gp-view-toggle" role="group" aria-label="Vista de predios">
-     <button type="button" [class.active]="vista()==='tabla'" [attr.aria-pressed]="vista()==='tabla'" (click)="cambiarVista('tabla')"><fa-icon [icon]="tablaIcon"/> Tabla</button>
-     <button type="button" [class.active]="vista()==='tarjetas'" [attr.aria-pressed]="vista()==='tarjetas'" (click)="cambiarVista('tarjetas')"><fa-icon [icon]="tarjetasIcon"/> Tarjetas</button>
-    </div>
+    <app-list-view-switch appearance="segmented" [view]="vista()" label="Vista de predios" (viewChange)="cambiarVista($event)"/>
    </div>
    @if(!prediosFiltrados().length){<app-empty-state [title]="busqueda().trim()?'Sin resultados':'Sin predios'"/>}
-   @else if(vista()==='tabla'){
-    <div class="admin-table-wrap"><table class="admin-table">
-     <thead><tr><th>Predio</th><th>Titularidad</th><th>Desde</th><th class="text-right">Acciones</th></tr></thead>
-     <tbody>@for(p of prediosPagina();track p.predioId){<tr>
+   @else if(vista()==='table'){
+    <app-data-table appearance="admin" [columns]="predioColumns" [rows]="prediosPagina()" trackByKey="predioId" [rowTemplate]="pRow"/>
+    <ng-template #pRow let-p>
+
       <td><div class="admin-entity"><span class="admin-entity-icon"><fa-icon [icon]="predioIcon"/></span><div><strong>{{p.nombre}}</strong><span>{{p.codigo}}</span></div></div></td>
       <td>{{p.tipoTitularidad||'—'}}</td>
       <td>{{p.fechaDesde?(p.fechaDesde|date:'dd/MM/yyyy'):'—'}}</td>
@@ -55,8 +52,8 @@
          [attr.aria-label]="'Eliminar '+p.nombre" title="Eliminar fundo" (click)="eliminarFundo(p.predioId)"><fa-icon [icon]="deleteIcon"/></button>
        }
       </div></td>
-     </tr>}</tbody>
-    </table></div>
+     
+    </ng-template>
    }@else{
     <div class="desco-record-grid apappss-predios-cards">
      @for(p of prediosPagina();track p.predioId){<app-record-card>

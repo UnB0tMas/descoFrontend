@@ -30,6 +30,11 @@ export class FilterPanelComponent implements OnInit {
   @Input() collapsible = true;
   @Input() initiallyExpanded = true;
   @Input() applying = false;
+  @Input() showActions = true;
+  @Input() showApply = true;
+  @Input() showClear = true;
+  @Input() applyLabel = 'Aplicar filtros';
+  @Input() clearLabel = 'Limpiar';
 
   @Output() apply = new EventEmitter<void>();
   @Output() clear = new EventEmitter<void>();

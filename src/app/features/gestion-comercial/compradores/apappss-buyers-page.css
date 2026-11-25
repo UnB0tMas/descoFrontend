@@ -7,7 +7,7 @@
 /* Reutiliza el selector de vistas, la tabla y la tarjeta institucional. */
 .apappss-buyers-content { min-width: 0; }
 .apappss-buyers-viewbar { display: flex; justify-content: flex-end; }
-.apappss-buyers-viewbar .technical-view-control { margin-top: 0; margin-bottom: .85rem; }
+.apappss-buyers-viewbar app-list-view-switch { margin-top: 0; margin-bottom: .85rem; }
 .apappss-buyers-table-wrap { max-width: 100%; }
 .apappss-buyers-table { min-width: max(100%, 46rem); }
 .apappss-buyer-name { overflow-wrap: anywhere; }

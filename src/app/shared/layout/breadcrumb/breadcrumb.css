@@ -2,3 +2,29 @@
   display: block;
   min-width: 0;
 }
+
+.desco-breadcrumb--compact {
+  gap: .55rem;
+  flex-wrap: wrap;
+  font-size: .78rem;
+  line-height: 1.4;
+  color: var(--desco-text-muted);
+}
+.desco-breadcrumb--compact .desco-breadcrumb__separator {
+  color: var(--desco-text-muted);
+  opacity: .75;
+}
+.desco-breadcrumb--compact .desco-breadcrumb__link {
+  color: var(--desco-primary);
+  text-decoration: none;
+}
+.desco-breadcrumb--compact .desco-breadcrumb__link:hover {
+  text-decoration: underline;
+}
+.desco-breadcrumb--compact .desco-breadcrumb__current {
+  color: var(--desco-text-muted);
+  font-weight: 500;
+}
+@media (max-width: 480px) {
+  .desco-breadcrumb--compact {gap: .35rem .45rem; font-size: .73rem;}
+}

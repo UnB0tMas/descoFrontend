@@ -1,5 +1,11 @@
 import { DialogBackdropDirective } from '../../../../../../../../shared/feedback/dialog-lifecycle/dialog-backdrop.directive';
 import { NgTemplateOutlet } from '@angular/common';
+import { AppToggleComponent } from '../../../../../../../../shared/forms/app-toggle/app-toggle';
+import { E3FileDropzoneComponent } from '../../../../../../../../shared/files/file-dropzone/file-dropzone';
+import { ResourceImagesAttachService } from '../../../../../../../../shared/files/resource-images-attach.service';
+import { PermissionService } from '../../../../../../../../core/access/permission.service';
+import { ResourceProductCreatedResponse } from '../../../../../../../../infrastructure/openapi/generated/model/resourceProductCreatedResponse';
+import { ResourceIdentityFieldsComponent } from '../../../../../../../../shared/forms/resource-identity-fields/resource-identity-fields';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -11,7 +17,7 @@ import {
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
 import { faCoins, faFloppyDisk, faPen, faPlus, faRotate, faXmark } from '@fortawesome/free-solid-svg-icons';
-import { finalize, forkJoin, Observable } from 'rxjs';
+import { finalize, forkJoin, Observable, switchMap } from 'rxjs';
 
 import { ReferenceDataService } from '../../../../../../../../core/reference-data/reference-data.service';
 import { ResourceProductDetailResponse } from '../../../../../../../../infrastructure/openapi/generated/model/resourceProductDetailResponse';
@@ -34,7 +40,7 @@ type ProductTarget = ResourceProductListItemResponse | ResourceProductDetailResp
 @Component({
   selector: 'app-producto-form',
   standalone: true,
-  imports: [DialogBackdropDirective, ReactiveFormsModule, FaIconComponent, FormErrorComponent, NgTemplateOutlet],
+  imports: [DialogBackdropDirective, ReactiveFormsModule, FaIconComponent, FormErrorComponent, NgTemplateOutlet, ResourceIdentityFieldsComponent, AppToggleComponent, E3FileDropzoneComponent],
   templateUrl: './producto-form.html',
   styleUrl: './producto-form.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -47,6 +53,12 @@ export class ProductoFormComponent {
   private readonly api = inject(ResourceApiService);
   private readonly refs = inject(ReferenceDataService);
   private readonly toast = inject(ToastService);
+  private readonly permissions = inject(PermissionService);
+  private readonly imageUploader = inject(ResourceImagesAttachService);
+  readonly imageFiles = signal<File[]>([]);
+  canUploadImages(): boolean {
+    return this.permissions.has('ARCHIVOS_CREAR') && this.permissions.has('PRODUCTOS_IMAGENES');
+  }
 
   readonly uot = inject(UotContextStore);
   readonly mode = signal<ProductFormMode>('create');
@@ -160,6 +172,14 @@ export class ProductoFormComponent {
     return this.addIcon;
   }
 
+  setProductOption(option: 'requiereLote' | 'controlaVencimiento' | 'permiteVenta', checked: boolean): void {
+    if (this.saving()) return;
+    const control = this.productForm.controls[option];
+    control.setValue(checked);
+    control.markAsDirty();
+    control.markAsTouched();
+  }
+
   save(): void {
     if (this.mode() === 'price') { this.savePrice(); return; }
     if (this.mode() === 'state') { this.saveState(); return; }
@@ -198,8 +218,21 @@ export class ProductoFormComponent {
             permiteVenta: raw.permiteVenta,
           });
 
-    operation.pipe(finalize(() => this.saving.set(false))).subscribe({
-      next: () => { this.toast.success(this.mode() === 'edit' ? 'Producto actualizado' : 'Producto registrado'); this.finish({ saved: true, value: null }); },
+    const images = this.imageFiles();
+    operation.pipe(
+      switchMap((created) => {
+        const productId = this.mode() === 'edit'
+          ? Number(current?.productoId ?? 0)
+          : Number((created as ResourceProductCreatedResponse | null)?.productoId ?? 0);
+        return this.imageUploader.attach(uotId, 'PRODUCTO', productId, 'PRODUCTO_IMAGEN', images);
+      }),
+      finalize(() => this.saving.set(false)),
+    ).subscribe({
+      next: (result) => {
+        this.toast.success(this.mode() === 'edit' ? 'Producto actualizado' : 'Producto registrado');
+        if (result.failed) this.toast.warning('Algunas imágenes no se guardaron. Puede agregarlas desde el detalle.');
+        this.finish({ saved: true, value: null });
+      },
       error: (error: unknown) => this.fail(error),
     });
   }
@@ -265,7 +298,7 @@ export class ProductoFormComponent {
   }
 
   private resetState(mode: ProductFormMode, item: ProductTarget | null): void {
-    this.mode.set(mode); this.current.set(item); this.errorMessage.set(null);
+    this.mode.set(mode); this.current.set(item); this.errorMessage.set(null); this.imageFiles.set([]);
   }
 
   private fail(error: unknown): void {

@@ -1,28 +1,28 @@
-import { RecordCardComponent } from '../../../shared/data-display/record-card/record-card';
+import { InstitutionalRecordCardComponent } from '../../../shared/data-display/record-card/institutional-record-card';
 import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
-import { faEye, faLayerGroup, faMapLocationDot, faPen, faPlus, faRotate, faSearch, faTableCellsLarge, faTableList, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faEye, faLayerGroup, faMapLocationDot, faPen, faPlus, faRotate, faSearch, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { Subscription, finalize } from 'rxjs';
 import { PermissionDirective } from '../../../core/access/permission.directive';
 import { PermissionService } from '../../../core/access/permission.service';
 import { UotContextStore } from '../../uot/state/uot-context.store';
 import { mapOpenApiError } from '../../../infrastructure/openapi/openapi-http-error.mapper';
-import { DataTableComponent } from '../../../shared/data-display/data-table/data-table';
 import { DataTableColumn } from '../../../shared/data-display/data-table/data-table.types';
 import { EmptyStateComponent } from '../../../shared/data-display/empty-state/empty-state';
 import { ErrorStateComponent } from '../../../shared/data-display/error-state/error-state';
 import { LoadingStateComponent } from '../../../shared/data-display/loading-state/loading-state';
-import { PaginatorComponent } from '../../../shared/data-display/paginator/paginator';
+import { ListViewMode } from '../../../shared/data-display/list-view-switch/list-view-switch';
+import { ListToolbarComponent } from '../../../shared/listing/list-toolbar/list-toolbar';
+import { ListContainerComponent } from '../../../shared/listing/list-container/list-container';
 import { PageHeaderComponent } from '../../../shared/layout/page-header/page-header';
 import { PageResult, emptyPageResult } from '../../../shared/models/page-result.model';
 import { ListarPrediosUseCase } from '../predios/application/use-case/listar-predios.use-case';
 import { ObtenerPredioUseCase } from '../predios/application/use-case/obtener-predio.use-case';
 import { Predio } from '../predios/domain/predio.model';
 import { PredioFormComponent } from '../predios/adapter/in/ui/pages/predio-form/predio-form';
-import { GestionProductivaAltaPredio } from './gestion-productiva-alta-predio';
 import { GpGeneralFacade } from './gp-general.facade';
 import { ToastService } from '../../../shared/feedback/toast-center/toast.service';
 import { ActionConfirmDialogComponent } from '../../../shared/feedback/action-confirm-dialog/action-confirm-dialog';
@@ -30,9 +30,9 @@ import { ActionConfirmDialogComponent } from '../../../shared/feedback/action-co
 @Component({
   selector: 'app-gestion-productiva-predios',
   standalone: true,
-  imports: [RecordCardComponent, DecimalPipe, FormsModule, RouterLink, FaIconComponent, PermissionDirective,
-    DataTableComponent, EmptyStateComponent, ErrorStateComponent, LoadingStateComponent,
-    PaginatorComponent, PageHeaderComponent, PredioFormComponent, GestionProductivaAltaPredio, ActionConfirmDialogComponent],
+  imports: [InstitutionalRecordCardComponent, DecimalPipe, FormsModule, RouterLink, FaIconComponent, PermissionDirective,
+    ListToolbarComponent, ListContainerComponent, EmptyStateComponent, ErrorStateComponent, LoadingStateComponent,
+    PageHeaderComponent, PredioFormComponent, ActionConfirmDialogComponent],
   templateUrl: './gestion-productiva-predios.html',
   styleUrl: './gestion-productiva.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -49,7 +49,6 @@ export class GestionProductivaPredios implements OnInit, OnDestroy {
   private detailSubscription?: Subscription;
 
   @ViewChild(PredioFormComponent) private editModal!: PredioFormComponent;
-  @ViewChild(GestionProductivaAltaPredio) private addModal!: GestionProductivaAltaPredio;
   @ViewChild(ActionConfirmDialogComponent) private confirmDialog!:ActionConfirmDialogComponent;
 
   readonly pageIcon = faMapLocationDot;
@@ -58,15 +57,13 @@ export class GestionProductivaPredios implements OnInit, OnDestroy {
   readonly viewIcon = faEye;
   readonly editIcon = faPen;
   readonly searchIcon = faSearch;
-  readonly cardsIcon = faTableCellsLarge;
-  readonly tableIcon = faTableList;
   readonly parcelIcon = faLayerGroup;
   readonly requiereUot = computed(() => this.uot.isGeneral());
   readonly loading = signal(true);
   readonly editingId = signal<number | null>(null);
   readonly error = signal<string | null>(null);
   readonly result = signal<PageResult<Predio>>(emptyPageResult(10));
-  readonly vista = signal<'tarjetas' | 'tabla'>('tabla');
+  readonly vista = signal<ListViewMode>('table');
   buscar = '';
   soloActivos = true;
   readonly columns: readonly DataTableColumn<Predio>[] = [
@@ -104,11 +101,7 @@ export class GestionProductivaPredios implements OnInit, OnDestroy {
   applySearch(): void { this.load(1); }
   changeActive(value: boolean): void { this.soloActivos = value; this.load(1); }
   clear(): void { this.buscar = ''; this.soloActivos = true; this.load(1); }
-  changeView(value: 'tarjetas' | 'tabla'): void { this.vista.set(value); }
-  async create(): Promise<void> {
-    if (!this.permitted('PREDIOS_CREAR') || this.requiereUot()) return;
-    if ((await this.addModal.open()).saved) this.load(1);
-  }
+  changeView(value: ListViewMode): void { this.vista.set(value); }
   async eliminar(row:Predio):Promise<void>{
     const u=this.uot.selectedId();if(!u||this.editingId()!==null||!this.permitted('PREDIOS_RETIRAR'))return;
     const confirmation=await this.confirmDialog.show({title:'Eliminar fundo o predio',

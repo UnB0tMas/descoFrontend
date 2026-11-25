@@ -1,3 +1,7 @@
+import { ListViewSwitchComponent, ListViewMode } from '../../../../../../../../shared/data-display/list-view-switch/list-view-switch';
+import { RecordCardComponent } from '../../../../../../../../shared/data-display/record-card/record-card';
+import { DataTableComponent } from '../../../../../../../../shared/data-display/data-table/data-table';
+import { DataTableColumn } from '../../../../../../../../shared/data-display/data-table/data-table.types';
 import { ChangeDetectionStrategy, Component, ElementRef, OnInit, ViewChild, inject, signal, } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -35,6 +39,9 @@ import { Rol } from '../../../../../domain/rol.model';
         ErrorStateComponent,
         EmptyStateComponent,
         PaginatorComponent,
+    DataTableComponent,
+    ListViewSwitchComponent,
+    RecordCardComponent,
         ActionConfirmDialogComponent,
         FormErrorComponent,
         PageHeaderComponent,
@@ -60,7 +67,19 @@ export class RolesListPage implements OnInit {
     readonly errorMessage = signal<string | null>(null);
     readonly modalError = signal<string | null>(null);
     readonly currentRole = signal<Rol | null>(null);
-    readonly result = signal<PageResult<Rol>>(emptyPageResult(20));
+    readonly result = signal<PageResult<Rol>>(emptyPageResult(10));
+  readonly rolesColumns: readonly DataTableColumn<Rol>[] = [
+    { key: 'rol', label: 'Rol' },
+    { key: 'codigo', label: 'Código' },
+    { key: 'permisos', label: 'Permisos', align: 'center' },
+    { key: 'usuarios', label: 'Usuarios', align: 'center' },
+    { key: 'factor', label: 'Segundo factor', align: 'center' },
+    { key: 'estado', label: 'Estado', align: 'center' },
+    { key: 'acciones', label: 'Acciones', align: 'right' }
+  ];
+  readonly viewMode = signal<ListViewMode>('table');
+
+
     readonly pageIcon = faShieldHalved;
     readonly addIcon = faPlus;
     readonly viewIcon = faEye;

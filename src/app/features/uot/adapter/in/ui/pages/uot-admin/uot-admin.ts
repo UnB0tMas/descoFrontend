@@ -1,3 +1,7 @@
+import { ListViewSwitchComponent, ListViewMode } from '../../../../../../../shared/data-display/list-view-switch/list-view-switch';
+import { RecordCardComponent } from '../../../../../../../shared/data-display/record-card/record-card';
+import { DataTableComponent } from '../../../../../../../shared/data-display/data-table/data-table';
+import { DataTableColumn } from '../../../../../../../shared/data-display/data-table/data-table.types';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -20,6 +24,7 @@ import { finalize, forkJoin } from 'rxjs';
 
 import { PermissionDirective } from '../../../../../../../core/access/permission.directive';
 import { mapOpenApiError } from '../../../../../../../infrastructure/openapi/openapi-http-error.mapper';
+import { PaginatorComponent } from '../../../../../../../shared/data-display/paginator/paginator';
 import { EmptyStateComponent } from '../../../../../../../shared/data-display/empty-state/empty-state';
 import { ErrorStateComponent } from '../../../../../../../shared/data-display/error-state/error-state';
 import { LoadingStateComponent } from '../../../../../../../shared/data-display/loading-state/loading-state';
@@ -46,6 +51,10 @@ import {
     ErrorStateComponent,
     LoadingStateComponent,
     PageHeaderComponent,
+    DataTableComponent,
+    PaginatorComponent,
+    ListViewSwitchComponent,
+    RecordCardComponent,
     UotFormComponent,
     UotDeactivationFormComponent,
   ],
@@ -64,11 +73,15 @@ export class UotAdminPage implements OnInit {
 
   readonly loading = signal(true);
   readonly referencesLoading = signal(true);
+  readonly referencesError = signal<string | null>(null);
   readonly errorMessage = signal<string | null>(null);
   readonly allUnits = signal<readonly UotUnit[]>([]);
   readonly users = signal<readonly AdminSelectOption[]>([]);
   readonly roles = signal<readonly AdminSelectOption[]>([]);
   readonly showInactive = signal(false);
+  readonly search = signal('');
+  readonly currentPage = signal(1);
+  readonly pageSize = signal(10);
 
   readonly units = computed<readonly UotUnit[]>(() =>
     this.showInactive()
@@ -76,9 +89,31 @@ export class UotAdminPage implements OnInit {
       : this.allUnits().filter((item) => item.estado),
   );
 
+  readonly filteredUnits = computed(() => {
+    const term = this.search().trim().toLocaleLowerCase('es');
+    return this.units().filter(unit => !term ||
+      [unit.nombre, unit.codigo, this.parentName(unit)].some(value => value.toLocaleLowerCase('es').includes(term)));
+  });
+  readonly totalPages = computed(() => Math.ceil(this.filteredUnits().length / this.pageSize()));
+  readonly visiblePage = computed(() => Math.max(1, Math.min(this.currentPage(), this.totalPages() || 1)));
+  readonly visibleUnits = computed(() => this.filteredUnits().slice((this.visiblePage() - 1) * this.pageSize(), this.visiblePage() * this.pageSize()));
+  setSearch(term: string): void { this.search.set(term); this.currentPage.set(1); }
+  changePage(page: number): void { this.currentPage.set(page); }
+  changeSize(size: number): void { this.pageSize.set(size); this.currentPage.set(1); }
+
   readonly activeUnits = computed<readonly UotUnit[]>(() =>
     this.allUnits().filter((item) => item.estado),
   );
+  readonly uotUnitsColumns: readonly DataTableColumn<UotUnit>[] = [
+    { key: 'uot', label: 'UOT' },
+    { key: 'superior', label: 'Superior' },
+    { key: 'asignacion', label: 'Asignación', align: 'center' },
+    { key: 'estado', label: 'Estado', align: 'center' },
+    { key: 'acciones', label: 'Acciones', align: 'right' }
+  ];
+  readonly viewMode = signal<ListViewMode>('table');
+
+
 
   readonly pageIcon = faSitemap;
   readonly addIcon = faPlus;
@@ -108,6 +143,7 @@ export class UotAdminPage implements OnInit {
 
   loadReferences(): void {
     this.referencesLoading.set(true);
+    this.referencesError.set(null);
 
     forkJoin({
       users: loadAllAdminPages((page, size) =>
@@ -143,6 +179,7 @@ export class UotAdminPage implements OnInit {
         error: () => {
           this.users.set([]);
           this.roles.set([]);
+          this.referencesError.set('No se pudieron cargar los usuarios y roles.');
         },
       });
   }
@@ -158,6 +195,10 @@ export class UotAdminPage implements OnInit {
   }
 
   async access(unit: UotUnit): Promise<void> {
+    if (this.users().length === 0 || this.roles().length === 0) {
+      this.referencesError.set('No hay usuarios o roles disponibles para asignar.');
+      return;
+    }
     const result = await this.form.openAccess(unit, this.options());
     if (result.saved) this.loadReferences();
   }
@@ -176,6 +217,7 @@ export class UotAdminPage implements OnInit {
 
   toggleInactive(value: boolean): void {
     this.showInactive.set(value);
+    this.currentPage.set(1);
     this.load();
   }
 

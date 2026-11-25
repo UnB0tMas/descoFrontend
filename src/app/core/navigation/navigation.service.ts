@@ -18,6 +18,7 @@ interface FrontendEntry {
 }
 
 const FRONTEND_ENTRIES: readonly FrontendEntry[] = [
+  { id:-6199,code:'PROVEEDORES',label:'Proveedores',route:'/administracion/proveedores',icon:'truck',order:45,permission:'ORGANIZACIONES_LISTAR',group:'ADMIN' },
   { id: -6101, code: 'CAMPANIAS', label: 'Campañas', route: '/gestion-comercial/campanias', icon: 'calendar-days', order: 10, permission: 'CAMPANIAS_LISTAR', group: 'COMERCIAL' },
   { id: -6102, code: 'PARTICIPANTES', label: 'Participantes', route: '/gestion-comercial/participantes', icon: 'user-group', order: 20, permission: 'PARTICIPANTES_LISTAR', group: 'COMERCIAL' },
   { id: -6103, code: 'OPERATIVOS', label: 'Operativos', route: '/gestion-comercial/operativos', icon: 'truck', order: 30, permission: 'OPERATIVOS_LISTAR', group: 'COMERCIAL' },
@@ -83,6 +84,9 @@ const ROUTES: Readonly<Record<string, string>> = {
   ACOPIO_APAPPSS_E4: '/gestion-comercial/acopio-rapido',
   PRECIOS: '/gestion-comercial/precios',
   POS: '/pos',
+  CAJAS_POS: '/pos/cajas',
+  HISTORIAL_POS: '/pos/historial',
+  PERSONAL_COMERCIAL: '/pos/personal',
   VENTAS: '/pos',
   INCIDENCIAS: '/gestion-comercial/incidencias',
   AJUSTES_PRECIO: '/gestion-comercial/ajustes',
@@ -91,6 +95,7 @@ const ROUTES: Readonly<Record<string, string>> = {
   LIQUIDACIONES: '/finanzas/liquidaciones',
   PAGOS: '/finanzas/pagos',
   COBROS: '/finanzas/cobros',
+  DASHBOARD_BI: '/reportes-control/dashboard',
   REPORTES: '/reportes',
   AUDITORIA: '/auditoria',
 };
@@ -119,13 +124,24 @@ export class NavigationService {
       ];
     }
     const modules = this.accessStore.modules();
-    const all = this.withFrontendEntries(this.buildTree(modules));
+    const visible = this.hasPermission('REPORTES_CONTROL_VER') ? modules : modules.filter(m =>
+      !['REPORTES', 'DASHBOARD_BI'].includes(m.codigo.trim().toUpperCase()));
+    const all = this.withFrontendEntries(this.buildTree(visible));
     const isSpecial = (code: string) => code === 'PRODUCTORES' || SPECIAL_ENTRIES.some((entry) => entry.code === code);
     const strip = (nodes: readonly NavigationItem[]): NavigationItem[] => nodes
-      .filter((node) => !isSpecial(node.code))
+      .filter((node) => !isSpecial(node.code) && (node.code !== 'CAJAS_POS' || this.hasPermission('CAJAS_ABRIR') || this.hasPermission('CAJAS_LISTAR')))
       .map((node) => ({ ...node, children: strip(node.children) }))
       .filter((node) => node.route !== null || node.children.length > 0);
-    const ordinary = this.groupProductiveNavigation(strip(all));
+    const ordinary = this.groupHorariosNavigation(this.groupProductiveNavigation(strip(all)));
+    // Un operador con permiso propio no necesita el permiso para listar empleados.
+    if(this.hasPermission('PERSONAL_COMERCIAL_PROPIO') && !this.containsCode(ordinary,'MI_HORARIO')
+       && !this.containsCode(ordinary,'PERSONAL_COMERCIAL')){
+      const item:NavigationItem={id:-6192,code:'MI_HORARIO',label:'Mi horario',route:'/pos/mi-horario',
+        icon:'calendar-check',order:65,children:[]};
+      const commercial=ordinary.find(n=>n.code==='GESTION_COMERCIAL'||n.code==='COMERCIAL');
+      if(commercial){ordinary[ordinary.indexOf(commercial)]={...commercial,children:[...commercial.children,item]};}
+      else ordinary.push(item);
+    }
     // Convenios son funciones opcionales; nunca se muestran solo por el rol.
     if (this.uot.isSpecific() && this.convenios.has('COMERCIALIZACION_ASOCIATIVA')) {
       const granted = SPECIAL_ENTRIES.filter((entry) =>
@@ -153,8 +169,63 @@ export class NavigationService {
       if (admin) admin.children = [...admin.children, node];
       else ordinary.push(node);
     }
-    return ordinary.sort((a, b) => a.order - b.order || a.label.localeCompare(b.label));
+    // Especialistas APAPPSS: acceso al mismo Dashboard, sin conceder el BI general.
+    if (this.hasPermission('REPORTES_CONTROL_VER') && this.hasPermission('DASHBOARD_APAPPSS_VER')
+        && !this.hasPermission('DASHBOARD_BI_VER')) {
+      const reportes=ordinary.find(n=>n.code.trim().toUpperCase()==='GRP_REPORTES_CONTROL');
+      const entry={id:-7390,code:'DASHBOARD_APAPPSS',label:'Dashboard',route:'/reportes-control/dashboard',
+        icon:'chart-pie',order:5,children:[]};
+      if (reportes && !this.containsCode(reportes.children,'DASHBOARD_BI')) reportes.children=[...reportes.children,entry];
+      else if(!reportes)ordinary.push({id:-7389,code:'GRP_REPORTES_CONTROL',label:'Reportes y control',
+        route:null,icon:'chart-pie',order:70,children:[entry]});
+    }
+    if (!this.containsCode(ordinary,'DOCS')) ordinary.push({
+      id:-7300,code:'DOCS',label:'Documentos',route:null,icon:'mail',order:60,children:[],
+    });
+    const menu = this.groupDocumentsNavigation(ordinary)
+      .sort((a, b) => a.order - b.order || a.label.localeCompare(b.label));
+    // Inicio es la pantalla común de acceso. Los demás módulos mantienen sus permisos.
+    const inicio = menu.find((item) => item.route === '/inicio');
+    return [
+      inicio ?? { id: -7998, code: 'INICIO', label: 'Inicio', route: '/inicio',
+        icon: 'house', order: 0, children: [] },
+      ...menu.filter((item) => item.route !== '/inicio'),
+    ];
   });
+
+  /** El menú comercial de horarios se arma por permisos sin submenús redundantes. */
+  private groupHorariosNavigation(nodes: readonly NavigationItem[]): NavigationItem[] {
+    return nodes.map(node => {
+      const children = this.groupHorariosNavigation(node.children);
+      if (node.code.trim().toUpperCase() !== 'PERSONAL_COMERCIAL') return { ...node, children };
+      const horarios: NavigationItem[] = [];
+      if (this.hasPermission('PERSONAL_COMERCIAL_LISTAR')) horarios.push({
+        id:-6193,code:'GESTIONAR_HORARIOS',label:'Gestionar horarios',route:'/pos/personal',
+        icon:'calendar-days',order:1,children:[],
+      });
+      if (this.hasPermission('PERSONAL_COMERCIAL_PROPIO')) horarios.push({
+        id:-6192,code:'MI_HORARIO',label:'Mi horario',route:'/pos/mi-horario',
+        icon:'calendar-check',order:2,children:[],
+      });
+      if(horarios.length===1)return {...node,label:horarios[0].label,route:horarios[0].route,children:[]};
+      return { ...node, label:'Horarios', route:null, children:horarios };
+    }).filter(node => node.route !== null || node.children.length>0);
+  }
+
+  private groupDocumentsNavigation(nodes: readonly NavigationItem[]): NavigationItem[] {
+    return nodes.map(item => {
+      if (item.code.trim().toUpperCase() !== 'DOCS') return item;
+      const children: NavigationItem[] = [
+        {id:-7302,code:'DOCS_RECIBIDOS',label:'Bandeja de entrada',
+          route:'/documentos/recibidos',icon:'inbox',order:1,children:[]},
+        {id:-7301,code:'DOCS_ENVIAR_MENU',label:'Enviados',
+          route:'/documentos/enviados',icon:'send',order:2,children:[]},
+        {id:-7303,code:'DOCS_MIS_DOCUMENTOS',label:'Mis documentos',
+          route:'/documentos/mis-documentos',icon:'folder-open',order:3,children:[]},
+      ];
+      return {...item,route:null,children};
+    });
+  }
 
   /** The standard production records share one entry; convention-specific menus remain untouched. */
   private groupProductiveNavigation(nodes: readonly NavigationItem[]): NavigationItem[] {

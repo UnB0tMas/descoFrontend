@@ -1,0 +1,28 @@
+@if (visible()) {
+  <section class="capacity-meter" [class.capacity-meter--over]="exceeds()" aria-label="Control de superficie">
+    <div class="capacity-meter__title">
+      <strong>{{ heading() }}</strong>
+      <span>{{ format(total()!) }} {{ unit() }}
+        @if (secondaryUnit() && unitsPerSecondary() > 0) { · {{ format(total()! / unitsPerSecondary()) }} {{ secondaryUnit() }} }
+      </span>
+    </div>
+    <div class="capacity-meter__stats">
+      <span>Ocupada <strong>{{ format(occupied()) }} {{ unit() }}</strong></span>
+      <span>Disponible <strong>{{ format(available()!) }} {{ unit() }}</strong></span>
+    </div>
+    <div class="capacity-meter__track" role="progressbar" [attr.aria-label]="heading()"
+      [attr.aria-valuenow]="progressNow()"
+      [attr.aria-valuemin]="0" [attr.aria-valuemax]="total()!">
+      <span class="capacity-meter__occupied" [style.width.%]="usedPercent()"></span>
+      <span class="capacity-meter__pending" [style.width.%]="pendingPercent()"></span>
+    </div>
+    @if (pending() > 0) {
+      <small class="capacity-meter__foot">Después de asignar: {{ format(remaining()) }} {{ unit() }} libres</small>
+    }
+    @if (exceeds()) {
+      <small class="capacity-meter__error" role="alert">La superficie supera el espacio disponible.</small>
+    }
+  </section>
+} @else if (available() !== null) {
+  <small class="capacity-meter__foot">Disponible: {{ format(available()!) }} {{ unit() }}</small>
+}

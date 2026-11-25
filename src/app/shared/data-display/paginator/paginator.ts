@@ -40,13 +40,17 @@ export class PaginatorComponent {
     return Math.min(this.page * this.size, this.totalRecords);
   }
 
+  get pageCount(): number {
+    return Math.max(this.totalPages, Math.ceil(this.totalRecords / Math.max(1, this.size)));
+  }
+
   get visiblePages(): readonly number[] {
-    if (this.totalPages <= 0) {
+    if (this.pageCount <= 0) {
       return [];
     }
 
-    const start = Math.max(1, Math.min(this.page - 2, this.totalPages - 4));
-    const end = Math.min(this.totalPages, start + 4);
+    const start = Math.max(1, Math.min(this.page - 2, this.pageCount - 4));
+    const end = Math.min(this.pageCount, start + 4);
 
     return Array.from(
       { length: end - start + 1 },
@@ -57,7 +61,7 @@ export class PaginatorComponent {
   goTo(targetPage: number): void {
     if (
       targetPage < 1 ||
-      targetPage > this.totalPages ||
+      targetPage > this.pageCount ||
       targetPage === this.page
     ) {
       return;

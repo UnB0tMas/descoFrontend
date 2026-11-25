@@ -1,0 +1,291 @@
+<app-modal-shell #solicitudModal variant="compose" size="wide" [icon]="icon"
+  title="Solicitud de salida técnica" description="Organiza tu salida en unos sencillos pasos"
+  [busy]="saving()" (closeRequested)="cerrar()">
+  <div #wizardBody class="e2-solicitud">
+    @if (loading()) {
+      <app-loading-state title="Cargando formulario" message="Preparando la información de tu solicitud." />
+    } @else if (error() && !catalogos().motivos.length) {
+      <app-error-state [message]="error() ?? 'No se pudo abrir el formulario.'" />
+    } @else {
+      <div class="e2-request-context">
+        <div class="e2-request-context__text">
+          <span class="e2-request-eyebrow">Unidad de trabajo</span>
+          <strong>{{uot.label()}}</strong>
+        </div>
+        @if (borradorId() !== null) { <span class="e2-request-status">Continuar solicitud</span> }
+      </div>
+      <div class="e2-request-progress" aria-live="polite">
+        <div class="e2-request-progress__header">
+          <strong>Paso {{paso() + 1}} de {{pasos.length}} · {{pasos[paso()].titulo}}</strong>
+          <span>{{progreso()}} %</span>
+        </div>
+        <div class="e2-request-progress__track" role="progressbar"
+          [attr.aria-valuenow]="paso() + 1" [attr.aria-valuemax]="pasos.length" aria-valuemin="1"
+          aria-label="Progreso de la solicitud">
+          <span [style.width.%]="progreso()"></span>
+        </div>
+      </div>
+      <nav class="e2-request-nav" aria-label="Pasos de la solicitud">
+        <ol>
+          @for (p of pasos; track p.titulo; let i = $index) {
+            <li>
+              <button type="button" class="e2-request-tab" (click)="irPaso(i)"
+                [disabled]="saving()" [class.is-active]="paso() === i" [class.is-complete]="paso() > i"
+                [attr.aria-current]="paso() === i ? 'step' : null"
+                [attr.aria-label]="'Paso ' + (i + 1) + ': ' + p.titulo">
+                <span class="e2-request-tab__number">{{i + 1}}</span>
+                <span class="e2-request-tab__label">{{p.titulo}}</span>
+              </button>
+            </li>
+          }
+        </ol>
+      </nav>
+      @if (error()) { <p role="alert" class="e2-request-error">{{error()}}</p> }
+      <form id="e2-solicitud-form" class="e2-request-form" (ngSubmit)="intentarEnvio()" novalidate>
+          <section [hidden]="paso() !== 0" id="solicitud-info" class="e2-request-section" aria-labelledby="solicitud-info-title">
+                    <header class="e2-request-section-heading">
+                      <div><h2 id="solicitud-info-title">Datos de la solicitud</h2>
+                        <p>Cuéntanos qué harás y cuándo será la salida.</p></div>
+                    </header>
+                    <div class="e2-request-grid">
+                      <div class="admin-field e2-request-wide">
+                        <label for="solicitud-nombre">Nombre de la salida <span class="e2-request-required">*</span></label>
+                        <input id="solicitud-nombre" class="admin-input" name="nombre" [(ngModel)]="nombre"
+                          maxlength="180" placeholder="Ej. Evaluación de parcelas del sector norte" autocomplete="off" required />
+                      </div>
+                      <div class="admin-field e2-request-wide">
+                        <label for="solicitud-motivo">Motivo <span class="e2-request-required">*</span></label>
+                        <select id="solicitud-motivo" class="admin-select" name="motivo" [(ngModel)]="motivoId" required>
+                          <option [ngValue]="0">Selecciona el motivo de la salida</option>
+                          @for (m of catalogos().motivos; track m.id) {<option [ngValue]="m.id">{{m.nombre}}</option>}
+                        </select>
+                      </div>
+                      <div class="admin-field">
+                        <label for="solicitud-inicio">Fecha y hora de inicio <span class="e2-request-required">*</span></label>
+                        <input id="solicitud-inicio" type="datetime-local" class="admin-input" name="inicio"
+                          [(ngModel)]="inicio" required />
+                      </div>
+                      <div class="admin-field">
+                        <label for="solicitud-fin">Fecha y hora de término <span class="e2-request-required">*</span></label>
+                        <input id="solicitud-fin" type="datetime-local" class="admin-input" name="fin"
+                          [(ngModel)]="fin" [min]="inicio" />
+                      </div>
+                      <div class="admin-field e2-request-wide">
+                        <label for="solicitud-descripcion">Objetivo y descripción</label>
+                        <textarea id="solicitud-descripcion" class="admin-textarea" name="descripcion"
+                          [(ngModel)]="descripcion" maxlength="400" rows="3"
+                          placeholder="Describe brevemente qué se realizará y para qué."></textarea>
+                        <p class="e2-request-hint">Indica un horario de término posterior al inicio.</p>
+                      </div>
+                    </div>
+                  </section>
+
+          <section [hidden]="paso() !== 1" id="solicitud-destinos" class="e2-request-section" aria-labelledby="solicitud-destinos-title">
+                    <header class="e2-request-section-heading">
+                      <div><h2 id="solicitud-destinos-title">Lugares que visitarás</h2>
+                        <p>Añade al menos un predio e indica qué actividad realizarás allí.</p></div>
+                    </header>
+                    <div class="e2-request-grid">
+                      <div class="admin-field e2-request-wide">
+                        <label for="solicitud-buscar">Buscar predio</label>
+                        <input class="admin-input" id="solicitud-buscar" name="buscarPredio"
+                          [(ngModel)]="buscarPredio" placeholder="Escribe el nombre o código del predio" autocomplete="off" />
+                      </div>
+                      <div class="admin-field e2-request-wide">
+                        <label for="solicitud-predio">Elige el predio</label>
+                        <select id="solicitud-predio" class="admin-select" name="predio" [(ngModel)]="predioId">
+                          <option [ngValue]="0">Selecciona un predio</option>
+                          @for (p of prediosFiltrados(); track p.predioId) {
+                            <option [ngValue]="p.predioId">{{p.codigo}} · {{p.nombre}}</option>
+                          }
+                        </select>
+                      </div>
+                      <div class="admin-field e2-request-wide">
+                        <label for="solicitud-actividad">Actividad prevista</label>
+                        <input id="solicitud-actividad" class="admin-input" name="actividad" [(ngModel)]="actividad"
+                          maxlength="400" placeholder="Ej. Inspección fitosanitaria y registro de hallazgos" />
+                      </div>
+                    </div>
+                    <button type="button" class="admin-secondary-button e2-request-add"
+                      (click)="agregarDestino()" [disabled]="saving() || !predioId || !actividad.trim()">+ Añadir predio</button>
+                    @if (!destinos().length) {
+                      <p class="e2-request-empty">Añade tu primer predio para continuar.</p>
+                    } @else {
+                      <ol class="e2-request-list" aria-label="Predios incluidos">
+                        @for (destino of destinos(); track $index) {
+                          <li><div><strong>{{nombrePredio(destino.predioId)}}</strong>
+                            <small>{{destino.actividadPrevista}}</small></div>
+                            <button class="admin-secondary-button e2-request-remove" type="button"
+                              [attr.aria-label]="'Quitar '+nombrePredio(destino.predioId)"
+                              (click)="eliminarDestino($index)" [disabled]="saving()">Quitar</button></li>
+                        }
+                      </ol>
+                    }
+                  </section>
+
+          <section [hidden]="paso() !== 2" id="solicitud-participantes" class="e2-request-section" aria-labelledby="solicitud-participantes-title">
+                    <header class="e2-request-section-heading">
+                      <div><h2 id="solicitud-participantes-title">Acompañantes</h2>
+                        <p>Si alguien te acompañará, añádelo aquí. Puedes continuar sin acompañantes.</p></div>
+                    </header>
+                    <div class="e2-request-grid">
+                      <div class="admin-field">
+                        <label for="solicitud-empleado">Empleado</label>
+                        <select id="solicitud-empleado" class="admin-select" name="empleado" [(ngModel)]="empleadoId">
+                          <option [ngValue]="0">Selecciona un empleado</option>
+                          @for (p of participantesDisponibles(); track p.id) {<option [ngValue]="p.id">{{p.nombre}}</option>}
+                        </select>
+                      </div>
+                      <div class="admin-field">
+                        <label for="solicitud-funcion">Función</label>
+                        <input id="solicitud-funcion" class="admin-input" name="funcion" [(ngModel)]="funcion"
+                          maxlength="120" placeholder="Ej. Especialista técnico" />
+                      </div>
+                    </div>
+                    <button type="button" class="admin-secondary-button e2-request-add" (click)="agregarParticipante()"
+                      [disabled]="saving() || !empleadoId || !funcion.trim()">+ Añadir participante</button>
+                    @if (!participantes().length) {
+                      <p class="e2-request-empty">Todavía no hay acompañantes. Puedes continuar.</p>
+                    } @else {
+                      <ul class="e2-request-list" aria-label="Participantes incluidos">
+                        @for (p of participantes(); track p.empleadoId) {
+                          <li><div><strong>{{nombreParticipante(p.empleadoId)}}</strong><small>{{p.funcion}}</small></div>
+                            <button type="button" class="admin-secondary-button e2-request-remove"
+                              [attr.aria-label]="'Quitar '+nombreParticipante(p.empleadoId)"
+                              (click)="eliminarParticipante($index)" [disabled]="saving()">Quitar</button></li>
+                        }
+                      </ul>
+                    }
+                  </section>
+
+          <section [hidden]="paso() !== 2" id="solicitud-recursos" class="e2-request-section" aria-labelledby="solicitud-recursos-title">
+                    <header class="e2-request-section-heading">
+                      <div><h2 id="solicitud-recursos-title">Materiales y equipos</h2>
+                        <p>Añade los materiales y equipos que necesitarás, si corresponde.</p></div>
+                    </header>
+                    <div class="e2-request-grid">
+                      <div class="admin-field">
+                        <label for="solicitud-recurso">Recurso</label>
+                        <select id="solicitud-recurso" class="admin-select" name="recurso" [(ngModel)]="recursoId">
+                          <option value="">Selecciona un recurso</option>
+                          @for (r of recursosDisponibles(); track r.tipo+':'+r.id) {
+                            <option [value]="r.tipo+':'+r.id">{{r.nombre}} · {{r.unidad || 'und'}}</option>
+                          }
+                        </select>
+                      </div>
+                      <div class="admin-field">
+                        <label for="solicitud-cantidad">Cantidad</label>
+                        <input id="solicitud-cantidad" class="admin-input" type="number" name="cantidad"
+                          [(ngModel)]="cantidad" min="0.001" step="any" />
+                      </div>
+                    </div>
+                    @if (recursoSeleccionado(); as r) {
+                      <div class="e2-request-stock" [class.e2-request-stock--missing]="seleccionSinStock()" role="status">
+                        <strong>En suministros: {{r.disponibleTecnico ?? r.disponible}} {{r.unidad || 'und'}}</strong>
+                        @if (r.tipo === 'CONSUMIBLE') {<span>En almacén comercial: {{r.disponibleComercial ?? 0}} {{r.unidad || 'und'}}</span>}
+                        <small>{{disponibleSeleccionado()}}</small>
+                      </div>
+                    }
+                    @if (recursosSinStock()) {
+                      <p class="e2-request-error" role="alert">Algunos materiales o equipos ya no están disponibles. Quítalos para continuar.</p>
+                    }
+                    <button type="button" class="admin-secondary-button e2-request-add" (click)="agregarRecurso()"
+                      [disabled]="saving() || !puedeAgregarRecurso()">+ Añadir recurso</button>
+                    @if (!recursos().length) {
+                      <p class="e2-request-empty">No has añadido materiales ni equipos. Puedes continuar.</p>
+                    } @else {
+                      <ul class="e2-request-list" aria-label="Recursos incluidos">
+                        @for (r of recursos(); track $index) {
+                          <li><div><strong>{{nombreRecurso(r)}}</strong><small>{{r.cantidad}} {{unidadRecurso(r)}}</small></div>
+                            <button type="button" class="admin-secondary-button e2-request-remove" (click)="eliminarRecurso($index)"
+                              [attr.aria-label]="'Quitar '+nombreRecurso(r)" [disabled]="saving()">Quitar</button></li>
+                        }
+                      </ul>
+                    }
+                  </section>
+
+          <section [hidden]="paso() !== 3" id="solicitud-adjuntos" class="e2-request-section e2-request-section--last" aria-labelledby="solicitud-adjuntos-title">
+                    <header class="e2-request-section-heading">
+                      <div><h2 id="solicitud-adjuntos-title">Archivos adjuntos</h2>
+                        <p>Si tienes fotos o documentos de apoyo, añádelos aquí.</p></div>
+                    </header>
+                    <app-e3-file-dropzone [files]="files()" [maxFiles]="10" [maxSizeMb]="6"
+                      [disabled]="saving()" [uploading]="saving()"
+                      (filesChange)="files.set($event)" (invalid)="error.set($event)" />
+                  </section>
+          <section [hidden]="paso() !== 3" class="e2-request-section e2-request-review" aria-labelledby="solicitud-revision-title">
+                    <header class="e2-request-section-heading">
+                      <div><h2 id="solicitud-revision-title">Revisa tu solicitud</h2>
+                        <p>Comprueba los datos antes de enviarla.</p></div>
+                    </header>
+                    <div class="e2-request-review-grid">
+                      <div class="e2-request-review-card">
+                        <h3>Información de la salida</h3>
+                        <dl>
+                          <div><dt>Nombre</dt><dd>{{nombre || 'Sin completar'}}</dd></div>
+                          <div><dt>Motivo</dt><dd>{{nombreMotivo()}}</dd></div>
+                          <div><dt>Inicio</dt><dd>{{inicio ? fechaVisible(inicio) : 'Sin definir'}}</dd></div>
+                          <div><dt>Término</dt><dd>{{fin ? fechaVisible(fin) : 'Sin definir'}}</dd></div>
+                          @if (descripcion.trim()) {<div><dt>Objetivo</dt><dd>{{descripcion}}</dd></div>}
+                        </dl>
+                        <button type="button" class="e2-request-review-edit" (click)="irPaso(0)">Revisar datos</button>
+                      </div>
+                      <div class="e2-request-review-card">
+                        <h3>Predios y actividades <span>{{destinos().length}}</span></h3>
+                        @if (destinos().length) {
+                          <ul class="e2-request-summary-list">
+                            @for (d of destinos(); track $index) {
+                              <li><strong>{{nombrePredio(d.predioId)}}</strong><small>{{d.actividadPrevista}}</small></li>
+                            }
+                          </ul>
+                        } @else {<p class="e2-request-empty-inline">Sin predios</p>}
+                        <button type="button" class="e2-request-review-edit" (click)="irPaso(1)">Revisar predios</button>
+                      </div>
+                      <div class="e2-request-review-card">
+                        <h3>Acompañantes <span>{{participantes().length}}</span></h3>
+                        @if (participantes().length) {
+                          <ul class="e2-request-summary-list">
+                            @for (p of participantes(); track p.empleadoId) {<li><strong>{{nombreParticipante(p.empleadoId)}}</strong><small>{{p.funcion}}</small></li>}
+                          </ul>
+                        } @else {<p class="e2-request-empty-inline">Sin acompañantes</p>}
+                        <button type="button" class="e2-request-review-edit" (click)="irPaso(2)">Revisar equipo</button>
+                      </div>
+                      <div class="e2-request-review-card">
+                        <h3>Materiales y equipos <span>{{recursos().length}}</span></h3>
+                        @if (recursos().length) {
+                          <ul class="e2-request-summary-list">
+                            @for (r of recursos(); track $index) {<li><strong>{{nombreRecurso(r)}}</strong><small>{{r.cantidad}} {{unidadRecurso(r)}}</small></li>}
+                          </ul>
+                        } @else {<p class="e2-request-empty-inline">Sin recursos adicionales</p>}
+                        <button type="button" class="e2-request-review-edit" (click)="irPaso(2)">Revisar recursos</button>
+                      </div>
+                      <div class="e2-request-review-card e2-request-review-card--wide">
+                        <h3>Archivos <span>{{files().length}}</span></h3>
+                        @if (files().length) {
+                          <ul class="e2-request-summary-list e2-request-summary-list--files">
+                            @for (archivo of files(); track $index) {<li>{{archivo.name}}</li>}
+                          </ul>
+                        } @else {<p class="e2-request-empty-inline">Sin archivos adjuntos</p>}
+                        
+                      </div>
+                    </div>
+                  </section>
+      </form>
+    }
+  </div>
+  <div modalActions class="e2-request-actions">
+    <button type="button" class="admin-secondary-button" (click)="cerrar()" [disabled]="saving()">Cerrar</button>
+    @if (!loading() && catalogos().motivos.length) {
+      @if (paso() > 0) {
+        <button type="button" class="admin-secondary-button" (click)="anterior()" [disabled]="saving()">Anterior</button>
+      }
+      @if (paso() < pasos.length - 1) {
+        <button type="button" class="admin-primary-button" (click)="siguiente()" [disabled]="saving() || avanceRestringido()">Siguiente</button>
+      } @else {
+        <button type="submit" form="e2-solicitud-form" class="admin-primary-button" [disabled]="saving()">
+          {{saving() ? 'Enviando…' : 'Enviar solicitud'}}
+        </button>
+      }
+    }
+  </div>
+</app-modal-shell>

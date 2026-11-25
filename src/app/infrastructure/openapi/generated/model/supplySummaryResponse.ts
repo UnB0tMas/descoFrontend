@@ -15,6 +15,7 @@ export interface SupplySummaryResponse {
     uotCodigo?: string;
     uotNombre?: string;
     codigo?: string;
+    productoId?: number;
     nombre?: string;
     unidadMedida?: string;
     estado?: boolean;

@@ -11,4 +11,6 @@ export interface NavigationItem {
 export interface BreadcrumbItem {
   label: string;
   url: string;
+  /** Opcional; la ventana que invoca el componente aporta sus parámetros. */
+  queryParams?: Record<string, string | number | boolean | null | undefined> | null;
 }

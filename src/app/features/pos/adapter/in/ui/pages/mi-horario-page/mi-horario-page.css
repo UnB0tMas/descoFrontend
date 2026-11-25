@@ -1,0 +1,36 @@
+/* Vista personal: utiliza las superficies y tarjetas institucionales. */
+:host { display: block; }
+.mi-horario-page { display: grid; gap: 1rem; }
+.mi-horario-resumen { padding: 1.3rem 1.45rem; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1.25rem; }
+.mi-horario-persona { min-width: 0; }
+.mi-horario-eyebrow { display: block; margin-bottom: .35rem; font-size: .72rem; font-weight: 750; letter-spacing: .07em; text-transform: uppercase; color: var(--desco-primary); }
+.mi-horario-persona h2 { margin: 0; font-size: 1.25rem; line-height: 1.35; font-weight: 760; color: var(--desco-text); }
+.mi-horario-persona p { margin: .4rem 0 0; font-size: .81rem; color: var(--desco-text-muted); }
+.mi-horario-indicadores { display: flex; flex-wrap: wrap; gap: .65rem; }
+.mi-horario-indicador { padding: .8rem 1rem; border: 1px solid var(--desco-border); border-radius: .8rem; min-width: 130px; display: grid; gap: .28rem; background: var(--desco-page-bg); }
+.mi-horario-indicador strong { font-size: 1.12rem; font-weight: 800; color: var(--desco-text); white-space: nowrap; }
+.mi-horario-indicador strong small { font-size: .72rem; font-weight: 500; color: var(--desco-text-muted); }
+.mi-horario-indicador > span { font-size: .72rem; color: var(--desco-text-muted); }
+.mi-horario-encabezado h2 { margin: 0; font-size: 1rem; font-weight: 750; color: var(--desco-text); }
+.mi-horario-encabezado p { margin: .2rem 0 0; font-size: .77rem; color: var(--desco-text-muted); }
+.mi-horario-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 245px), 1fr)); gap: .85rem; align-items: stretch; }
+.mi-horario-grid app-record-card { min-width: 0; }
+.mi-horario-dia-cabecera { display: flex; align-items: flex-start; justify-content: space-between; gap: .5rem; min-width: 0; }
+.mi-horario-dia-cabecera strong { font-weight: 760; font-size: .9rem; }
+.mi-horario-atencion { display: flex; align-items: baseline; gap: .2rem .6rem; flex-wrap: wrap; }
+.mi-horario-atencion > span { width: 100%; font-size: .7rem; color: var(--desco-text-muted); }
+.mi-horario-atencion > strong { font-size: .88rem; font-weight: 750; color: var(--desco-text); }
+.mi-horario-atencion > small { font-size: .68rem; color: var(--desco-primary); }
+.mi-horario-linea { position: relative; height: .45rem; width: 100%; overflow: hidden; border-radius: 1rem; background: var(--desco-border); }
+.mi-horario-linea-tramo { position: absolute; top: 0; bottom: 0; min-width: 0; background: var(--desco-primary); border-radius: 1rem; }
+.mi-horario-linea-vacia { opacity: .55; }
+.mi-horario-turnos { display: grid; gap: .45rem; align-content: start; }
+.mi-horario-turno { display: flex; align-items: center; gap: .65rem; border: 1px solid var(--desco-border); border-radius: .65rem; padding: .6rem .7rem; font-size: .83rem; font-weight: 675; color: var(--desco-text); }
+.mi-horario-turno fa-icon { color: var(--desco-primary); font-size: .76rem; }
+.mi-horario-sin-turnos { font-size: .79rem; color: var(--desco-text-muted); padding: .45rem 0; }
+.mi-horario-empty, .mi-horario-cargando { padding: 2rem; text-align: center; }
+.mi-horario-empty { display: grid; justify-items: center; gap: .55rem; }
+.mi-horario-empty fa-icon { font-size: 1.5rem; color: var(--desco-text-muted); }
+.mi-horario-empty h2 { margin: 0; font-weight: 750; }
+.mi-horario-empty p { margin: 0; font-size: .84rem; color: var(--desco-text-muted); }
+@media (max-width: 560px) { .mi-horario-resumen { padding: 1rem; } .mi-horario-indicadores { width: 100%; } .mi-horario-indicador { flex: 1 1 120px; min-width: 0; } .mi-horario-grid { grid-template-columns: minmax(0, 1fr); } }

@@ -1,0 +1,63 @@
+<section class="especial-panel space-y-5">
+  @if(cargando()){<div class="admin-surface p-6 text-sm">Cargando informes...</div>}
+  @else if(error()){<div class="admin-surface p-6 text-sm">{{error()}}</div>}
+  @else if(informes().length){
+    <div class="reportes-layout">
+      <div class="reportes-catalogo">
+        <h3 class="reportes-subtitle">Elige un informe</h3>
+        <div class="reportes-opciones">
+          @for(item of informes();track item.codigo){
+            <button type="button" class="reportes-item" [class.seleccionado]="elegido()===item.codigo" (click)="elegir(item.codigo)">
+              <span class="reportes-radio"></span><strong>{{item.nombre}}</strong>
+            </button>
+          }
+        </div>
+      </div>
+      <div class="reportes-filtros">
+        <h3 class="reportes-subtitle">Período y filtros</h3>
+        <div class="reportes-campos">
+          <label>Desde<input type="date" [value]="desde()" [max]="today" (change)="cambiar($event,'desde')"></label>
+          <label>Hasta<input type="date" [value]="hasta()" [max]="today" (change)="cambiar($event,'hasta')"></label>
+          @if(area()==='APAPPSS'){
+            <label class="reportes-full">Convenio<select [value]="convenio()" (change)="cambiar($event,'convenio')"><option value="">Seleccionar</option>
+              @for(i of filtros().convenios;track i.id){<option [value]="i.id">{{i.nombre}}</option>}</select></label>
+          }
+          @if(sanidad()||elegido()==='AP_PREDIOS'||elegido()==='AP_VENTAS'){
+            <label class="reportes-full">Predio<select [value]="predio()" (change)="cambiar($event,'predio')"><option value="">Seleccionar</option>
+              @for(i of filtros().predios;track i.id){<option [value]="i.id">{{i.nombre}}</option>}</select></label>
+          }
+          @if(area()==='APAPPSS'&&(sanidad()||elegido()==='AP_SOCIOS'||elegido()==='AP_LIQUIDACIONES'||elegido()==='AP_PAGOS')){
+            <label class="reportes-full">Socio<select [value]="socio()" (change)="cambiar($event,'socio')"><option value="">Todos</option>
+              @for(i of filtros().socios;track i.id){<option [value]="i.id">{{i.nombre}}</option>}</select></label>
+          }
+          @if(area()==='APAPPSS'&&!sanidad()&&elegido()!=='AP_SOCIOS'){
+            <label class="reportes-full">Campaña<select [value]="campania()" (change)="cambiar($event,'campania')"><option value="">Todas</option>
+              @for(i of filtros().campanias;track i.id){<option [value]="i.id">{{i.nombre}}</option>}</select></label>
+          }
+          <label class="reportes-full">Formato<select [value]="formato()" (change)="cambiar($event,'formato')">
+            @if(sanidad()){<option value="PDF">PDF</option><option value="DOCX">Word</option>}
+            @else{<option value="XLSX">Excel</option>}
+          </select></label>
+        </div>
+        @if(invalid()){<p class="reportes-ayuda">Seleccione el informe y complete los filtros.</p>}
+        <button type="button" class="reportes-generar" [disabled]="invalid()||generando()" (click)="generar()">
+          @if(generando()){<span class="loading loading-spinner loading-xs"></span>}
+          Generar informe
+        </button>
+      </div>
+    </div>
+    <div class="reportes-historial">
+      <div class="reportes-historial-cabecera"><div class="reportes-subtitle">Mis informes</div>
+        <button type="button" class="admin-secondary-button" (click)="actualizar()">Actualizar</button></div>
+      <div class="reportes-historial-lista">
+        @for(job of recientes();track job.id){<div class="reportes-trabajo">
+          <div><strong>{{job.tipo}}</strong><small>{{job.desde}} al {{job.hasta}} · {{job.formato}}</small></div>
+          <span class="reportes-estado" [class.listo]="job.estado==='LISTO'" [class.fallido]="job.estado==='ERROR'">
+            @switch(job.estado){@case('LISTO'){Listo}@case('ERROR'){No disponible}@case('PROCESANDO'){Preparando}@default{En espera}}
+          </span>
+          @if(job.estado==='LISTO'){<button type="button" class="reportes-descargar" (click)="descargar(job)">Descargar</button>}
+        </div>}
+      </div>
+    </div>
+  }@else{<div class="admin-surface p-5 text-sm">No hay informes disponibles.</div>}
+</section>

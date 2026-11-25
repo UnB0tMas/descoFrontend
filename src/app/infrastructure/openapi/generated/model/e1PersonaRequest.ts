@@ -10,6 +10,7 @@
 
 
 export interface E1PersonaRequest { 
+    personaId?: number;
     tipoDocumento: string;
     numeroDocumento: string;
     nombres: string;

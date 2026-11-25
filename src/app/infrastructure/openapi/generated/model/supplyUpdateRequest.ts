@@ -11,6 +11,7 @@
 
 export interface SupplyUpdateRequest { 
     uotId: number;
+    productoId?: number;
     nombre: string;
     /**
      * Código del catálogo UNIDAD_MEDIDA.

@@ -1,0 +1,6 @@
+<label class="desco-toggle" [class.desco-toggle--disabled]="disabled">
+  <input type="checkbox" role="switch" class="desco-toggle__input" [checked]="checked"
+    [disabled]="disabled" [attr.aria-label]="label" (change)="change($event)" />
+  <span class="desco-toggle__track" aria-hidden="true"><span class="desco-toggle__thumb"></span></span>
+  <span class="desco-toggle__label">{{ label }}</span>
+</label>

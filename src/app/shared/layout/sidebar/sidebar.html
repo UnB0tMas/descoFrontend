@@ -57,6 +57,7 @@
           <app-sidebar-item
             [item]="item"
             [collapsed]="collapsed"
+            [documentUnread]="unread.pendientes()"
             (navigate)="closeMobile()"
             (requestExpand)="expandSidebar()"
           />

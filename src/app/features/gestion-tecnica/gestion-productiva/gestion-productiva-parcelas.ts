@@ -1,11 +1,13 @@
-import { RecordCardComponent } from '../../../shared/data-display/record-card/record-card';
+import { BreadcrumbComponent } from '../../../shared/layout/breadcrumb/breadcrumb';
+import { ListViewSwitchComponent } from '../../../shared/data-display/list-view-switch/list-view-switch';
+import { InstitutionalRecordCardComponent } from '../../../shared/data-display/record-card/institutional-record-card';
 import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
 import { faArrowLeft, faEye, faLayerGroup, faPen, faPlus, faRotate, faSearch, faTableCellsLarge, faTableList, faTrash } from '@fortawesome/free-solid-svg-icons';
-import { Subscription, finalize } from 'rxjs';
+import { Subscription, finalize , switchMap } from 'rxjs';
 import { PermissionDirective } from '../../../core/access/permission.directive';
 import { PermissionService } from '../../../core/access/permission.service';
 import { UotContextStore } from '../../uot/state/uot-context.store';
@@ -26,7 +28,7 @@ import { ObtenerPredioUseCase } from '../predios/application/use-case/obtener-pr
 
 @Component({
   selector: 'app-gestion-productiva-parcelas', standalone: true,
-  imports: [RecordCardComponent, DecimalPipe, FormsModule, RouterLink, FaIconComponent, PermissionDirective,
+  imports: [BreadcrumbComponent, ListViewSwitchComponent, InstitutionalRecordCardComponent, DecimalPipe, FormsModule, RouterLink, FaIconComponent, PermissionDirective,
     PageHeaderComponent, PaginatorComponent, DataTableComponent, EmptyStateComponent,
     ErrorStateComponent, LoadingStateComponent, GpParcelaForm, ActionConfirmDialogComponent],
   templateUrl: './gestion-productiva-parcelas.html', styleUrl: './gestion-productiva.css',
@@ -45,6 +47,7 @@ export class GestionProductivaParcelas implements OnInit, OnDestroy {
   readonly predioId = Number(this.route.snapshot.paramMap.get('predioId'));
   readonly predioNombre = signal('Predio');
   readonly predioCodigo = signal('');
+  readonly actuacionPermitida=signal(false);
   readonly loading = signal(true);
   readonly editing = signal(false);
   readonly error = signal<string | null>(null);
@@ -76,7 +79,7 @@ export class GestionProductivaParcelas implements OnInit, OnDestroy {
   });
   readonly totalPages = computed(() => Math.ceil(this.filtered().length / this.size()));
   readonly visible = computed(() => this.filtered().slice((this.page() - 1) * this.size(), this.page() * this.size()));
-  can(code: string): boolean { return this.perms.has(code); }
+  can(code: string): boolean { return this.perms.has(code) && (code === 'CULTIVOS_CREAR' || !['CULTIVOS_EDITAR','CULTIVOS_RETIRAR'].includes(code) || this.actuacionPermitida()); }
   ngOnInit(): void {
     if (!Number.isInteger(this.predioId) || this.predioId < 1) { this.loading.set(false); this.error.set('Predio inválido.'); return; }
     this.subscriptions.add(this.predios.execute(this.predioId).subscribe({
@@ -91,7 +94,8 @@ export class GestionProductivaParcelas implements OnInit, OnDestroy {
     if (!uot) { this.loading.set(false); this.error.set('Selecciona una UOT para consultar las parcelas.'); return; }
     this.listSubscription?.unsubscribe();
     this.loading.set(true); this.error.set(null);
-    this.listSubscription = this.gp.parcelas(uot, this.predioId).pipe(finalize(() => this.loading.set(false))).subscribe({
+    this.actuacionPermitida.set(false);
+    this.listSubscription = this.gp.puedeActuar(uot,this.predioId).pipe(switchMap(permitido=>{this.actuacionPermitida.set(permitido);return this.gp.parcelas(uot,this.predioId);}),finalize(() => this.loading.set(false))).subscribe({
       next: items => {
         this.items.set([...items].sort((a, b) => a.codigo.localeCompare(b.codigo, 'es', { numeric: true })));
         if (reset) this.page.set(1);

@@ -16,6 +16,43 @@
     <div class="topbar-actions">
       <app-uot-context-switcher [compact]="true" />
 
+      @if (mostrarReportes()) {
+        <div class="dropdown dropdown-end">
+          <button type="button" tabindex="0" class="topbar-icon-button relative"
+                  title="Mis reportes" aria-label="Mis reportes">
+            <fa-icon [icon]="bellIcon" />
+            @if (excel.listos().length + especiales.listos().length) {
+              <span class="absolute -right-1 -top-1 rounded-full bg-blue-600 px-1 text-[10px] font-bold text-white">
+                {{ excel.listos().length + especiales.listos().length }}
+              </span>
+            }
+          </button>
+          <div tabindex="0" class="dropdown-content z-50 mt-2 w-72 max-w-[85vw] rounded-xl border border-base-300 bg-base-100 p-3 shadow-2xl">
+            <strong class="text-sm">Mis reportes</strong>
+            <div class="mt-3 grid max-h-72 gap-2 overflow-y-auto">
+              @for(job of especiales.trabajos().slice(0, 4);track job.id) {
+                <div class="flex items-center gap-2 rounded-lg border border-base-300 p-2 text-xs">
+                  <fa-icon [icon]="excelIcon" class="text-blue-500"/>
+                  <span class="min-w-0 flex-1 truncate">{{job.tipo.replaceAll('_',' ')}}</span>
+                  @if(job.estado==='LISTO'){<button type="button" class="font-bold text-blue-500" (click)="descargarEspecial(job)">Descargar</button>}
+                  @else{<span class="opacity-70">{{job.estado==='ERROR'?'Sin archivo':'Preparando'}}</span>}
+                </div>
+              }
+              @for (job of excel.trabajos().slice(0, 6); track job.id) {
+                <div class="flex items-center gap-2 rounded-lg border border-base-300 p-2 text-xs">
+                  <fa-icon [icon]="excelIcon" class="text-blue-500"/>
+                  <span class="min-w-0 flex-1 truncate">{{job.codigo.replaceAll('_',' ')}}</span>
+                  @if (job.estado === 'LISTO') {
+                    <button type="button" class="font-bold text-blue-500" (click)="descargarReporte(job)">Descargar</button>
+                  } @else { <span class="opacity-70">{{job.estado === 'ERROR' ? 'Sin archivo' : 'Preparando'}}</span> }
+                </div>
+              } @empty { <p class="text-xs opacity-70">Sin solicitudes recientes.</p> }
+            </div>
+            <a routerLink="/reportes" class="mt-3 block text-right text-xs font-bold text-blue-500">Ver reportes</a>
+          </div>
+        </div>
+      }
+
       <button
         type="button"
         class="topbar-icon-button"

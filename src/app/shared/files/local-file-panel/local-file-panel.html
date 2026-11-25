@@ -16,29 +16,17 @@
         <fa-icon [class.animate-spin]="loading()" [icon]="refreshIcon" />
       </button>
 
-      @if (canUpload) {
-        <label
-          class="admin-primary-button admin-primary-button--small local-upload-button"
-          [class.local-upload-button--disabled]="uploading()"
-        >
-          @if (uploading()) {
-            <span class="loading loading-spinner loading-xs"></span>
-            Subiendo…
-          } @else {
-            <fa-icon [icon]="uploadIcon" />
-            Subir
-          }
-          <input
-            #fileInput
-            type="file"
-            [accept]="accept"
-            [disabled]="uploading()"
-            (change)="upload(fileInput)"
-          />
-        </label>
-      }
     </div>
   </div>
+  @if (canUpload) {
+    <div class="local-dropzone">
+      <app-e3-file-dropzone title="Añadir imágenes" [files]="selectedFiles()"
+        [multiple]="true" [maxFiles]="5" [maxSizeMb]="15"
+        [accept]="accept === 'image/*' ? 'image/jpeg,image/png,image/webp' : accept" fileTypesHint="Imágenes JPG, PNG o WebP"
+        [disabled]="uploading()" [uploading]="uploading()"
+        (filesChange)="uploadSelected($event)" (invalid)="errorMessage.set($event)" />
+    </div>
+  }
 
   @if (errorMessage()) {
     <div class="admin-inline-error">{{ errorMessage() }}</div>

@@ -1,3 +1,4 @@
+import { ListViewSwitchComponent } from '../../../../../../../../shared/data-display/list-view-switch/list-view-switch';
 import { RecordCardComponent } from '../../../../../../../../shared/data-display/record-card/record-card';
 import {
   ChangeDetectionStrategy,
@@ -48,7 +49,7 @@ import { ProductorFormComponent } from '../productor-form/productor-form';
 @Component({
   selector: 'app-productores-list-page',
   standalone: true,
-  imports: [RecordCardComponent, 
+  imports: [ListViewSwitchComponent, RecordCardComponent, 
     RouterLink,
     FaIconComponent,
     PermissionDirective,

@@ -1,3 +1,7 @@
+import { ListViewSwitchComponent, ListViewMode } from '../../../../../../../../shared/data-display/list-view-switch/list-view-switch';
+import { RecordCardComponent } from '../../../../../../../../shared/data-display/record-card/record-card';
+import { DataTableComponent } from '../../../../../../../../shared/data-display/data-table/data-table';
+import { DataTableColumn } from '../../../../../../../../shared/data-display/data-table/data-table.types';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -54,6 +58,9 @@ type AreaView = 'hierarchy' | 'table';
     ErrorStateComponent,
     EmptyStateComponent,
     PaginatorComponent,
+    DataTableComponent,
+    ListViewSwitchComponent,
+    RecordCardComponent,
     ActionConfirmDialogComponent,
     PageHeaderComponent,
     AreaHierarchyComponent,
@@ -90,8 +97,28 @@ export class OrganizacionesListPage implements OnInit {
   readonly referencesError = signal<string | null>(null);
   readonly referenceAreas = signal<readonly Area[]>([]);
 
-  readonly organizations = signal<PageResult<Empresa>>(emptyPageResult(20));
-  readonly areas = signal<PageResult<Area>>(emptyPageResult(20));
+  readonly organizations = signal<PageResult<Empresa>>(emptyPageResult(10));
+  readonly areas = signal<PageResult<Area>>(emptyPageResult(10));
+  readonly organizationsColumns: readonly DataTableColumn<Empresa>[] = [
+    { key: 'organizacion', label: 'Organización' },
+    { key: 'uot', label: 'UOT' },
+    { key: 'ruc', label: 'RUC' },
+    { key: 'tipo', label: 'Tipo' },
+    { key: 'contacto', label: 'Contacto' },
+    { key: 'estado', label: 'Estado', align: 'center' },
+    { key: 'acciones', label: 'Acciones', align: 'right' }
+  ];
+  readonly areasColumns: readonly DataTableColumn<Area>[] = [
+    { key: 'codigo', label: 'Código' },
+    { key: 'area', label: 'Área' },
+    { key: 'uot', label: 'UOT' },
+    { key: 'superior', label: 'Área superior' },
+    { key: 'estado', label: 'Estado', align: 'center' },
+    { key: 'acciones', label: 'Acciones', align: 'right' }
+  ];
+  readonly viewMode = signal<ListViewMode>('table');
+
+
 
   readonly pageIcon = faBuilding;
   readonly companyIcon = faBuilding;
@@ -121,6 +148,8 @@ export class OrganizacionesListPage implements OnInit {
       (area) => area.estado && (!id || area.uotId === id),
     );
   });
+
+  readonly trackOrganization = (_index: number, company: Empresa): string => `${company.empresaId}-${company.uotId}`;
 
   ngOnInit(): void {
     this.unitFilter.set(this.uot.modo() === 'ESPECIFICA' ? this.uot.selectedId() : null);

@@ -7,6 +7,7 @@ import { empleadosRoutes } from './empleados/empleados.routes';
 import { organizacionesRoutes } from './organizaciones/organizaciones.routes';
 import { rolesPermisosRoutes } from './roles-permisos/roles-permisos.routes';
 import { usuariosRoutes } from './usuarios/usuarios.routes';
+import { proveedoresRoutes } from './proveedores/proveedores.routes';
 
 export const administracionRoutes: Routes = [
   {
@@ -21,6 +22,7 @@ export const administracionRoutes: Routes = [
       ...catalogosRoutes,
       ...empleadosRoutes,
       ...usuariosRoutes,
+      ...proveedoresRoutes,
       ...uotAdminRoutes,
     ],
   },

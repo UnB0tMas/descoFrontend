@@ -1,6 +1,6 @@
 export interface OpcionE2 { id: number; nombre: string; codigo?: string; }
 export interface RecursoOpcionE2 {
-  id: number; tipo: string; nombre: string; codigo?: string; unidad?: string; disponible: number;
+  id: number; tipo: string; nombre: string; codigo?: string; unidad?: string; disponible: number; disponibleTecnico?: number; disponibleComercial?: number;
 }
 export interface CatalogosE2 {
   motivos: OpcionE2[]; tiposVisita: OpcionE2[]; bienes: RecursoOpcionE2[];
@@ -19,7 +19,7 @@ export interface ParticipanteE2 {empleadoId:number;nombre:string;funcion?:string
 export interface ParticipanteEntradaE2 {empleadoId:number;funcion?:string;}
 export interface VisitaE2 {visitaId:number;destinoId:number;predioId:number;fechaInicio?:string;fechaFin?:string;
   estado:string;objetivo?:string;resumen?:string;recomendaciones?:string;tipoVisita?:string;}
-export interface EventoE2 {eventoId:number;tipo:string;detalle?:string;usuarioId:number;fechaHora?:string;}
+export interface EventoE2 {eventoId:number;tipo:string;detalle?:string;usuarioId:number;usuarioNombre?:string|null;fechaHora?:string;}
 export interface ResumenE2 {salidaId:number;nombre:string;estado:string;fechaSolicitud?:string;
   fechaInicioPrevista?:string;fechaFinPrevista?:string;solicitanteEmpleadoId:number;}
 export interface DetalleE2 extends ResumenE2 {uotId:number;convenioId?:number;motivoSalidaId:number;
@@ -35,7 +35,7 @@ export interface SolicitudE2 {
 export interface CorreccionE2 {
   nombre:string;descripcion?:string;motivoSalidaId:number;fechaInicioPrevista:string;
   fechaFinPrevista?:string;destinos?:DestinoEntradaE2[];bienes?:RecursoEntradaE2[];
-  participantes?:ParticipanteEntradaE2[];enviar?:boolean;
+  participantes?:ParticipanteEntradaE2[];enviar?:boolean;archivoIds?:number[];
 }
 export interface EstadoBienE2 {solicitudRecursoId:number;
   resultado:'CONFORME'|'DANADO'|'FALTANTE'|'CONSUMIDO';cantidadDevuelta?:number;observacion?:string;}

@@ -8,13 +8,15 @@
     <form class="admin-form-grid" [formGroup]="form" (ngSubmit)="save()">
       <div class="admin-field admin-field-span-2">
                 <app-e3-file-dropzone title="Documento o fotografía"
-          [files]="file() ? [file()!] : []" [multiple]="false" [maxFiles]="1" [maxSizeMb]="25"
-          [allowedExtensions]="['jpg','jpeg','png','webp','pdf']" formatsLabel="JPG, PNG, WEBP o PDF"
-          accept="image/jpeg,image/png,image/webp,application/pdf"
+          [files]="file() ? [file()!] : []" [multiple]="false" [maxFiles]="1" [maxSizeMb]="(fixedContext()?.tipo ?? form.controls.contextoTipo.value) === 'GASTO' ? 6 : 25"
+          fileTypesHint="JPG, PNG, WebP o PDF"
+          accept="image/jpeg,image/png,image/webp,application/pdf,.jpg,.jpeg,.png,.webp,.pdf"
           [disabled]="saving()" [uploading]="saving()"
           (filesChange)="selectFiles($event)" (invalid)="errorMessage.set($event)" />
       </div>
-      <div class="admin-field admin-field-span-2"><label for="evidenceCategory">Categoría</label><select id="evidenceCategory" class="admin-select" formControlName="categoria">@for (category of categories; track category) { <option [value]="category">{{ category }}</option> }</select></div>
+      @if ((fixedContext()?.tipo ?? form.controls.contextoTipo.value) !== 'GASTO') {
+        <div class="admin-field admin-field-span-2"><label for="evidenceCategory">Categoría</label><select id="evidenceCategory" class="admin-select" formControlName="categoria">@for (category of categories; track category) { <option [value]="category">{{ category }}</option> }</select></div>
+      }
       <div class="admin-field admin-field-span-2"><label for="evidenceDescription">Descripción (opcional)</label><textarea id="evidenceDescription" class="admin-textarea" formControlName="descripcion" maxlength="400" rows="3"></textarea></div>
       @if (!fixedContext()) {
         <div class="admin-field"><label for="evidenceContextType">Contexto</label><select id="evidenceContextType" class="admin-select" formControlName="contextoTipo">@for (context of contexts; track context.tipo) { <option [value]="context.tipo">{{ context.etiqueta }}</option> }</select></div>

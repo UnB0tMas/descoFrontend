@@ -1,0 +1,6 @@
+<span class="desco-status-badge" [class.desco-status-badge--success]="tone === 'success'"
+  [class.desco-status-badge--warning]="tone === 'warning'" [class.desco-status-badge--danger]="tone === 'danger'"
+  [class.desco-status-badge--info]="tone === 'info'">
+  @if (dot) { <span class="desco-status-dot" aria-hidden="true"></span> }
+  {{ label }}<ng-content />
+</span>

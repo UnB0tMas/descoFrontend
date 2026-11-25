@@ -32,9 +32,9 @@ export class RegistrarFotografiaUseCase {
       if(!config.cloudName || !config.uploadPreset) {
         const uotId=this.uot.selectedId();
         if(!uotId) throw new Error('Selecciona una UOT antes de subir la evidencia.');
-        return this.local.upload({uotId,file:input.file,category:'FOTOGRAFIA',description:input.descripcion,
+        return this.local.upload({uotId,file:input.file,category:input.contexto.tipo==='GASTO'?'COMPROBANTE':'FOTOGRAFIA',description:input.descripcion,
           linkType:input.contexto.tipo,linkId:input.contexto.id,
-          evidence:{tipo:input.tipoEvidencia,origen:'CAMARA',fecha:input.fechaCaptura,latitud:input.latitudCaptura,longitud:input.longitudCaptura}
+          evidence:{tipo:input.contexto.tipo==='GASTO'?'COMPROBANTE':input.tipoEvidencia,origen:'CAMARA',fecha:input.fechaCaptura,latitud:input.latitudCaptura,longitud:input.longitudCaptura}
         }).pipe(map(file=>({archivoId:file.archivoId!})));
       }
       return this.storage.upload(input.file).pipe(

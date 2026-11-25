@@ -1,0 +1,22 @@
+:host { display: block; min-width: 0; }
+.desco-list-container { display: grid; gap: .9rem; min-width: 0; }
+.desco-list-container__message { border: 1px dashed var(--desco-border); border-radius: var(--desco-radius-lg);
+  background: var(--desco-surface); color: var(--desco-text-muted); padding: 2.5rem 1rem;
+  text-align: center; font-size: .83rem; }
+
+/* Rejilla institucional de tarjetas, reutilizable desde cualquier listado. */
+.desco-record-grid--institutional { grid-template-columns:repeat(auto-fit,minmax(min(100%,270px),1fr)); gap:1rem; }
+.desco-record-grid--institutional > * { min-width:0; max-width:100%; }
+@media(max-width:620px) { .desco-record-grid--institutional { grid-template-columns:minmax(0,1fr); } }
+
+/* Opcional: cards de ancho limitado, con espacio superior respecto al filtro. */
+.desco-record-grid--institutional.desco-record-grid--bounded {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 1rem;
+  padding: 1rem 1rem 0;
+}
+@media (max-width: 620px) {
+  .desco-record-grid--institutional.desco-record-grid--bounded { padding: .8rem .8rem 0; }
+}

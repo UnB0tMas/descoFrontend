@@ -4,6 +4,6 @@
 .e2-modal-box label.admin-field{display:flex;flex-direction:column;gap:.36rem;font-size:.82rem;font-weight:650}.e2-modal-box label.admin-field .admin-input,.e2-modal-box label.admin-field .admin-select,.e2-modal-box label.admin-field .admin-textarea{width:100%}
 
 .e2-active-filter{background:var(--desco-primary-soft);color:var(--desco-primary-text);border-color:var(--desco-primary)}
-.e2-listbar .technical-view-control{margin-left:auto}
+.e2-listbar .technical-view-switch{margin-left:auto}
 
 @media(max-width:640px){.e2-toolbar{align-items:stretch}.e2-toolbar-search{flex:0 0 auto;min-width:0;width:100%}}

@@ -1,8 +1,9 @@
+import {DataTableComponent} from '../../../shared/data-display/data-table/data-table';
 import { ChangeDetectionStrategy, Component, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
-import { faArrowLeft, faEye, faMapLocationDot, faPen, faPlus, faRotate, faTableCellsLarge, faTableList, faUsers, faSeedling, faBan, faTrashCan } from '@fortawesome/free-solid-svg-icons';
+import { faArrowLeft, faEye, faMapLocationDot, faPen, faPlus, faRotate, faUsers, faSeedling, faBan, faTrashCan } from '@fortawesome/free-solid-svg-icons';
 import { finalize } from 'rxjs';
 import { ActionConfirmDialogComponent } from '../../../shared/feedback/action-confirm-dialog/action-confirm-dialog';
 import { ToastService } from '../../../shared/feedback/toast-center/toast.service';
@@ -14,6 +15,7 @@ import { LoadingStateComponent } from '../../../shared/data-display/loading-stat
 import { ErrorStateComponent } from '../../../shared/data-display/error-state/error-state';
 import { EmptyStateComponent } from '../../../shared/data-display/empty-state/empty-state';
 import { PaginatorComponent } from '../../../shared/data-display/paginator/paginator';
+import { ListViewSwitchComponent, ListViewMode } from '../../../shared/data-display/list-view-switch/list-view-switch';
 import { RecordCardComponent } from '../../../shared/data-display/record-card/record-card';
 import { mapOpenApiError } from '../../../infrastructure/openapi/openapi-http-error.mapper';
 import { ObtenerProductorUseCase } from '../../gestion-tecnica/productores/application/use-case/obtener-productor.use-case';
@@ -23,7 +25,7 @@ import { ExpedienteE1UseCase } from '../../gestion-tecnica/predios/expediente/ap
 
 @Component({
  selector:'app-apappss-socio-detail',standalone:true,
- imports:[DatePipe,RouterLink,FaIconComponent,PageHeaderComponent,LoadingStateComponent,ErrorStateComponent,EmptyStateComponent,PaginatorComponent,RecordCardComponent,ApappssPredioAltaPage,ActionConfirmDialogComponent],
+ imports:[DataTableComponent,DatePipe,RouterLink,FaIconComponent,PageHeaderComponent,LoadingStateComponent,ErrorStateComponent,EmptyStateComponent,PaginatorComponent,RecordCardComponent,ListViewSwitchComponent,ApappssPredioAltaPage,ActionConfirmDialogComponent],
  templateUrl:'./apappss-socio-detail.html',styleUrls: ['../../gestion-tecnica/gestion-productiva/gestion-productiva.css', './apappss-socio-detail.css'],
  changeDetection:ChangeDetectionStrategy.OnPush,
 })
@@ -41,7 +43,6 @@ export class ApappssSocioDetailPage implements OnInit {
  readonly convenioId=Number(this.route.snapshot.queryParamMap.get('convenioId'));
  readonly icon=faUsers;readonly backIcon=faArrowLeft;readonly plusIcon=faPlus;readonly refreshIcon=faRotate;
  readonly predioIcon=faMapLocationDot;readonly detalleIcon=faEye;readonly editarIcon=faPen;
- readonly tablaIcon=faTableList;readonly tarjetasIcon=faTableCellsLarge;
  readonly productionIcon=faSeedling;readonly disabledIcon=faBan;readonly deleteIcon=faTrashCan;
  readonly aptitudes=signal<Record<number,FundoAptitud>>({});
  readonly aptitudesCargando=signal<ReadonlySet<number>>(new Set<number>());
@@ -51,7 +52,8 @@ export class ApappssSocioDetailPage implements OnInit {
  private consultaVersion=0;
  readonly loading=signal(true);readonly error=signal<string|null>(null);
  readonly socio=signal<ProductorDetalle|null>(null);readonly predios=signal<ProductorPredio[]>([]);
- readonly vista=signal<'tabla'|'tarjetas'>('tabla');
+ readonly predioColumns=[{key:'nombre',label:'Predio'},{key:'tipoTitularidad',label:'Titularidad'},{key:'fechaDesde',label:'Desde'},{key:'acciones',label:'Acciones',headerClass:'text-right'}];
+ readonly vista=signal<ListViewMode>('table');
  readonly busqueda=signal('');readonly pagina=signal(1);readonly tamano=signal(10);
  readonly prediosFiltrados=computed(()=>{
   const filtro=this.busqueda().trim().toLocaleLowerCase();
@@ -65,7 +67,7 @@ export class ApappssSocioDetailPage implements OnInit {
   return this.prediosFiltrados().slice(start,start+this.tamano());
  });
  buscarPredio(texto:string):void{this.busqueda.set(texto);this.pagina.set(1);this.consultarAptitudes();}
- cambiarVista(vista:'tabla'|'tarjetas'):void{this.vista.set(vista);}
+ cambiarVista(vista:ListViewMode):void{this.vista.set(vista);}
  cambiarPagina(pagina:number):void{if(pagina>=1&&pagina<=this.totalPaginas()){this.pagina.set(pagina);this.consultarAptitudes();}}
  cambiarTamano(tamano:number):void{
   if(![10,20,50,100].includes(tamano))return;

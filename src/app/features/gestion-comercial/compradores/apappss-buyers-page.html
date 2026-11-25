@@ -14,23 +14,14 @@
       <button type="submit" class="admin-secondary-button" [disabled]="loading()"><fa-icon [icon]="searchIcon" /> Buscar</button>
     </form>
     <div class="apappss-buyers-viewbar">
-      <div class="technical-view-control" role="group" aria-label="Visualización de compradores">
-        <button type="button" class="technical-view-button" [class.active]="viewMode() === 'tabla'"
-          [attr.aria-pressed]="viewMode() === 'tabla'" (click)="viewMode.set('tabla')">Tabla</button>
-        <button type="button" class="technical-view-button" [class.active]="viewMode() === 'tarjetas'"
-          [attr.aria-pressed]="viewMode() === 'tarjetas'" (click)="viewMode.set('tarjetas')">Tarjetas</button>
-      </div>
+      <app-list-view-switch appearance="segmented" [view]="viewMode()" label="Vista de compradores" (viewChange)="viewMode.set($event)"/>
     </div>
     @if (loading()) { <app-loading-state title="Cargando compradores" [rows]="5" /> }
     @else if (error()) { <app-error-state [message]="error() || 'No se pudo consultar.'" (retry)="load()" /> }
     @else if (items().length === 0) { <app-empty-state title="Sin compradores" message="No hay compradores para los filtros seleccionados." /> }
-    @else if (viewMode() === 'tabla') {
-      <div class="admin-table-wrap apappss-buyers-table-wrap" tabindex="0" role="region" aria-label="Tabla de compradores, desplazamiento horizontal">
-        <table class="admin-table apappss-buyers-table">
-          <thead><tr><th>Comprador</th><th>Documento</th><th>Tipo</th><th>Teléfono</th><th>Correo</th><th class="text-right">Acciones</th></tr></thead>
-          <tbody>
-            @for (buyer of items(); track buyer.compradorId) {
-              <tr>
+    @else if (viewMode() === 'table') {
+      <app-data-table appearance="admin" [columns]="buyerColumns" [rows]="items()" trackByKey="compradorId" [rowTemplate]="buyerRow"/>
+      <ng-template #buyerRow let-buyer>
                 <td><div class="admin-entity"><span class="admin-entity-icon"><fa-icon [icon]="buyer.tipo === 'EMPRESA' ? companyIcon : personIcon" /></span><strong class="apappss-buyer-name">{{ buyer.nombre }}</strong></div></td>
                 <td><span class="apappss-buyer-document">{{ buyer.tipoDocumento }}: {{ buyer.documento }}</span></td>
                 <td><span class="admin-status">{{ buyer.tipo === 'EMPRESA' ? 'Empresa' : 'Persona natural' }}</span></td>
@@ -40,11 +31,8 @@
                   <button type="button" class="admin-icon-button" title="Ver detalles" [attr.aria-label]="'Ver detalles de ' + buyer.nombre" (click)="openDetail(buyer)"><fa-icon [icon]="detailIcon" /></button>
                   <button type="button" class="admin-icon-button" [disabled]="!canEdit()" [attr.title]="canEdit() ? 'Editar comprador' : 'Sin permiso para editar compradores'" [attr.aria-label]="'Editar ' + buyer.nombre" (click)="openEdit(buyer)"><fa-icon [icon]="editIcon" /></button>
                 </div></td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
+              
+      </ng-template>
     } @else {
       <div class="desco-record-grid apappss-buyers-grid">
         @for (buyer of items(); track buyer.compradorId) {

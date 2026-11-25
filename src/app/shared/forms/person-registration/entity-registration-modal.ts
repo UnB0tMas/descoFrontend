@@ -1,9 +1,10 @@
 import { ChangeDetectionStrategy, Component, ElementRef, ViewChild, inject, signal } from '@angular/core';
 import { FormBuilder, FormControl, FormRecord, ReactiveFormsModule, Validators } from '@angular/forms';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
-import { faBuilding, faUserPlus, faXmark } from '@fortawesome/free-solid-svg-icons';
+import { faBuilding, faMagnifyingGlass, faSpinner, faUserPlus, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { Observable, finalize } from 'rxjs';
 import { GeographyCascadeComponent, GeographySelection } from '../geography-cascade/geography-cascade';
+import { InlineConfirmDialogComponent } from '../../feedback/inline-confirm-dialog/inline-confirm-dialog';
 import { PersonDataFieldsComponent } from './person-data-fields';
 import { PersonDocumentOption } from './person-lookup';
 import {
@@ -61,6 +62,10 @@ export interface EntityModalOptions {
   extras?: readonly EntityExtraField[];
   hiddenFields?: readonly (keyof PersonIdentityLocks | 'sexo' | 'nombreComercial')[];
   requireDistrictForManual?: boolean;
+  /** Texto de la acción cuando se completan datos de un registro existente. */
+  updateLabel?: string;
+  /** La identidad resuelta es la entidad que esta ventana gestiona, sin relación adicional. */
+  identityIsRole?: boolean;
   allowOverwrite?: boolean;
 }
 
@@ -69,12 +74,11 @@ const DEFAULT_DOCUMENTS: readonly PersonDocumentOption[] = [
   { value: 'CE', label: 'Carné de extranjería' },
   { value: 'PASAPORTE', label: 'Pasaporte' },
 ];
-const FALLBACK = 'No pudimos encontrar información de la persona o empresa. Puede registrarla manualmente.';
 
 /** Modal y formulario únicos para alta/consulta/completitud de Persona y Empresa. */
 @Component({
   selector: 'app-entity-registration-modal', standalone: true,
-  imports: [ReactiveFormsModule, FaIconComponent, PersonDataFieldsComponent, GeographyCascadeComponent],
+  imports: [ReactiveFormsModule, FaIconComponent, PersonDataFieldsComponent, GeographyCascadeComponent, InlineConfirmDialogComponent],
   templateUrl: './entity-registration-modal.html', styleUrl: './entity-registration-modal.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -92,6 +96,7 @@ export class EntityRegistrationModalComponent {
   readonly saving = signal(false);
   readonly blocked = signal(false);
   readonly warning = signal<string | null>(null);
+  readonly manualPrompt = signal(false);
   readonly roleId = signal<number | null>(null);
   readonly identityId = signal<number | null>(null);
   readonly resolution = signal<IdentityResolution | null>(null);
@@ -104,6 +109,8 @@ export class EntityRegistrationModalComponent {
   readonly iconPerson = faUserPlus;
   readonly iconCompany = faBuilding;
   readonly iconClose = faXmark;
+  readonly iconSearch = faMagnifyingGlass;
+  readonly iconSearching = faSpinner;
   readonly minBirth = minBirthDateIso();
   readonly maxBirth = maxBirthDateIso();
   readonly extraForm = new FormRecord<FormControl<string>>({});
@@ -129,6 +136,7 @@ export class EntityRegistrationModalComponent {
     ++this.sequence;
     this.config.set({ ...options, documents: options.documents.length ? options.documents : DEFAULT_DOCUMENTS });
     this.busy.set(false); this.saving.set(false); this.blocked.set(false); this.warning.set(null);
+    this.manualPrompt.set(false);
     this.roleId.set(options.roleId ?? null); this.identityId.set(null); this.resolution.set(null);
     this.found.set(!!options.initial); this.documentLocked.set(!!options.initial);
     this.form.reset({ tipoDocumento: 'DNI', numeroDocumento: '', nombres: '', apellidoPaterno: '',
@@ -238,6 +246,7 @@ export class EntityRegistrationModalComponent {
   private invalidateLookup(): void {
     ++this.sequence;
     this.busy.set(false); this.blocked.set(false); this.warning.set(null); this.roleId.set(null);
+    this.manualPrompt.set(false);
     this.identityId.set(null); this.resolution.set(null); this.found.set(false);
     this.baseline = null; this.baselineExtras = null;
     this.resetLocks();
@@ -281,7 +290,20 @@ export class EntityRegistrationModalComponent {
   private prefillResolution(result: IdentityResolution): void {
     this.resolution.set(result);
     this.identityId.set(result.entityId);
-    if (!result.found) { this.found.set(false); this.setRequiredFields(); this.warning.set(FALLBACK); return; }
+    if (result.found && this.config()?.identityIsRole) {
+      if (!result.entityId) {
+        this.blocked.set(true);
+        this.warning.set('No se pudo recuperar la persona. Intente nuevamente.');
+        return;
+      }
+      this.roleId.set(result.entityId);
+    }
+    if (!result.found) {
+      this.found.set(false); this.setRequiredFields();
+      if (result.manualEntryAllowed) this.promptManualEntry();
+      else this.warning.set(result.message || 'La validación está en proceso. Intente nuevamente.');
+      return;
+    }
     const values: Partial<EntityDraft> = {
       nombres: result.names ?? '', apellidoPaterno: result.paternalSurname ?? '',
       apellidoMaterno: result.maternalSurname ?? '', fechaNacimiento: result.birthDate ?? '',
@@ -294,6 +316,28 @@ export class EntityRegistrationModalComponent {
     this.warning.set(null);
     this.documentLocked.set(true);
   }
+  private promptManualEntry(): void {
+    this.warning.set(null);
+    this.manualPrompt.set(true);
+  }
+
+  acceptManualEntry(): void {
+    this.manualPrompt.set(false);
+    const control = this.entityKind() === 'PERSONA' ? 'nombres' : 'razonSocial';
+    // Permanece en el formulario actual y no se realiza ningún INSERT al confirmar la alerta.
+    this.dialog.nativeElement.querySelector<HTMLInputElement>(`[formControlName="${control}"]`)?.focus();
+  }
+
+  cancelManualEntry(): void {
+    this.manualPrompt.set(false);
+    this.close();
+  }
+
+  cancelFromKeyboard(): void {
+    if (this.manualPrompt()) this.cancelManualEntry();
+    else this.close();
+  }
+
   search(): void {
     if (!this.canSearch()) { this.warning.set('Ingrese un documento válido.'); return; }
     const config = this.config();
@@ -320,7 +364,7 @@ export class EntityRegistrationModalComponent {
   }
   private queryIdentity(type: string, document: string, token: number): void {
     if (type !== 'DNI' && type !== 'RUC') {
-      this.busy.set(false); this.warning.set(FALLBACK); return;
+      this.busy.set(false); this.promptManualEntry(); return;
     }
     const target: IdentityTarget = this.entityKind();
     this.identities.resolve(target, type, document).subscribe({
@@ -354,7 +398,7 @@ export class EntityRegistrationModalComponent {
           this.busy.set(false);
         },
         error: () => {
-          if (token === this.sequence) { this.busy.set(false); this.warning.set(FALLBACK); }
+          if (token === this.sequence) { this.busy.set(false); this.warning.set('No se pudo completar la búsqueda. Intente nuevamente.'); }
         },
       });
   }
@@ -390,7 +434,7 @@ export class EntityRegistrationModalComponent {
   }
   save(): void {
     const config = this.config();
-    if (!config || this.busy() || this.saving()) return;
+    if (!config || this.busy() || this.saving() || this.manualPrompt()) return;
     if (this.blocked()) { this.warning.set('Primero debe recuperarse el registro existente.'); return; }
     if (this.roleId() && !this.changed()) {
       this.finish({id:this.roleId()!,unchanged:true,data:this.form.getRawValue()}); return;
@@ -455,11 +499,13 @@ export class EntityRegistrationModalComponent {
   }
   close(): void {
     if (this.saving()) return;
+    this.manualPrompt.set(false);
     this.finish(null);
   }
   private finish(result: EntityModalResult | null): void {
     ++this.sequence;
     this.busy.set(false);
+    this.manualPrompt.set(false);
     if (this.dialog.nativeElement.open) this.dialog.nativeElement.close();
     const resolve = this.resolvePromise;
     this.resolvePromise = null;

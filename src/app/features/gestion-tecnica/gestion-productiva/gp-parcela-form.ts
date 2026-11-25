@@ -38,19 +38,29 @@ export class GpParcelaForm {
 
   predioId = 0;
   predioNombre = '';
+  productorId: number | null = null;
+  referencia = '';
+  observacion = '';
   nombre = '';
-  areaHa: number | null = null;
+  areaM2: number | null = null;
   distrito = '';
   centroPoblado: number | null = null;
   latitud: number | null = null;
   longitud: number | null = null;
 
-  open(predioId: number, predioNombre: string, current: GpParcelaResponse | null = null): Promise<GpModalResult> {
+  openForProductor(personaId: number, nombre: string, current: GpParcelaResponse | null = null): Promise<GpModalResult> {
+    return this.open(current?.predioId ?? 0, nombre, current, personaId);
+  }
+
+  open(predioId: number, predioNombre: string, current: GpParcelaResponse | null = null, productorId: number | null = null): Promise<GpModalResult> {
     this.editing.set(current);
     this.predioId = predioId;
     this.predioNombre = predioNombre;
+    this.productorId = productorId;
+    this.referencia = current?.referencia ?? '';
+    this.observacion = current?.observacion ?? '';
     this.nombre = current?.nombre ?? '';
-    this.areaHa = current?.areaHa ?? null;
+    this.areaM2 = current?.areaHa == null ? null : Math.round(Number(current.areaHa) * 10000);
     this.distrito = current?.distritoCodigo ?? '';
     this.centroPoblado = current?.centroPobladoId ?? null;
     this.latitud = current?.latitud ?? null;
@@ -80,11 +90,11 @@ export class GpParcelaForm {
     const uot = this.uot.selectedId();
     if (!uot || this.saving()) return;
     if (!this.nombre.trim() || this.nombre.trim().length > 120 ||
-        this.areaHa == null || !Number.isFinite(this.areaHa) || this.areaHa <= 0 ||
-        this.areaHa > 999999.9999 ||
-        Math.abs(this.areaHa * 10000 - Math.round(this.areaHa * 10000)) > 0.000001 ||
+        this.areaM2 == null || !Number.isInteger(this.areaM2) ||
+        this.areaM2 < 1 || this.areaM2 > 9999999999 ||
+        this.referencia.length > 300 || this.observacion.length > 500 ||
         !/^\d{6}$/.test(this.distrito)) {
-      this.error.set('Complete nombre, superficie mayor que cero (máximo 4 decimales) y distrito obligatorio.'); return;
+      this.error.set('Complete el nombre, la superficie en m² y el distrito.'); return;
     }
     if ((this.latitud === null) !== (this.longitud === null) ||
         this.latitud !== null && (!Number.isFinite(this.latitud) || Math.abs(this.latitud) > 90) ||
@@ -96,11 +106,12 @@ export class GpParcelaForm {
     }
     const current = this.editing();
     const common = {
-      nombre: this.nombre.trim(), areaHa: this.areaHa, distritoCodigo: this.distrito,
+      nombre: this.nombre.trim(), areaHa: this.areaM2! / 10000, distritoCodigo: this.distrito,
+      referencia: this.referencia.trim() || null, observacion: this.observacion.trim() || null,
       centroPobladoId: this.centroPoblado,
       latitud: this.latitud, longitud: this.longitud,
     };
-    const payload = JSON.stringify({ uot, parcelaId: current?.parcelaId ?? null, predioId: this.predioId, ...common });
+    const payload = JSON.stringify({ uot, productorId: this.productorId, parcelaId: current?.parcelaId ?? null, predioId: this.predioId, ...common });
     if (this.ultimoPayload !== payload || this.ultimoRequestId === null) {
       this.ultimoPayload = payload;
       this.ultimoRequestId = crypto.randomUUID();
@@ -110,7 +121,9 @@ export class GpParcelaForm {
     this.error.set(null);
     const operation = current
       ? this.gp.editarParcela(uot, current.parcelaId, common, clave)
-      : this.gp.crearParcela(uot, { ...common, predioId: this.predioId }, clave);
+      : this.productorId !== null
+        ? this.gp.crearParcelaProductor(uot, this.productorId, common, clave)
+        : this.gp.crearParcela(uot, { ...common, predioId: this.predioId }, clave);
     operation.pipe(finalize(() => this.saving.set(false))).subscribe({
       next: () => { this.toast.success(current ? 'Parcela actualizada' : 'Parcela registrada'); this.finish(true); },
       error: e => this.error.set(mapOpenApiError(e).message),

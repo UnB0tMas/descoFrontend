@@ -1,0 +1,19 @@
+<div class="desco-list-toolbar" [class.desco-list-toolbar--institutional]="appearance === 'institutional'"
+  [class.desco-list-toolbar--inline]="layout === 'inline'">
+  @if (showSearch) {
+    <label class="desco-list-toolbar__search">
+      <fa-icon [icon]="searchIcon" aria-hidden="true" />
+      <input #searchInput type="search" [value]="search" [placeholder]="searchPlaceholder"
+        [attr.aria-label]="searchPlaceholder" [disabled]="busy" (input)="searchChange.emit(searchInput.value)" />
+    </label>
+  }
+  <div class="desco-list-toolbar__filters"><ng-content select="[toolbarFilters]" /></div>
+  <div class="desco-list-toolbar__actions">
+    <ng-content select="[toolbarActions]" />
+    @if (showRefresh) {
+      <button type="button" class="admin-secondary-button desco-list-toolbar__refresh" [disabled]="busy"
+        title="Actualizar" aria-label="Actualizar" (click)="refresh.emit()"><fa-icon [icon]="refreshIcon" /></button>
+    }
+    @if (showViewSwitch) { <app-list-view-switch [appearance]="appearance === 'institutional' ? 'segmented' : 'default'" [view]="view" [disabled]="busy" (viewChange)="viewChange.emit($event)" /> }
+  </div>
+</div>

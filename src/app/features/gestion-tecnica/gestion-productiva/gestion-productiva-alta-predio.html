@@ -11,42 +11,22 @@
     <div class="gp-fundo-scroll">
       @if (error()) { <div class="admin-inline-error" role="alert">{{error()}}</div> }
 
-      <section class="gp-fundo-section" aria-labelledby="fundo-persona-title">
-        <div class="gp-fundo-section-title"><span class="gp-fundo-step">1</span><div><h3 id="fundo-persona-title">Titular principal</h3></div></div>
-        @if (selected(); as p) {
-          <div class="gp-person-selected gp-fundo-selected">
-            <div><strong>{{p.nombreCompleto}}</strong><small>{{p.tipoDocumento}} · {{p.numeroDocumento}}</small></div>
-            <button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="changePerson()">Cambiar persona</button>
-          </div>
-        } @else {
-          <app-person-lookup idPrefix="fundo-buscar" [documentTypes]="documentTypes"
-            [documentType]="personForm.controls.tipoDocumento.value" [documentNumber]="personForm.controls.numeroDocumento.value"
-            [maxLength]="documentMaxLength()" [inputMode]="personForm.controls.tipoDocumento.value === 'DNI' ? 'numeric' : 'text'"
-            [canSearch]="canSearchPerson()" [searching]="loading() || identityLoading()" [disabled]="saving()"
-            [message]="identityMessage()"
-            (documentTypeChange)="changeLookupType($event)" (documentNumberChange)="changeLookupNumber($event)"
-            (searchRequested)="search()" (manualRequested)="openPersonaModal('principal','manual')" />
-          @if (persons().length > 0) {
-            <div class="gp-fundo-results" role="list" aria-label="Personas encontradas">
-              @for (p of persons(); track p.personaId) {
-                <button type="button" class="gp-person-row" role="listitem" (click)="select(p)"><strong>{{p.nombreCompleto}}</strong><span>{{p.tipoDocumento}} · {{p.numeroDocumento}}</span></button>
-              }
+      @if (selected()) {
+        <section class="gp-fundo-section desco-aligned-form" aria-labelledby="fundo-datos-title">
+          <div class="gp-fundo-section-title"><span class="gp-fundo-step">1</span><div><h3 id="fundo-datos-title">Datos del fundo o predio</h3></div></div>
+          @if (selected(); as p) {
+            <div class="gp-person-selected gp-fundo-selected">
+              <div><strong>{{p.nombreCompleto}}</strong><small>Titular principal · {{p.tipoDocumento}} · {{p.numeroDocumento}}</small></div>
+              <button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="openPersonaModal('principal')">Cambiar persona</button>
             </div>
           }
-          @if (searched() && persons().length === 0) { <p class="gp-subtle">No se encontró la persona.</p> }
-        }
-      </section>
-
-      @if (selected()) {
-        <section class="gp-fundo-section" aria-labelledby="fundo-datos-title">
-          <div class="gp-fundo-section-title"><span class="gp-fundo-step">2</span><div><h3 id="fundo-datos-title">Datos del fundo o predio</h3></div></div>
-          <div class="gp-form-grid">
-            <div class="admin-field">
+          <div class="gp-form-grid desco-aligned-form__grid">
+            <div class="admin-field desco-aligned-form__field">
               <label for="fundoNombre">Nombre del fundo o predio</label>
               <input id="fundoNombre" class="admin-input" [(ngModel)]="nombre" (blur)="buscarFundos()" maxlength="140" placeholder="Ej. Fundo Santa Rosa" />
             </div>
-            <div class="admin-field">
-              <label for="fundoReferencia">Referencia <span class="gp-fundo-optional">(opcional)</span></label>
+            <div class="admin-field desco-aligned-form__field">
+              <label for="fundoReferencia">Referencia <span class="gp-fundo-optional desco-aligned-form__optional">(opcional)</span></label>
               <input id="fundoReferencia" class="admin-input" [(ngModel)]="referencia" maxlength="250" placeholder="Sector, camino o punto de referencia" />
             </div>
           </div>
@@ -57,44 +37,22 @@
               @for (p of prediosExistentes(); track p.predioId) { <div class="gp-inline-note">{{p.nombre}} · {{p.distritoCodigo}}</div> }
             </div>
           }
-          <div class="gp-fundo-subtitle">Características productivas</div>
-          <div class="gp-form-grid gp-fundo-characteristics">
-            <label class="admin-field" for="fundoAreaTotal">Superficie total (ha) *
+          <div class="gp-fundo-subtitle">Datos generales del fundo</div>
+          <div class="gp-form-grid gp-fundo-characteristics desco-aligned-form__grid">
+            <div class="admin-field desco-aligned-form__field">
+              <label for="fundoAreaTotal">Superficie total (ha) *</label>
               <input id="fundoAreaTotal" name="areaTotalHa" type="number" inputmode="decimal" min="0.0001" max="999999.9999" step="0.0001"
                 class="admin-input" [(ngModel)]="areaTotalHa" required />
-            </label>
-            <label class="admin-field" for="fundoAreaCultivable">Superficie cultivable (ha) *
-              <input id="fundoAreaCultivable" name="areaCultivableHa" type="number" inputmode="decimal" min="0" max="999999.9999" step="0.0001"
-                class="admin-input" [(ngModel)]="areaCultivableHa" required />
-            </label>
-            <label class="admin-field gp-fundo-wide" for="fundoTipoRiego">Tipo de riego *
-              <input id="fundoTipoRiego" name="tipoRiego" class="admin-input" maxlength="30" [(ngModel)]="tipoRiego"
-                placeholder="Ej. Gravedad, goteo o sin riego" required />
-            </label>
-          </div>
-          <div class="gp-form-grid gp-fundo-characteristics">
-            <label class="admin-field" for="fundoAltitud">Altitud (m) <span class="gp-fundo-optional">Opcional</span>
+            </div>
+            <div class="admin-field desco-aligned-form__field">
+              <label for="fundoAltitud">Altitud (m) <span class="gp-fundo-optional desco-aligned-form__optional">(opcional)</span></label>
               <input id="fundoAltitud" type="number" min="-500" max="7000" step="0.01" class="admin-input" [(ngModel)]="altitudM" />
-            </label>
-            <label class="admin-field" for="fundoFuente">Fuente de agua <span class="gp-fundo-optional">Opcional</span>
-              <input id="fundoFuente" maxlength="150" class="admin-input" [(ngModel)]="fuenteAgua" />
-            </label>
-            <label class="admin-field gp-fundo-wide" for="fundoInfraestructura">Infraestructura <span class="gp-fundo-optional">Opcional</span>
-              <textarea id="fundoInfraestructura" rows="2" maxlength="300" class="admin-textarea" [(ngModel)]="infraestructura"></textarea>
-            </label>
-            <label class="admin-field gp-fundo-wide" for="fundoObservacion">Observaciones <span class="gp-fundo-optional">Opcional</span>
-              <textarea id="fundoObservacion" rows="2" maxlength="500" class="admin-textarea" [(ngModel)]="observacion"></textarea>
-            </label>
-            <label class="admin-field" for="fundoFechaRegistro">Fecha de registro
-              <input id="fundoFechaRegistro" type="date" class="admin-input" [(ngModel)]="fechaRegistro" [max]="today" />
-            </label>
-            <label class="admin-field" for="fundoVigencia">Vigencia de características
-              <input id="fundoVigencia" type="date" class="admin-input" [(ngModel)]="fechaDesde" [min]="fechaRegistro" [max]="today" />
-            </label>
+            </div>
+            <div class="admin-field gp-fundo-wide desco-aligned-form__field desco-aligned-form__wide">
+              <label for="fundoDetalle">Detalles <span class="gp-fundo-optional desco-aligned-form__optional">(opcional)</span></label>
+              <textarea id="fundoDetalle" rows="2" maxlength="500" class="admin-textarea" [(ngModel)]="detalle"></textarea>
+            </div>
           </div>
-          @if (areaTotalHa !== null && areaCultivableHa !== null && areaCultivableHa > areaTotalHa) {
-            <p class="gp-fundo-validation" role="alert">La superficie cultivable no puede superar la superficie total.</p>
-          }
           <div class="gp-fundo-subtitle">Titularidad</div>
           <div class="gp-fundo-owners">
             <label class="admin-field">Tipo de titularidad del principal
@@ -133,7 +91,7 @@
               </div>
             } @else {
               <button type="button" class="admin-secondary-button gp-fundo-add-button" [disabled]="saving() || restanteTitularidad() <= .01"
-                (click)="openPersonaModal('adicional','lookup')">Agregar otro titular</button>
+                (click)="openPersonaModal('adicional')">Agregar otro titular</button>
             }
           </div>
           <div class="gp-fundo-subtitle">Ubicación geográfica</div>
@@ -147,7 +105,7 @@
       }
     </div>
 
-    <footer class="gp-modal-footer gp-fundo-footer">
+    <footer class="gp-modal-footer gp-fundo-footer desco-compact-modal-actions">
       <button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="close()">Cancelar</button>
       <button type="button" class="admin-primary-button" [disabled]="!puedeGuardar()" (click)="save()">
         <fa-icon [icon]="saveIcon" /> {{saving() ? 'Guardando…' : 'Guardar fundo / predio'}}

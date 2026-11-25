@@ -1,0 +1,83 @@
+<section class="desco-page proveedores-page">
+  <app-page-header title="Proveedores" eyebrow="Administración" subtitle="Personas y empresas proveedoras de la UOT." [icon]="icon">
+    <div pageActions class="flex flex-wrap gap-2">
+      <button class="admin-secondary-button" type="button" (click)="load()" [disabled]="loading()">
+        <fa-icon [icon]="refreshIcon" /> Actualizar
+      </button>
+      <button *appPermission="'ORGANIZACIONES_CREAR'" class="admin-primary-button" type="button" (click)="add()">
+        <fa-icon [icon]="addIcon" /> Nuevo proveedor
+      </button>
+    </div>
+  </app-page-header>
+  <section class="admin-surface proveedores-content">
+    <form class="proveedores-toolbar" (submit)="$event.preventDefault();find()">
+      <label class="admin-field"><span>Buscar</span>
+        <input class="admin-input" type="search" [value]="search()" (input)="search.set($any($event.target).value)" placeholder="Nombre o documento" />
+      </label>
+      <label class="admin-field"><span>Tipo</span>
+        <select class="admin-select" [value]="type()" (change)="filter($any($event.target).value)">
+          <option value="">Todos</option><option value="PERSONA">Persona</option><option value="EMPRESA">Empresa</option>
+        </select>
+      </label>
+      <button class="admin-secondary-button" type="submit" [disabled]="loading()"><fa-icon [icon]="searchIcon" /> Buscar</button>
+      <app-list-view-switch appearance="segmented" [view]="mode()" (viewChange)="mode.set($event)" />
+    </form>
+    @if(loading()){<app-loading-state title="Cargando proveedores" [rows]="4" />}
+    @else if(error()){<app-error-state [message]="error() || 'No se pudo consultar.'" (retry)="load()" />}
+    @else if(rows().length===0){<app-empty-state title="Sin proveedores" message="No hay registros con los filtros seleccionados." />}
+    @else if(mode()==='table'){
+      <div class="admin-table-wrap" tabindex="0" role="region" aria-label="Listado de proveedores">
+        <table class="admin-table"><thead><tr><th>Proveedor</th><th>Tipo</th><th>Documento</th><th>Contacto</th><th>Estado</th><th>Acciones</th></tr></thead>
+          <tbody>@for(row of rows();track row.id){<tr>
+            <td>{{row.nombre}}</td><td>{{row.tipo==='EMPRESA'?'Empresa':'Persona'}}</td>
+            <td>{{row.tipoDocumento}} {{row.documento}}</td><td>{{row.telefono||row.correo||'—'}}</td>
+            <td>{{row.estado?'Activo':'Inactivo'}}</td><td>
+              <div class="admin-row-actions proveedores-actions">
+                @if(row.estado){
+                  <button class="admin-icon-button" type="button" title="Editar proveedor" aria-label="Editar proveedor"
+                    [disabled]="!canEdit()||saving()" (click)="edit(row)"><fa-icon [icon]="editIcon" /></button>
+                  <button class="admin-icon-button admin-icon-button--danger" type="button" title="Eliminar proveedor" aria-label="Eliminar proveedor"
+                    [disabled]="!canEdit()||saving()" (click)="requestRemoval(row)"><fa-icon [icon]="removeIcon" /></button>
+                }@else{
+                  <button class="admin-icon-button admin-icon-button--success" type="button" title="Restaurar proveedor" aria-label="Restaurar proveedor"
+                    [disabled]="!canEdit()||saving()" (click)="toggle(row)"><fa-icon [icon]="restoreIcon" /></button>
+                }
+              </div>
+            </td></tr>}</tbody>
+        </table>
+      </div>
+    }@else{
+      <div class="desco-record-grid proveedores-grid">
+        @for(row of rows();track row.id){
+          <app-record-card><div class="proveedores-card-top"><fa-icon [icon]="row.tipo==='EMPRESA'?companyIcon:personIcon" />
+            <span class="admin-status">{{row.tipo==='EMPRESA'?'Empresa':'Persona'}}</span>
+            <span class="admin-status">{{row.estado?'Activo':'Inactivo'}}</span></div>
+            <h3>{{row.nombre}}</h3><p>{{row.tipoDocumento}} · {{row.documento}}</p>
+            <p>{{row.telefono||'Sin teléfono'}} · {{row.correo||'Sin correo'}}</p>
+            <footer><div class="admin-row-actions proveedores-actions">
+                @if(row.estado){
+                  <button class="admin-icon-button" type="button" title="Editar proveedor" aria-label="Editar proveedor"
+                    [disabled]="!canEdit()||saving()" (click)="edit(row)"><fa-icon [icon]="editIcon" /></button>
+                  <button class="admin-icon-button admin-icon-button--danger" type="button" title="Eliminar proveedor" aria-label="Eliminar proveedor"
+                    [disabled]="!canEdit()||saving()" (click)="requestRemoval(row)"><fa-icon [icon]="removeIcon" /></button>
+                }@else{
+                  <button class="admin-icon-button admin-icon-button--success" type="button" title="Restaurar proveedor" aria-label="Restaurar proveedor"
+                    [disabled]="!canEdit()||saving()" (click)="toggle(row)"><fa-icon [icon]="restoreIcon" /></button>
+                }
+              </div></footer></app-record-card>
+        }
+      </div>
+    }
+    @if(!loading()&&!error()){
+      <app-paginator [page]="page()" [size]="size()" [totalRecords]="total()" [totalPages]="pages()"
+        (pageChange)="load($event)" (sizeChange)="changeSize($event)" />
+    }
+  </section>
+  <app-entity-registration-modal />
+  @if(pendingRemoval()){
+    <app-inline-confirm-dialog title="Eliminar proveedor"
+      message="El proveedor dejará de estar disponible para nuevos registros. Su historial se conservará."
+      confirmLabel="Eliminar" cancelLabel="Cancelar" tone="warning"
+      (confirmed)="confirmRemoval()" (cancelled)="pendingRemoval.set(null)" />
+  }
+</section>

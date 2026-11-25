@@ -1,3 +1,8 @@
 :host {
   display: contents;
 }
+
+.admin-employee-picker { display: grid; gap: .7rem; width: 100%; min-width: 0; }
+.admin-employee-picker .admin-input,
+.admin-employee-picker .admin-select { width: 100%; min-width: 0; min-height: 2.7rem; box-sizing: border-box; }
+.admin-employee-picker .admin-select { padding-inline: .8rem 2.4rem; }

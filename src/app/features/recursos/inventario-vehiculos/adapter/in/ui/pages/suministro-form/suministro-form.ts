@@ -18,6 +18,9 @@ import {
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
 import { finalize, Observable } from 'rxjs';
+import { ResourceIdentityFieldsComponent } from '../../../../../../../../shared/forms/resource-identity-fields/resource-identity-fields';
+import { ResourceApiService } from '../../../../../../shared/resource-api.service';
+import { ResourceProductListItemResponse } from '../../../../../../../../infrastructure/openapi/generated/model/resourceProductListItemResponse';
 
 import { ReferenceDataService } from '../../../../../../../../core/reference-data/reference-data.service';
 import { SupplySummaryResponse } from '../../../../../../../../infrastructure/openapi/generated/model/supplySummaryResponse';
@@ -38,7 +41,7 @@ type SupplyFormMode = 'create' | 'edit' | 'movement';
 @Component({
   selector: 'app-suministro-form',
   standalone: true,
-  imports: [DialogBackdropDirective, ReactiveFormsModule, FaIconComponent, FormErrorComponent],
+  imports: [DialogBackdropDirective, ReactiveFormsModule, FaIconComponent, FormErrorComponent, ResourceIdentityFieldsComponent],
   templateUrl: './suministro-form.html',
   styleUrl: './suministro-form.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -49,6 +52,7 @@ export class SuministroFormComponent {
 
   private readonly fb = inject(FormBuilder);
   private readonly api = inject(SupplyApiService);
+  private readonly productsApi = inject(ResourceApiService);
   private readonly refs = inject(ReferenceDataService);
   private readonly toast = inject(ToastService);
   readonly uot = inject(UotContextStore);
@@ -58,6 +62,7 @@ export class SuministroFormComponent {
   readonly saving = signal(false);
   readonly referencesLoading = signal(false);
   readonly units = signal<readonly { code: string; label: string }[]>([]);
+  readonly products = signal<readonly ResourceProductListItemResponse[]>([]);
   readonly errorMessage = signal<string | null>(null);
 
   readonly addIcon = faBoxOpen;
@@ -71,6 +76,7 @@ export class SuministroFormComponent {
   readonly form = this.fb.nonNullable.group({
     uotId: [0, [Validators.required, Validators.min(1)]],
     codigo: ['', [Validators.maxLength(40)]],
+    productoId: [0],
     nombre: ['', [Validators.required, notBlankValidator, Validators.maxLength(150)]],
     unidadMedida: ['', [Validators.required, notBlankValidator, Validators.maxLength(20)]],
     stockInicial: [0, [Validators.required, Validators.min(0), decimalPrecisionValidator(11, 3)]],
@@ -92,6 +98,7 @@ export class SuministroFormComponent {
     this.form.reset({
       uotId: this.resolveCreateUotId(preferredUotId),
       codigo: '',
+      productoId: 0,
       nombre: '',
       unidadMedida: 'UND',
       stockInicial: 0,
@@ -105,8 +112,12 @@ export class SuministroFormComponent {
     }
     this.form.controls.codigo.disable({ emitEvent: false });
     this.form.controls.stockInicial.enable({ emitEvent: false });
+    this.form.controls.productoId.enable({ emitEvent: false });
+    this.form.controls.nombre.enable({ emitEvent: false });
+    this.form.controls.unidadMedida.enable({ emitEvent: false });
 
     this.loadUnits();
+    this.loadProducts();
     return this.show();
   }
 
@@ -117,6 +128,7 @@ export class SuministroFormComponent {
     this.form.reset({
       uotId: Number(item.uotId ?? 0),
       codigo: item.codigo ?? '',
+      productoId: item.productoId ?? 0,
       nombre: item.nombre ?? '',
       unidadMedida: item.unidadMedida ?? 'UND',
       stockInicial: Number(item.stockActual ?? item.stock ?? 0),
@@ -125,7 +137,11 @@ export class SuministroFormComponent {
     this.form.controls.uotId.disable({ emitEvent: false });
     this.form.controls.codigo.disable({ emitEvent: false });
     this.form.controls.stockInicial.disable({ emitEvent: false });
+    this.form.controls.productoId.disable({ emitEvent: false });
+    this.form.controls.nombre[item.productoId ? 'disable' : 'enable']({ emitEvent: false });
+    this.form.controls.unidadMedida[item.productoId ? 'disable' : 'enable']({ emitEvent: false });
     this.loadUnits();
+    this.loadProducts();
     return this.show();
   }
 
@@ -150,6 +166,42 @@ export class SuministroFormComponent {
 
   onUotChange(): void {
     this.form.controls.codigo.setValue('', { emitEvent: false });
+    this.onProductChange('0');
+    this.form.controls.nombre.setValue('');
+    this.form.controls.unidadMedida.setValue('UND');
+    this.products.set([]);
+    this.loadProducts();
+  }
+
+  private loadProducts(): void {
+    const uotId = Number(this.form.getRawValue().uotId);
+    if (uotId <= 0) return;
+    this.productsApi.listAllProducts(uotId).subscribe({
+      next: (items) => {
+        if (Number(this.form.getRawValue().uotId) === uotId) {
+          this.products.set(items.filter((item) => item.uotId === uotId && item.estado !== false));
+        }
+      },
+      error: () => this.products.set([]),
+    });
+  }
+
+  onProductChange(value: string): void {
+    const id = Number(value) || 0;
+    this.form.controls.productoId.setValue(id);
+    const item = this.products().find((product) => product.productoId === id);
+    if (!item) {
+      this.form.controls.nombre.enable({ emitEvent: false });
+      this.form.controls.unidadMedida.enable({ emitEvent: false });
+      this.form.controls.stockInicial.enable({ emitEvent: false });
+      return;
+    }
+    this.form.controls.nombre.setValue((item.nombre ?? '').slice(0, 150));
+    this.form.controls.unidadMedida.setValue(item.unidadMedidaCodigo ?? '');
+    this.form.controls.stockInicial.setValue(0);
+    this.form.controls.nombre.disable({ emitEvent: false });
+    this.form.controls.unidadMedida.disable({ emitEvent: false });
+    this.form.controls.stockInicial.disable({ emitEvent: false });
   }
 
   title(): string {
@@ -192,8 +244,9 @@ export class SuministroFormComponent {
 
     const operation: Observable<unknown> =
       this.mode() === 'edit' && this.current()?.suministroId
-        ? this.api.update(Number(this.current()!.suministroId), {
+          ? this.api.update(Number(this.current()!.suministroId), {
             uotId,
+            productoId: raw.productoId || undefined,
             nombre: normalizeText(raw.nombre),
             unidadMedida: raw.unidadMedida.trim().toUpperCase(),
             stockMinimo: Number(raw.stockMinimo),
@@ -201,6 +254,7 @@ export class SuministroFormComponent {
         : this.api.create({
             uotId,
             codigo: undefined,
+            productoId: raw.productoId || undefined,
             nombre: normalizeText(raw.nombre),
             unidadMedida: raw.unidadMedida.trim().toUpperCase(),
             stockInicial: Number(raw.stockInicial),

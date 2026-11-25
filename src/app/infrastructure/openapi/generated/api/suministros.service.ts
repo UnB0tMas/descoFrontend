@@ -73,6 +73,7 @@ export interface SuministrosUotKardexRequestParams {
 
 export interface SuministrosUotListarRequestParams {
     uotId?: number;
+    buscar?: string;
     pagina?: number;
     tamano?: number;
     /** Identificador UUID de correlación. Si no se envía, el backend genera uno y lo devuelve en la respuesta. */
@@ -383,6 +384,7 @@ export class SuministrosService extends BaseService {
     public suministrosUotListar(requestParameters?: SuministrosUotListarRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<ApiResponsePageResponseSupplySummaryResponse>>;
     public suministrosUotListar(requestParameters?: SuministrosUotListarRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
         const uotId = requestParameters?.uotId;
+        const buscar = requestParameters?.buscar;
         const pagina = requestParameters?.pagina;
         const tamano = requestParameters?.tamano;
         const xCorrelationId = requestParameters?.xCorrelationId;
@@ -398,6 +400,14 @@ export class SuministrosService extends BaseService {
             true,
         );
 
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'buscar',
+            <any>buscar,
+            QueryParamStyle.Form,
+            true,
+        );
 
         localVarQueryParameters = this.addToHttpParams(
             localVarQueryParameters,

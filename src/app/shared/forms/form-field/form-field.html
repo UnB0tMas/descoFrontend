@@ -1,0 +1,10 @@
+<div class="desco-form-field" [class.desco-form-field--invalid]="!!error">
+  @if (label) {
+    <label class="desco-form-field__label" [attr.for]="forId">
+      {{ label }} @if (required) { <span aria-hidden="true">*</span> }
+    </label>
+  }
+  <div class="desco-form-field__control"><ng-content /></div>
+  @if (error) { <p class="desco-form-field__error" role="alert">{{ error }}</p> }
+  @else if (hint) { <p class="desco-form-field__hint">{{ hint }}</p> }
+</div>

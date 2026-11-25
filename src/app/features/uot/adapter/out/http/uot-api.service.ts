@@ -200,6 +200,10 @@ export class UotApiService {
       .pipe(map((response) => unwrapApiResponse(response)));
   }
 
+  assignAccess(uotId: number, body: UotAssignUserRequest & { rolId: number }) {
+    return this.assignUser(uotId, body);
+  }
+
   assignRole(uotId: number, body: UotAssignRoleRequest) {
     return this.api
       .uotAsignarRol(

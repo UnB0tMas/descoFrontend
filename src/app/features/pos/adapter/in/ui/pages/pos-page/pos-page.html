@@ -1,6 +1,6 @@
 <div class="desco-page pos-page">
   <app-page-header
-    title="Punto de venta"
+    [title]="activeView()==='venta'?'Punto de venta':'Historial de ventas'"
     eyebrow="POS"
     [subtitle]="uot.label()"
     [icon]="pageIcon"
@@ -10,7 +10,7 @@
         type="button"
         class="admin-secondary-button"
         [disabled]="contextLoading() || catalogLoading() || processing()"
-        (click)="loadContext()"
+        (click)="refreshPage()"
       >
         <fa-icon [icon]="refreshIcon" />
         Actualizar
@@ -18,10 +18,15 @@
     </div>
   </app-page-header>
 
-  <nav class="admin-tabs pos-mode-nav mt-5" aria-label="Gestión de ventas">
-    <button type="button" [class.active]="activeView() === 'venta'" (click)="changeView('venta')">Venta POS</button>
-    <button type="button" [class.active]="activeView() === 'historial'" (click)="changeView('historial')">Gestor de ventas</button>
-  </nav>
+  @if (activeView()==='venta') {
+    <section class="pos-register-status" aria-live="polite">
+      @if(cajaLoading()){<span>Consultando caja activa…</span>}
+      @else if(cajaActiva();as caja){<span class="pos-register-status__on">Caja disponible: {{caja.caja}} · Turno #{{caja.sesionId}}</span>}
+      @else if(permissions.has('POS_SIN_CAJA')){<span class="pos-register-status__on">Venta autorizada</span>}
+      @else {<span class="pos-register-status__off">No tienes una caja abierta.</span>}
+      @if (permissions.has('CAJAS_ABRIR')) {<a routerLink="/pos/cajas" class="admin-primary-button">{{cajaActiva()?'Mi caja':'Abrir caja'}}</a>}
+    </section>
+  }
 
   @if (contextError()) {
     <app-error-state
@@ -31,7 +36,7 @@
   } @else if (contextLoading()) {
     <app-loading-state
       title="Preparando POS"
-      message="Consultando almacenes y métodos de pago."
+      message=""
     />
   } @else {
     @if (activeView() === 'venta') {
@@ -73,6 +78,9 @@
               (documentNumberChange)="onCustomerDocumentInput($event)"
               (searchRequested)="resolveCustomer()" />
           </div>
+          <button type="button" class="admin-secondary-button pos-customer-add"
+            [disabled]="customerLoading() || processing() || cart.locked()"
+            (click)="openCustomerModal()">Agregar / registrar cliente</button>
           @if (cart.customer(); as customer) {
             <div class="pos-customer-result" role="status">
               <fa-icon [icon]="customerIcon" />
@@ -137,7 +145,7 @@
                     </div>
                     <footer>
                       <button type="button" class="admin-primary-button admin-primary-button--small"
-                        [disabled]="cart.locked() || processing() || product.stockAvailable <= 0"
+                        [disabled]="!puedeOperar() || cart.locked() || processing() || product.stockAvailable <= 0"
                         (click)="add(product)"><fa-icon [icon]="plusIcon" /> Agregar</button>
                     </footer>
                   </app-record-card>
@@ -189,7 +197,7 @@
               <strong>Registro de venta pendiente de confirmar.</strong>
             }
             <span>
-              El carrito está bloqueado para evitar duplicados. Reanude la operación sin modificarlo.
+              Termina la venta pendiente para continuar.
             </span>
           </div>
         }
@@ -197,12 +205,6 @@
         <div class="pos-cart__items">
           @for (item of cart.items(); track item.productId) {
             <article class="pos-cart-item">
-              <app-pos-product-image
-                [fileId]="item.imageFileId"
-                [imageUrl]="item.imageUrl"
-                [alt]="item.name"
-              />
-
               <div class="pos-cart-item__body">
                 <div class="pos-cart-item__heading">
                   <div>
@@ -304,11 +306,6 @@
             </div>
           }
 
-          @if (lastSaleId()) {
-            <div class="pos-success-note">Venta #{{ lastSaleId() }} confirmada</div>
-            <button type="button" class="admin-secondary-button" (click)="openReceipt(lastSaleId()!)">Ver comprobante</button>
-          }
-
           <button
             type="button"
             class="admin-primary-button pos-checkout-button"
@@ -329,11 +326,32 @@
 
     @if (activeView() === 'historial') {
       <section class="admin-surface pos-operation-panel">
+        @if(permissions.has('VENTAS_REPORTES')) {
+          <div class="pos-reports">
+            <header><strong>Reporte de ventas</strong></header>
+            <div class="pos-report-controls">
+              <label>Resumen<select class="admin-select" [value]="reporteGrupo()" (change)="reporteGrupo.set($any($event.target).value);loadReport()"><option value="DIA">Diario</option><option value="MES">Mensual</option></select></label>
+              <label>Desde<input type="date" class="admin-input" [value]="reporteDesde()" (change)="reporteDesde.set($any($event.target).value)" /></label>
+              <label>Hasta<input type="date" class="admin-input" [value]="reporteHasta()" (change)="reporteHasta.set($any($event.target).value)" /></label>
+              <button type="button" class="admin-secondary-button" [disabled]="reporteLoading()" (click)="loadReport()">Consultar</button>
+              <button type="button" class="admin-secondary-button" [disabled]="!reporte().length" (click)="exportReport()">Exportar CSV</button>
+            </div>
+            @if(reporteError()){<div class="admin-inline-error">{{reporteError()}}</div>}
+            @if(reporte().length){<div class="pos-report-scroll"><table class="pos-report-table"><thead><tr><th>Período</th><th>Ventas</th><th>Vendido (PEN)</th><th>Cobrado (PEN)</th><th>Efectivo (PEN)</th></tr></thead><tbody>
+              @for(f of reporte();track f.periodo){<tr><td>{{f.periodo}}</td><td>{{f.cantidad}}</td><td>{{f.vendido|number:'1.2-2'}}</td><td>{{f.cobrado|number:'1.2-2'}}</td><td>{{f.efectivo|number:'1.2-2'}}</td></tr>}
+            </tbody></table></div>}
+          </div>
+        }
         <header class="pos-section-header"><div class="pos-section-heading"><span class="pos-section-icon"><fa-icon [icon]="pageIcon" /></span>
           <div><strong>Gestor de ventas</strong></div></div>
           <button type="button" class="admin-secondary-button" [disabled]="historyLoading()" (click)="loadHistory()">
             <fa-icon [icon]="refreshIcon" /> Actualizar</button>
         </header>
+        @if(permissions.has('VENTAS_TODAS_VER')){
+          <label class="pos-field"><input type="checkbox" [checked]="historialCompleto()"
+            (change)="historialCompleto.set($any($event.target).checked);loadHistory()" />
+            Consultar historial completo de ventas de la UOT</label>
+        }
         <div class="pos-sales-kpis">
           <div><small>Ventas listadas</small><strong>{{ salesCount() }}</strong></div>
           <div><small>Total vendido</small><strong>{{ salesTotal() | number:'1.2-2' }}</strong></div>
@@ -351,9 +369,23 @@
             (viewChange)="setHistoryView($event)" />
         </div>
         @if (historyView() === 'table') {
+          <ng-template #historyReceiptAction let-sale>
+            <div class="pos-history-row-actions">
+              <button type="button" class="admin-icon-button" aria-label="Ver venta" title="Ver venta"
+                [disabled]="saleActionId() !== null" (click)="viewSale(sale.saleId)">
+                <fa-icon [icon]="searchIcon" />
+              </button>
+              @if (permissions.has('COMPROBANTES_VER') || permissions.has('POS_OPERAR')) {
+                <button type="button" class="admin-icon-button" aria-label="Reimprimir comprobante"
+                  title="Reimprimir comprobante" [disabled]="receiptLoading()" (click)="openReceipt(sale.saleId)">
+                  <fa-icon [icon]="printIcon" />
+                </button>
+              }
+            </div>
+          </ng-template>
           <app-data-table appearance="admin" [columns]="saleColumns" [rows]="historyPageItems()"
-            [loading]="historyLoading()" [rowClickable]="true" trackByKey="saleId"
-            emptyMessage="Sin ventas" (rowClick)="viewSale($event.saleId)" />
+            [loading]="historyLoading()" [rowClickable]="false" trackByKey="saleId"
+            [cellTemplates]="{ acciones: historyReceiptAction }" emptyMessage="Sin ventas" />
         } @else if (historyLoading()) {
           <app-loading-state title="Cargando ventas" message="" />
         } @else {
@@ -373,9 +405,11 @@
                 </dl>
                 <footer class="pos-sales-card-actions">
                   <button type="button" class="admin-secondary-button"
-                    [disabled]="saleActionId() !== null" (click)="viewSale(sale.saleId)">Ver detalle</button>
-                  <button type="button" class="admin-secondary-button"
-                    [disabled]="receiptLoading()" (click)="openReceipt(sale.saleId)">Comprobante</button>
+                    [disabled]="saleActionId() !== null" (click)="viewSale(sale.saleId)" aria-label="Ver detalle" title="Ver detalle"><fa-icon [icon]="searchIcon" /></button>
+                  @if(permissions.has('COMPROBANTES_VER') || permissions.has('POS_OPERAR')) {
+                    <button type="button" class="admin-secondary-button"
+                      [disabled]="receiptLoading()" (click)="openReceipt(sale.saleId)" title="Reimprimir comprobante" aria-label="Reimprimir comprobante"><fa-icon [icon]="printIcon" /> Reimprimir</button>
+                  }
                 </footer>
               </app-record-card>
             } @empty {
@@ -405,7 +439,17 @@
                 <span>{{ line.quantity | number:'1.0-3' }} × {{ line.unitPrice | number:'1.2-2' }}</span>
                 <span>{{ line.subtotal | number:'1.2-2' }}</span></div>
             }
-            @if (detail.sale.balance > 0 && detail.sale.state !== 'ANULADA' && detail.sale.state !== 'ENTREGADA') {
+            <div class="pos-operation-grid">
+              <strong>Pagos registrados</strong>
+              @for(p of detail.payments;track p.paymentId){
+                <div class="pos-operation-line">
+                  <span>{{p.method}}</span><strong>{{p.amount|number:'1.2-2'}}</strong>
+                  <span>{{p.status}} @if(p.operationNumber){ · Ref. {{p.operationNumber}} }
+                    @if(p.archivoId){ · Foto registrada #{{p.archivoId}} }</span>
+                </div>
+              } @empty { <p>No se registraron pagos.</p> }
+            </div>
+            @if (permissions.has('POS_OPERAR') && puedeOperar() && detail.sale.balance > 0 && detail.sale.state !== 'ANULADA' && detail.sale.state !== 'ENTREGADA') {
               <div class="pos-operation-grid">
                 <label class="pos-field"><span>Método de pago</span>
                   <select class="admin-select" [value]="paymentForm.controls.paymentMethodId.value"
@@ -415,177 +459,194 @@
                     }
                   </select>
                 </label>
-                @if (selectedPaymentMethod()?.requiresOperationNumber) {
-                  <label class="pos-field"><span>Número de operación</span>
+                @if (selectedPaymentMethod()) {
+                  <label class="pos-field"><span>Código o referencia <em>Opcional</em></span>
                     <input class="admin-input" maxlength="120" [value]="paymentForm.controls.operationNumber.value"
                       (input)="paymentForm.controls.operationNumber.setValue($any($event.target).value)" />
                   </label>
                 }
+                <label class="pos-field"><span>Importe a registrar</span>
+                  <input type="number" min="0.01" [max]="detail.sale.balance" step="0.01" class="admin-input"
+                    [value]="pagoPendienteImporte()" (input)="pagoPendienteImporte.set(+$any($event.target).value)" /></label>
+                <app-e3-file-dropzone title="Fotografía del pago (opcional)" accept="image/jpeg,image/png,image/webp"
+                  fileTypesHint="JPG, PNG o WebP" [maxFiles]="1" [maxSizeMb]="8"
+                  [files]="fotoPagoHistorial()" (filesChange)="fotoPagoHistorial.set($event)"
+                  [uploading]="saleActionId() !== null" (invalid)="historyError.set($event)" />
               </div>
-              <button class="admin-primary-button" type="button" [disabled]="saleActionId() !== null || !selectedPaymentMethod()"
-                (click)="paySelectedSale()">Registrar pago del saldo de {{ detail.sale.balance | number:'1.2-2' }}</button>
+              <button class="admin-primary-button" type="button" [disabled]="saleActionId() !== null || !selectedPaymentMethod() || pagoPendienteImporte()<=0"
+                (click)="paySelectedSale()">Registrar pago parcial o total</button>
             }
-            @if (detail.sale.balance <= 0 && detail.sale.state !== 'ANULADA' && detail.sale.state !== 'ENTREGADA') {
+            @if (permissions.has('POS_OPERAR') && puedeOperar() && detail.sale.balance <= 0 && detail.sale.state !== 'ANULADA' && detail.sale.state !== 'ENTREGADA') {
               <button class="admin-primary-button" type="button" [disabled]="saleActionId() !== null"
                 (click)="deliverSelectedSale()">Confirmar entrega y descontar Kardex</button>
             }
-            @if (detail.sale.paid === 0 && detail.sale.state !== 'ANULADA' && detail.sale.state !== 'ENTREGADA') {
-              <label class="pos-field"><span>Motivo para anular la venta sin pagos</span>
+            @if (permissions.has('VENTAS_EDITAR') && detail.sale.paid === 0 && detail.sale.state !== 'ANULADA' && detail.sale.state !== 'ENTREGADA') {
+              <div class="pos-field"><label for="sale-note">Observación de venta</label>
+                <textarea id="sale-note" class="admin-input" rows="2" maxlength="500"
+                  [value]="saleNote()" (input)="saleNote.set($any($event.target).value)"></textarea>
+                <button type="button" class="admin-secondary-button" [disabled]="!!saleActionId() || !saleNote().trim()"
+                  (click)="saveSaleNote()">Guardar observación</button>
+              </div>
+            }
+            @if (permissions.has('VENTAS_ANULAR') && (puedeOperar() || permissions.has('VENTAS_TODAS_VER')) && detail.sale.state !== 'ANULADA') {
+              <label class="pos-field"><span>Motivo de anulación</span>
                 <input class="admin-input" maxlength="300" [value]="cancelReason()"
                   (input)="cancelReason.set($any($event.target).value)" placeholder="Motivo de al menos 5 caracteres" /></label>
-              <button type="button" class="admin-secondary-button" [disabled]="!!saleActionId() || cancelReason().trim().length < 5"
-                (click)="cancelSelectedSale()">Anular venta</button>
+              @if(detail.sale.paid > 0){
+                <label class="pos-field"><input type="checkbox" [checked]="devolucionConfirmada()"
+                  (change)="devolucionConfirmada.set($any($event.target).checked)" /> Confirmo que se devolvió íntegramente el dinero cobrado al cliente</label>
+              }
+              <button type="button" class="admin-secondary-button" [disabled]="!!saleActionId() || cancelReason().trim().length < 5 || (detail.sale.paid>0 && !devolucionConfirmada())"
+                (click)="cancelSelectedSale()">Anular venta y revertir stock</button>
             }
           </div>
         }
   </div>
 </dialog>
 
-<dialog #checkoutDialog appDialogBackdrop class="modal desco-modal" (cancel)="$event.preventDefault(); closeCheckoutDialog()">
-  <div class="modal-box admin-modal-box pos-checkout-modal">
-    <header class="admin-modal-header"><div class="admin-modal-title-group"><h2>Confirmar cobro</h2></div>
-      <button type="button" class="admin-icon-button" (click)="closeCheckoutDialog()" aria-label="Cerrar"><fa-icon [icon]="closeIcon" /></button></header>
-    <p class="pos-checkout-total">{{ cart.currency() }} {{ cart.total() | number:'1.2-2' }}</p>
-        <section class="pos-payment" [formGroup]="paymentForm">
-          <div class="pos-payment__heading">
-            <div>
-              <fa-icon [icon]="paymentIcon" />
-              <strong>Cobro</strong>
-            </div>
-
+<app-modal-shell #checkoutDialog title="Confirmar cobro" [icon]="receiptIcon" size="wide"
+  [busy]="processing()" (closed)="onCheckoutClosed()">
+  <div class="pos-checkout-content">
+    <div class="pos-checkout-summary">
+      <span>Total a cobrar</span>
+      <strong>{{ cart.currency() }} {{ cart.total() | number:'1.2-2' }}</strong>
+    </div>
+    <section class="pos-payment">
+      <header class="pos-payment__heading"><strong>Medios de pago</strong><small>Puede combinar varios métodos.</small></header>
+      @for(pago of pagos();track $index;let i=$index){
+        <div class="pos-payment-item">
+          <div class="pos-payment-item__head"><strong>Pago {{ i+1 }}</strong>
+            @if(pagos().length>1 && !cart.locked()){
+              <button type="button" class="admin-icon-button" title="Quitar medio de pago"
+                aria-label="Quitar medio de pago" (click)="quitarPago(i)" [disabled]="processing()">
+                <fa-icon [icon]="trashIcon" />
+              </button>
+            }
           </div>
-
-          <div class="pos-payment__fields">
-            <label class="pos-field">
-              <span>Método de pago</span>
-              <select
-                class="admin-select"
-                formControlName="paymentMethodId"
-                [disabled]="processing()"
-              >
-                <option [value]="0">Seleccionar</option>
-                @for (method of paymentMethods(); track method.paymentMethodId) {
-                  <option [value]="method.paymentMethodId">
-                    {{ method.name }}
-                  </option>
-                }
+          <div class="pos-payment-item__grid">
+            <label class="pos-field"><span>Método de pago</span>
+              <select class="admin-select" [value]="pago.paymentMethodId" [disabled]="cart.locked() || processing()"
+                (change)="editarPago(i,'paymentMethodId',$any($event.target).value)">
+                @for(m of paymentMethods();track m.paymentMethodId){<option [value]="m.paymentMethodId">{{m.name}}</option>}
               </select>
             </label>
-
-            @if (selectedPaymentMethod()?.requiresOperationNumber) {
-              <label class="pos-field">
-                <span>Número de operación</span>
-                <input
-                  class="admin-input"
-                  type="text"
-                  maxlength="120"
-                  autocomplete="off"
-                  placeholder="Código o referencia del pago"
-                  formControlName="operationNumber"
-                  [readOnly]="processing()"
-                />
+            <label class="pos-field"><span>Importe</span>
+              <input class="admin-input" type="number" min="0.01" step="0.01" [value]="pago.amount"
+                [readOnly]="cart.locked() || processing()" (input)="editarPago(i,'amount',$any($event.target).value)" />
+            </label>
+            @if(metodoFila(pago.paymentMethodId)?.code!=='EFECTIVO'){
+              <label class="pos-field pos-payment-item__full"><span>Código de operación <em>Opcional</em></span>
+                <input class="admin-input" maxlength="120" [value]="pago.operationNumber"
+                  [readOnly]="cart.locked() || processing()" (input)="editarPago(i,'operationNumber',$any($event.target).value)" />
               </label>
             }
-
-            <label class="pos-field pos-field--full">
-              <span>Observación <em>Opcional</em></span>
-              <textarea
-                class="admin-textarea pos-observation"
-                rows="3"
-                maxlength="500"
-                placeholder="Detalle adicional de la venta"
-                formControlName="observation"
-                [readOnly]="processing() || cart.locked()"
-              ></textarea>
-
-            </label>
           </div>
-        </section>
-
-
-    @if (checkoutError()) { <div class="admin-inline-error">{{ checkoutError() }}</div> }
-    <footer class="admin-modal-actions"><button type="button" class="admin-secondary-button" (click)="closeCheckoutDialog()" [disabled]="processing()">Cancelar</button>
-      <button type="button" class="admin-primary-button" [disabled]="processing() || !canCheckout()" (click)="checkout()">{{ checkoutLabel() }}</button></footer>
-  </div>
-</dialog>
-
-<dialog #receiptDialog appDialogBackdrop class="modal desco-modal" (cancel)="$event.preventDefault(); closeReceipt()">
-  <div class="modal-box admin-modal-box pos-receipt-modal">
-    <header class="admin-modal-header"><h2>Comprobante de pago</h2>
-      <button class="admin-icon-button" type="button" (click)="closeReceipt()" aria-label="Cerrar"><fa-icon [icon]="closeIcon" /></button></header>
-    @if (receiptLoading()) { <p>Consultando venta...</p> }
-    @if (receiptError()) { <p role="alert" class="admin-inline-error">{{ receiptError() }}</p> }
-    @if (receiptSale(); as receipt) {
-      <div class="pos-thermal-receipt" id="pos-print-receipt">
-        <h3>COMPROBANTE DE PAGO</h3>
-        <p>DESCO</p>
-        <p>Venta N.º {{ receipt.sale.saleId }}</p>
-        <p>{{ receipt.sale.date }}</p>
-        <p>Cliente: {{ receipt.sale.customer || 'Cliente varios' }}</p>
-        <hr />
-        @for (line of receipt.lines; track $index) {
-          <div class="pos-receipt-line"><span>{{ line.product }}<small>{{ line.quantity | number:'1.0-3' }} × {{ line.unitPrice | number:'1.2-2' }}</small></span>
-            <strong>{{ line.subtotal | number:'1.2-2' }}</strong></div>
-        }
-        <hr />
-        <div class="pos-receipt-line"><strong>TOTAL</strong><strong>{{ receipt.sale.currency }} {{ receipt.sale.total | number:'1.2-2' }}</strong></div>
-        <div class="pos-receipt-line"><span>Pagado</span><span>{{ receipt.sale.paid | number:'1.2-2' }}</span></div>
-        <div class="pos-receipt-line"><span>Saldo</span><span>{{ receipt.sale.balance | number:'1.2-2' }}</span></div>
-        <p class="pos-receipt-note">Documento informativo. No es comprobante tributario electrónico.</p>
-      </div>
-      <button type="button" class="admin-primary-button" (click)="printReceipt()">Imprimir</button>
-    }
-  </div>
-</dialog>
-
-<dialog #manualCustomerDialog appDialogBackdrop class="desco-modal pos-manual-modal"
-  aria-labelledby="pos-manual-title" (cancel)="$event.preventDefault(); closeManualCustomer()">
-  <div class="admin-modal-box pos-manual-modal__box">
-    <header class="admin-modal-header pos-manual-modal__header">
-      <div class="admin-modal-title-group">
-        <div><h2 id="pos-manual-title">{{ customerForm.controls.type.value === 'PERSONA' ? 'Registrar persona' : 'Registrar empresa' }}</h2></div>
-      </div>
-      <button type="button" class="admin-icon-button" aria-label="Cerrar"
-        [disabled]="manualSaving()" (click)="closeManualCustomer()"><fa-icon [icon]="closeIcon" /></button>
-    </header>
-    <form class="pos-manual-modal__form" [formGroup]="manualForm" (ngSubmit)="saveManualCustomer()">
-      <div class="pos-manual-modal__body">
-        <div class="pos-manual-document">
-          <span>{{ customerForm.controls.type.value === 'EMPRESA' ? 'Empresa' : 'Persona' }}</span>
-          <strong>{{ customerForm.controls.documentType.value }} {{ customerForm.controls.documentNumber.value }}</strong>
+          @if(!cart.locked()){
+            <app-e3-file-dropzone title="Foto del pago (opcional)" accept="image/jpeg,image/png,image/webp"
+              fileTypesHint="JPG, PNG o WebP" [maxFiles]="1" [maxSizeMb]="8"
+              [files]="pago.files" (filesChange)="fotosPago(i,$event)" [uploading]="processing()"
+              (invalid)="checkoutError.set($event)" />
+          }
         </div>
-        @if (customerForm.controls.type.value === 'PERSONA') {
-          <!-- Se reutilizan validación, distribución y controles de los datos personales institucionales. -->
-          <app-person-data-fields [form]="manualForm" idPrefix="pos-persona"
-            [identityVisible]="false" [locationVisible]="false" [birthDateVisible]="false"
-            [disabled]="manualSaving()" />
+      }
+      <button type="button" class="admin-secondary-button pos-add-payment" (click)="agregarPago()"
+        [disabled]="cart.locked() || processing()"><fa-icon [icon]="plusIcon" /> Añadir medio de pago</button>
+      <div class="pos-payment-totals" [class.pos-payment-totals--warning]="pagoDiferencia() !== 0">
+        <span>Asignado: <strong>{{ cart.currency() }} {{ pagoTotal() | number:'1.2-2' }}</strong></span>
+        <span>Diferencia: <strong>{{ cart.currency() }} {{ pagoDiferencia() | number:'1.2-2' }}</strong></span>
+      </div>
+      <label class="pos-field"><span>Observación <em>Opcional</em></span>
+        <textarea class="admin-textarea pos-observation" [formControl]="paymentForm.controls.observation"
+          maxlength="500" rows="2" [readOnly]="processing() || cart.locked()"></textarea>
+      </label>
+    </section>
+    @if (checkoutError()) { <div class="admin-inline-error" role="alert">{{ checkoutError() }}</div> }
+  </div>
+  <div modalActions class="pos-modal-actions">
+    <button type="button" class="admin-secondary-button" (click)="closeCheckoutDialog()" [disabled]="processing()">Cancelar</button>
+    <button type="button" class="admin-primary-button" [disabled]="processing() || !canCheckout()"
+      (click)="checkout()">{{ checkoutLabel() }}</button>
+  </div>
+</app-modal-shell>
+
+<app-modal-shell #receiptDialog title="Comprobante de venta" [icon]="receiptIcon" size="wide"
+  (closed)="clearReceiptPdf()">
+  @if(receiptLoading()){<app-loading-state title="Cargando comprobante" message="" />}
+  @if(receiptError()){<p class="admin-inline-error" role="alert">{{receiptError()}}</p>}
+  @if(receiptData();as receipt){
+    <div class="pos-receipt-workspace">
+      <div class="pos-receipt-options">
+        <div class="pos-receipt-options__document">
+          <span>Comprobante</span>
+          <strong>{{receipt.tipoDocumento === 'FACTURA' ? 'Factura' : 'Boleta de venta'}}</strong>
+          <small>{{numeroComprobante(receipt)}}</small>
+        </div>
+        <label class="pos-field"><span>Formato</span>
+          <select class="admin-select" [value]="receiptLayout()"
+            (change)="changeReceiptLayout($any($event.target).value)">
+            <option value="thermal">Ticket 80 mm</option><option value="a4">Documento A4 (PDF)</option>
+          </select>
+        </label>
+        @if(receiptLayout()==='a4') {
+          <button type="button" class="admin-primary-button" [disabled]="pdfLoading()"
+            (click)="downloadReceiptPdf()"><fa-icon [icon]="printIcon" /> Descargar PDF</button>
         } @else {
-          <div class="pos-manual-company">
-            <div class="admin-field pos-manual-company__full">
-              <label for="pos-razon">Razón social</label>
-              <input id="pos-razon" class="admin-input" formControlName="businessName" maxlength="200" />
-              <app-form-error [control]="manualForm.controls.businessName" fieldLabel="La razón social" />
-            </div>
-            <div class="admin-field">
-              <label for="pos-telefono-empresa">Teléfono (opcional)</label>
-              <input id="pos-telefono-empresa" class="admin-input" formControlName="telefono" maxlength="30" type="tel" />
-            </div>
-            <div class="admin-field">
-              <label for="pos-correo-empresa">Correo (opcional)</label>
-              <input id="pos-correo-empresa" class="admin-input" formControlName="correo" maxlength="180" type="email" />
-              <app-form-error [control]="manualForm.controls.correo" fieldLabel="El correo" />
-            </div>
-          </div>
+          <button type="button" class="admin-primary-button" (click)="printReceipt()">
+            <fa-icon [icon]="printIcon" /> Imprimir ticket</button>
         }
       </div>
-      <footer class="admin-modal-actions pos-manual-modal__footer">
-        <button type="button" class="admin-secondary-button" [disabled]="manualSaving()"
-          (click)="closeManualCustomer()">Cancelar</button>
-        <button type="submit" class="admin-primary-button" [disabled]="manualSaving()">
-          @if (manualSaving()) { <span class="loading loading-spinner loading-sm"></span> Guardando… }
-          @else { Guardar cliente }
-        </button>
-      </footer>
-    </form>
-  </div>
-</dialog>
+      @if(receiptLayout()==='a4') {
+        <div class="pos-receipt-preview pos-receipt-preview--a4">
+          @if(pdfLoading()) {
+            <app-loading-state title="Preparando PDF" message="" />
+          } @else if(receiptPdfPreview()) {
+            <iframe class="pos-receipt-pdf" [src]="receiptPdfPreview()"
+              title="Vista previa del comprobante A4"></iframe>
+          } @else {
+            <p class="pos-receipt-preview__empty">No se pudo mostrar el PDF. Intente nuevamente.</p>
+            <button type="button" class="admin-secondary-button" (click)="loadReceiptPdf()">Reintentar</button>
+          }
+        </div>
+      } @else {
+        <div class="pos-receipt-preview pos-receipt-preview--thermal">
+          <article class="pos-thermal-receipt" id="pos-print-receipt">
+            <header class="pos-receipt-brand">
+              <strong>{{receipt.emisorRazonSocial || receipt.uotNombre}}</strong>
+              @if(receipt.emisorRuc){<span>RUC: {{receipt.emisorRuc}}</span>}
+              @if(receipt.emisorDireccion){<small>{{receipt.emisorDireccion}}</small>}
+            </header>
+            <div class="pos-receipt-document-heading">
+              <h3>{{receipt.tipoDocumento === 'FACTURA' ? 'FACTURA' : 'BOLETA DE VENTA'}}</h3>
+              <strong>{{numeroComprobante(receipt)}}</strong>
+            </div>
+            <div class="pos-receipt-meta">
+              <div><span>Fecha</span><strong>{{receipt.fecha.replace('T',' ')}}</strong></div>
+              <div><span>Cliente</span><strong>{{receipt.cliente || 'Cliente varios'}}</strong></div>
+              @if(receipt.documento){<div><span>Documento</span><strong>{{receipt.documento}}</strong></div>}
+              @if(receipt.atendidoPor){<div><span>Atendido por</span><strong>{{receipt.atendidoPor}}</strong></div>}
+            </div>
+            <section class="pos-receipt-items" aria-label="Detalle de la venta">
+              <div class="pos-receipt-items__title"><span>Descripción</span><span>Importe</span></div>
+              @for(line of receipt.lineas;track $index){
+                <div class="pos-receipt-line pos-receipt-item">
+                  <span>{{line.producto}}
+                    <small>{{line.cantidad | number:'1.0-3'}} × {{line.precioUnitario | number:'1.2-2'}}</small>
+                  </span>
+                  <strong>{{line.subtotal | number:'1.2-2'}}</strong>
+                </div>
+              }
+            </section>
+            <div class="pos-receipt-totals">
+              <div class="pos-receipt-line"><span>Subtotal</span><strong>{{receipt.moneda}} {{receipt.subtotal | number:'1.2-2'}}</strong></div>
+              <div class="pos-receipt-line"><span>Impuestos</span><strong>{{receipt.moneda}} {{receipt.impuesto | number:'1.2-2'}}</strong></div>
+              <div class="pos-receipt-line pos-receipt-total"><strong>TOTAL</strong><strong>{{receipt.moneda}} {{receipt.total | number:'1.2-2'}}</strong></div>
+            </div>
+            @if(receiptQr()) {<img class="pos-receipt-qr" [src]="receiptQr()" alt="Código QR del comprobante" />}
+            <footer class="pos-receipt-footer">Gracias por su compra</footer>
+          </article>
+        </div>
+      }
+    </div>
+  }
+</app-modal-shell>
+<app-entity-registration-modal />

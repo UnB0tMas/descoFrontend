@@ -28,6 +28,7 @@ export interface ResourceAssetResponse {
     proveedorPersonaId?: number;
     proveedorEmpresaId?: number;
     observacion?: string;
+    permiteSalidaTecnica?: boolean;
     archivoPrincipalId?: number;
     incidentesAbiertos?: number;
     estado?: boolean;

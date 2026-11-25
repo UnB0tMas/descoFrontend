@@ -1,0 +1,45 @@
+:host { display: contents; }
+.arqueo-panel { display: grid; gap: .9rem; min-width: 0; }
+.arqueo-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .35rem; }
+.arqueo-head small, .arqueo-kpis span { color: var(--desco-text-muted); font-size: .75rem; }
+.arqueo-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .6rem; }
+.arqueo-kpis > div { display: grid; gap: .35rem; padding: .8rem; border: 1px solid var(--desco-border); border-radius: .65rem; background: var(--desco-surface-soft); }
+.arqueo-kpis strong { font-size: 1rem; white-space: nowrap; }
+.arqueo-kpis .arqueo-important { border-color: var(--desco-primary); }
+.arqueo-metodos { display: flex; flex-wrap: wrap; gap: .45rem; }
+.arqueo-metodos span { display: inline-flex; gap: .45rem; padding: .45rem .65rem; border: 1px solid var(--desco-border); border-radius: .6rem; font-size: .78rem; }
+.arqueo-filter { display: grid; grid-template-columns: 1fr 1fr; gap: .7rem; }
+.arqueo-filter .admin-select, .arqueo-filter .admin-input { width: 100%; min-height: 2.4rem; }
+.arqueo-subtotal, .arqueo-actions { display: flex; justify-content: flex-end; gap: .8rem; align-items: center; }
+.arqueo-subtotal { font-size: .83rem; padding: .6rem; border-top: 1px solid var(--desco-border); }
+.arqueo-outcome, .arqueo-note { margin: 0; font-size: .84rem; }
+/* Comprobante monocromático, legible a 80 mm y reutilizado por el servicio de impresión. */
+.arqueo-print-host{position:fixed;top:-10000px;left:-10000px;pointer-events:none}
+.arqueo-ticket{width:80mm;box-sizing:border-box;background:#fff;color:#111;padding:3mm 4mm 4mm;font-family:Arial,Helvetica,sans-serif;font-size:10px;line-height:1.38}
+.arqueo-ticket__header{text-align:center;padding:0 0 10px;border-bottom:2px solid #111}
+.arqueo-ticket__brand{font-size:21px;font-weight:900;letter-spacing:2px}
+.arqueo-ticket__header h2{font-size:14px;font-weight:800;letter-spacing:.8px;margin:7px 0}
+.arqueo-ticket__header p{margin:3px 0;font-size:10px}
+.arqueo-ticket__info{padding:8px 0 5px}
+.arqueo-ticket__section{padding:7px 0 5px;margin:7px 0 5px;border-top:1px dashed #444;border-bottom:1px dashed #444;text-align:center;font-size:10px;font-weight:800;letter-spacing:.5px}
+.arqueo-ticket .arqueo-line{display:flex;align-items:baseline;justify-content:space-between;gap:6px;margin:4px 0}
+.arqueo-ticket .arqueo-line>span:first-child{min-width:0;overflow-wrap:anywhere}
+.arqueo-ticket .arqueo-line>b{flex:none;font-variant-numeric:tabular-nums;white-space:nowrap}
+.arqueo-ticket .arqueo-payment{padding-left:8px}
+.arqueo-ticket .arqueo-line--strong{font-weight:800}
+.arqueo-ticket__sum{padding:7px 0;border-top:1px solid #111;border-bottom:1px solid #111;margin-top:8px}
+.arqueo-ticket__result{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:11px 4px;font-weight:900;font-size:13px;border-bottom:2px solid #111}
+.arqueo-ticket__result strong{font-size:16px;font-variant-numeric:tabular-nums}
+.arqueo-ticket__observation{padding:8px 0;overflow-wrap:anywhere}
+.arqueo-ticket__observation p{margin:3px 0}
+.arqueo-ticket__footer{text-align:center;border-top:1px dashed #444;margin-top:10px;padding-top:9px;font-size:9px}
+.arqueo-ticket__footer p{margin:0 0 5px}
+@media(max-width:680px){.arqueo-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.arqueo-filter{grid-template-columns:1fr}}
+
+/* La tabla conserva su ancho natural y se desplaza dentro del modal. */
+.arqueo-panel app-data-table { min-width:0; width:100%; max-width:100%; display:block; }
+.arqueo-panel app-paginator { min-width:0; width:100%; display:block; }
+.arqueo-panel { min-width:0; max-width:100%; }
+.arqueo-kpis > div { min-width:0; }
+.arqueo-kpis strong { white-space:normal; overflow-wrap:normal; font-variant-numeric:tabular-nums; }
+@media(max-width:460px) { .arqueo-kpis { grid-template-columns:1fr 1fr; } .arqueo-head strong { overflow-wrap:anywhere; } }

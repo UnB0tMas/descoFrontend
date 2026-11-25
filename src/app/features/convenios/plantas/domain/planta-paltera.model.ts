@@ -20,7 +20,7 @@ export interface PaginaE3 { total: number; items: PlantaE3[]; resumen: ResumenE3
 export interface EventoE3 { eventoId: number; tipo: string; estadoAnterior?: string; estadoNuevo?: string;
  observacion?: string; visitaId?: number; usuarioId?: number; usuarioNombre?: string; fechaHora?: string; }
 export interface EpisodioE3 { episodioId: number; diagnostico: string; diagnosticoId: number;
- inicio?: string; fin?: string; observacion?: string;
+ inicio?: string; fin?: string; observacion?: string; estado?: 'VIGENTE'|'RECUPERADA'|'NO_CONTROLADA'|'ELIMINADA';
  usuarioAperturaId?: number; usuarioApertura?: string; usuarioCierreId?: number; usuarioCierre?: string; }
 export interface SeguimientoE3 { seguimientoId: number; episodioId?: number; tipo: TipoActuacionE3;
  observacion: string; resultado?: string; eventoId: number; visitaId?: number; usuarioId?: number; usuarioNombre?: string; fechaHora?: string; }

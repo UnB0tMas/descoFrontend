@@ -14,8 +14,9 @@ export const gestionProductivaRoutes: Routes = [{
     {
       path: '', pathMatch: 'full',
       data: { module: 'PREDIOS', permission: 'PREDIOS_LISTAR' }, canActivate: access,
-      loadComponent: () => import('./gestion-productiva-predios').then(m => m.GestionProductivaPredios),
+      loadComponent: () => import('./gestion-productiva-personas').then(m => m.GestionProductivaPersonas),
     },
+    { path: 'predios', pathMatch: 'full', redirectTo: '' },
     {
       path: 'predios/:predioId/parcelas',
       data: { breadcrumb: 'Parcelas', module: 'CULTIVOS', permission: 'CULTIVOS_LISTAR' }, canActivate: access,
@@ -37,7 +38,6 @@ export const gestionProductivaRoutes: Routes = [{
       loadComponent: () => import('./gestion-productiva-actividad').then(m => m.GestionProductivaActividad),
     },
     // Enlaces históricos, conservados para marcadores y consumidores previos.
-    { path: 'predios', pathMatch: 'full', redirectTo: '' },
     { path: 'cultivos', pathMatch: 'full', redirectTo: '' },
     { path: 'censos', pathMatch: 'full', redirectTo: '' },
     { path: 'sanidad', pathMatch: 'full', redirectTo: '' },

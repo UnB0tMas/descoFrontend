@@ -340,3 +340,13 @@
 .catalog-page-breadcrumb a,.catalog-page-breadcrumb button{border:0;background:none;padding:0;color:var(--desco-primary);font:inherit;cursor:pointer;text-decoration:none}
 .catalog-page-breadcrumb a:hover,.catalog-page-breadcrumb button:hover{text-decoration:underline}
 .catalog-page-breadcrumb [aria-current="page"]{font-weight:600;color:var(--desco-text)}
+
+/* El ancho de los tabs no depende del número de catálogos. */
+.catalog-group-tabs {display:flex;flex-wrap:nowrap;max-width:100%;min-width:0;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;overscroll-behavior-x:contain;scroll-snap-type:x proximity;padding-bottom:.4rem}
+.catalog-group-tab {flex:0 0 auto;white-space:normal;min-width:120px;max-width:180px;scroll-snap-align:start}
+.catalog-item-tabs {flex-wrap:nowrap;max-width:100%;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;overscroll-behavior-x:contain;padding:.15rem 0 .5rem}
+.catalog-item-tab {flex:0 0 auto;white-space:nowrap}
+@media (max-width:640px){.catalog-browser{padding:.7rem}.catalog-group-tab{min-width:112px}.catalog-item-tab{font-size:.72rem;padding:.45rem .7rem}}
+
+.catalog-shell .catalog-group-tabs,.catalog-shell .catalog-item-tabs {padding-left:.4rem;padding-right:.4rem}
+.catalog-shell .catalog-browser {min-width:0;max-width:100%}

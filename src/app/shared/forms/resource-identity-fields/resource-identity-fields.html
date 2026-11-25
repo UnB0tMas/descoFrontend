@@ -1,0 +1,15 @@
+<div class="admin-field admin-field-span-2">
+  <label for="resource-identity-name">Nombre</label>
+  <input id="resource-identity-name" class="admin-input" [formControl]="nameControl()" [readonly]="readonlyIdentity()" maxlength="180" />
+  <app-form-error [control]="nameControl()" fieldLabel="El nombre" />
+</div>
+<div class="admin-field">
+  <label for="resource-identity-unit">Unidad de medida</label>
+  <select id="resource-identity-unit" class="admin-select" [formControl]="unitControl()" [disabled]="loading() || readonlyIdentity()">
+    <option value="">Seleccionar</option>
+    @for (unit of units(); track unit.code) {
+      <option [value]="unit.code">{{ unit.label }} · {{ unit.code }}</option>
+    }
+  </select>
+  <app-form-error [control]="unitControl()" fieldLabel="La unidad de medida" />
+</div>

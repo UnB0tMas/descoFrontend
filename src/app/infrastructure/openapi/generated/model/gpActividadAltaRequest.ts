@@ -6,5 +6,6 @@ export interface GpActividadAltaRequest {
   parcelaId: number; rubro: GpRubro; cultivoId?: number | null; especieId?: number | null; variedadId?: number | null;
   cantidadAproximada?: number | null; cantidadExacta?: number | null;
   superficieAproximadaM2?: number | null; superficieExactaM2?: number | null;
+  tipoRiego?: string | null; fuenteAgua?: string | null;
   razas?: GpRazaConteo[] | null; variedades?: GpVariedadSuperficie[] | null;
 }

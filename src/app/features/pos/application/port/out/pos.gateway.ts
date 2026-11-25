@@ -23,9 +23,9 @@ export interface PosGateway {
   listTechnicalDeliveries(uotId: number): Observable<readonly PosTechnicalRecord[]>;
   registerTechnicalDelivery(uotId: number, warehouseId: number, employeeId: number,
     lines: readonly PosTechnicalLine[], reason: string, observation?: string): Observable<PosTechnicalDelivery>;
-  listSales(uotId: number): Observable<readonly PosSaleRecord[]>;
+  listSales(uotId: number, todas?: boolean): Observable<readonly PosSaleRecord[]>;
   getSaleDetail(saleId: number): Observable<PosSaleDetail>;
-  cancelSale(saleId: number, reason: string): Observable<void>;
+  cancelSale(saleId: number, reason: string, devolucionConfirmada?: boolean): Observable<void>;
   listPaymentMethods(): Observable<readonly PosPaymentMethod[]>;
 
   resolveCustomer(
@@ -49,6 +49,7 @@ export interface PosGateway {
     amount: number,
     operationNumber: string | undefined,
     idempotencyKey: string,
+    archivoId?: number,
   ): Observable<void>;
 
   deliverSale(

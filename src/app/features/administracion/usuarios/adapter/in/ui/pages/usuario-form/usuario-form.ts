@@ -1,6 +1,5 @@
-import { ChangeDetectionStrategy, Component, ElementRef, ViewChild, inject, signal, } from '@angular/core';
+import { computed, ChangeDetectionStrategy, Component, ElementRef, ViewChild, inject, signal, } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators, } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
 import { faEye, faEyeSlash, faFloppyDisk, faPen, faUserPlus, faXmark, } from '@fortawesome/free-solid-svg-icons';
 import { finalize, Observable } from 'rxjs';
@@ -21,7 +20,7 @@ interface UserFormOptions {
 @Component({
     selector: 'app-usuario-form',
     standalone: true,
-    imports: [ReactiveFormsModule, RouterLink, FaIconComponent, FormErrorComponent],
+    imports: [ReactiveFormsModule, FaIconComponent, FormErrorComponent],
     templateUrl: './usuario-form.html',
     styleUrl: './usuario-form.css',
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -36,7 +35,13 @@ export class UsuarioFormComponent {
     readonly saving = signal(false);
     readonly showPassword = signal(false);
     readonly current = signal<Usuario | UsuarioDetalle | null>(null);
-    readonly employees = signal<readonly AdminSelectOption[]>([]);
+    readonly employeeSearch = signal('');
+  readonly filteredEmployees = computed(() => {
+    const term = this.employeeSearch().trim().toLocaleLowerCase('es');
+    const current = Number(this.form.controls.empleadoId.value);
+    return term ? this.employees().filter(item => item.value === current || item.label.toLocaleLowerCase('es').includes(term) || (item.description ?? '').toLocaleLowerCase('es').includes(term)) : this.employees();
+  });
+  readonly employees = signal<readonly AdminSelectOption[]>([]);
     readonly roles = signal<readonly AdminSelectOption[]>([]);
     readonly selectedRoleIds = signal<Set<number>>(new Set());
     readonly errorMessage = signal<string | null>(null);
@@ -57,6 +62,7 @@ export class UsuarioFormComponent {
     });
     openCreate(options: UserFormOptions): Promise<AdminModalResult> {
         this.current.set(null);
+    this.employeeSearch.set('');
         this.employees.set(options.employees);
         this.roles.set(options.roles);
         this.selectedRoleIds.set(options.roles.length === 1
@@ -64,13 +70,9 @@ export class UsuarioFormComponent {
             : new Set());
         this.errorMessage.set(null);
 
-        const firstEmployee = options.employees[0] ?? null;
-
         this.form.reset({
-            empleadoId: firstEmployee?.value ?? 0,
-            nombreUsuario: firstEmployee
-                ? buildUsernameSuggestion(firstEmployee.label, Number(firstEmployee.value))
-                : '',
+            empleadoId: 0,
+            nombreUsuario: '',
             passwordInicial: '',
             correoSeguridad: '',
             requiereCambioPassword: true,

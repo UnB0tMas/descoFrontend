@@ -1,0 +1,10 @@
+:host { display: inline-flex; max-width: 100%; }
+.desco-status-badge { display: inline-flex; align-items: center; gap: .4rem; max-width: 100%;
+  padding: .27rem .6rem; border: 1px solid var(--desco-border);
+  border-radius: 99px; background: var(--desco-surface-soft); color: var(--desco-text-muted);
+  font-size: .73rem; font-weight: 700; line-height: 1.3; overflow-wrap: anywhere; }
+.desco-status-badge--success { border-color: var(--desco-success-border); background: var(--desco-success-soft); color: var(--desco-success-text); }
+.desco-status-badge--warning { border-color: var(--desco-warning-border); background: var(--desco-warning-soft); color: var(--desco-warning-text); }
+.desco-status-badge--danger { border-color: var(--desco-danger-border); background: var(--desco-danger-soft); color: var(--desco-danger-text); }
+.desco-status-badge--info { border-color: var(--desco-info-border); background: var(--desco-info-soft); color: var(--desco-info-text); }
+.desco-status-dot { width: .4rem; height: .4rem; border-radius: 50%; background: currentColor; flex: 0 0 auto; }

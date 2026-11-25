@@ -22,5 +22,6 @@ export interface ResourceAssetUpdateRequest {
     proveedorPersonaId?: number;
     proveedorEmpresaId?: number;
     observacion?: string;
+    permiteSalidaTecnica?: boolean;
     vehiculo?: ResourceAssetVehicleRequest;
 }

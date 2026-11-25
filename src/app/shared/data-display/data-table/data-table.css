@@ -28,12 +28,39 @@
   white-space: nowrap;
 }
 
-/* Apariencia admin: tipografía, densidad y foco consistentes con Recursos/Administración. */
-.desco-data-table.admin-table { width:100%; min-width: min(100%, 42rem); border-collapse:collapse; }
-.desco-data-table.admin-table :is(th,td) { padding:.8rem .9rem; font-size:.8125rem; line-height:1.4; vertical-align:middle; }
-.desco-data-table.admin-table th { font-size:.73rem; font-weight:750; letter-spacing:.025em; white-space:nowrap; }
-.desco-data-table.admin-table td { white-space:normal; overflow-wrap:anywhere; }
-.desco-data-table.admin-table tr.cursor-pointer { cursor:pointer; }
-.desco-data-table.admin-table tbody tr.cursor-pointer:hover { background:var(--desco-surface-soft); }
-.desco-data-table.admin-table tbody tr.cursor-pointer:focus-visible { outline:2px solid var(--desco-primary); outline-offset:-2px; }
-@media (max-width:780px) { .desco-data-table.admin-table :is(td,th) { padding:.65rem .7rem; } }
+/* Variante administrativa: el viewport desplaza horizontalmente la tabla, no la página. */
+.desco-data-table.admin-table {
+  width: max-content;
+  min-width: 100%;
+  table-layout: auto;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.desco-data-table.admin-table :is(th, td) {
+  padding: .75rem .9rem;
+  font-size: .8125rem;
+  line-height: 1.4;
+  vertical-align: middle;
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+.desco-data-table.admin-table th {
+  font-size: .73rem;
+  font-weight: 750;
+  letter-spacing: .025em;
+}
+.desco-data-table.admin-table tbody tr.cursor-pointer:hover { background: var(--desco-surface-soft); }
+.desco-data-table.admin-table tbody tr.cursor-pointer:focus-visible {
+  outline: 2px solid var(--desco-primary);
+  outline-offset: -2px;
+}
+/* Mantiene visibles las acciones sin comprimir letras o importes. */
+.desco-data-table.admin-table td:has(.caja-row-actions) { white-space: nowrap; }
+@media (max-width: 780px) {
+  .desco-data-table.admin-table :is(td, th) { padding: .65rem .75rem; }
+}
+
+/* Variantes opcionales sin modificar las tablas existentes. */
+.desco-data-table__caption { caption-side: top; padding: .65rem .85rem; color: var(--desco-text-muted);
+  text-align: left; font-size: .77rem; }
+.desco-data-table--compact:is(.admin-table,.table) :is(th,td) { padding: .48rem .65rem; font-size: .77rem; }

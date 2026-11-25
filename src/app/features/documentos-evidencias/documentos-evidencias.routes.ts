@@ -11,19 +11,7 @@ export const documentosEvidenciasRoutes: Routes = [
     loadComponent: () => import('./adapter/in/ui/pages/documentos-salidas/documentos-salidas')
       .then(m => m.DocumentosSalidasPage),
   },
-  {
-    path: 'documentos-evidencias',
-    data: {
-      breadcrumb: 'Documentos y evidencias',
-      module: 'ARCHIVOS',
-      permission: 'ARCHIVOS_LISTAR',
-    },
-    canActivate: [moduleAccessGuard, permissionGuard],
-    loadComponent: () =>
-      import('./adapter/in/ui/pages/documentos-evidencias-list/documentos-evidencias-list').then(
-        (m) => m.DocumentosEvidenciasListPage,
-      ),
-  },
+  { path: 'documentos-evidencias', pathMatch: 'full', redirectTo: 'documentos/mis-documentos' },
   {
     path: 'documentos-evidencias/locales',
     data: {

@@ -1,6 +1,6 @@
 import { ResourceDatePipe } from '../../../../../../../../shared/formatting/resource-date.pipe';
 import { DatePipe, DecimalPipe } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -42,6 +42,9 @@ import { EmptyStateComponent } from '../../../../../../../../shared/data-display
 import { ErrorStateComponent } from '../../../../../../../../shared/data-display/error-state/error-state';
 import { LoadingStateComponent } from '../../../../../../../../shared/data-display/loading-state/loading-state';
 import { PaginatorComponent } from '../../../../../../../../shared/data-display/paginator/paginator';
+import { ListViewSwitchComponent, ListViewMode } from '../../../../../../../../shared/data-display/list-view-switch/list-view-switch';
+import { RecordCardComponent } from '../../../../../../../../shared/data-display/record-card/record-card';
+import { ResourceImageComponent } from '../../../../../../shared/resource-image/resource-image';
 import { PageHeaderComponent } from '../../../../../../../../shared/layout/page-header/page-header';
 import { UotContextStore } from '../../../../../../../uot/state/uot-context.store';
 import { AlmacenProductoFormComponent } from '../almacen-producto-form/almacen-producto-form';
@@ -66,6 +69,9 @@ type WarehouseTab = 'warehouses' | 'stock' | 'kardex';
     ErrorStateComponent,
     LoadingStateComponent,
     PaginatorComponent,
+    ListViewSwitchComponent,
+    RecordCardComponent,
+    ResourceImageComponent,
     PageHeaderComponent,
     AlmacenOperationFormComponent,
     ProductoFormComponent, AlmacenProductoFormComponent,
@@ -82,6 +88,7 @@ export class AlmacenesListPage implements OnInit {
   @ViewChild(AlmacenProductoFormComponent) private productConfiguration!:AlmacenProductoFormComponent;
   readonly settingsIcon=faSliders;readonly stateIcon=faPowerOff;
 
+  private readonly route = inject(ActivatedRoute);
   private readonly api = inject(ResourceApiService);
   private readonly permissions = inject(PermissionService);
   readonly uot = inject(UotContextStore);
@@ -97,7 +104,7 @@ export class AlmacenesListPage implements OnInit {
   readonly products = signal<readonly ResourceProductListItemResponse[]>([]);
   readonly stock = signal<readonly ResourceStockResponse[]>([]);
   readonly filterProducts = computed(() => {
-    const warehouseId = this.warehouseFilter();
+    const warehouseId = this.detailWarehouse()?.almacenId ?? this.warehouseFilter();
     const productIds = new Set(this.stock()
       .filter(row => !warehouseId || row.almacenId === warehouseId)
       .map(row => row.productoId));
@@ -113,6 +120,9 @@ export class AlmacenesListPage implements OnInit {
   readonly detailSearch = signal('');
   readonly detailSearchDraft = signal('');
   readonly detailTab = signal<'products' | 'kardex'>('products');
+  readonly detailStockView = signal<ListViewMode>('cards');
+  readonly stockView = signal<ListViewMode>('cards');
+  private restoredWarehouse = false;
   readonly detailProductId = signal<number | null>(null);
 
   // Los cuatro listados comparten el paginador oficial de DESCO.
@@ -145,8 +155,11 @@ export class AlmacenesListPage implements OnInit {
 
   readonly visibleDetailStock = computed(() => {
     const query = this.detailSearch().trim().toLocaleLowerCase();
-    return this.detailStock().filter((row) => !query ||
-      `${row.producto ?? ''} ${this.productCode(row.productoId)}`.toLocaleLowerCase().includes(query));
+    const selectedProduct = this.productFilter();
+    return this.detailStock().filter((row) =>
+      (!selectedProduct || row.productoId === selectedProduct) &&
+      (!query || `${row.producto ?? ''} ${this.productCode(row.productoId)}`.toLocaleLowerCase().includes(query))
+    );
   });
   readonly visibleDetailKardex = computed(() => this.detailMovements().filter(
     (row) => !this.detailProductId() || row.productoId === this.detailProductId(),
@@ -268,6 +281,12 @@ export class AlmacenesListPage implements OnInit {
       .subscribe({
         next: ({ warehouses, products, stock, kardex }) => {
           this.warehouses.set(warehouses);
+          if (!this.restoredWarehouse) {
+            this.restoredWarehouse = true;
+            const warehouseId = Number(this.route.snapshot.queryParamMap.get('almacenId'));
+            const restore = warehouses.find(item => item.almacenId === warehouseId);
+            if (warehouseId > 0 && restore) this.openWarehouseDetail(restore);
+          }
           this.products.set(products);
           this.stock.set(stock);
           this.kardex.set(kardex);
@@ -296,9 +315,11 @@ export class AlmacenesListPage implements OnInit {
 
   onWarehouseChange(value: string): void {
     const parsed = Number(value);
-    this.warehouseFilter.set(
-      Number.isFinite(parsed) && parsed > 0 ? parsed : null,
-    );
+    const nextId = Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+    if (this.detailWarehouse() && this.detailWarehouse()?.almacenId !== nextId) {
+      this.closeWarehouseDetail();
+    }
+    this.warehouseFilter.set(nextId);
     this.reconcileProductFilter();
     this.stockPage.set(1);
     this.kardexPage.set(1);
@@ -310,6 +331,7 @@ export class AlmacenesListPage implements OnInit {
     this.productFilter.set(Number.isFinite(parsed) && parsed > 0 ? parsed : null);
     this.reconcileProductFilter();
     this.stockPage.set(1);
+    this.detailStockPage.set(1);
     this.kardexPage.set(1);
     if (this.activeTab() === 'kardex') this.loadKardex();
   }
@@ -384,18 +406,29 @@ export class AlmacenesListPage implements OnInit {
   }
 
   canMoveNature(nature: 'E' | 'S'): boolean {
-    return this.warehouses().some((warehouse) => nature === 'E'
-      ? warehouse.permiteEntrada !== false : warehouse.permiteSalida !== false);
+    const currentId = this.detailWarehouse()?.almacenId ?? this.warehouseFilter();
+    return this.warehouses().some((warehouse) =>
+      (!currentId || warehouse.almacenId === currentId) && warehouse.estado !== false &&
+      (nature === 'E' ? warehouse.permiteEntrada !== false : warehouse.permiteSalida !== false)
+    );
   }
 
   async movement(nature: 'E' | 'S'): Promise<void> {
-    const result = await this.form.openMovement(this.options(), this.queryUnitId(), { nature });
+    const current = this.detailWarehouse();
+    const warehouseId = current?.almacenId ?? this.warehouseFilter() ?? undefined;
+    const preferredUnit = current ? this.detailUotId() : (this.queryUnitId()
+      ?? this.warehouses().find(warehouse => warehouse.almacenId === warehouseId)?.uotPropietariaId);
+    const result = await this.form.openMovement(this.options(), preferredUnit, { nature, warehouseId });
     if (result.saved) this.refreshAfterOperation();
   }
 
   openWarehouseDetail(warehouse: ResourceWarehouseResponse): void {
     if (!warehouse.almacenId) return;
     this.detailWarehouse.set(warehouse);
+    this.warehouseFilter.set(warehouse.almacenId);
+    this.productFilter.set(null);
+    this.stockPage.set(1);
+    this.kardexPage.set(1);
     this.detailTab.set('products');
     this.detailSearch.set('');
     this.detailSearchDraft.set('');
@@ -490,6 +523,10 @@ export class AlmacenesListPage implements OnInit {
     }
   }
 
+  productImage(id?: number): ResourceProductListItemResponse | undefined {
+    return this.products().find(item => item.productoId === id);
+  }
+
   productCode(id?: number): string {
     return this.products().find((item) => item.productoId === id)?.codigo ?? '';
   }
@@ -535,10 +572,17 @@ export class AlmacenesListPage implements OnInit {
   }
 
   private options(): WarehouseOperationOptions {
+    const detail = this.detailWarehouse();
+    const latest = detail?.almacenId && !this.detailLoading() && this.detailStock().length > 0
+      ? [
+          ...this.stock().filter(row => row.almacenId !== detail.almacenId),
+          ...this.detailStock(),
+        ]
+      : this.stock();
     return {
       warehouses: this.warehouses(),
       products: this.products(),
-      stock: this.stock(),
+      stock: latest,
     };
   }
 }

@@ -12,11 +12,12 @@ import {AmbitoE3,CatalogosE3,EstadoPlantaE3} from '../../../../domain/planta-pal
 import {E3ClinicalService,AnalisisE3,ComentarioE3,EnfermedadDetalleE3,EnfermedadItemE3,TratamientoItemE3} from './e3-clinical.service';
 import {E3ExpedienteE4Service,NotaEnfermedadE4} from './e3-expediente-e4.service';
 import {E3EnfermedadDetalleComponent} from './e3-enfermedad-detalle';
+import {DataTableComponent} from '../../../../../../../shared/data-display/data-table/data-table';
 import {ListViewSwitchComponent} from '../../../../../../../shared/data-display/list-view-switch/list-view-switch';
 import {RecordCardComponent} from '../../../../../../../shared/data-display/record-card/record-card';
 import {E3FileDropzoneComponent} from './e3-file-dropzone';
 
-@Component({selector:'app-e3-planta-salud',standalone:true,imports:[CommonModule,FormsModule,FaIconComponent,E3EnfermedadDetalleComponent,ListViewSwitchComponent,RecordCardComponent,E3FileDropzoneComponent],
+@Component({selector:'app-e3-planta-salud',standalone:true,imports:[CommonModule,FormsModule,FaIconComponent,E3EnfermedadDetalleComponent,ListViewSwitchComponent,DataTableComponent,RecordCardComponent,E3FileDropzoneComponent],
  templateUrl:'./e3-planta-salud.html',styleUrl:'./e3-planta-salud.css',changeDetection:ChangeDetectionStrategy.OnPush})
 export class E3PlantaSaludComponent implements OnChanges {
  readonly viewIcon=faEye;readonly treatmentIcon=faArrowRight;readonly editIcon=faPen;readonly controlIcon=faCheck;readonly removeIcon=faTrash;
@@ -42,6 +43,8 @@ export class E3PlantaSaludComponent implements OnChanges {
  readonly cargando=signal(false);readonly guardando=signal(false);readonly error=signal<string|null>(null);
  readonly enfermedades=signal<EnfermedadItemE3[]>([]);readonly comentarios=signal<ComentarioE3[]>([]);
  readonly analisis=signal<AnalisisE3|null>(null);
+ readonly enfermedadColumns=[{key:'enfermedad',label:'Enfermedad'},{key:'estado',label:'Estado'},{key:'fechaDiagnostico',label:'Diagnosticada'},{key:'registradoPor',label:'Registró'},{key:'totalTratamientos',label:'Tratamientos'},{key:'acciones',label:'Acciones'}];
+ readonly tratamientoColumns=[{key:'descripcion',label:'Tratamiento'},{key:'fechaAplicacion',label:'Aplicación'},{key:'resultado',label:'Resultado'},{key:'comentario',label:'Observación'},{key:'usuarioNombre',label:'Registrado por'},{key:'acciones',label:'Acciones'}];
  readonly vista=signal<'table'|'cards'>('table');
  readonly enfermedadSeleccionada=signal(0);
  readonly detalleTratamientos=signal<EnfermedadDetalleE3|null>(null);
@@ -59,7 +62,7 @@ export class E3PlantaSaludComponent implements OnChanges {
  comentarioGeneral='';comentarioEnfermedad='';
  readonly hoyLocal=this.hoy();
  private hoy(){const date=new Date();return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;}
- puedeModificar(){return this.editable&&this.estadoPlanta!=='MUERTA'&&this.estadoPlanta!=='ELIMINADA';}
+ puedeModificar(){return this.editable&&this.estadoPlanta!=='MUERTA'&&this.estadoPlanta!=='ELIMINADA'&&this.analisis()?.estadoPlanta!=='MUERTA'&&this.analisis()?.estadoPlanta!=='ELIMINADA';}
  puedeAnotar(){return this.puedeModificar()&&this.permissions.has('APAPPSS_PLANTAS_SALUD_COMENTAR');}
  puedeTratar(){return this.puedeModificar()&&this.permissions.has('APAPPSS_PLANTAS_TRATAMIENTO_LOTE');}
  diagnosticosFiltrados(){const q=this.busquedaDiagnostico.trim().toLocaleLowerCase();return [...(this.catalogos?.diagnosticos??[])]
@@ -67,7 +70,7 @@ export class E3PlantaSaludComponent implements OnChanges {
  tratamientosPermitidos(){const q=this.busquedaTratamiento.trim().toLocaleLowerCase();return (this.catalogos?.tratamientos??[])
   .filter(t=>t.problemaId===this.detalleTratamientos()?.diagnosticoId&&t.nombre.toLocaleLowerCase().includes(q));}
  ngOnChanges(changes:SimpleChanges):void{
-  if(changes['plantaId']||changes['ambito'])this.actualizar();
+  if(changes['plantaId']||changes['ambito']||changes['estadoPlanta'])this.actualizar();
   else if(changes['enfermedadInicial']&&this.modo==='tratamientos'&&this.enfermedadInicial>0)
    this.seleccionarEnfermedad(this.enfermedadInicial);
  }

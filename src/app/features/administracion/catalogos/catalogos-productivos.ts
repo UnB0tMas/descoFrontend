@@ -77,7 +77,7 @@ export class CatalogosProductivos implements OnInit {
   readonly search = signal('');
   readonly detailKey = signal<string | null>(null);
   readonly currentPage = signal(1);
-  readonly pageSize = signal(20);
+  readonly pageSize = signal(10);
 
   readonly selectedCatalog = computed(() =>
     this.tabs.find(tab => tab.codigo === this.type()) ?? this.tabs[0],

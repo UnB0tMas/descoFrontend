@@ -1,0 +1,31 @@
+:host { display:block;min-width:0; }
+.mi-actividad-page { min-width:0; }
+.mi-actividad-panel { margin-top:1rem; }
+.mi-actividad-title { display:flex; justify-content:space-between; align-items:start;
+  flex-wrap:wrap; gap:.7rem; }
+.mi-actividad-title h3 { margin:.2rem 0 0;font-size:1rem;font-weight:760; }
+.mi-actividad-title small { font-size:.75rem;color:var(--desco-text-muted); }
+.mi-actividad-data { display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,175px),1fr));
+  gap:.9rem;margin:1rem 0 0; }
+.mi-actividad-data dt { font-size:.73rem;color:var(--desco-text-muted); }
+.mi-actividad-data dd { margin:.2rem 0 0;font-size:.83rem;font-weight:650;overflow-wrap:anywhere; }
+.mi-actividad-timeline { margin:0;padding:0;list-style:none;display:grid;gap:.65rem; }
+.mi-actividad-timeline li { min-width:0;padding:.85rem 1rem;border:1px solid var(--desco-border);
+  border-radius:var(--desco-radius-md,.7rem);background:var(--desco-surface-soft); }
+.mi-actividad-event-header { display:flex;justify-content:space-between;gap:.6rem;
+  flex-wrap:wrap;align-items:baseline; }
+.mi-actividad-event-header strong {font-size:.83rem;font-weight:750;}
+.mi-actividad-event-header time {font-size:.72rem;color:var(--desco-text-muted);}
+.mi-actividad-timeline p {font-size:.79rem;line-height:1.55;white-space:pre-wrap;
+  overflow-wrap:anywhere;margin:.45rem 0 0;}
+.mi-actividad-timeline .mi-actividad-detail {color:var(--desco-text-muted);}
+.mi-actividad-event-footer {display:flex;gap:.65rem;flex-wrap:wrap;margin-top:.65rem;
+  color:var(--desco-text-muted);font-size:.72rem;}
+@media(max-width:580px) {.mi-actividad-data{grid-template-columns:repeat(2,minmax(0,1fr));}}
+
+.mi-actividad-content { display:grid; gap:1rem; min-width:0; }
+.mi-actividad-empty { display:grid; justify-items:center; text-align:center; gap:.5rem;
+  padding:1.65rem 1rem; color:var(--desco-text); border:1px dashed var(--desco-border);
+  border-radius:var(--desco-radius-lg); }
+.mi-actividad-empty fa-icon { color:var(--desco-primary-text); font-size:1.4rem; }
+.mi-actividad-empty p { margin:0; color:var(--desco-text-muted); font-size:.85rem; }

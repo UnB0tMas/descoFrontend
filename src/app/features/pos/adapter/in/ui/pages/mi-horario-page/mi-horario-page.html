@@ -1,0 +1,79 @@
+<div class="desco-page mi-horario-page">
+  <app-page-header title="Mi horario" eyebrow="GESTIÓN COMERCIAL" [subtitle]="uot.label()" [icon]="icon">
+    <div pageActions>
+      <app-button label="Actualizar" tone="secondary" [icon]="refreshIcon" [loading]="loading()" (pressed)="reload()" />
+    </div>
+  </app-page-header>
+
+  @if (error()) {
+    <div class="admin-inline-error" role="alert">{{ error() }}</div>
+  }
+
+  @if (datos(); as info) {
+    @if (info.empleadoId === null) {
+      <section class="admin-surface mi-horario-empty" role="status">
+        <fa-icon [icon]="clockIcon" />
+        <h2>Sin horario asignado</h2>
+        <p>Consulta con el responsable de personal.</p>
+      </section>
+    } @else {
+      <section class="admin-surface mi-horario-resumen" aria-label="Resumen de la semana">
+        <div class="mi-horario-persona">
+          <span class="mi-horario-eyebrow">Tu jornada semanal</span>
+          <h2>{{ info.nombre }}</h2>
+          <p>Atención general: {{ info.atencion.horaInicio }} – {{ info.atencion.horaFin }}</p>
+        </div>
+        <div class="mi-horario-indicadores">
+          <div class="mi-horario-indicador">
+            <strong>{{ diasAsignados() }} <small>/ 7</small></strong>
+            <span>Días asignados</span>
+          </div>
+          <div class="mi-horario-indicador">
+            <strong>{{ horasSemanales() }}</strong>
+            <span>Horas programadas</span>
+          </div>
+        </div>
+      </section>
+
+      <div class="mi-horario-encabezado">
+        <div>
+          <h2>Distribución semanal</h2>
+          <p>Horarios y atención establecidos para cada día.</p>
+        </div>
+      </div>
+      <section class="mi-horario-grid" aria-label="Horarios por día">
+        @for (dia of dias(); track dia.numero) {
+          <app-record-card>
+            <header class="mi-horario-dia-cabecera">
+              <strong>{{ dia.nombre }}</strong>
+              <app-status-badge [label]="dia.estado" [tone]="dia.tono" [dot]="true" />
+            </header>
+            <div class="mi-horario-atencion">
+              <span>Horario de atención</span>
+              <strong>{{ dia.inicio }} – {{ dia.fin }}</strong>
+              @if (dia.personalizado) { <small>Personalizado</small> }
+            </div>
+            <div class="mi-horario-linea" [class.mi-horario-linea-vacia]="!dia.turnos.length" role="img"
+                 [attr.aria-label]="dia.estado + ': ' + dia.porcentaje + '% de la atención'">
+              @for (tramo of dia.turnos; track tramo.turno.horarioId) {
+                <span class="mi-horario-linea-tramo" [style.left.%]="tramo.offset" [style.width.%]="tramo.ancho"></span>
+              }
+            </div>
+            <div class="mi-horario-turnos">
+              @for (tramo of dia.turnos; track tramo.turno.horarioId) {
+                <div class="mi-horario-turno">
+                  <fa-icon [icon]="clockIcon" />
+                  <span>{{ tramo.turno.horaInicio }} – {{ tramo.turno.horaFin }}</span>
+                </div>
+              } @empty {
+                <span class="mi-horario-sin-turnos">Sin turnos asignados</span>
+              }
+            </div>
+          </app-record-card>
+        }
+      </section>
+    }
+  } @else if (loading()) {
+    <section class="admin-surface mi-horario-cargando" role="status">Cargando horarios…</section>
+  }
+</div>

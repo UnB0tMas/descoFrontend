@@ -1,9 +1,10 @@
+import { ListViewSwitchComponent } from '../../../../../../../../../shared/data-display/list-view-switch/list-view-switch';
 import { RecordCardComponent } from '../../../../../../../../../shared/data-display/record-card/record-card';
 import { ChangeDetectionStrategy, Component, OnInit, ViewChild, ElementRef, AfterViewInit, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { finalize } from 'rxjs';
+import { finalize, Observable } from 'rxjs';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
 import { faEye, faRoute, faPlus, faMagnifyingGlass, faRotate, faPen, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { UotContextStore } from '../../../../../../../../uot/state/uot-context.store';
@@ -17,17 +18,21 @@ import { PermissionDirective } from '../../../../../../../../../core/access/perm
 import { ResumenE2, CatalogosE2, DetalleE2 } from '../../../../../domain/salida-operativa.model';
 import { SalidasE2UseCase } from '../../../../../application/use-case/salidas-e2.use-case';
 import { provideSalidasE2 } from '../../../../../salidas-e2.providers';
+import { SalidasTecnicasApi } from '../../../../out/http/salidas-tecnicas.api';
 import { ToastService } from '../../../../../../../../../shared/feedback/toast-center/toast.service';
 import { ActionConfirmDialogComponent } from '../../../../../../../../../shared/feedback/action-confirm-dialog/action-confirm-dialog';
+import { SolicitudSalidaTecnicaModal } from '../solicitud-tecnica/solicitud-tecnica';
 @Component({selector:'app-operativas-list',standalone:true,
- imports: [RecordCardComponent, DatePipe,FormsModule,RouterLink,FaIconComponent,PageHeaderComponent,ActionConfirmDialogComponent,PaginatorComponent,
-   LoadingStateComponent,ErrorStateComponent,EmptyStateComponent,PermissionDirective],
+ imports: [ListViewSwitchComponent, RecordCardComponent, DatePipe,FormsModule,RouterLink,FaIconComponent,PageHeaderComponent,ActionConfirmDialogComponent,PaginatorComponent,
+   LoadingStateComponent,ErrorStateComponent,EmptyStateComponent,PermissionDirective,SolicitudSalidaTecnicaModal],
  providers:[...provideSalidasE2()],templateUrl:'./operativas-list.html',styleUrl:'./operativas-list.css',
  changeDetection:ChangeDetectionStrategy.OnPush})
 export class OperativasListPage implements OnInit, AfterViewInit {
  @ViewChild('createDialog') createDialog!:ElementRef<HTMLDialogElement>;
+ @ViewChild(SolicitudSalidaTecnicaModal) solicitudModal!:SolicitudSalidaTecnicaModal;
  @ViewChild(ActionConfirmDialogComponent) confirm!:ActionConfirmDialogComponent;
  private readonly api=inject(SalidasE2UseCase);
+ private readonly documental=inject(SalidasTecnicasApi);
  private readonly toast=inject(ToastService);
  private readonly uot=inject(UotContextStore);
  private readonly route=inject(ActivatedRoute);
@@ -50,6 +55,7 @@ export class OperativasListPage implements OnInit, AfterViewInit {
   this.api.catalogos(u,this.convenioId).subscribe({next:x=>this.catalogos.set(x),error:e=>this.error.set(mapOpenApiError(e).message)});
  }
  openCreate():void {
+  if(!this.convenioId){this.solicitudModal.open();return;}
   this.nombre='';this.motivoId=0;this.inicio=this.localInput();this.fin='';this.descripcion='';
   this.editingId.set(null);
   this.creating.set(true);this.createDialog.nativeElement.showModal();
@@ -62,12 +68,15 @@ export class OperativasListPage implements OnInit, AfterViewInit {
     tone:'danger',confirmLabel:'Cancelar solicitud',requiresReason:true,reasonLabel:'Motivo',minimumReasonLength:5});
   if(!result.confirmed||!result.reason)return;
   this.saving.set(true);
-  this.api.cancelar(u,item.salidaId,result.reason,this.convenioId)
-   .pipe(finalize(()=>this.saving.set(false))).subscribe({
+  const cancelacion$: Observable<unknown> = this.convenioId
+    ? this.api.cancelar(u,item.salidaId,result.reason,this.convenioId)
+    : this.documental.cancelar(u,item.salidaId,result.reason);
+  cancelacion$.pipe(finalize(()=>this.saving.set(false))).subscribe({
       next:()=>{this.toast.success('Solicitud cancelada');this.load();},
       error:e=>this.toast.error('No se pudo cancelar',mapOpenApiError(e).message)});
  }
  editar(salidaId:number):void {
+  if(!this.convenioId){this.solicitudModal.open(salidaId);return;}
   const u=this.uotId();if(!u||this.editingLoading()!==null||this.saving())return;
   this.editingLoading.set(salidaId);
   this.api.ver(u,salidaId,this.convenioId).pipe(finalize(()=>this.editingLoading.set(null)))

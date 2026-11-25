@@ -1,0 +1,56 @@
+:host { display: contents; }
+.desco-modal-shell { display: flex; flex-direction: column; overflow: hidden; padding: 0; }
+.desco-modal-shell .admin-modal-header { flex: 0 0 auto; }
+.desco-modal-description { display: block; margin-top: .25rem; color: var(--desco-text-muted);
+  font-size: .73rem; line-height: 1.4; }
+.desco-modal-shell__body { min-width: 0; min-height: 0; overflow-y: auto; padding: 1rem 1.15rem; }
+.desco-modal-shell__footer { flex: 0 0 auto; padding: .85rem 1.15rem; border-top: 1px solid var(--desco-border); }
+.desco-modal-shell__footer:empty { display: none; }
+@media(max-width: 600px) { .desco-modal-shell__body { padding: .85rem; } .desco-modal-shell__footer { padding: .75rem .85rem; } }
+
+/* Opt-in: editor de mensajes; no cambia el aspecto de otros modales. */
+.desco-modal-shell--compose {
+  width: min(var(--desco-modal-compose-width, 730px), calc(100vw - 2rem));
+  max-width: var(--desco-modal-compose-width, 730px);
+  height: min(82dvh, 790px);
+  max-height: calc(100dvh - 2rem);
+  min-height: min(540px, calc(100dvh - 2rem));
+  border-radius: 1rem;
+}
+.desco-modal-shell--compose .admin-modal-header {
+  padding: .85rem 1.2rem;
+  border-bottom: 1px solid var(--desco-border);
+  margin: 0;
+}
+.desco-modal-shell--compose .admin-modal-title-group h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+.desco-modal-shell--compose .desco-modal-shell__body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  padding: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.desco-modal-shell--compose .desco-modal-shell__footer {
+  padding: .65rem 1.15rem;
+  background: var(--desco-surface);
+}
+@media (max-width: 600px) {
+  .desco-modal-shell--compose {
+    width: calc(100vw - .65rem);
+    max-width: calc(100vw - .65rem);
+    height: calc(100dvh - .65rem);
+    max-height: calc(100dvh - .65rem);
+    min-height: 0;
+    border-radius: .75rem;
+  }
+  .desco-modal-shell--compose .admin-modal-header { padding: .75rem .9rem; }
+  .desco-modal-shell--compose .desco-modal-shell__footer { padding: .65rem .8rem; }
+}

@@ -6,6 +6,7 @@ import {
 } from './features/acceso/acceso.routes';
 import { administracionRoutes } from './features/administracion/administracion.routes';
 import { apappssRoutes } from './features/convenios/apappss.routes';
+import { gestionDocumentariaRoutes } from './features/gestion-documentaria/gestion-documentaria.routes';
 import { documentosEvidenciasRoutes } from './features/documentos-evidencias/documentos-evidencias.routes';
 import { finanzasRoutes } from './features/finanzas/finanzas.routes';
 import { gestionComercialRoutes } from './features/gestion-comercial/gestion-comercial.routes';
@@ -59,6 +60,7 @@ export const routes: Routes = [
       ...miCuentaRoutes,
       ...administracionRoutes,
       ...apappssRoutes,
+      ...gestionDocumentariaRoutes,
       ...documentosEvidenciasRoutes,
       ...posRoutes,
       ...recursosRoutes,

@@ -1,0 +1,29 @@
+<section class="desco-list-container">
+  @if (view === 'cards' && (cardsTemplate || cardTemplate)) {
+    @if (loading) {
+      <p class="desco-list-container__message" role="status">Cargando registros...</p>
+    } @else if (rows.length === 0) {
+      <p class="desco-list-container__message">{{ emptyMessage }}</p>
+    } @else {
+      @if (cardsTemplate) {
+        <ng-container [ngTemplateOutlet]="cardsTemplate" />
+      } @else {
+        <div class="desco-record-grid" [class.desco-record-grid--institutional]="cardLayout === 'institutional'"
+          [class.desco-record-grid--bounded]="cardsBounded">
+          @for (row of rows; track identity($index, row)) {
+            <ng-container [ngTemplateOutlet]="cardTemplate" [ngTemplateOutletContext]="{ $implicit: row }" />
+          }
+        </div>
+      }
+    }
+  } @else {
+    <app-data-table [columns]="columns" [rows]="rows" [appearance]="appearance"
+      [sort]="sort" [loading]="loading" [emptyMessage]="emptyMessage"
+      [rowClickable]="rowClickable" [trackByKey]="trackByKey" [cellTemplates]="cellTemplates"
+      (rowClick)="rowClick.emit($event)" (sortChange)="sortChange.emit($event)" />
+  }
+  @if (showPaginator && !loading) {
+    <app-paginator [page]="page" [size]="size" [totalRecords]="totalRecords" [totalPages]="totalPages"
+      [pageSizes]="pageSizes" (pageChange)="pageChange.emit($event)" (sizeChange)="sizeChange.emit($event)" />
+  }
+</section>

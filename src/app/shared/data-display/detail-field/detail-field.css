@@ -1,0 +1,5 @@
+:host { display: block; min-width: 0; }
+.desco-detail-field { display: grid; gap: .25rem; min-width: 0; }
+.desco-detail-field__label { color: var(--desco-text-muted); font-size: .74rem; font-weight: 650; }
+.desco-detail-field__value { color: var(--desco-text); font-size: .84rem; font-weight: 700;
+  line-height: 1.45; overflow-wrap: anywhere; }

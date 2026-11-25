@@ -64,23 +64,22 @@
           <app-form-error [control]="form.controls.uotId" fieldLabel="La UOT" />
         </div>
 
-        <div class="admin-field">
-          <label for="suministro-form-field-8">Unidad</label>
-          <select id="suministro-form-field-8" class="admin-select" formControlName="unidadMedida" [disabled]="referencesLoading()">
-            @for (unit of units(); track unit.code) {
-              <option [value]="unit.code">{{ unit.label }} · {{ unit.code }}</option>
-            }
-          </select>
-          <app-form-error [control]="form.controls.unidadMedida" fieldLabel="La unidad" />
-        </div>
-        <div class="admin-field admin-field-span-2">
-          <label for="suministro-form-field-9">Nombre</label>
-          <input id="suministro-form-field-9" class="admin-input" maxlength="150" formControlName="nombre" />
-          <app-form-error [control]="form.controls.nombre" fieldLabel="El nombre" />
-        </div>
+        @if (mode() === 'create' || (mode() === 'edit' && !current()?.productoId)) {
+          <div class="admin-field admin-field-span-2">
+            <label for="suministro-producto-vinculo">Producto comercial (opcional)</label>
+            <select id="suministro-producto-vinculo" class="admin-select" [value]="form.controls.productoId.value" (change)="onProductChange($any($event.target).value)">
+              <option [value]="0">Nuevo suministro técnico</option>
+              @for (product of products(); track product.productoId) {
+                <option [value]="product.productoId">{{ product.nombre }} · {{ product.codigo }}</option>
+              }
+            </select>
+          </div>
+        }
+        <p class="admin-field-span-2 text-sm text-desco-muted">El suministro vinculado no comparte stock comercial. El traslado se registra al aprobar una salida técnica.</p>
+        <app-resource-identity-fields [nameControl]="form.controls.nombre" [unitControl]="form.controls.unidadMedida" [units]="units()" [loading]="referencesLoading()" [readonlyIdentity]="!!form.getRawValue().productoId" />
         @if (mode() === 'create') {
           <div class="admin-field">
-            <label for="suministro-form-field-10">Stock inicial</label>
+            <label for="suministro-form-field-10">Stock técnico inicial</label>
             <input id="suministro-form-field-10" class="admin-input" type="number" min="0" step="0.001" formControlName="stockInicial" />
           </div>
         }

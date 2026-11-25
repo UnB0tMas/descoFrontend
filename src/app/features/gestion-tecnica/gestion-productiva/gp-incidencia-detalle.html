@@ -1,10 +1,9 @@
 <div class="desco-page gp-page gp-sanitary-page">
-  <nav class="gp-breadcrumb" aria-label="Ruta de navegación">
-    <a routerLink="/gestion-tecnica/gestion-productiva">Predios</a><span>/</span>
-    <a [routerLink]="['/gestion-tecnica/gestion-productiva/predios',predioId,'parcelas',parcelaId]">Parcela</a><span>/</span>
-    <a [routerLink]="['/gestion-tecnica/gestion-productiva/predios',predioId,'parcelas',parcelaId,'actividades',actividadId]" [queryParams]="{seccion:'incidencias'}">Actividad</a><span>/</span>
-    <span aria-current="page">Incidencia #{{incidenciaId}}</span>
-  </nav>
+  <app-breadcrumb variant="compact" [showHome]="false"
+    [segments]="[{label:'Predios',url:'/gestion-tecnica/gestion-productiva'},
+                 {label:'Parcela',url:'/gestion-tecnica/gestion-productiva/predios/'+predioId+'/parcelas/'+parcelaId},
+                 {label:'Actividad',url:'/gestion-tecnica/gestion-productiva/predios/'+predioId+'/parcelas/'+parcelaId+'/actividades/'+actividadId,queryParams:{seccion:'incidencias'}},
+                 {label:'Incidencia #'+incidenciaId,url:''}]" />
   <app-page-header [title]="'Incidencia #'+incidenciaId" eyebrow="Gestión productiva · Sanidad" [icon]="pageIcon">
     <div pageActions class="flex flex-wrap gap-2">
       <a class="admin-secondary-button" [routerLink]="['/gestion-tecnica/gestion-productiva/predios',predioId,'parcelas',parcelaId,'actividades',actividadId]" [queryParams]="{seccion:'incidencias'}"><fa-icon [icon]="backIcon" /> Incidencias</a>

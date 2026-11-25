@@ -385,7 +385,7 @@
   body * { visibility: hidden !important; }
   #pos-print-receipt,#pos-print-receipt * { visibility: visible !important; }
   #pos-print-receipt { position: fixed; inset: 0 auto auto 0; width: 80mm; margin: 0; padding: 0; background: white; color: #000; }
-  @page { size: 80mm auto; margin: 3mm; }
+  @page { size: auto; margin: 3mm; }
 }
 
 /* Modal de cliente: patrón institucional usado por el formulario compartido de personas. */
@@ -430,4 +430,261 @@
   .pos-cart__header,.pos-cart__footer { padding:.8rem; }
   .pos-cart__items { padding-inline:.8rem; }
   .pos-products-table { overflow:auto; }
+}
+
+/* Gestión comercial: cabecera de turno, carrito compacto y constancia de venta. */
+.pos-register-status {display:flex;gap:.65rem;align-items:center;flex-wrap:wrap;padding:.8rem 1rem;margin:1rem 0;background:var(--desco-surface-soft);border:1px solid var(--desco-border);border-radius:.85rem;font-size:.83rem;}
+.pos-register-status__on {color:var(--desco-primary-text);font-weight:750;flex:1}
+.pos-register-status__off {color:var(--desco-text-muted);font-weight:700;flex:1}
+.pos-customer-add {margin-top:.65rem;min-height:2.25rem;font-size:.78rem;}
+.pos-cart {border-radius:1rem;box-shadow:0 6px 28px rgba(0,0,0,.07)}
+.pos-cart-item {grid-template-columns:3rem minmax(0,1fr);gap:.55rem;padding:.6rem 0;}
+.pos-cart-item app-pos-product-image {width:3rem}
+.pos-cart-item__controls {grid-template-columns:2rem 3.2rem 2rem minmax(0,1fr);gap:.3rem;margin-top:.45rem;}
+.pos-cart-item__controls .admin-icon-button {min-width:1.95rem;min-height:1.95rem}
+.pos-cart__items {max-height:min(46dvh,27rem)}
+.pos-reports {display:grid;gap:.8rem;padding:1rem;margin-bottom:1rem;border:1px solid var(--desco-border);border-radius:.85rem;}
+.pos-reports header {display:flex;justify-content:space-between;gap:1rem}
+.pos-reports small {color:var(--desco-text-muted)}
+.pos-report-controls {display:flex;gap:.6rem;align-items:end;flex-wrap:wrap}
+.pos-report-controls label {display:grid;gap:.3rem;font-size:.76rem;color:var(--desco-text-muted)}
+.pos-report-scroll {overflow-x:auto}
+.pos-report-table {width:100%;border-collapse:collapse;font-size:.8rem}
+.pos-report-table th,.pos-report-table td {padding:.5rem;text-align:right;border-bottom:1px solid var(--desco-border);white-space:nowrap}
+.pos-report-table th:first-child,.pos-report-table td:first-child {text-align:left}
+.pos-receipt-options {display:flex;justify-content:space-between;gap:.5rem;align-items:end;margin-bottom:1rem;flex-wrap:wrap}
+.pos-receipt-options label {display:grid;gap:.3rem;font-size:.8rem}
+.pos-receipt-brand {display:grid;text-align:center;gap:.2rem;margin-bottom:.7rem}
+.pos-receipt-brand strong {font-size:1.05rem}
+.pos-receipt-note {font-size:.7rem;line-height:1.4;text-align:center}
+.pos-receipt-qr {display:block;width:7rem;height:7rem;max-width:100%;margin:.75rem auto}
+.pos-receipt-total {font-size:1.1rem;margin-top:.5rem}
+.pos-receipt-a4 {max-width:40rem;width:100%;padding:2rem;margin:auto}
+@media print {
+  body.pos-print-a4 #pos-print-receipt {width:190mm;max-width:190mm;padding:12mm;font-size:12pt}
+  body.pos-print-thermal #pos-print-receipt {width:76mm;max-width:76mm;padding:2mm;font-size:9pt}
+  body.pos-print-a4 .pos-receipt-qr {width:28mm;height:28mm}
+  body.pos-print-thermal .pos-receipt-qr {width:25mm;height:25mm}
+}
+
+.pos-receipt-modal {max-width:min(94vw,48rem)}
+
+/* Ajustes adaptativos de carrito, inputs y fichas. No alteran la lógica del POS. */
+.pos-page { --pos-control-height:2.65rem; }
+.pos-page .admin-input,.pos-page .admin-select { box-sizing:border-box; min-height:var(--pos-control-height); }
+.pos-customer-search {grid-template-columns:minmax(8rem,10rem) minmax(0,1fr);align-items:end}
+.pos-customer-search .pos-type-field,.pos-customer-search app-person-lookup { min-width:0; }
+.pos-catalog-heading {min-width:0;}
+.pos-catalog-controls { min-width:0; }
+.pos-catalog-search {min-width:0;}
+.pos-cart {scrollbar-gutter:auto;}
+.pos-cart__items {padding-inline:.85rem;}
+.pos-cart-item {grid-template-columns:3.35rem minmax(0,1fr);gap:.65rem;align-items:start;}
+.pos-cart-item app-pos-product-image {width:3.35rem;min-width:0;align-self:start;}
+.pos-cart-item__heading { gap:.35rem; }
+.pos-cart-item__heading > div { flex:1;min-width:0; }
+.pos-cart-item__heading .admin-icon-button {width:2rem;min-width:2rem;min-height:2rem;flex:0 0 2rem;}
+.pos-cart-item__heading strong {line-height:1.3;}
+.pos-cart-item__heading small {overflow-wrap:anywhere;}
+.pos-cart-item__controls {grid-template-columns:2.15rem minmax(2.8rem,3.4rem) 2.15rem;
+  gap:.4rem;align-items:center;justify-content:start;}
+.pos-cart-item__controls .admin-icon-button {display:grid;place-items:center;width:2.15rem;min-width:2.15rem;
+  height:2.15rem;min-height:2.15rem;padding:0;}
+.pos-cart-item__controls .admin-input {width:100%;height:2.15rem;min-height:2.15rem;
+  padding:0 .15rem;text-align:center;font-size:.82rem;}
+.pos-cart-item__price {grid-column:1 / -1;display:flex;flex-wrap:wrap;align-items:baseline;
+  justify-content:space-between;gap:.15rem .45rem;text-align:left;min-width:0;}
+.pos-cart-item__price small {font-size:.7rem;white-space:normal;}
+.pos-cart-item__price strong {font-size:.85rem;margin-left:auto;white-space:nowrap;}
+.pos-cart__header,.pos-cart__footer {min-width:0;}
+.pos-cart__header-actions {flex:0 0 auto;}
+.pos-cart__grand-total strong {text-align:right;}
+.pos-record-details {min-width:0;}
+.pos-record-details dl > div {align-items:start;}
+.pos-record-details dd {text-align:right;max-width:65%;}
+.pos-product-grid app-record-card footer button {width:100%;min-height:2.6rem;}
+@media (min-width:1025px) and (max-width:1450px) {
+  .pos-layout {grid-template-columns:minmax(0,1fr) minmax(18.5rem,21rem);gap:.75rem;}
+  .pos-product-grid {grid-template-columns:repeat(auto-fit,minmax(min(100%,15rem),1fr));}
+}
+@media (max-width:720px) {
+  .pos-customer-search {grid-template-columns:minmax(0,1fr);}
+  .pos-cart {max-height:none;}
+}
+
+/* Carrito compacto sin miniaturas: espacio completo para nombre, cantidad y precio. */
+.pos-cart-item {grid-template-columns:minmax(0,1fr);gap:0;padding:.72rem 0;}
+.pos-cart-item__body {width:100%;min-width:0;}
+.pos-cart-item__heading {align-items:start;}
+.pos-cart-item__controls {margin-top:.55rem;}
+.pos-cart-item__price {grid-column:1/-1;}
+
+/* POS: formularios y comprobantes con el diseño común de DESCO. */
+.pos-history-row-actions {display:flex;align-items:center;justify-content:flex-end;gap:.35rem;}
+.pos-checkout-content {display:grid;gap:.9rem;font-size:.8rem;}
+.pos-checkout-summary {display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.75rem .9rem;
+ border:1px solid var(--desco-border);border-radius:.7rem;background:var(--desco-surface-soft);}
+.pos-checkout-summary span {color:var(--desco-text-muted);font-size:.77rem;}
+.pos-checkout-summary strong {font-size:clamp(1.02rem,2.4vw,1.35rem);font-weight:750;color:var(--desco-text);white-space:nowrap;}
+.pos-checkout-content .pos-payment {display:grid;gap:.7rem;border:0;padding:0;}
+.pos-checkout-content .pos-payment__heading {margin:0;font-size:.79rem;}
+.pos-checkout-content .pos-payment__heading small {font-size:.72rem;font-weight:400;}
+.pos-payment-item {display:grid;gap:.65rem;padding:.8rem;border:1px solid var(--desco-border);
+ border-radius:.75rem;background:var(--desco-surface);}
+.pos-payment-item__head {display:flex;align-items:center;justify-content:space-between;gap:.5rem;font-size:.78rem;}
+.pos-payment-item__grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.7rem;}
+.pos-payment-item__full {grid-column:1 / -1;}
+.pos-checkout-content .pos-field {display:grid;gap:.3rem;font-size:.76rem;min-width:0;}
+.pos-checkout-content .pos-field > span {color:var(--desco-text-muted);font-size:.73rem;font-weight:600;}
+.pos-checkout-content .admin-input,.pos-checkout-content .admin-select {width:100%;min-width:0;font-size:.78rem;}
+.pos-payment-totals {display:flex;flex-wrap:wrap;justify-content:space-between;gap:.55rem;padding:.7rem .8rem;
+ border:1px solid var(--desco-border);border-radius:.65rem;font-size:.76rem;background:var(--desco-surface-soft);}
+.pos-payment-totals--warning {border-color:var(--desco-warning,#e4a438);}
+.pos-modal-actions {display:flex;gap:.6rem;justify-content:flex-end;align-items:center;}
+.pos-receipt-workspace {display:grid;gap:.85rem;min-width:0;}
+.pos-receipt-options {display:flex;align-items:end;gap:.65rem;margin:0;flex-wrap:wrap;}
+.pos-receipt-options .pos-field {display:grid;gap:.3rem;min-width:10rem;flex:1 1 10rem;font-size:.75rem;}
+.pos-receipt-options .pos-field > span {font-size:.72rem;color:var(--desco-text-muted);}
+.pos-receipt-options .admin-primary-button {flex:0 0 auto;min-height:2.5rem;}
+.pos-receipt-preview {display:flex;justify-content:center;padding:1rem;background:var(--desco-surface-soft);
+ border:1px solid var(--desco-border);border-radius:.75rem;overflow:auto;max-height:min(64dvh,47rem);}
+.pos-thermal-receipt {box-sizing:border-box;flex:0 0 auto;max-width:100%;width:80mm;margin:0;padding:6mm;
+ border:1px solid #e6e8eb;border-radius:3px;box-shadow:0 8px 24px rgb(0 0 0 / 10%);font:11px/1.48 ui-monospace,monospace;}
+.pos-receipt-brand {margin-bottom:1rem;}
+.pos-receipt-brand strong {font-size:1.07rem;}
+.pos-receipt-brand small {font-size:.72rem;}
+.pos-receipt-document-heading {display:grid;justify-items:center;gap:.25rem;margin-bottom:.85rem;text-align:center;}
+.pos-receipt-document-heading h3 {font-size:1rem;letter-spacing:.065em;margin:0;}
+.pos-receipt-document-heading span {font-size:.65rem;font-weight:700;letter-spacing:.045em;}
+.pos-receipt-meta {display:grid;gap:.32rem;padding:.7rem 0;border-top:1px dashed #808080;border-bottom:1px dashed #808080;}
+.pos-receipt-meta > div {display:flex;justify-content:space-between;gap:.6rem;align-items:baseline;}
+.pos-receipt-meta span {color:#444;}
+.pos-receipt-meta strong {text-align:right;font-weight:700;overflow-wrap:anywhere;}
+.pos-receipt-items {display:grid;gap:.3rem;padding:.65rem 0;border-bottom:1px dashed #808080;}
+.pos-receipt-items__title {display:flex;justify-content:space-between;gap:.4rem;font-weight:700;}
+.pos-receipt-line {margin:.22rem 0;}
+.pos-receipt-line strong {white-space:nowrap;}
+.pos-receipt-totals {display:grid;gap:.15rem;margin-top:.6rem;}
+.pos-receipt-total {padding-top:.6rem;margin-top:.35rem;border-top:1px solid #444;font-size:1.08rem;}
+.pos-receipt-note {margin-top:1rem !important;padding-top:.5rem;border-top:1px dashed #aaa;font-size:.66rem;
+ line-height:1.45;font-weight:600;color:#333;text-align:center;}
+.pos-receipt-a4 {width:min(100%,38rem);max-width:100%;padding:1.6rem;}
+@media(max-width:600px){.pos-payment-item__grid{grid-template-columns:minmax(0,1fr)}
+ .pos-receipt-options .admin-primary-button{width:100%;justify-content:center;}
+ .pos-receipt-preview{padding:.65rem;}}
+@media print {
+ .pos-receipt-preview{border:0;max-height:none;overflow:visible;padding:0;background:white;}
+ .pos-thermal-receipt{border:0;box-shadow:none;border-radius:0;}
+ body.pos-print-a4 #pos-print-receipt{width:190mm;max-width:190mm;padding:12mm;}
+ body.pos-print-thermal #pos-print-receipt{width:76mm;max-width:76mm;padding:2mm;}
+}
+
+@media print {
+ #pos-print-receipt.pos-receipt-a4{width:190mm;max-width:190mm;padding:12mm;}
+ #pos-print-receipt:not(.pos-receipt-a4){width:76mm;max-width:76mm;padding:2mm;}
+}
+
+/* El mismo comprobante se adapta a ticket térmico y a la vista A4. */
+.pos-receipt-options__document { display:grid;gap:.2rem;min-width:11rem;margin-right:auto; }
+.pos-receipt-options__document span { color:var(--desco-text-muted);font-size:.72rem; }
+.pos-receipt-options__document strong { font-size:.9rem;color:var(--desco-text); }
+.pos-receipt-options__document small { color:var(--desco-text-muted);font-size:.73rem; }
+.pos-receipt-brand {line-height:1.5;}
+.pos-receipt-brand span {font-size:.8rem;font-weight:700;}
+.pos-receipt-document-heading strong {font-size:.85rem;letter-spacing:.05em;}
+.pos-receipt-footer {text-align:center;font-size:.7rem;margin-top:.45rem;}
+.pos-receipt-a4 { min-height: 48rem;box-shadow:0 2px 16px rgba(0,0,0,.06);font-family:Arial,Helvetica,sans-serif;font-size:.88rem;padding:2rem 2.5rem; }
+.pos-receipt-a4 .pos-receipt-brand {text-align:left;margin-bottom:1.4rem;}
+.pos-receipt-a4 .pos-receipt-document-heading {text-align:left;justify-items:start;padding:1rem;border:1px solid #dadde2;border-radius:.35rem;}
+.pos-receipt-a4 .pos-receipt-items__title {padding:.6rem .4rem;background:#f1f4f8;}
+.pos-receipt-a4 .pos-receipt-line {padding:.45rem .3rem;}
+.pos-receipt-a4 .pos-receipt-qr {margin:1.2rem 0;width:9rem;height:9rem;}
+@media (max-width:600px) {.pos-receipt-a4 {padding:1.1rem;min-height:0;}}
+@media print {body.pos-print-thermal .pos-receipt-footer {color:#000;} }
+
+/* Impresión y vista previa: ticket térmico y PDF A4 son formatos distintos. */
+.pos-receipt-preview {
+  display:block;
+  box-sizing:border-box;
+  width:100%;
+  min-width:0;
+  max-height:min(65dvh,48rem);
+  overflow:auto;
+  padding:1rem;
+  scrollbar-gutter:stable;
+}
+.pos-receipt-preview--thermal {background:var(--desco-surface-soft);}
+.pos-receipt-preview--a4 {display:grid;justify-items:center;gap:.7rem;padding:.6rem;}
+.pos-receipt-pdf {display:block;width:100%;max-width:55rem;height:min(65dvh,48rem);border:0;background:white;}
+.pos-receipt-preview__empty {font-size:.8rem;color:var(--desco-text-muted);text-align:center;}
+.pos-thermal-receipt {
+  display:block;
+  box-sizing:border-box;
+  width:80mm;
+  max-width:100%;
+  height:auto;
+  min-height:0;
+  margin:0 auto;
+  padding:5mm 5mm 7mm;
+  overflow:visible;
+  background:#fff;
+  color:#1a1a1a;
+  font:11px/1.52 ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace;
+  overflow-wrap:anywhere;
+  box-shadow:0 5px 22px rgb(0 0 0 / 11%);
+}
+.pos-thermal-receipt .pos-receipt-brand {display:grid;gap:.2rem;text-align:center;margin:0 0 .7rem;}
+.pos-thermal-receipt .pos-receipt-brand strong {font-size:13px;line-height:1.35;overflow-wrap:anywhere;}
+.pos-thermal-receipt .pos-receipt-brand span,
+.pos-thermal-receipt .pos-receipt-brand small {font-size:10px;line-height:1.35;overflow-wrap:anywhere;}
+.pos-thermal-receipt .pos-receipt-document-heading {display:grid;gap:.3rem;margin:0 0 .75rem;text-align:center;}
+.pos-thermal-receipt .pos-receipt-document-heading h3 {font-size:12px;letter-spacing:.02em;line-height:1.35;}
+.pos-thermal-receipt .pos-receipt-document-heading strong {font-size:11px;letter-spacing:.02em;}
+.pos-thermal-receipt .pos-receipt-meta {padding:.65rem 0;gap:.35rem;}
+.pos-thermal-receipt .pos-receipt-meta > div {display:grid;grid-template-columns:5rem minmax(0,1fr);gap:.35rem;align-items:start;}
+.pos-thermal-receipt .pos-receipt-meta strong {min-width:0;line-height:1.35;overflow-wrap:anywhere;text-align:right;}
+.pos-thermal-receipt .pos-receipt-items {padding:.7rem 0;gap:.45rem;}
+.pos-thermal-receipt .pos-receipt-items__title {display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.6rem;}
+.pos-thermal-receipt .pos-receipt-item {display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.6rem;align-items:start;}
+.pos-thermal-receipt .pos-receipt-item > span {min-width:0;overflow-wrap:anywhere;}
+.pos-thermal-receipt .pos-receipt-item small {margin-top:.15rem;font-size:10px;color:#333;}
+.pos-thermal-receipt .pos-receipt-item strong {white-space:nowrap;}
+.pos-thermal-receipt .pos-receipt-total {padding-top:.6rem;margin-top:.3rem;font-size:13px;}
+.pos-thermal-receipt .pos-receipt-qr {
+  display:block;
+  position:static;
+  box-sizing:content-box;
+  width:27mm;
+  height:27mm;
+  max-width:100%;
+  object-fit:contain;
+  margin:1rem auto .55rem;
+  padding:0;
+}
+.pos-thermal-receipt .pos-receipt-footer {margin:.3rem 0 0;text-align:center;font-size:10px;line-height:1.5;}
+@media (max-width:560px) {
+  .pos-receipt-preview {padding:.65rem;scrollbar-gutter:auto;}
+  .pos-receipt-pdf {height:60dvh;}
+}
+@media print {
+  body.pos-print-thermal #pos-print-receipt {
+    display:block !important;
+    position:absolute;
+    inset:0 auto auto 0;
+    width:76mm;
+    max-width:76mm;
+    height:auto;
+    min-height:0;
+    margin:0;
+    padding:2mm;
+    overflow:visible;
+    background:#fff;
+    color:#000;
+    box-shadow:none;
+    border:0;
+    border-radius:0;
+    break-inside:avoid;
+  }
+  body.pos-print-thermal .pos-receipt-preview {max-height:none;overflow:visible;padding:0;border:0;background:#fff;}
+  body.pos-print-thermal .pos-thermal-receipt .pos-receipt-qr {width:25mm;height:25mm;}
 }

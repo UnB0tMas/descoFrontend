@@ -1,14 +1,20 @@
 import { inject, Injectable } from '@angular/core';
 import { GpIncidenciaAltaRequest, GpIncidenciaEditarRequest, GpTratamientoAplicarRequest, GpIncidenciaCerrarRequest } from '../../../infrastructure/openapi/generated/api/gestionProductivaGeneral.service';
-import { map } from 'rxjs';
+import { catchError, map, of } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../../environments/environment';
+import { ApiEnvelope, unwrapApiResponse } from '../../../infrastructure/openapi/api-response-unwrapper';
 import { GestionProductivaGeneralService } from '../../../infrastructure/openapi/generated/api/gestionProductivaGeneral.service';
 import { GpParcelaAltaRequest } from '../../../infrastructure/openapi/generated/model/gpParcelaAltaRequest';
 import { GpParcelaEditarRequest } from '../../../infrastructure/openapi/generated/model/gpParcelaEditarRequest';
 import { GpActividadAltaRequest } from '../../../infrastructure/openapi/generated/model/gpActividadAltaRequest';
 import { GpActividadEditarRequest } from '../../../infrastructure/openapi/generated/model/gpActividadEditarRequest';
 import { GpCensoAltaRequest } from '../../../infrastructure/openapi/generated/model/gpCensoAltaRequest';
+import { GpResumenPeriodo, GpResumenTipoEvento } from '../../../infrastructure/openapi/generated/model/gpResumenResponse';
 import { GpEventoAltaRequest } from '../../../infrastructure/openapi/generated/model/gpEventoAltaRequest';
 import { GpCatalogoRazaRequest } from '../../../infrastructure/openapi/generated/model/gpCatalogoRazaRequest';
+import { GpProductorEditarRequest } from '../../../infrastructure/openapi/generated/model/gpProductorEditarRequest';
+import { GpProductorParcelaAltaRequest } from '../../../infrastructure/openapi/generated/model/gpProductorParcelaAltaRequest';
 import { GpCatalogoCultivoRequest } from '../../../infrastructure/openapi/generated/model/gpCatalogoCultivoRequest';
 import { GpCatalogoEspecieRequest } from '../../../infrastructure/openapi/generated/model/gpCatalogoEspecieRequest';
 import { GpCatalogoProblemaRequest } from '../../../infrastructure/openapi/generated/model/gpCatalogoProblemaRequest';
@@ -16,6 +22,24 @@ import { GpCatalogoTratamientoRequest } from '../../../infrastructure/openapi/ge
 @Injectable({providedIn:'root'})
 export class GpGeneralFacade {
   private readonly api=inject(GestionProductivaGeneralService);
+  private readonly http=inject(HttpClient);
+  puedeActuarProductor(uot:number,persona:number){
+    return this.http.get<ApiEnvelope<boolean>>(`${environment.apiBaseUrl}/api/v1/gestion-productiva-general/productores/${persona}/autorizacion-tecnica`,
+      {params:{uotId:uot}}).pipe(map(r=>unwrapApiResponse(r)===true),catchError(()=>of(false)));
+  }
+  puedeActuar(uot:number,predio:number){
+    return this.http.get<ApiEnvelope<boolean>>(`${environment.apiBaseUrl}/api/v1/gestion-productiva-general/predios/${predio}/autorizacion-tecnica`,
+      {params:{uotId:uot}}).pipe(map(r=>unwrapApiResponse(r)===true),catchError(()=>of(false)));
+  }
+  productores(uot:number,buscar=''){return this.api.gpProductoresListar(uot,buscar).pipe(map(r=>r.datos??[]));}
+  parcelasProductor(uot:number,persona:number){return this.api.gpProductorParcelasListar(uot,persona).pipe(map(r=>r.datos??[]));}
+  crearParcelaProductor(uot:number,persona:number,q:GpProductorParcelaAltaRequest,key:string){return this.api.gpProductorParcelaCrear(uot,persona,q,key).pipe(map(r=>r.datos.id));}
+  editarProductor(uot:number,persona:number,q:GpProductorEditarRequest,key:string=crypto.randomUUID()){
+    return this.api.gpProductorEditar(uot,persona,q,key).pipe(map(r=>r.datos.id));
+  }
+  retirarProductor(uot:number,persona:number,motivo:string,key:string=crypto.randomUUID()){
+    return this.api.gpProductorRetirar(uot,persona,motivo,key).pipe(map(r=>r.datos.id));
+  }
   parcelas(uot:number,predio:number){return this.api.gpParcelasListar(uot,predio).pipe(map(r=>r.datos??[]));}
   crearParcela(u:number,q:GpParcelaAltaRequest,key:string=crypto.randomUUID()){return this.api.gpParcelaCrear(u,q,key).pipe(map(r=>r.datos.id));}
   editarParcela(u:number,id:number,q:GpParcelaEditarRequest,key:string=crypto.randomUUID()){return this.api.gpParcelaEditar(u,id,q,key).pipe(map(r=>r.datos.id));}
@@ -23,6 +47,7 @@ export class GpGeneralFacade {
   actividades(uot:number,parcela:number){return this.api.gpActividadesListar(uot,parcela).pipe(map(r=>r.datos??[]));}
   revisiones(uot:number,id:number){return this.api.gpActividadRevisionesListar(uot,id).pipe(map(r=>r.datos??[]));}
   censos(uot:number,id:number){return this.api.gpCensosListar(uot,id).pipe(map(r=>r.datos??[]));}
+  resumen(uot:number,id:number,periodo:GpResumenPeriodo,tipo:GpResumenTipoEvento){return this.api.gpResumenObtener(uot,id,periodo,tipo).pipe(map(r=>r.datos));}
   eventos(uot:number,id:number){return this.api.gpEventosListar(uot,id).pipe(map(r=>r.datos??[]));}
   crearActividad(u:number,q:GpActividadAltaRequest){return this.api.gpActividadCrear(u,q,crypto.randomUUID()).pipe(map(r=>r.datos.id));}
   editarActividad(u:number,id:number,q:GpActividadEditarRequest){return this.api.gpActividadEditar(u,id,q,crypto.randomUUID()).pipe(map(r=>r.datos.id));}
@@ -37,6 +62,7 @@ export class GpGeneralFacade {
   retirarIncidencia(u:number,id:number,motivo:string){return this.api.gpIncidenciaRetirar(u,id,{motivo},crypto.randomUUID()).pipe(map(r=>r.datos.id));}
   revisionesIncidencia(u:number,id:number){return this.api.gpIncidenciaRevisionesListar(u,id).pipe(map(r=>r.datos??[]));}
   aplicarTratamiento(u:number,id:number,q:GpTratamientoAplicarRequest){return this.api.gpIncidenciaTratamientoCrear(u,id,q,crypto.randomUUID()).pipe(map(r=>r.datos.id));}
+  eliminarTratamiento(u:number,id:number,motivo:string){return this.api.gpIncidenciaTratamientoEliminar(u,id,{motivo},crypto.randomUUID()).pipe(map(r=>r.datos.id));}
   finalizarTratamiento(u:number,id:number,descripcion:string){return this.api.gpIncidenciaTratamientoFinalizar(u,id,{descripcion},crypto.randomUUID()).pipe(map(r=>r.datos.id));}
   cerrarIncidencia(u:number,id:number,q:GpIncidenciaCerrarRequest){return this.api.gpIncidenciaCerrar(u,id,q,crypto.randomUUID()).pipe(map(r=>r.datos.id));}
   finalizarActividad(u:number,id:number,motivo:string){return this.api.gpActividadFinalizar(u,id,motivo,crypto.randomUUID()).pipe(map(r=>r.datos.id));}

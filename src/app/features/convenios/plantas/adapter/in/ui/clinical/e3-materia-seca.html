@@ -45,7 +45,7 @@
         <span class="e4-seca-badge" [class.e4-seca-badge--total]="m.cobertura==='TOTAL'">{{m.cobertura==='TOTAL'?'Total':'Parcial'}}</span></td>
        <td><strong class="e4-seca-quantity">{{m.cantidadPlantas}} / {{m.totalPlantasAlRegistro}} plantas</strong><small>{{m.cantidadFrutos??'—'}} frutos analizados</small></td>
        <td><span class="e4-seca-method">{{m.metodo??'No informado'}}</span></td>
-       <td class="e4-seca-user"><strong>{{m.usuarioNombre||('Usuario #'+m.usuarioId)}}</strong>
+       <td class="e4-seca-user"><strong>{{m.usuarioNombre||'No identificado'}}</strong>
         <small>{{m.fechaRegistro|date:'dd/MM/yyyy HH:mm'}}</small>
         @if(m.fechaModificacion){<small>Modificado por {{m.modificadoPorNombre||'Usuario registrado'}} · {{m.fechaModificacion|date:'dd/MM/yyyy HH:mm'}}</small>}
        </td>
@@ -75,7 +75,7 @@
       <div><dt>Plantas analizadas</dt><dd>{{m.cantidadPlantas}} / {{m.totalPlantasAlRegistro}}</dd></div>
       <div><dt>Frutos analizados</dt><dd>{{m.cantidadFrutos??'—'}}</dd></div>
       <div><dt>Método</dt><dd>{{m.metodo??'No informado'}}</dd></div>
-      <div><dt>Registrado por</dt><dd>{{m.usuarioNombre||('Usuario #'+m.usuarioId)}}</dd></div>
+      <div><dt>Registrado por</dt><dd>{{m.usuarioNombre||'No identificado'}}</dd></div>
       <div><dt>Fecha de registro</dt><dd>{{m.fechaRegistro|date:'dd/MM/yyyy HH:mm'}}</dd></div>
      </dl>
      <div class="e4-seca-card-observation"><span>Observación</span><p>{{m.informe}}</p></div>

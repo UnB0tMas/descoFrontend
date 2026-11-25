@@ -1,0 +1,30 @@
+<dialog #dialog class="modal desco-modal person-edit-dialog" (cancel)="$event.preventDefault(); close()"
+  aria-labelledby="person-edit-title">
+  <div class="modal-box admin-modal-box person-edit-box">
+    <header class="admin-modal-header">
+      <div class="admin-modal-title-group">
+        <span class="admin-modal-icon"><fa-icon [icon]="editIcon" /></span>
+        <div><p>DATOS PERSONALES</p><h2 id="person-edit-title">Editar persona</h2></div>
+      </div>
+      <button class="admin-icon-button" type="button" aria-label="Cerrar" [disabled]="saving()" (click)="close()">
+        <fa-icon [icon]="closeIcon" />
+      </button>
+    </header>
+    @if (current(); as person) {
+      <div class="person-edit-content">
+        <p class="person-edit-document">{{person.tipoDocumento}} {{person.numeroDocumento}}</p>
+        @if (error()) { <p class="admin-inline-error" role="alert">{{error()}}</p> }
+        <app-person-data-fields [form]="form" [identityVisible]="false" [birthDateVisible]="false"
+          [districtCode]="form.controls.distritoCodigo.value ?? ''"
+          [populationCenterId]="form.controls.centroPobladoId.value" [disabled]="saving()"
+          [referenceLabel]="'Dirección o referencia'" (geographyChanged)="geography($event)" />
+      </div>
+    }
+    <footer class="person-edit-footer">
+      <button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="close()">Cancelar</button>
+      <button type="button" class="admin-primary-button" [disabled]="saving()" (click)="save()">
+        {{saving() ? 'Guardando…' : 'Guardar cambios'}}
+      </button>
+    </footer>
+  </div>
+</dialog>

@@ -27,8 +27,20 @@
     </div>
   </app-page-header>
 
+  @if (referencesError()) {
+    <div class="admin-inline-error mt-3" role="alert">
+      {{ referencesError() }}
+      <button type="button" class="admin-secondary-button" [disabled]="referencesLoading()" (click)="loadReferences()">Reintentar</button>
+    </div>
+  }
+
   <section class="admin-surface mt-5">
     <div class="admin-toolbar admin-toolbar--end">
+      <div class="admin-field desco-admin-toolbar-search">
+        <label for="uotSearch">Buscar</label>
+        <input id="uotSearch" type="search" class="admin-input" placeholder="Nombre o código" [value]="search()" (input)="setSearch($any($event.target).value)" />
+      </div>
+      <app-list-view-switch appearance="segmented" [view]="viewMode()" (viewChange)="viewMode.set($event)" />
       <label class="admin-switch-row uot-inactive-switch">
         <span>
           <strong>Ver inactivas</strong>
@@ -53,7 +65,7 @@
         [message]="errorMessage() || 'No se pudo cargar la información.'"
         (retry)="load()"
       />
-    } @else if (units().length === 0) {
+    } @else if (filteredUnits().length === 0) {
       <app-empty-state
         [title]="showInactive() ? 'Sin UOT inactivas' : 'Sin UOT activas'"
         [message]="
@@ -63,20 +75,26 @@
         "
       />
     } @else {
-      <div class="admin-table-wrap">
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th>UOT</th>
-              <th>Superior</th>
-              <th class="text-center">Asignación</th>
-              <th class="text-center">Estado</th>
-              <th class="text-right">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (unit of units(); track unit.uotId) {
-              <tr>
+      @if (viewMode() === 'cards') {
+      <div class="desco-record-grid desco-admin-record-grid">
+        @for (unit of visibleUnits(); track unit.uotId) {
+<app-record-card>
+ <header><span class="admin-entity-icon"><fa-icon [icon]="pageIcon" /></span><span class="admin-code">{{ unit.codigo }}</span></header>
+ <h3>{{ unit.nombre }}</h3><p class="gp-subtle">Superior: {{ parentName(unit) }}</p>
+ <dl><div><dt>Asignación</dt><dd>{{ unit.predeterminada ? 'Predeterminada' : unit.asignada ? 'Asignada' : 'No asignada' }}</dd></div><div><dt>Estado</dt><dd>{{ unit.estado ? 'Activa' : 'Inactiva' }}</dd></div></dl>
+ <footer><div class="admin-row-actions">
+ @if (unit.estado) {
+ <button *appPermission="'UOT_EDITAR'" type="button" class="admin-icon-button" title="Editar UOT" (click)="edit(unit)"><fa-icon [icon]="editIcon" /></button>
+ <button *appPermission="'UOT_ADMINISTRAR_ACCESOS'" type="button" class="admin-icon-button" [disabled]="referencesLoading()" title="Accesos" (click)="access(unit)"><fa-icon [icon]="accessIcon" /></button>
+ @if (!unit.esRaiz) { <button *appPermission="'UOT_RETIRAR'" type="button" class="admin-icon-button admin-icon-button--danger" title="Deshabilitar" (click)="deactivate(unit)"><fa-icon [icon]="deactivateIcon" /></button> }
+ } </div></footer>
+</app-record-card>
+        }
+      </div>
+      } @else {
+<app-data-table appearance="admin" [columns]="uotUnitsColumns" [rows]="visibleUnits()" [rowTemplate]="uotUnitsRow" [trackByKey]="'uotId'" />
+        <ng-template #uotUnitsRow let-unit>
+
                 <td>
                   <div class="admin-stack-copy">
                     <strong>{{ unit.nombre }}</strong>
@@ -142,11 +160,11 @@
                     }
                   </div>
                 </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
+              
+        </ng-template>
+      }
+      <app-paginator [page]="visiblePage()" [size]="pageSize()" [totalRecords]="filteredUnits().length" [totalPages]="totalPages()"
+        (pageChange)="changePage($event)" (sizeChange)="changeSize($event)" />
     }
   </section>
 </div>

@@ -312,7 +312,9 @@ export class E5Page implements OnInit {
   this.api.liquidaciones(this.campaignId).subscribe({next:d=>this.liquidaciones.set(d),error:e=>this.fail(e)});
  }
  async abrirGastoDocumentos(id:number,concepto:string):Promise<void> {
-  if(!this.can('ARCHIVOS_CREAR')||this.frozen())return;
+  if(!this.can('ARCHIVOS_CREAR')||!this.can('GASTOS_EDITAR')||this.frozen())return;
+  const gasto=this.gastos()?.gastos?.find(g=>g.gastoId===id);
+  if(!gasto||gasto.estado==='ANULADO')return;
   const result=await this.uploader?.open({tipo:'GASTO',id,etiqueta:concepto});
   if(result?.saved)this.done('Comprobante registrado.');
  }

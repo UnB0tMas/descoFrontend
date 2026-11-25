@@ -182,7 +182,7 @@
 
       } @else {
         <div class="admin-field admin-field-span-2">
-          <span>Datos de la persona</span>
+          <label>Persona seleccionada</label>
           @if (identityCaptured()) {
             <div class="admin-entity"><strong>{{ form.controls.nombres.value }} {{ form.controls.apellidoPaterno.value }}</strong>
               <span>{{form.controls.tipoDocumento.value}} · {{form.controls.numeroDocumento.value}}</span></div>
@@ -205,7 +205,7 @@
             <option [value]="unit.uotId">{{ unit.nombre }}</option>
           }
         </select>
-        <small>En vista general puede escoger la adscripción; al editar permanece fija.</small>
+
         <app-form-error [control]="form.controls.uotId" fieldLabel="La UOT" />
       </div>
 

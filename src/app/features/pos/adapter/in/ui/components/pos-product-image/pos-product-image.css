@@ -28,3 +28,11 @@
   font-weight: 800;
   text-transform: uppercase;
 }
+
+/* SVG monocromático, neutro y consistente con los iconos de la aplicación. */
+.pos-product-image__placeholder {
+  background:var(--desco-surface-soft);
+  color:var(--desco-text-muted);
+  opacity:.68;
+}
+.pos-product-image__art {display:block;width:72%;height:72%;max-width:5rem;}

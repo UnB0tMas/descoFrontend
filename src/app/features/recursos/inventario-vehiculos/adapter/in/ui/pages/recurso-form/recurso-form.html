@@ -20,16 +20,41 @@
       @if (mode() === 'create') { <div class="admin-field"><label for="recurso-form-field-8">UOT del bien</label><select id="recurso-form-field-8" class="admin-select" formControlName="uotId" (change)="onUotChange()"><option [value]="0">Seleccionar</option>@for (unit of availableUnits(); track unit.uotId) { <option [value]="unit.uotId">{{ unit.nombre }}</option> }</select><app-form-error [control]="form.controls.uotId" fieldLabel="La UOT" /></div> }
       <div class="admin-field"><label for="recurso-form-field-9">Tipo de bien</label><select id="recurso-form-field-9" class="admin-select" formControlName="tipoBienId"><option [value]="0">Seleccionar</option>@for (type of assetTypes(); track type.value) { <option [value]="type.value">{{ type.label }}</option> }</select><app-form-error [control]="form.controls.tipoBienId" fieldLabel="El tipo de bien" /></div>
 <div class="admin-field"><label for="recurso-form-field-10">Nombre</label><input id="recurso-form-field-10" class="admin-input" formControlName="nombre" maxlength="150" /><app-form-error [control]="form.controls.nombre" fieldLabel="El nombre" [messages]="{ blank: 'El nombre no puede contener solo espacios.' }" /></div>
-      <div class="admin-field"><label for="recurso-form-field-11">Marca</label><input id="recurso-form-field-11" class="admin-input" formControlName="marca" maxlength="80" /></div><div class="admin-field"><label for="recurso-form-field-12">Modelo</label><input id="recurso-form-field-12" class="admin-input" formControlName="modelo" maxlength="80" /></div><div class="admin-field"><label for="recurso-form-field-13">Serie</label><input id="recurso-form-field-13" class="admin-input" formControlName="serie" maxlength="100" /></div>
+      <div class="admin-field"><label for="recurso-form-field-11">Marca (opcional)</label><input id="recurso-form-field-11" class="admin-input" formControlName="marca" maxlength="80" /></div><div class="admin-field"><label for="recurso-form-field-12">Modelo (opcional)</label><input id="recurso-form-field-12" class="admin-input" formControlName="modelo" maxlength="80" /></div><div class="admin-field"><label for="recurso-form-field-13">Serie (opcional)</label><input id="recurso-form-field-13" class="admin-input" formControlName="serie" maxlength="100" /></div>
       @if (isVehicleAsset()) {
         <div class="resource-form-section admin-field-span-2"><span>Datos del vehículo</span></div>
         <ng-container *ngTemplateOutlet="vehicleFields"></ng-container>
       }
+      <div class="resource-technical-use admin-field-span-2" [class.resource-technical-use--enabled]="form.controls.permiteSalidaTecnica.value">
+        <app-toggle
+          label="Disponible para salidas técnicas"
+          [checked]="form.controls.permiteSalidaTecnica.value"
+          [disabled]="form.controls.permiteSalidaTecnica.disabled"
+          (checkedChange)="onTechnicalUseChange($event)"
+        />
+        <p>Permite asignar el bien a trabajos de campo autorizados.</p>
+      </div>
       <div class="resource-form-section admin-field-span-2"><span>Adquisición</span></div>
       <div class="admin-field"><label for="recurso-form-field-14">Fecha de adquisición</label><input id="recurso-form-field-14" class="admin-input" type="date" [max]="today" formControlName="fechaAdquisicion" /><app-form-error [control]="form.controls.fechaAdquisicion" fieldLabel="La fecha de adquisición" [messages]="{ futureDate: 'La fecha no puede ser futura.' }" /></div>
-      <div class="admin-field"><label for="recurso-form-monto">Monto de adquisición</label><div class="resource-money-field"><select id="recurso-form-field-15" aria-label="Moneda de adquisición" class="admin-select" formControlName="moneda">@for (currency of currencies(); track currency.code) { <option [value]="currency.code">{{ currency.code }}</option> }</select><input class="admin-input" type="number" min="0" step="0.01" id="recurso-form-monto" formControlName="montoAdquisicion" /></div></div>
-      <div class="admin-field admin-field-span-2"><label for="recurso-form-field-16">Proveedor</label><select id="recurso-form-field-16" class="admin-select" formControlName="proveedorEmpresaId"><option [value]="0">Sin proveedor registrado</option>@for (organization of organizations(); track organization.value) { <option [value]="organization.value">{{ organization.label }} @if (organization.description) { · {{ organization.description }} }</option> }</select></div>
-      <div class="admin-field admin-field-span-2"><label for="recurso-form-field-17">Observación</label><textarea id="recurso-form-field-17" class="admin-textarea" rows="3" maxlength="500" formControlName="observacion"></textarea></div>
+      <div class="admin-field"><label for="recurso-form-monto">Monto de adquisición (opcional)</label><div class="resource-money-field"><select id="recurso-form-field-15" aria-label="Moneda de adquisición" class="admin-select" formControlName="moneda">@for (currency of currencies(); track currency.code) { <option [value]="currency.code">{{ currency.code }}</option> }</select><input class="admin-input" type="number" min="0" step="0.01" id="recurso-form-monto" formControlName="montoAdquisicion" placeholder="Sin registrar" /></div></div>
+      <div class="admin-field admin-field-span-2"><label for="recurso-form-field-16">Proveedor (opcional)</label>
+        <select id="recurso-form-field-16" class="admin-select" formControlName="proveedorSeleccionado">
+          <option value="">Sin proveedor</option>
+          @for (supplier of organizations(); track supplier.id) {
+            <option [value]="supplier.tipo + ':' + supplier.entidadId">{{supplier.nombre}} · {{supplier.tipoDocumento}} {{supplier.documento}}</option>
+          }
+        </select>
+      </div>
+      <div class="admin-field admin-field-span-2"><label for="recurso-form-field-17">Observación (opcional)</label><textarea id="recurso-form-field-17" class="admin-textarea" rows="3" maxlength="500" formControlName="observacion"></textarea></div>
+      @if (canUploadImages()) {
+        <div class="admin-field admin-field-span-2">
+          <app-e3-file-dropzone title="Imágenes del bien (opcional)" [files]="imageFiles()"
+            [multiple]="true" [maxFiles]="5" [maxSizeMb]="15"
+            accept="image/jpeg,image/png,image/webp" fileTypesHint="JPG, PNG o WebP"
+            [disabled]="saving()" [uploading]="saving()"
+            (filesChange)="imageFiles.set($event)" (invalid)="errorMessage.set($event)" />
+        </div>
+      }
       <ng-container *ngTemplateOutlet="actions"></ng-container>
     </form>
   }

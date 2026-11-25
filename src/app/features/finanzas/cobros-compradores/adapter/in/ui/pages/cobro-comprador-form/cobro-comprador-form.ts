@@ -1,14 +1,15 @@
-import { ChangeDetectionStrategy, Component, ElementRef, ViewChild, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, ViewChild, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
 import { faCashRegister, faFloppyDisk, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { finalize } from 'rxjs';
 import { mapOpenApiError } from '../../../../../../../../infrastructure/openapi/openapi-http-error.mapper';
 import { ToastService } from '../../../../../../../../shared/feedback/toast-center/toast.service';
+import { E3FileDropzoneComponent } from '../../../../../../../../shared/files/file-dropzone/file-dropzone';
 import { RegistrarCobroCompradorUseCase } from '../../../../../application/use-case/registrar-cobro-comprador.use-case';
 import { SubirDocumentoEvidenciaUseCase } from '../../../../../../../documentos-evidencias/application/use-case/subir-documento-evidencia.use-case';
 export interface CobroCompradorFormResult { saved:boolean; id?:number; }
-@Component({selector:'app-cobro-comprador-form',standalone:true,imports:[ReactiveFormsModule,FaIconComponent],
+@Component({selector:'app-cobro-comprador-form',standalone:true,imports:[ReactiveFormsModule,FaIconComponent,E3FileDropzoneComponent],
  templateUrl:'./cobro-comprador-form.html',styleUrl:'./cobro-comprador-form.css',changeDetection:ChangeDetectionStrategy.OnPush})
 export class CobroCompradorFormComponent {
  @ViewChild('dialog',{static:true}) private dialog!:ElementRef<HTMLDialogElement>;
@@ -20,6 +21,8 @@ export class CobroCompradorFormComponent {
  readonly saving=signal(false);readonly campaniaFijada=signal(false);readonly compradorNombre=signal('');
  readonly error=signal<string|null>(null);readonly pageIcon=faCashRegister;readonly saveIcon=faFloppyDisk;readonly closeIcon=faXmark;
  readonly tope=signal<number|null>(null);readonly archivo=signal<File|null>(null);
+ readonly archivos=computed(()=>this.archivo()?[this.archivo()!]:[]);
+ readonly subiendoComprobante=signal(false);
  readonly medios=['TRANSFERENCIA','DEPOSITO','YAPE','PLIN','EFECTIVO'] as const;
  readonly form=this.fb.nonNullable.group({campaniaVentaId:[0,[Validators.required,Validators.min(1)]],
   operativoVentaId:[0],importe:[0,[Validators.required,Validators.min(.01)]],moneda:['PEN',[Validators.required]],
@@ -31,11 +34,12 @@ export class CobroCompradorFormComponent {
  });}
  open(campaniaVentaId=0,operativoVentaId=0,comprador='',saldoMax?:number):Promise<CobroCompradorFormResult>{
   this.form.reset({campaniaVentaId,operativoVentaId,importe:0,moneda:'PEN',medioPago:'TRANSFERENCIA',numeroOperacion:''});
-  this.efectivo.set(false);this.archivo.set(null);this.tope.set(saldoMax===undefined?null:Math.max(0,saldoMax));
+  this.efectivo.set(false);this.archivo.set(null);this.subiendoComprobante.set(false);this.tope.set(saldoMax===undefined?null:Math.max(0,saldoMax));
   this.campaniaFijada.set(campaniaVentaId>0);this.compradorNombre.set(comprador);this.error.set(null);
   this.dialog.nativeElement.showModal();return new Promise(r=>this.resolver=r);
  }
- seleccionarArchivo(event:Event):void{const input=event.target as HTMLInputElement;this.archivo.set(input.files?.[0]??null);}
+ cambiarArchivo(files:File[]):void{this.archivo.set(files[0]??null);this.error.set(null);}
+ archivoInvalido(message:string):void{this.error.set(message);}
  close():void{if(!this.saving())this.finish({saved:false});}
  submit():void{
   const v=this.form.getRawValue();const importe=Number(v.importe);
@@ -56,8 +60,9 @@ export class CobroCompradorFormComponent {
    importe,moneda:'PEN',medioPago:medio,numeroOperacion:operacion}).subscribe({
     next:id=>{
      if(!file){this.toast.success('Cobro registrado');this.saving.set(false);this.finish({saved:true,id});return;}
+     this.subiendoComprobante.set(true);
      this.evidence.execute({file,tipoEvidencia:'COMPROBANTE',categoria:'COMPROBANTE',
-      contexto:{tipo:'COBRO',id}}).pipe(finalize(()=>this.saving.set(false))).subscribe({
+      contexto:{tipo:'COBRO',id}}).pipe(finalize(()=>{this.subiendoComprobante.set(false);this.saving.set(false);})).subscribe({
       next:()=>{this.toast.success('Cobro y comprobante registrados');this.finish({saved:true,id});},
       error:e=>{this.toast.error('Cobro registrado, pero no se pudo adjuntar el comprobante',mapOpenApiError(e).message);
        this.finish({saved:true,id});}

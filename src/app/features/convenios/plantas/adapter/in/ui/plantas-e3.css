@@ -103,10 +103,6 @@
 @media(max-width:480px){:host .e3-lote-line{grid-template-columns:minmax(0,1fr)}:host .e3-lote-line .admin-field:nth-child(3),:host .e3-remove-line{grid-column:auto;grid-row:auto}:host .e3-remove-line{justify-self:end}:host .e3-lote-footer button{flex:1 1 0}}
 
 /* Las clases GP están encapsuladas en sus vistas de origen: replicar sus reglas aquí. */
-:host .gp-view-toggle{display:inline-flex;align-items:center;gap:.2rem;border:1px solid var(--desco-border);border-radius:.75rem;padding:.2rem;background:var(--desco-surface)}
-:host .gp-view-toggle button{display:inline-flex;align-items:center;justify-content:center;gap:.45rem;border:0;background:transparent;color:var(--desco-text-muted);font-size:.8rem;font-weight:650;padding:.6rem .8rem;border-radius:.55rem;cursor:pointer}
-:host .gp-view-toggle button.active{background:var(--desco-surface-soft);color:var(--desco-primary)}
-:host .gp-view-toggle button:focus-visible{outline:2px solid var(--desco-primary);outline-offset:2px}
 :host .gp-card-actions{display:flex;flex-wrap:wrap;align-items:center;gap:.45rem;margin-top:auto;border-top:1px solid var(--desco-border);padding-top:.8rem}
 :host .gp-cards--institutional .gp-card{box-shadow:0 1px 3px rgba(15,23,42,.04);transition:border-color .15s,transform .15s}
 :host .gp-cards--institutional .gp-card:hover{border-color:var(--desco-primary);transform:translateY(-1px)}
@@ -199,9 +195,9 @@
 
 /* Acciones del listado: selector Tabla/Tarjetas debajo de los filtros, sin desplazar los campos. */
 :host .e3-list-toolbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;margin:.65rem 0 0;padding:.85rem 0 .2rem}
-:host .e3-list-toolbar .gp-view-toggle{flex:0 0 auto}
+:host .e3-list-toolbar app-list-view-switch{flex:0 0 auto}
 :host .e3-list-toolbar .admin-primary-button{margin-left:auto}
-@media(max-width:600px){:host .e3-list-toolbar .gp-view-toggle{max-width:100%}:host .e3-list-toolbar .admin-primary-button{width:100%;margin-left:0}}
+@media(max-width:600px){:host .e3-list-toolbar app-list-view-switch{max-width:100%}:host .e3-list-toolbar .admin-primary-button{width:100%;margin-left:0}}
 
 /* Expediente de planta como página; evita modal horizontal/centrado y conserva controles. */
 :host .e3-expediente-page{display:block;width:100%;min-width:0;padding:0;border:0;background:transparent}

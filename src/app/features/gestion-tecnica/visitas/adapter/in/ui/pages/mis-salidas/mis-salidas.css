@@ -1,0 +1,15 @@
+:host{display:block;min-width:0}
+.mis-salidas-page{min-width:0}
+.mis-salidas-tabs{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:1rem;border-bottom:1px solid var(--desco-border);padding-bottom:.6rem}
+.mis-salidas-tab{padding:.5rem .85rem;border-radius:.7rem;color:var(--desco-text-muted);text-decoration:none}
+.mis-salidas-tab.is-active{background:var(--desco-surface-soft);color:var(--desco-text);font-weight:650}
+.mis-salidas-toolbar{display:flex;align-items:end;flex-wrap:wrap;gap:.7rem}
+.mis-salidas-search{flex:1 1 230px;min-width:180px}
+.mis-salidas-code{display:block;margin-top:.25rem;color:var(--desco-text-muted)}
+.mis-salidas-destinos{max-width:280px;white-space:normal;overflow-wrap:anywhere}
+.mis-salidas-cards{padding:1rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,310px),1fr));gap:.85rem}
+.mis-salidas-cards header{display:flex;gap:.5rem;justify-content:space-between}
+.mis-salidas-cards header small{color:var(--desco-text-muted)}
+.mis-salidas-cards dd{overflow-wrap:anywhere}
+.mis-salidas-cards footer{display:flex;justify-content:flex-end}
+@media(max-width:640px){.mis-salidas-search{flex-basis:100%}.mis-salidas-toolbar>.admin-field{width:100%}}

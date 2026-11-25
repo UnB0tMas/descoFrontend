@@ -65,7 +65,7 @@
      <td>{{(g.reglaCodigo==='IGUAL'||g.reglaCodigo?.startsWith('DI-'))?'Igualitaria':g.reglaCodigo==='PESO_ACEPTADO'?'Peso aceptado':g.reglaCodigo==='VENTA_BRUTA'?'Venta bruta':g.reglaCodigo==='MANUAL'?'Manual':'—'}}</td>
      <td><span class="e5-state">{{g.repartoEstado??g.estado}}</span></td><td>{{g.vendedores??'—'}}</td>
      <td><div class="e5-row-actions">
-      <button type="button" class="admin-icon-button" title="Subir comprobante" aria-label="Subir comprobante" [disabled]="frozen()||!can('ARCHIVOS_CREAR')" (click)="abrirGastoDocumentos(g.gastoId!,g.concepto??'Gasto')"><fa-icon [icon]="icons.file" /></button>
+      <button type="button" class="admin-icon-button" title="Subir comprobante" aria-label="Subir comprobante" [disabled]="frozen()||g.estado==='ANULADO'||!can('ARCHIVOS_CREAR')||!can('GASTOS_EDITAR')" (click)="abrirGastoDocumentos(g.gastoId!,g.concepto??'Gasto')"><fa-icon [icon]="icons.file" /></button>
       <button type="button" class="admin-icon-button" title="Detalle del gasto" aria-label="Detalle del gasto" (click)="verGasto(g.gastoId!)"><fa-icon [icon]="icons.view" /></button>
       <button type="button" class="admin-icon-button" title="Ver reparto" aria-label="Ver reparto" (click)="gastoId=g.gastoId!;chooseGasto()"><fa-icon [icon]="icons.view" /></button>
       @if(!frozen() && (g.estado==='REGISTRADO'||g.estado==='APROBADO') && can('GASTOS_EDITAR')){<button type="button" class="admin-icon-button" title="Editar gasto" aria-label="Editar gasto" (click)="editarGasto(g.gastoId!)"><fa-icon [icon]="icons.edit" /></button>}

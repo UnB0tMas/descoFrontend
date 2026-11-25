@@ -1,6 +1,8 @@
 /* Tarjeta institucional de listados. Reutilizable, sin dependencias de dominio. */
 app-record-card { display:block; min-width:0; height:100%; }
 .desco-record-grid {display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,285px),1fr));gap:1rem;align-items:stretch;min-width:0}
+/* Contenido proyectado: esta regla global respeta los elementos de cualquier template. */
+.desco-record-grid--bounded > * { flex: 0 1 360px; width: min(100%, 360px); max-width: 100%; min-width: 0; }
 .desco-record-card {display:flex;flex-direction:column;gap:.85rem;box-sizing:border-box;min-width:0;height:100%;padding:1.1rem;border:1px solid var(--desco-border,#334155);border-radius:1rem;background:var(--desco-surface,#fff);color:var(--desco-text,#0f172a);box-shadow:0 2px 10px color-mix(in srgb,var(--desco-text,#0f172a) 4%,transparent);transition:border-color .16s ease,box-shadow .16s ease,transform .16s ease}
 .desco-record-card:hover {border-color:color-mix(in srgb,var(--desco-primary,#3b82f6) 45%,var(--desco-border,#334155));box-shadow:0 7px 22px color-mix(in srgb,var(--desco-text,#0f172a) 8%,transparent);transform:translateY(-2px)}
 .desco-record-card:focus-within {border-color:var(--desco-primary,#3b82f6)}
@@ -54,3 +56,99 @@ app-record-card { display:block; min-width:0; height:100%; }
 .pos-product-grid app-record-card .desco-record-card > footer > button { flex:1 1 auto; min-width:0; padding:.55rem .7rem; }
 .pos-sales-grid app-record-card .desco-record-card > footer.pos-sales-card-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
 .pos-sales-grid app-record-card .desco-record-card > footer.pos-sales-card-actions > button { width:100%; min-width:0; white-space:normal; }
+
+.desco-record-card--compact { gap: .6rem; padding: .8rem; }
+
+/* Variante institucional: diseño oficial de tarjetas; los módulos solo suministran datos y acciones. */
+.desco-record-card--institutional > .desco-record-card__top { display:flex; align-items:center; justify-content:space-between; gap:.6rem; flex-wrap:wrap; min-width:0; }
+.desco-record-card--institutional .desco-record-card__code { font-size:.7rem; letter-spacing:.03em; color:var(--desco-text-muted,#64748b); font-weight:700; overflow-wrap:anywhere; }
+.desco-record-card--institutional .desco-record-card__icon { width:2.55rem; height:2.55rem; flex-shrink:0; border-radius:.8rem; background:color-mix(in srgb,var(--desco-primary,#3b82f6) 11%,transparent); color:var(--desco-primary,#3b82f6); display:grid; place-items:center; }
+.desco-record-card--institutional .desco-record-card__heading { font-size:1rem; line-height:1.35; font-weight:760; margin:0; overflow-wrap:anywhere; color:var(--desco-text,#0f172a); }
+.desco-record-card--institutional .desco-record-card__metadata { display:flex; flex-wrap:wrap; gap:.4rem .75rem; color:var(--desco-text-muted,#64748b); font-size:.77rem; }
+.desco-record-card--institutional .desco-record-card__description { margin:0; font-size:.8rem; line-height:1.5; color:var(--desco-text-muted,#64748b); overflow-wrap:anywhere; }
+.desco-record-card--institutional .desco-record-card__actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.5rem; margin-top:auto; padding-top:.85rem; border-top:1px solid var(--desco-border,#334155); min-width:0; }
+.desco-record-card--institutional .desco-record-card__actions > [recordActions] { display:contents; }
+.desco-record-card--institutional .desco-record-card__actions > [recordActions] > a:first-child { grid-column:1/-1; width:100%; }
+.desco-record-card--institutional .desco-record-card__actions > [recordActions] > :is(a,button) { display:inline-flex; align-items:center; justify-content:center; gap:.4rem; min-height:2.2rem; max-width:100%; min-width:0; width:100%; padding:.48rem .5rem; font-size:.75rem; white-space:normal; overflow-wrap:anywhere; }
+
+app-institutional-record-card { display:block; min-width:0; height:100%; }
+
+/* Variante optativa: ficha compacta con acciones exclusivamente icónicas. */
+.desco-record-card__identity { display: contents; }
+.desco-record-card--summary .desco-record-card { gap: .65rem; padding: 1.2rem 1.05rem 1.05rem; }
+.desco-record-card--summary .desco-record-card__identity { display: flex; align-items: center; gap: .75rem; min-width: 0; }
+.desco-record-card--summary .desco-record-card__identity .desco-record-card__icon { flex: 0 0 2.4rem; width: 2.4rem; height: 2.4rem; }
+.desco-record-card--summary .desco-record-card__heading { font-size: .94rem; min-width: 0; line-height: 1.4; }
+.desco-record-card--summary .desco-record-card__code { font-size: .7rem; }
+.desco-record-card--summary .desco-record-card__metadata { gap: .4rem; }
+.desco-record-card--summary .desco-record-card__metadata > span { padding: .3rem .55rem; border: 1px solid var(--desco-border); border-radius: .5rem; background: var(--desco-surface-soft); line-height: 1.4; overflow-wrap: anywhere; }
+.desco-record-card--summary .desco-record-card__description { font-size: .76rem; }
+.desco-record-card--icon-actions .desco-record-card__actions { display: flex; justify-content: flex-end; align-items: center; gap: .4rem; padding-top: .7rem; }
+.desco-record-card--icon-actions .desco-record-card__actions > [recordActions] { display: flex; align-items: center; justify-content: flex-end; flex-wrap: nowrap; gap: .45rem; width: auto; margin-left: auto; }
+.desco-record-card--icon-actions .desco-record-card__actions > [recordActions] > :is(a,button) { flex: 0 0 2.35rem; width: 2.35rem; min-width: 2.35rem; max-width: 2.35rem; min-height: 2.35rem; height: 2.35rem; padding: .35rem; border-radius: .65rem; white-space: nowrap; }
+.desco-record-card--icon-actions .desco-record-card__actions > [recordActions] > a:first-child { grid-column: auto; width: 2.35rem; }
+@media (max-width: 460px) { .desco-record-card--summary .desco-record-card { padding: .85rem; } }
+
+/* Diseño configurable: distribuye tarjetas en toda el área sin estirarlas excesivamente.
+   Se activa por clase; no modifica listados que usan otra distribución. */
+.desco-record-grid--adaptive {
+  --desco-card-min-width: 230px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--desco-card-min-width)), 1fr));
+  gap: .85rem;
+  align-items: stretch;
+  min-width: 0;
+}
+.desco-record-grid--adaptive > :is(app-record-card, app-institutional-record-card) {
+  display: block;
+  width: 100%;
+  max-width: 360px;
+  min-width: 0;
+  box-sizing: border-box;
+}
+@media (max-width: 420px) {
+  .desco-record-grid--adaptive { --desco-card-min-width: 100%; gap: .75rem; }
+  .desco-record-grid--adaptive > :is(app-record-card, app-institutional-record-card) {max-width: 100%;}
+}
+
+/* Shared: variante cronológica reutilizable, con contenido semántico proyectado. */
+.desco-record-grid--timeline{--desco-timeline-min:260px;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,var(--desco-timeline-min)),1fr));gap:1rem;align-items:stretch;min-width:0}
+.desco-record-grid--timeline>app-record-card{display:block;min-width:0;width:100%;max-width:440px;box-sizing:border-box}
+app-record-card.desco-timeline-record>.desco-record-card{display:flex;flex-direction:column;gap:.85rem;min-width:0;height:100%;padding:1rem 1.05rem;border:1px solid var(--desco-border);border-radius:1rem;background:var(--desco-surface);box-shadow:0 3px 14px rgba(0,0,0,.035)}
+.desco-timeline-head{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:.5rem;min-width:0}
+.desco-timeline-head>div{min-width:0;flex:1 1 125px;display:grid;gap:.3rem}
+.desco-timeline-head strong{font-size:.93rem;line-height:1.35;color:var(--desco-text);overflow-wrap:anywhere}
+.desco-timeline-kicker{font-size:.68rem;letter-spacing:.035em;text-transform:uppercase;font-weight:700;color:var(--desco-primary)}
+.desco-timeline-date{font-size:.7rem;color:var(--desco-text-muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.desco-timeline-quantity{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;padding:.75rem .85rem;border-radius:.75rem;border:1px solid var(--desco-border);background:var(--desco-surface-soft)}
+.desco-timeline-quantity>div{display:grid;gap:.22rem;min-width:0}
+.desco-timeline-quantity>div>span,.desco-timeline-extra>span{font-size:.7rem;font-weight:650;color:var(--desco-text-muted)}
+.desco-timeline-quantity>div>strong{font-size:1.35rem;line-height:1.25;font-weight:800;font-variant-numeric:tabular-nums;color:var(--desco-text);overflow-wrap:anywhere}
+.desco-timeline-quantity strong small{font-size:.72rem;font-weight:650;color:var(--desco-text-muted)}
+.desco-timeline-extra>strong{font-size:1.1rem!important}
+.desco-timeline-delta{font-size:.8rem;font-weight:800;line-height:1.25;color:var(--desco-text);padding:.38rem .62rem;border-radius:999px;border:1px solid var(--desco-border);background:var(--desco-surface);font-variant-numeric:tabular-nums}
+.desco-timeline-delta--positive{color:#15803d;border-color:color-mix(in srgb,#15803d 28%,transparent);background:color-mix(in srgb,#15803d 10%,var(--desco-surface))}
+.desco-timeline-delta--negative{color:#be123c;border-color:color-mix(in srgb,#be123c 28%,transparent);background:color-mix(in srgb,#be123c 10%,var(--desco-surface))}
+.desco-timeline-delta--initial{color:var(--desco-primary);border-color:color-mix(in srgb,var(--desco-primary) 25%,transparent);background:color-mix(in srgb,var(--desco-primary) 9%,var(--desco-surface))}
+.desco-timeline-context{margin:-.35rem 0 0;font-size:.72rem;color:var(--desco-text-muted)}
+.desco-timeline-status{padding:.33rem .56rem;border-radius:999px;border:1px solid color-mix(in srgb,#15803d 25%,transparent);background:color-mix(in srgb,#15803d 10%,var(--desco-surface));color:#15803d;font-weight:750;font-size:.7rem;white-space:nowrap}
+.desco-timeline-status--closed{background:var(--desco-surface-soft);border-color:var(--desco-border);color:var(--desco-text-muted)}
+.desco-timeline-facts{margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.65rem .8rem}
+.desco-timeline-facts>div{min-width:0}
+.desco-timeline-facts dt{font-size:.7rem;font-weight:600;color:var(--desco-text-muted);margin-bottom:.2rem}
+.desco-timeline-facts dd{font-size:.8rem;line-height:1.4;font-weight:650;color:var(--desco-text);margin:0;overflow-wrap:anywhere;white-space:pre-line}
+.desco-timeline-full{grid-column:1/-1}
+.desco-timeline-note{display:grid;gap:.3rem;padding:.72rem .8rem;border-left:3px solid var(--desco-primary);border-radius:.45rem;background:var(--desco-surface-soft);min-width:0;margin-top:auto}
+.desco-timeline-note>span,.desco-timeline-highlight>span{font-size:.7rem;color:var(--desco-text-muted);font-weight:700}
+.desco-timeline-note p{margin:0;font-size:.8rem;line-height:1.5;color:var(--desco-text);white-space:pre-line;overflow-wrap:anywhere}
+.desco-timeline-highlight{display:grid;gap:.32rem;padding:.7rem .8rem;border-radius:.65rem;border:1px solid var(--desco-border);background:var(--desco-surface-soft)}
+.desco-timeline-highlight>strong{font-size:.83rem;color:var(--desco-text);overflow-wrap:anywhere}
+.desco-timeline-highlight>small{font-size:.75rem;color:var(--desco-text-muted);overflow-wrap:anywhere}
+.desco-timeline-transition{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:start;gap:.5rem}
+.desco-timeline-transition>div{display:grid;gap:.25rem;min-width:0;padding:.6rem;background:var(--desco-surface-soft);border:1px solid var(--desco-border);border-radius:.6rem}
+.desco-timeline-transition small{font-size:.68rem;color:var(--desco-text-muted)}
+.desco-timeline-transition strong{font-size:.78rem;line-height:1.4;color:var(--desco-text);overflow-wrap:anywhere}
+.desco-timeline-arrow{padding-top:.7rem;font-weight:800;color:var(--desco-primary)}
+.desco-timeline-actions{margin-top:auto;padding-top:.7rem;border-top:1px solid var(--desco-border)}
+@media(max-width:620px){.desco-record-grid--timeline{--desco-timeline-min:240px;gap:.75rem}app-record-card.desco-timeline-record>.desco-record-card{padding:.9rem}.desco-timeline-facts{gap:.6rem}}
+@media(max-width:450px){.desco-record-grid--timeline{--desco-timeline-min:100%;grid-template-columns:minmax(0,1fr)}.desco-record-grid--timeline>app-record-card{max-width:none}}

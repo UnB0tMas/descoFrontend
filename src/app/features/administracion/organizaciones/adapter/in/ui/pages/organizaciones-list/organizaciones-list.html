@@ -61,6 +61,7 @@
 
   <section class="admin-surface mt-5">
     <div class="admin-toolbar">
+      <app-list-view-switch appearance="segmented" [view]="viewMode()" (viewChange)="viewMode.set($event)" />
       @if (isGeneral()) {
         <div class="admin-field">
           <label for="organizationUotFilter">Filtrar por UOT</label>
@@ -77,7 +78,7 @@
     </div>
   </section>
 
-  <div class="admin-tabs mt-5">
+  <div class="admin-tabs desco-admin-tabs-scroll mt-5">
     <button type="button" [class.active]="activeTab() === 'organizations'" (click)="setTab('organizations')">
       <fa-icon [icon]="companyIcon" /> Organizaciones
     </button>
@@ -95,14 +96,26 @@
       } @else if (organizations().items.length === 0) {
         <app-empty-state title="Sin organizaciones" message="No hay empresas o asociaciones para el filtro UOT seleccionado." />
       } @else {
-        <div class="admin-table-wrap">
-          <table class="admin-table">
-            <thead>
-              <tr><th>Organización</th><th>UOT</th><th>RUC</th><th>Tipo</th><th>Contacto</th><th class="text-center">Estado</th><th class="text-right">Acciones</th></tr>
-            </thead>
-            <tbody>
-              @for (company of organizations().items; track company.empresaId + '-' + company.uotId) {
-                <tr>
+        @if (viewMode() === 'cards') {
+      <div class="desco-record-grid desco-admin-record-grid">
+        @for (company of organizations().items; track company.empresaId + '-' + company.uotId) {
+<app-record-card>
+ <header><span class="admin-entity-icon"><fa-icon [icon]="company.esAsociacion ? associationIcon : companyIcon" /></span><span class="admin-code">{{ company.ruc }}</span></header>
+ <h3>{{ company.razonSocial }}</h3><p class="gp-subtle">{{ company.uotNombre }}</p>
+ <dl><div><dt>Tipo</dt><dd>{{ company.esAsociacion ? 'Asociación' : 'Empresa' }}</dd></div><div><dt>Contacto</dt><dd>{{ company.correo || company.telefono || '—' }}</dd></div></dl>
+ <span class="admin-status" [class.admin-status--active]="company.estado" [class.admin-status--inactive]="!company.estado">{{ company.estado ? 'Activa' : 'Inactiva' }}</span>
+ <footer><div class="admin-row-actions">
+ <button *appPermission="'ORGANIZACIONES_VER'" type="button" class="admin-icon-button" [disabled]="detailLoadingId()===company.empresaId" (click)="viewOrganization(company)" title="Ver"><fa-icon [icon]="viewIcon" /></button>
+ <button *appPermission="'ORGANIZACIONES_EDITAR'" type="button" class="admin-icon-button" [disabled]="detailLoadingId()===company.empresaId" (click)="editOrganization(company)" title="Editar"><fa-icon [icon]="editIcon" /></button>
+ <button *appPermission="'ORGANIZACIONES_RETIRAR'" type="button" class="admin-icon-button admin-icon-button--danger" [disabled]="disablingOrganizationId()!==null" (click)="disableOrganization(company)" title="Retirar"><fa-icon [icon]="disableIcon" /></button>
+ </div></footer>
+</app-record-card>
+        }
+      </div>
+      } @else {
+<app-data-table appearance="admin" [columns]="organizationsColumns" [rows]="organizations().items" [rowTemplate]="organizationsRow" [trackByFn]="trackOrganization" />
+        <ng-template #organizationsRow let-company>
+
                   <td>
                     <div class="admin-entity">
                       <span
@@ -138,11 +151,9 @@
                     <button *appPermission="'ORGANIZACIONES_EDITAR'" type="button" class="admin-icon-button" title="Editar en esta UOT" [disabled]="detailLoadingId() === company.empresaId || disablingOrganizationId() !== null" (click)="editOrganization(company)"><fa-icon [icon]="editIcon" /></button>
                     <button *appPermission="'ORGANIZACIONES_RETIRAR'" type="button" class="admin-icon-button admin-icon-button--danger" title="Retirar de esta UOT" [disabled]="disablingOrganizationId() !== null" (click)="disableOrganization(company)"><fa-icon [icon]="disableIcon" /></button>
                   </div></td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
+                
+        </ng-template>
+      }
         <app-paginator [page]="organizations().page" [size]="organizations().size" [totalRecords]="organizations().totalRecords" [totalPages]="organizations().totalPages" (pageChange)="loadOrganizations($event, organizations().size)" (sizeChange)="loadOrganizations(1, $event)" />
       }
     </section>
@@ -188,12 +199,9 @@
         } @else if (areas().items.length === 0) {
           <app-empty-state title="Sin áreas" message="No hay áreas para el filtro UOT seleccionado." />
         } @else {
-          <div class="admin-table-wrap">
-            <table class="admin-table">
-              <thead><tr><th>Código</th><th>Área</th><th>UOT</th><th>Área superior</th><th class="text-center">Estado</th><th class="text-right">Acciones</th></tr></thead>
-              <tbody>
-                @for (area of areas().items; track area.areaId + '-' + area.uotId) {
-                  <tr>
+          <app-data-table appearance="admin" [columns]="areasColumns" [rows]="areas().items" [rowTemplate]="areasRow" [trackByKey]="'areaId'" />
+        <ng-template #areasRow let-area>
+
                     <td><span class="admin-code">{{ area.codigo }}</span></td>
                     <td class="admin-table-primary">{{ area.nombre }}</td>
                     <td>
@@ -207,11 +215,8 @@
                       <button *appPermission="'ORGANIZACIONES_EDITAR'" type="button" class="admin-icon-button" title="Editar área" [disabled]="disablingAreaId() !== null" (click)="editArea(area)"><fa-icon [icon]="editIcon" /></button>
                       <button *appPermission="'ORGANIZACIONES_RETIRAR'" type="button" class="admin-icon-button admin-icon-button--danger" title="Deshabilitar área" [disabled]="disablingAreaId() !== null" (click)="disableArea(area)"><fa-icon [icon]="disableIcon" /></button>
                     </div></td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
+                  
+        </ng-template>
           <app-paginator [page]="areas().page" [size]="areas().size" [totalRecords]="areas().totalRecords" [totalPages]="areas().totalPages" (pageChange)="loadAreas($event, areas().size)" (sizeChange)="loadAreas(1, $event)" />
         }
       }

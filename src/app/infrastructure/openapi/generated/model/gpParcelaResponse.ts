@@ -3,4 +3,5 @@ export interface GpParcelaResponse {
   areaHa?: number | null; estado: boolean;
   distritoCodigo?: string | null; centroPobladoId?: number | null;
   latitud?: number | null; longitud?: number | null;
+  referencia?: string | null; observacion?: string | null;
 }

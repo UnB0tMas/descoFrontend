@@ -30,6 +30,10 @@ import {
 import { finalize } from 'rxjs';
 
 import { AccessStore } from '../../../../../../../core/access/access.store';
+import { ModuleAccessService } from '../../../../../../../core/access/module-access.service';
+import { PermissionService } from '../../../../../../../core/access/permission.service';
+import { NavigationItem } from '../../../../../../../core/navigation/navigation-item.model';
+import { NavigationService } from '../../../../../../../core/navigation/navigation.service';
 import { mapOpenApiError } from '../../../../../../../infrastructure/openapi/openapi-http-error.mapper';
 import { ErrorStateComponent } from '../../../../../../../shared/data-display/error-state/error-state';
 import { LoadingStateComponent } from '../../../../../../../shared/data-display/loading-state/loading-state';
@@ -62,6 +66,31 @@ import { IndicadoresPanelComponent } from '../../components/indicadores-panel/in
 export class InicioPage implements OnInit {
   private readonly useCase = inject(ObtenerDashboardUseCase);
   private readonly access = inject(AccessStore);
+  private readonly permissions = inject(PermissionService);
+  private readonly modules = inject(ModuleAccessService);
+  private readonly navigation = inject(NavigationService);
+
+  // El inicio no concede acceso a indicadores sin autorización.
+  readonly canViewDashboard = computed(() =>
+    this.modules.has('INICIO') && this.permissions.has('INICIO_LISTAR'),
+  );
+
+  readonly availableLinks = computed(() => {
+    const links: { code: string; label: string; route: string }[] = [];
+    const routes = new Set<string>();
+    const visit = (items: readonly NavigationItem[]): void => {
+      for (const item of items) {
+        if (item.route && item.route !== '/inicio' &&
+            item.route !== '/seleccionar-uot' && !routes.has(item.route)) {
+          routes.add(item.route);
+          links.push({ code: item.code, label: item.label, route: item.route });
+        }
+        visit(item.children);
+      }
+    };
+    visit(this.navigation.items());
+    return links.slice(0, 8);
+  });
 
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
@@ -89,6 +118,9 @@ export class InicioPage implements OnInit {
   readonly relatedAccesses = computed<readonly AccesoRapido[]>(() =>
     this.dashboard().accesosRapidos,
   );
+
+  readonly priorityIndicators = computed(() => this.dashboard().indicadores.slice(0, 3));
+  readonly priorityCharts = computed(() => this.dashboard().graficos.slice(0, 2));
 
   readonly filterError = computed(() => {
     const from = this.parseDate(this.desde());
@@ -118,10 +150,15 @@ export class InicioPage implements OnInit {
   });
 
   ngOnInit(): void {
-    this.load();
+    if (this.canViewDashboard()) this.load();
+    else this.loading.set(false);
   }
 
   load(): void {
+    if (!this.canViewDashboard()) {
+      this.loading.set(false);
+      return;
+    }
     if (this.filterError()) {
       return;
     }
@@ -169,6 +206,8 @@ export class InicioPage implements OnInit {
 
   iconForModule(code: string): IconDefinition {
     const normalized = code.toUpperCase();
+
+    if (normalized.includes('HORARIO')) return faCalendarDays;
 
     if (normalized.includes('TIPO') && normalized.includes('BIEN')) {
       return faBoxesStacked;

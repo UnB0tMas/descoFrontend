@@ -1,0 +1,264 @@
+<div class="desco-page personal-page">
+ <app-page-header title="Gestionar horarios" eyebrow="GESTIÓN COMERCIAL" [subtitle]="uot.label()" [icon]="icon">
+  <div pageActions class="personal-actions"><button type="button" class="admin-secondary-button" [disabled]="loading()" (click)="reload()">Actualizar</button>
+   @if(permissions.has('HORARIO_COMERCIAL_CONFIGURAR')){<button type="button" class="admin-primary-button" (click)="tab.set('atencion');openAtencion()">Configurar atención</button>}
+  </div>
+ </app-page-header>
+ @if(error()){<div role="alert" class="admin-inline-error">{{error()}}</div>}
+ @if(!uotId){<section class="admin-surface personal-panel">Selecciona una UOT.</section>}
+ @else if(loading()&&!data()){<section class="admin-surface personal-panel">Cargando…</section>}
+ @else if(data();as plan){
+  <nav class="personal-tabs" aria-label="Gestionar horarios">
+   <button type="button" [class.personal-tab-active]="tab()==='general'" [attr.aria-current]="tab()==='general'?'page':null" (click)="tab.set('general')">General</button>
+   <button type="button" [class.personal-tab-active]="tab()==='atencion'" [attr.aria-current]="tab()==='atencion'?'page':null" (click)="tab.set('atencion')">Atención</button>
+   <button type="button" [class.personal-tab-active]="tab()==='turnos'" [attr.aria-current]="tab()==='turnos'?'page':null" (click)="tab.set('turnos')">Turnos</button>
+   <button type="button" [class.personal-tab-active]="tab()==='personal'" [attr.aria-current]="tab()==='personal'?'page':null" (click)="tab.set('personal')">Empleados y asignaciones</button>
+  </nav>
+  @if(tab()==='general'){
+   <section class="personal-summary">
+    <article class="admin-surface"><span>Horario general</span><strong>{{plan.atencion.horaInicio}} – {{plan.atencion.horaFin}}</strong></article>
+    <article class="admin-surface"><span>Personal habilitado</span><strong>{{habilitados()}}</strong></article>
+    <article class="admin-surface"><span>Turnos asignados</span><strong>{{franjasTotal()}}</strong></article>
+    <article class="admin-surface"><span>Días cubiertos</span><strong>{{diasCubiertos()}} / 7</strong></article>
+   </section>
+   <section class="admin-surface personal-panel">
+    <header class="personal-section-head"><h2>Cobertura semanal</h2></header>
+    <div class="personal-week">
+     @for(d of cobertura();track d.dia){
+      <article class="personal-day" [class.personal-day--free]="d.libres.length>0" [class.personal-day--empty]="d.porcentaje===0" [class.personal-day--covered]="d.porcentaje===100">
+       <div class="personal-day-top"><strong>{{d.nombre}}</strong><small>{{d.porcentaje}}% cubierto</small><small>{{d.horaInicio}} – {{d.horaFin}}</small></div>
+       <div class="personal-progress" role="progressbar" [attr.aria-valuenow]="d.porcentaje" aria-valuemin="0" aria-valuemax="100" [attr.aria-label]="d.nombre"><span [style.width.%]="d.porcentaje"></span></div>
+       <small>{{d.personas}} {{d.personas===1?'empleado':'empleados'}}</small>
+       @if(d.libres.length){<div class="personal-gap"><strong>Horas sin cobertura</strong>@for(gap of d.libres;track gap){<span>{{gap}}</span>}</div>}
+       @else{<div class="personal-covered">Jornada cubierta</div>}
+       <div class="personal-assigned">@for(name of d.nombres;track name){<span>{{name}}</span>}</div>
+      </article>
+     }
+    </div>
+   </section>
+  } @else if(tab()==='atencion') {
+   <section class="admin-surface personal-panel">
+    <header class="personal-section-head"><h2>Atención semanal</h2></header>
+    <div class="personal-general-atencion"><span>Horario general</span><strong>{{plan.atencion.horaInicio}} – {{plan.atencion.horaFin}}</strong>
+     @if(permissions.has('HORARIO_COMERCIAL_CONFIGURAR')){
+      <app-button label="Editar horario general" [icon]="iconEditar" [iconOnly]="true" size="small" (pressed)="openAtencion()" />
+     }
+    </div>
+    <div class="personal-week">
+     @for(d of diasAtencion();track d.diaSemana){
+      <article class="personal-day" [class.personal-day--personalizado]="d.personalizado">
+       <div class="personal-atencion-day-title"><strong>{{dias[d.diaSemana-1].nombre}}</strong>
+        @if(d.personalizado){<span class="personal-atencion-tag">Personalizado</span>}
+       </div>
+       <div class="personal-atencion-day-time">{{d.horaInicio}} – {{d.horaFin}}</div>
+       @if(permissions.has('HORARIO_COMERCIAL_CONFIGURAR')){
+        <div class="personal-atencion-day-actions">
+         <app-button [icon]="iconEditar" label="Editar {{dias[d.diaSemana-1].nombre}}" [iconOnly]="true" size="small" [disabled]="saving()" (pressed)="openAtencion(d.diaSemana)" />
+         @if(d.personalizado){<app-button [icon]="iconRestaurar" label="Restaurar horario general" [iconOnly]="true" size="small" [disabled]="saving()" (pressed)="restaurarDia(d.diaSemana)" />}
+        </div>
+       }
+      </article>
+     }
+    </div>
+   </section>
+  } @else if(tab()==='turnos') {
+   <section class="admin-surface personal-panel personal-turnos">
+    <header class="personal-section-head personal-section-head--actions">
+     <h2>Turnos guardados</h2>
+     <div class="personal-turno-toolbar">
+      <app-list-view-switch [view]="vistaTurnos()" label="Vista de turnos" [disabled]="saving()" (viewChange)="vistaTurnos.set($event)" />
+      @if(permissions.has('HORARIO_COMERCIAL_CONFIGURAR')){
+       <button type="button" class="admin-primary-button" [disabled]="saving()" (click)="nuevoTurno()">Crear turno</button>
+      }
+     </div>
+    </header>
+    @if(plantillasError()){<p class="admin-inline-error" role="alert">{{plantillasError()}}</p>}
+    @if(vistaTurnos()==='table'){
+     <ng-template #turnoNombre let-t><strong>{{t.nombre}}</strong></ng-template>
+     <ng-template #turnoHorario let-t>{{t.horaInicio}} – {{t.horaFin}}</ng-template>
+     <ng-template #turnoAcciones let-t>
+      <div class="admin-row-actions">
+        <app-button [icon]="iconDetalles" label="Detalles de {{t.nombre}}" [iconOnly]="true" size="small" (pressed)="detallesTurno(t)" />
+        @if(permissions.has('HORARIO_COMERCIAL_CONFIGURAR')){
+        <button type="button" class="admin-icon-button" [disabled]="saving()" [attr.aria-label]="'Editar ' + t.nombre" title="Editar" (click)="editarTurno(t)"><fa-icon [icon]="iconEditar" /></button>
+        <button type="button" class="admin-icon-button" [disabled]="saving()" [attr.aria-label]="'Quitar ' + t.nombre" title="Quitar" (click)="eliminarTurno(t)"><fa-icon [icon]="iconQuitar" /></button>
+        }
+       </div>
+     </ng-template>
+     <app-data-table appearance="admin" [columns]="columnasTurnos"
+      [rows]="plantillas()" trackByKey="plantillaId" emptyMessage="No hay turnos creados."
+      [cellTemplates]="{ nombre:turnoNombre, horario:turnoHorario, acciones:turnoAcciones }" />
+    }@else{
+     <div class="desco-record-grid">
+      @for(t of plantillas();track t.plantillaId){
+       <app-record-card>
+        <header><strong>{{t.nombre}}</strong></header>
+        <dl><div><dt>Horario</dt><dd>{{t.horaInicio}} – {{t.horaFin}}</dd></div></dl>
+        <footer><div class="admin-row-actions">
+          <app-button [icon]="iconDetalles" label="Detalles de {{t.nombre}}" [iconOnly]="true" size="small" (pressed)="detallesTurno(t)" />
+          @if(permissions.has('HORARIO_COMERCIAL_CONFIGURAR')){
+          <button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="editarTurno(t)"><fa-icon [icon]="iconEditar" /> Editar</button>
+          <button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="eliminarTurno(t)"><fa-icon [icon]="iconQuitar" /> Quitar</button>
+          }
+         </div></footer>
+       </app-record-card>
+      }@empty{<p class="personal-empty">No hay turnos creados.</p>}
+     </div>
+    }
+   </section>
+
+  } @else {
+   <section class="admin-surface personal-panel">
+    <div class="personal-section-head"><h2>Empleados y asignaciones</h2></div>
+    <div class="personal-filters">
+     <label><span>Buscar empleado</span><input class="admin-input" type="search" [value]="buscar()" (input)="buscar.set($any($event.target).value)" placeholder="Nombres y apellidos" /></label>
+     <label><span>Acceso comercial</span><select class="admin-select" [value]="estado()" (change)="estado.set($any($event.target).value)">
+      <option value="TODOS">Todos</option><option value="HABILITADOS">Habilitados</option><option value="SUSPENDIDOS">Suspendidos</option>
+     </select></label>
+     <app-list-view-switch [view]="vista()" label="Vista de empleados" (viewChange)="vista.set($event)" />
+    </div>
+    @if(vista()==='table'){
+     <ng-template #empleadoNombre let-e>
+      <div class="admin-entity"><span class="admin-avatar">{{e.nombre.slice(0,1)}}</span><strong>{{e.nombre}}</strong></div>
+     </ng-template>
+     <ng-template #empleadoTurnos let-e>{{turnosEmpleado(e.empleadoId)}}</ng-template>
+     <ng-template #empleadoAcceso let-e>
+      <span class="admin-status" [class.admin-status--active]="e.habilitadoPos" [class.admin-status--inactive]="!e.habilitadoPos">{{e.habilitadoPos?'Habilitado':'Suspendido'}}</span>
+     </ng-template>
+     <ng-template #empleadoAcciones let-e>
+      <div class="admin-row-actions">
+       @if(e.habilitadoPos){<a class="admin-secondary-button" [routerLink]="['/pos/personal',e.empleadoId]" [attr.aria-label]="'Gestionar horario de '+e.nombre"><fa-icon [icon]="iconHorario" /> {{turnosEmpleado(e.empleadoId)?'Editar horario':'Crear horario'}}</a>}
+       @if(permissions.has('PERSONAL_COMERCIAL_HABILITAR')){<button type="button" class="admin-icon-button" [disabled]="saving()" (click)="openAcceso(e,!e.habilitadoPos)" [title]="e.habilitadoPos?'Suspender acceso comercial':'Habilitar acceso comercial'" [attr.aria-label]="e.habilitadoPos?'Suspender acceso de '+e.nombre:'Habilitar acceso de '+e.nombre"><fa-icon [icon]="e.habilitadoPos?iconSuspender:iconHabilitar" /></button>}
+      </div>
+     </ng-template>
+     <app-data-table appearance="admin" [columns]="columnasEmpleados" [rows]="filtrados()" trackByKey="empleadoId"
+      emptyMessage="No se encontraron empleados." [cellTemplates]="{nombre:empleadoNombre,turnos:empleadoTurnos,habilitadoPos:empleadoAcceso,acciones:empleadoAcciones}" />
+    }@else{
+     <div class="desco-record-grid">
+      @for(e of filtrados();track e.empleadoId){
+       <app-record-card>
+        <header><span class="admin-entity"><span class="admin-avatar">{{e.nombre.slice(0,1)}}</span><strong>{{e.nombre}}</strong></span></header>
+        <dl><div><dt>Turnos semanales</dt><dd>{{turnosEmpleado(e.empleadoId)}}</dd></div>
+         <div><dt>Acceso</dt><dd><span class="admin-status" [class.admin-status--active]="e.habilitadoPos" [class.admin-status--inactive]="!e.habilitadoPos">{{e.habilitadoPos?'Habilitado':'Suspendido'}}</span></dd></div></dl>
+        <footer><div class="admin-row-actions">
+         @if(e.habilitadoPos){<a class="admin-secondary-button" [routerLink]="['/pos/personal',e.empleadoId]"><fa-icon [icon]="iconHorario" /> Gestionar horario</a>}
+         @if(permissions.has('PERSONAL_COMERCIAL_HABILITAR')){<button class="admin-secondary-button" type="button" [disabled]="saving()" (click)="openAcceso(e,!e.habilitadoPos)">{{e.habilitadoPos?'Suspender acceso':'Habilitar acceso'}}</button>}
+        </div></footer>
+       </app-record-card>
+      }@empty{<p class="personal-empty">No se encontraron empleados.</p>}
+     </div>
+    }
+   </section>
+  }
+ }
+</div>
+<app-modal-shell #atencionModal title="Configurar atención" [icon]="iconHorario" size="wide" [busy]="saving()">
+ <div class="personal-atencion-form">
+  <div class="personal-selector-head">
+   <div class="personal-selector-label">
+    <strong>Días de atención</strong>
+    <span>{{seleccionDias().length}} de 7 seleccionados</span>
+   </div>
+   <app-button size="small" tone="ghost" [label]="seleccionCompleta() ? 'Desmarcar todos' : 'Seleccionar todos'"
+    [disabled]="saving()" (pressed)="seleccionarTodos()" />
+  </div>
+  <div class="personal-atencion-dia-selector" role="group" aria-label="Días de atención">
+   @for(d of dias;track d.dia){
+    <button type="button" class="personal-atencion-choice" [class.personal-dia-selected]="seleccionDias().includes(d.dia)"
+     [attr.aria-pressed]="seleccionDias().includes(d.dia)" [attr.aria-label]="d.nombre + (seleccionDias().includes(d.dia) ? ', seleccionado' : ', no seleccionado')"
+     [disabled]="saving()" (click)="seleccionarDia(d.dia)">
+     <span class="personal-atencion-choice-check" aria-hidden="true">
+      @if(seleccionDias().includes(d.dia)){<fa-icon [icon]="iconSeleccionado" />}
+     </span>
+     <span>{{d.nombre}}</span>
+    </button>
+   }
+  </div>
+  <p class="personal-selector-help" aria-live="polite">
+   @if(seleccionCompleta()){Horario general. Los días personalizados se mantienen.}
+   @else if(seleccionDias().length){Horario personalizado para los días seleccionados.}
+   @else{Selecciona al menos un día.}
+  </p>
+  @if(modalError()){<p class="admin-inline-error" role="alert">{{modalError()}}</p>}
+  <form id="configurar-atencion-form" class="personal-atencion-campos" (ngSubmit)="guardarAtencion()">
+   <app-form-field label="Apertura" forId="personal-apertura" [required]="true">
+    <input id="personal-apertura" type="time" name="inicio" [(ngModel)]="inicio" [disabled]="saving()" required />
+   </app-form-field>
+   <app-form-field label="Cierre" forId="personal-cierre" [required]="true">
+    <input id="personal-cierre" type="time" name="fin" [(ngModel)]="fin" [disabled]="saving()" required />
+   </app-form-field>
+  </form>
+  @if(previsualizados().length){
+   <div class="personal-afectados"><strong>Horarios afectados</strong>
+    @for(a of previsualizados();track a.horarioId){<p>{{dias[a.diaSemana-1].nombre}} · {{a.empleado}}: {{a.horaInicio}}–{{a.horaFin}} → {{a.quitar?'Se quitará':a.nuevoInicio+'–'+a.nuevoFin}}</p>}
+   </div>
+  }
+ </div>
+ <div modalActions class="personal-modal-actions">
+  <app-button label="Cancelar" [disabled]="saving()" (pressed)="atencionModal.close()" />
+  <app-button label="Guardar atención" tone="primary" [loading]="saving()" [disabled]="!seleccionDias().length||!inicio||!fin||inicio>=fin" (pressed)="guardarAtencion()" />
+ </div>
+</app-modal-shell>
+<app-modal-shell #detallesModal [title]="turnoDetalle()?.nombre || 'Detalle del turno'" [icon]="iconDetalles" size="normal">
+ <div class="personal-detalle-contenido">
+  <div class="personal-detalle-resumen">
+   <div><span>Horario</span><strong>{{turnoDetalle()?.horaInicio}} – {{turnoDetalle()?.horaFin}}</strong></div>
+   <div><span>Asignaciones</span><strong>{{personalTurnoDetalle().length}}</strong></div>
+  </div>
+  <h3>Empleados</h3>
+  <div class="personal-detalle-empleados">
+   @for(m of personalTurnoDetalle();track m.empleadoId+'-'+m.dia){
+    <a class="personal-detalle-empleado" [routerLink]="['/pos/personal',m.empleadoId]" (click)="detallesModal.close()">
+     <span class="admin-avatar" aria-hidden="true">{{m.empleado.slice(0,1)}}</span>
+     <span class="personal-detalle-nombre"><strong>{{m.empleado}}</strong><small>{{dias[m.dia-1].nombre}}</small></span>
+     <fa-icon [icon]="iconHorario" class="personal-detalle-icono" />
+    </a>
+   }@empty{<p class="personal-muted">No hay empleados asignados.</p>}
+  </div>
+ </div>
+ <div modalActions class="personal-modal-actions"><app-button label="Cerrar" (pressed)="detallesModal.close()" /></div>
+</app-modal-shell>
+<dialog #accesoDialog class="modal desco-modal" (cancel)="$event.preventDefault();accesoDialog.close()">
+ <div class="modal-box admin-modal-box admin-modal-box--compact personal-dialog">
+  <header class="admin-modal-header"><h2>{{habilitar()?'Habilitar':'Suspender'}} acceso comercial</h2>
+   <button class="admin-icon-button" type="button" aria-label="Cerrar" [disabled]="saving()" (click)="accesoDialog.close()">×</button>
+  </header>
+  <p>{{seleccionado()?.nombre}} · {{uot.label()}}</p>
+  @if(!habilitar()){<p>El operador no podrá abrir/cerrar caja, vender ni consultar su horario mientras esté suspendido. Se conserva su historial.</p>}
+  @if(modalError()){<p class="admin-inline-error" role="alert">{{modalError()}}</p>}
+  <form (ngSubmit)="confirmarAcceso()" class="admin-form-grid">
+   <div class="admin-field admin-field-span-2"><label for="personal-motivo">Motivo obligatorio</label>
+    <textarea id="personal-motivo" class="admin-textarea" name="motivo" rows="3" minlength="5" maxlength="270" required [(ngModel)]="motivoAcceso"></textarea></div>
+   <footer class="admin-modal-actions admin-field-span-2">
+    <button type="button" class="admin-secondary-button" (click)="accesoDialog.close()" [disabled]="saving()">Cancelar</button>
+    <button type="submit" class="admin-primary-button" [disabled]="saving()||motivoAcceso.trim().length<5">Confirmar</button>
+   </footer>
+  </form>
+ </div>
+</dialog>
+
+<dialog #plantillaDialog class="modal desco-modal" (cancel)="$event.preventDefault();!saving() && plantillaDialog.close()">
+ <div class="modal-box admin-modal-box admin-modal-box--compact personal-dialog">
+  <header class="admin-modal-header"><h2>{{editandoPlantilla()===null?'Crear turno':'Editar turno'}}</h2>
+   <button type="button" class="admin-icon-button" aria-label="Cerrar" [disabled]="saving()" (click)="plantillaDialog.close()">×</button>
+  </header>
+  @if(modalError()){<p class="admin-inline-error" role="alert">{{modalError()}}</p>}
+  <form class="admin-form-grid" (ngSubmit)="guardarTurno()">
+   <div class="admin-field admin-field-span-2"><label for="turno-nombre">Nombre del turno</label>
+    <input class="admin-input" id="turno-nombre" name="nombreTurno" [(ngModel)]="nombrePlantilla" minlength="2" maxlength="80" required placeholder="Ej. Turno mañana" />
+   </div>
+   <div class="admin-field"><label for="turno-inicio">Desde</label>
+    <input class="admin-input" id="turno-inicio" name="inicioTurno" type="time" [(ngModel)]="desdePlantilla" required />
+   </div>
+   <div class="admin-field"><label for="turno-fin">Hasta</label>
+    <input class="admin-input" id="turno-fin" name="finTurno" type="time" [(ngModel)]="hastaPlantilla" required />
+   </div>
+   <footer class="admin-modal-actions admin-field-span-2">
+    <button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="plantillaDialog.close()">Cancelar</button>
+    <button type="submit" class="admin-primary-button" [disabled]="saving()||!rangoTurnoValido()">Guardar turno</button>
+   </footer>
+  </form>
+ </div>
+</dialog>
+
+<app-action-confirm-dialog />

@@ -266,7 +266,7 @@ export class EmpleadoFormComponent {
     },
   );
 
-  open(
+  async open(
     options: EmployeeFormOptions,
     employee: Empleado | EmpleadoDetalle | null = null,
   ): Promise<AdminModalResult> {
@@ -365,6 +365,12 @@ export class EmpleadoFormComponent {
       );
     } else {
       this.identityLocks.set(emptyIdentityFieldLocks());
+    }
+
+    if (!employee) {
+      // Paso 1: identificación mediante el modal compartido.
+      await this.openSharedIdentity();
+      if (!this.identityCaptured()) return { saved: false, value: null };
     }
 
     openAnimatedDialog(this.dialogRef.nativeElement);

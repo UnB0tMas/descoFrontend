@@ -1,0 +1,11 @@
+:host{display:block;min-width:0}
+.desco-radio-group{display:block;min-width:0;border:0;padding:0;margin:0}
+.desco-radio-group legend{padding:0;margin:0 0 .44rem;color:var(--desco-text);font-size:.73rem;font-weight:780;line-height:1.4}
+.desco-radio-options{display:grid;gap:.45rem}
+.desco-radio-option{display:flex;align-items:center;gap:.6rem;min-width:0;min-height:2.5rem;padding:.55rem .75rem;border:1px solid var(--desco-border);border-radius:var(--desco-radius-md,.65rem);background:var(--desco-surface);color:var(--desco-text);font-size:.8rem;font-weight:600;line-height:1.4;cursor:pointer}
+.desco-radio-option input{flex:none;width:1rem;height:1rem;margin:0;accent-color:var(--desco-primary);appearance:auto;cursor:inherit}
+.desco-radio-option span{min-width:0;overflow-wrap:anywhere}
+.desco-radio-option--selected{border-color:var(--desco-primary);background:var(--desco-primary-soft,var(--desco-surface-soft))}
+.desco-radio-option:not(.desco-radio-option--disabled):hover{border-color:var(--desco-primary)}
+.desco-radio-option:focus-within{outline:2px solid var(--desco-primary);outline-offset:2px}
+.desco-radio-option--disabled{opacity:.55;cursor:not-allowed}

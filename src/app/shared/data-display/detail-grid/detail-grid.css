@@ -1,0 +1,4 @@
+:host { display: block; min-width: 0; }
+.desco-detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .9rem 1rem; }
+.desco-detail-grid--three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 640px) { .desco-detail-grid, .desco-detail-grid--three { grid-template-columns: minmax(0, 1fr); } }

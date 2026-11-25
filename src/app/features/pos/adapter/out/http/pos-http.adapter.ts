@@ -1,15 +1,15 @@
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { forkJoin, map } from 'rxjs';
+import { map } from 'rxjs';
 
 import { IdempotencyKeyService } from '../../../../../core/http/services/idempotency-key.service';
-import { LogisticsOperationsApiService } from '../../../../recursos/shared/logistics-operations-api.service';
 
 import { POSVentasService } from '../../../../../infrastructure/openapi/generated/api/pOSVentas.service';
 import { SaleCreateRequest } from '../../../../../infrastructure/openapi/generated/model/saleCreateRequest';
 import { SaleManualCustomerRequest } from '../../../../../infrastructure/openapi/generated/model/saleManualCustomerRequest';
-import { unwrapApiResponse } from '../../../../../infrastructure/openapi/api-response-unwrapper';
+import { ApiEnvelope, unwrapApiResponse } from '../../../../../infrastructure/openapi/api-response-unwrapper';
+import { BASE_PATH } from '../../../../../infrastructure/openapi/generated';
 import { IdentityResolverService } from '../../../../../shared/identity/identity-resolver.service';
-import { ResourceApiService } from '../../../../recursos/shared/resource-api.service';
 import {
   PosCustomer,
   PosTechnicalEmployee, PosTechnicalLine, PosTechnicalDelivery, PosTechnicalRecord,
@@ -30,72 +30,32 @@ import { PosGateway } from '../../../application/port/out/pos.gateway';
 @Injectable()
 export class PosHttpAdapter implements PosGateway {
   private readonly sales = inject(POSVentasService);
-  private readonly resources = inject(ResourceApiService);
+  private readonly http = inject(HttpClient);
+  private readonly basePath = inject(BASE_PATH);
   private readonly identities = inject(IdentityResolverService);
-  private readonly logistics = inject(LogisticsOperationsApiService);
   private readonly idempotency = inject(IdempotencyKeyService);
 
+  private posCatalog(uotId: number, warehouseId?: number, internal = false) {
+    const params = new HttpParams().set('uotId', String(uotId))
+      .set('usoInterno', String(internal));
+    const options = warehouseId == null ? params : params.set('almacenId', String(warehouseId));
+    const url = `${this.basePath.replace(/\/$/, '')}/api/v1/ventas/catalogo-pos`;
+    return this.http.get<ApiEnvelope<{
+      warehouses: PosWarehouse[];
+      products: PosProduct[];
+    }>>(url, { params: options }).pipe(map((response) => unwrapApiResponse(response)));
+  }
+
   listWarehouses(uotId: number) {
-    return this.resources
-      .listWarehouses(uotId)
-      .pipe(
-        map((items) =>
-          items
-            .filter(
-              (item) =>
-                item.estado !== false
-                && Number(item.uotPropietariaId ?? 0) === uotId
-                && item.permiteSalida !== false
-                && Number(item.almacenId ?? 0) > 0,
-            )
-            .map(
-              (item): PosWarehouse => ({
-                warehouseId: Number(item.almacenId),
-                code: item.codigo?.trim() ?? '',
-                name: item.nombre?.trim() ?? 'Almacén',
-              }),
-            )
-            .sort((a, b) => a.name.localeCompare(b.name)),
-        ),
-      );
+    return this.posCatalog(uotId).pipe(map((data) => data.warehouses ?? []));
   }
 
   listCatalog(uotId: number, warehouseId: number) {
-    return this.catalogByPolicy(uotId, warehouseId, false);
+    return this.posCatalog(uotId, warehouseId).pipe(map((data) => data.products ?? []));
   }
 
   listTechnicalCatalog(uotId: number, warehouseId: number) {
-    return this.catalogByPolicy(uotId, warehouseId, true);
-  }
-
-  private catalogByPolicy(uotId: number, warehouseId: number, internal: boolean) {
-    return forkJoin({
-      products: this.resources.listAllProducts(uotId),
-      stock: this.resources.listStock(uotId, warehouseId),
-      policies: this.logistics.listPolicies(uotId),
-    }).pipe(map(({ products, stock, policies }) => {
-      const stockByProduct = new Map(stock
-        .filter((item) => Number(item.almacenId ?? 0) === warehouseId)
-        .map((item) => [Number(item.productoId ?? 0), Number(item.stockDisponible ?? 0)] as const));
-      const allowedIds = new Set(policies.filter((p) => p.configurado
-        && (internal ? p.permiteUsoInterno : p.permiteVenta)).map((p) => p.productoId));
-      return products.map((item): PosProduct => ({
-        productId: Number(item.productoId ?? 0),
-        code: item.codigo?.trim() ?? '',
-        name: item.nombre?.trim() || 'Producto',
-        description: item.descripcion?.trim() || null,
-        unit: item.unidadMedidaNombre?.trim() || item.unidadMedidaCodigo?.trim() || 'UND',
-        category: item.categoriaNombre?.trim() || item.categoriaCodigo?.trim() || null,
-        unitPrice: internal ? 0 : Number(item.precioVigente ?? 0),
-        initialPrice: Number(item.precioInicial ?? 0),
-        currency: item.moneda?.trim().toUpperCase() || 'PEN',
-        stockAvailable: stockByProduct.get(Number(item.productoId ?? 0)) ?? 0,
-        imageFileId: Number(item.archivoPrincipalId ?? 0) > 0 ? Number(item.archivoPrincipalId) : null,
-        imageUrl: item.imagenPrincipalUrl?.trim() || null,
-      })).filter((item) => allowedIds.has(item.productId)
-        && item.stockAvailable > 0 && (internal || item.unitPrice > 0))
-        .sort((a, b) => a.name.localeCompare(b.name));
-    }));
+    return this.posCatalog(uotId, warehouseId, true).pipe(map((data) => data.products ?? []));
   }
 
   listTechnicalEmployees(uotId: number) {
@@ -141,8 +101,8 @@ export class PosHttpAdapter implements PosGateway {
       })));
   }
 
-  listSales(uotId: number) {
-    return this.sales.ventasListar({ uotId }, 'body', false, { transferCache: false })
+  listSales(uotId: number, todas = false) {
+    return this.sales.ventasListar({ uotId, estado: todas ? '__HISTORIAL_COMPLETO__' : undefined }, 'body', false, { transferCache: false })
       .pipe(map((response) => (unwrapApiResponse(response) ?? []).map((sale) => this.mapSale(sale))));
   }
 
@@ -159,12 +119,18 @@ export class PosHttpAdapter implements PosGateway {
             unitPrice: Number(item.precioUnitario ?? 0),
             subtotal: Number(item.subtotal ?? 0),
           })),
+          payments: (detail.pagos ?? []).map(p => ({
+            paymentId:Number(p.pagoVentaId ?? 0),method:p.metodoPago ?? 'Medio de pago',
+            amount:Number(p.importe ?? 0),operationNumber:p.numeroOperacion ?? null,
+            status:p.estadoPago ?? '',
+            archivoId:(p as typeof p & {archivoId?:number|null}).archivoId ?? null,
+          })),
         };
       }));
   }
 
-  cancelSale(saleId: number, reason: string) {
-    const body = { motivo: reason.trim() };
+  cancelSale(saleId: number, reason: string, devolucionConfirmada = false) {
+    const body = { motivo: reason.trim(), devolucionConfirmada };
     return this.idempotency.idempotent(`pos:venta:anular:${saleId}`, body, (key) =>
       this.sales.ventasAnular({ id: saleId, xIdempotencyKey: key,
         saleCancelRequest: body }, 'body', false, { transferCache: false })
@@ -436,18 +402,20 @@ export class PosHttpAdapter implements PosGateway {
     amount: number,
     operationNumber: string | undefined,
     idempotencyKey: string,
+    archivoId?: number,
   ) {
+    const paymentBody = {
+      metodoPagoId: paymentMethodId,
+      importe: amount,
+      numeroOperacion: operationNumber?.trim() || undefined,
+      archivoId,
+    };
     return this.sales
       .ventasRegistrarPago(
         {
           id: saleId,
           xIdempotencyKey: idempotencyKey,
-          salePaymentRequest: {
-            metodoPagoId: paymentMethodId,
-            importe: amount,
-            numeroOperacion:
-              operationNumber?.trim() || undefined,
-          },
+          salePaymentRequest: paymentBody,
         },
         'body',
         false,

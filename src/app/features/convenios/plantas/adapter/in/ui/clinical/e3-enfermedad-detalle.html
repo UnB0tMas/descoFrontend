@@ -1,57 +1,63 @@
-<dialog #modal class="modal desco-modal e3-case-dialog" (cancel)="$event.preventDefault();cerrar()">
+<dialog #modal class="modal desco-modal e3-case-dialog" [attr.aria-label]="detalle()?.enfermedad||'Detalle de enfermedad'" (cancel)="$event.preventDefault();cerrar()">
  <section class="modal-box admin-modal-box e3-case-box">
   <header class="admin-modal-header e3-case-head">
-   <div class="admin-modal-title-group"><div><p class="e3-kicker">Expediente fitosanitario</p><h2>{{detalle()?.enfermedad||'Detalle de enfermedad'}}</h2>
-    @if(detalle();as d){<small>Estado: <strong>{{d.estado==='VIGENTE'?'Vigente':d.estado==='RECUPERADA'?'Controlada':'Eliminada'}}</strong> · {{d.diasEnferma}} días registrados</small>}
-   </div></div>
-   <button type="button" class="admin-icon-button" aria-label="Cerrar detalle" (click)="cerrar()">✕</button>
+   <div class="admin-modal-title-group"><div><p>Expediente fitosanitario</p><h2>{{detalle()?.enfermedad||'Detalle de enfermedad'}}</h2></div></div>
+   <app-button label="Cerrar" [icon]="closeIcon" [iconOnly]="true" [disabled]="saving()" (pressed)="cerrar()" />
   </header>
   <div class="e3-case-body">
    @if(error()){<p class="e3-case-error" role="alert">{{error()}}</p>}
-   @if(loading()){<p>Cargando enfermedad…</p>}
+   @if(loading()){<p class="e3-case-note">Cargando enfermedad…</p>}
    @else if(detalle();as d){
-    <div class="e3-case-kpis" aria-label="Resumen de enfermedad">
-     <article class="admin-detail-card"><span>Duración</span><strong>{{d.diasEnferma}} días</strong></article>
-     <article class="admin-detail-card"><span>Tratamientos</span><strong>{{d.tratamientos.length}}</strong></article>
-     <article class="admin-detail-card"><span>Situación</span><strong>{{d.estado==='RECUPERADA'?'Controlada':estadoPlanta==='MUERTA'&&d.estado==='VIGENTE'?'No controlada':d.estado==='VIGENTE'?'Vigente':'Retirada'}}</strong></article>
-    </div>
-     <dl class="e3-case-facts">
-      <div><dt>Fecha del diagnóstico</dt><dd>{{d.fechaDiagnostico|date:'dd/MM/yyyy HH:mm'}}</dd></div>
-      <div><dt>Registrado por</dt><dd>{{d.registradoPor||'Usuario registrado'}}</dd></div>
-      <div><dt>Fecha de control</dt><dd>{{d.fechaCuracion?(d.fechaCuracion|date:'dd/MM/yyyy HH:mm'):'Pendiente'}}</dd></div>
-      <div><dt>Responsable del control</dt><dd>{{d.curadoPor||'—'}}</dd></div>
-     </dl>
-     @if(d.observacion){<article class="admin-detail-card"><strong>Observaciones del diagnóstico</strong><p>{{d.observacion}}</p></article>}
-     @if(d.motivoCierre){<article class="admin-detail-card"><strong>Observación del control</strong><p>{{d.motivoCierre}}</p></article>}
-     @if(d.estado==='ELIMINADA'){<p>Este registro se retiró administrativamente. La información y sus tratamientos permanecen disponibles.</p>}
-     @if(puedeModificar()&&accion()){
-      @if(accion()==='editar'){
-       <div class="e3-case-form"><h3>Editar diagnóstico</h3>
-        <label class="admin-field">Enfermedad<select class="admin-select" [(ngModel)]="diagnosticoId"><option [ngValue]="0">Seleccionar</option>
-         @for(x of catalogos.diagnosticos;track x.id){<option [ngValue]="x.id">{{x.nombre}}</option>}</select></label>
-        <label class="admin-field">Observación<textarea class="admin-textarea" maxlength="1000" rows="3" [(ngModel)]="observacion"></textarea></label>
-        <div class="e3-case-actions"><button type="button" class="admin-secondary-button" (click)="iniciarAccion(null)">Cancelar</button>
-         <button type="button" class="admin-primary-button" [disabled]="saving()||!diagnosticoId" (click)="guardarEdicion()">Guardar</button></div>
-       </div>
-      }
-      @if(accion()==='recuperar'){
-       <div class="e3-case-form"><h3>Registrar control</h3>
-        <label class="admin-field">Fecha de control<input type="date" class="admin-input" [(ngModel)]="fechaCuracion" [max]="hoy"/></label>
-        <label class="admin-field">Comentario (opcional)<textarea class="admin-textarea" maxlength="600" [(ngModel)]="comentarioCierre" rows="3"></textarea></label>
-        <div class="e3-case-actions"><button type="button" class="admin-secondary-button" (click)="iniciarAccion(null)">Cancelar</button>
-         <button type="button" class="admin-primary-button" [disabled]="saving()" (click)="recuperar()">Confirmar control</button></div>
-       </div>
-      }
-      @if(accion()==='eliminar'){
-       <div class="e3-case-form"><h3>Eliminar enfermedad</h3><p>Conservará sus datos y tratamientos, pero quedará retirada del registro activo.</p>
-        <label class="admin-field">Motivo obligatorio<textarea class="admin-textarea" maxlength="600" [(ngModel)]="motivo" rows="3"></textarea></label>
-        <div class="e3-case-actions"><button type="button" class="admin-secondary-button" (click)="iniciarAccion(null)">Cancelar</button>
-         <button type="button" class="admin-primary-button" [disabled]="saving()||motivo.trim().length<5" (click)="eliminar()">Confirmar eliminación</button></div>
-       </div>
-      }
+    <dl class="e3-case-facts">
+     <div><dt>Estado</dt><dd>{{d.estado==='VIGENTE'?'Vigente':d.estado==='RECUPERADA'?'Controlada':d.estado==='NO_CONTROLADA'?'No controlada':'Retirada'}}</dd></div>
+     <div><dt>Tratamientos</dt><dd>{{d.tratamientos.length}}</dd></div>
+     <div><dt>Diagnóstico</dt><dd>{{d.fechaDiagnostico|date:'dd/MM/yyyy HH:mm'}}</dd></div>
+     <div><dt>Registrado por</dt><dd>{{d.registradoPor||'—'}}</dd></div>
+     @if(d.fechaCierre){<div><dt>Fecha de cierre</dt><dd>{{d.fechaCierre|date:'dd/MM/yyyy HH:mm'}}</dd></div>}
+     @if(d.curadoPor){<div><dt>Responsable del cierre</dt><dd>{{d.curadoPor}}</dd></div>}
+     @if(d.diasEnferma!==null){<div><dt>Duración</dt><dd>{{d.diasEnferma}} días</dd></div>}
+    </dl>
+    @if(d.observacion){<div class="e3-case-observation"><strong>Observación del diagnóstico</strong><p>{{d.observacion}}</p></div>}
+    @if(d.motivoCierre){<div class="e3-case-observation"><strong>Observación del cierre</strong><p>{{d.motivoCierre}}</p></div>}
+    @if(puedeModificar()&&accion()){
+     @if(accion()==='editar'){
+      <section class="e3-case-form" aria-label="Editar diagnóstico"><h3>Editar diagnóstico</h3>
+       <label class="admin-field"><span class="admin-field-label">Enfermedad</span><select class="admin-select" [(ngModel)]="diagnosticoId" [disabled]="saving()"><option [ngValue]="0">Seleccionar</option>
+        @for(x of catalogos.diagnosticos;track x.id){<option [ngValue]="x.id">{{x.nombre}}</option>}</select></label>
+       <label class="admin-field"><span class="admin-field-label">Observación</span><textarea class="admin-textarea" maxlength="1000" rows="3" [(ngModel)]="observacion" [disabled]="saving()"></textarea></label>
+      </section>
      }
+     @if(accion()==='recuperar'){
+      <section class="e3-case-form" aria-label="Finalizar enfermedad"><h3>Finalizar enfermedad</h3>
+       <app-radio-group label="Resultado" [name]="'e3-cierre-'+plantaId+'-'+episodioId" [options]="opcionesCierre()" [value]="resultadoCierre" [disabled]="saving()" (valueChange)="seleccionarResultado($event)" />
+       @if(!d.tratamientos.length){<p class="e3-case-note">El control requiere un tratamiento registrado.</p>}
+       @if(resultadoCierre==='CONTROLADA'){
+        <label class="admin-field"><span class="admin-field-label">Fecha de control</span><input type="date" class="admin-input" [(ngModel)]="fechaCuracion" [max]="hoy" [disabled]="saving()" /></label>
+        <label class="admin-field"><span class="admin-field-label">Comentario (opcional)</span><textarea class="admin-textarea" maxlength="600" [(ngModel)]="comentarioCierre" rows="3" [disabled]="saving()"></textarea></label>
+       }@else if(resultadoCierre==='NO_CONTROLADA'){
+        <p class="e3-case-warning">La muerte es irreversible. El expediente quedará en solo lectura.</p>
+        <label class="admin-field"><span class="admin-field-label">Motivo de la muerte *</span><textarea class="admin-textarea" maxlength="600" [(ngModel)]="comentarioCierre" rows="3" placeholder="Indique el motivo" [disabled]="saving()" required></textarea></label>
+       }
+      </section>
+     }
+     @if(accion()==='eliminar'){
+      <section class="e3-case-form" aria-label="Retirar enfermedad"><h3>Retirar enfermedad</h3>
+       <p class="e3-case-note">El historial se conservará.</p>
+       <label class="admin-field"><span class="admin-field-label">Motivo *</span><textarea class="admin-textarea" maxlength="600" [(ngModel)]="motivo" rows="3" [disabled]="saving()" required></textarea></label>
+      </section>
+     }
+    }
    }
   </div>
-  <footer class="gp-modal-footer e3-case-foot"><button type="button" class="admin-secondary-button" (click)="cerrar()">Cerrar detalle</button></footer>
+  @if(!loading()&&puedeModificar()&&accion()){
+   <footer class="e3-case-foot">
+    <app-button label="Cancelar" [disabled]="saving()" (pressed)="iniciarAccion(null)" />
+    @switch(accion()){
+     @case('editar'){<app-button label="Guardar" tone="primary" [loading]="saving()" [disabled]="!diagnosticoId" (pressed)="guardarEdicion()" />}
+     @case('recuperar'){<app-button label="Guardar" [tone]="resultadoCierre==='NO_CONTROLADA'?'danger':'primary'" [loading]="saving()" [disabled]="!puedeFinalizar()" (pressed)="recuperar()" />}
+     @case('eliminar'){<app-button label="Retirar" tone="danger" [loading]="saving()" [disabled]="motivo.trim().length<5" (pressed)="eliminar()" />}
+    }
+   </footer>
+  }
  </section>
 </dialog>

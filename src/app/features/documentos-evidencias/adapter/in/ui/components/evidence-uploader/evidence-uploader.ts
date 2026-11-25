@@ -1,5 +1,5 @@
 import { DialogBackdropDirective } from '../../../../../../../shared/feedback/dialog-lifecycle/dialog-backdrop.directive';
-import { FileDropzoneComponent } from '../../../../../../../shared/forms/file-dropzone/file-dropzone';
+import { E3FileDropzoneComponent } from '../../../../../../../shared/files/file-dropzone/file-dropzone';
 import { ChangeDetectionStrategy, Component, ElementRef, ViewChild, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
@@ -13,7 +13,7 @@ import { SubirDocumentoEvidenciaUseCase } from '../../../../../application/use-c
 import { EvidenciaCategoria } from '../../../../../domain/documento-evidencia.model';
 import { EVIDENCIA_CONTEXTOS, EvidenciaContexto, EvidenciaContextoTipo } from '../../../../../domain/evidencia-contexto.model';
 
-@Component({ selector: 'app-evidence-uploader', standalone: true, imports: [DialogBackdropDirective, ReactiveFormsModule, FaIconComponent, FormErrorComponent, FileDropzoneComponent], templateUrl: './evidence-uploader.html', styleUrl: './evidence-uploader.css', changeDetection: ChangeDetectionStrategy.OnPush })
+@Component({ selector: 'app-evidence-uploader', standalone: true, imports: [DialogBackdropDirective, ReactiveFormsModule, FaIconComponent, FormErrorComponent, E3FileDropzoneComponent], templateUrl: './evidence-uploader.html', styleUrl: './evidence-uploader.css', changeDetection: ChangeDetectionStrategy.OnPush })
 export class EvidenceUploaderComponent {
   @ViewChild('dialog', { static: true }) private readonly dialogRef!: ElementRef<HTMLDialogElement>;
   private readonly fb = inject(FormBuilder);
@@ -46,6 +46,9 @@ export class EvidenceUploaderComponent {
   selectFiles(files: File[]): void { this.file.set(files[0] ?? null); this.progress.set(0); this.errorMessage.set(null); }
   close(): void { if (!this.saving()) this.finish({ saved: false, value: null }); }
   save(): void {
+    if ((this.fixedContext()?.tipo ?? this.form.controls.contextoTipo.value) === 'GASTO') {
+      this.form.controls.categoria.setValue('COMPROBANTE', { emitEvent: false });
+    }
     this.form.controls.tipoEvidencia.setValue(this.form.controls.categoria.value, { emitEvent: false });
     this.form.controls.fechaCaptura.setValue('', { emitEvent: false });
     this.form.markAllAsTouched();

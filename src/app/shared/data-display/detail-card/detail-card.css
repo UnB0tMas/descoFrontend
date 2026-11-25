@@ -1,0 +1,9 @@
+:host { display: block; min-width: 0; }
+.desco-detail-card { display: grid; gap: .85rem; min-width: 0; padding: 1rem;
+  border: 1px solid var(--desco-border); border-radius: var(--desco-radius-lg);
+  background: var(--desco-surface); }
+.desco-detail-card__header { display: flex; align-items: center; gap: .7rem; min-width: 0; }
+.desco-detail-card__header h3 { margin: 0; color: var(--desco-text); font-size: .89rem; font-weight: 800; }
+.desco-detail-card__header p { margin: .2rem 0 0; color: var(--desco-text-muted); font-size: .74rem; }
+.desco-detail-card__icon { display: grid; flex: 0 0 auto; place-items: center; width: 2.25rem; height: 2.25rem;
+  border-radius: .7rem; background: var(--desco-primary-soft); color: var(--desco-primary-text); }

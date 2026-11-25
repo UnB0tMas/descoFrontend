@@ -16,7 +16,7 @@ import {
   faSitemap,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
-import { Observable, concatMap, finalize } from 'rxjs';
+import { Observable, finalize } from 'rxjs';
 
 import { mapOpenApiError } from '../../../../../../../infrastructure/openapi/openapi-http-error.mapper';
 import { ToastService } from '../../../../../../../shared/feedback/toast-center/toast.service';
@@ -133,8 +133,8 @@ export class UotFormComponent {
   ): Promise<AdminModalResult> {
     this.prepare('access', options, unit);
     this.accessForm.reset({
-      usuarioId: options.users?.[0]?.value ?? 0,
-      rolId: options.roles?.[0]?.value ?? 0,
+      usuarioId: 0,
+      rolId: 0,
       predeterminada: false,
     });
     return this.show();
@@ -227,19 +227,12 @@ export class UotFormComponent {
     this.errorMessage.set(null);
 
     this.api
-      .assignUser(unit.uotId, {
+      .assignAccess(unit.uotId, {
         usuarioId,
+        rolId,
         predeterminada: raw.predeterminada,
       })
-      .pipe(
-        concatMap(() =>
-          this.api.assignRole(unit.uotId, {
-            usuarioId,
-            rolId,
-          }),
-        ),
-        finalize(() => this.saving.set(false)),
-      )
+      .pipe(finalize(() => this.saving.set(false)))
       .subscribe({
         next: () => {
           this.toast.success('Acceso UOT asignado');

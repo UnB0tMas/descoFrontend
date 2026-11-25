@@ -28,7 +28,7 @@ import {
   faWarehouse,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
-import { finalize, Observable, of, switchMap } from 'rxjs';
+import { catchError, concatMap, finalize, from, map, Observable, of, reduce, switchMap } from 'rxjs';
 
 import { ReferenceDataService } from '../../../../../../../../core/reference-data/reference-data.service';
 
@@ -43,6 +43,7 @@ import { LocalDocumentFileResponse } from '../../../../../../../../infrastructur
 import { mapOpenApiError } from '../../../../../../../../infrastructure/openapi/openapi-http-error.mapper';
 import { ToastService } from '../../../../../../../../shared/feedback/toast-center/toast.service';
 import { LocalDocumentApiService } from '../../../../../../../../shared/files/local-document-api.service';
+import { E3FileDropzoneComponent } from '../../../../../../../../shared/files/file-dropzone/file-dropzone';
 import { FormErrorComponent } from '../../../../../../../../shared/forms/form-error/form-error';
 import {
   GeographyCascadeComponent,
@@ -74,6 +75,7 @@ export interface WarehouseOperationOptions {
     FaIconComponent,
     FormErrorComponent,
     GeographyCascadeComponent,
+    E3FileDropzoneComponent,
     NgTemplateOutlet,
   ],
   templateUrl: './almacen-operation-form.html',
@@ -126,6 +128,15 @@ export class AlmacenOperationFormComponent {
   readonly closeIcon = faXmark;
 
   readonly movementNature = signal<'E' | 'S'>('E');
+  readonly movementWarehouseLocked = signal(false);
+  readonly movementSupportFiles = signal<File[]>([]);
+  readonly movementSupportError = signal<string | null>(null);
+  readonly movementAttachmentPhase = signal(false);
+
+  onMovementFilesChange(files: File[]): void {
+    this.movementSupportFiles.set(files);
+    this.movementSupportError.set(null);
+  }
 
   readonly movementTypes = [
     { value: ResourceMovementRegisterRequestTipoEnum.Compra, label: 'Compra' },
@@ -184,11 +195,65 @@ export class AlmacenOperationFormComponent {
   }
 
   onMovementWarehouseChange(): void {
-    const allowed = new Set(this.movementProducts().map(p => p.productoId));
-    for (const line of this.lines.controls) {
+    const allowed = new Set(this.movementProducts().map(product => product.productoId));
+    this.lines.controls.forEach((line, index) => {
       const control = line.get('productoId');
-      if (!allowed.has(Number(control?.value))) control?.setValue(0);
+      if (!allowed.has(Number(control?.value))) {
+        control?.setValue(0);
+        line.patchValue({ lote: '', fechaVencimiento: '' });
+      }
+      this.limitMovementQuantity(index);
+    });
+  }
+
+  movementAvailable(index: number): number {
+    const warehouseId = Number(this.movementForm.controls.almacenId.value);
+    const productId = Number(this.lines.at(index)?.get('productoId')?.value ?? 0);
+    const available = this.stock().find(item => item.almacenId === warehouseId &&
+      item.productoId === productId && item.estado !== false)?.stockDisponible ?? 0;
+    return productId > 0 && warehouseId > 0
+      ? Math.floor(Math.max(0, Number(available)) * 1000 + 0.000001) / 1000 : 0;
+  }
+
+  onMovementProductChange(index: number): void {
+    const line = this.lines.at(index);
+    line.patchValue({ lote: '', fechaVencimiento: '' });
+    if (this.movementNature() === 'S') {
+      const available = this.movementAvailable(index);
+      const quantity = line.get('cantidad');
+      if (quantity && Number(quantity.value) <= 0 && available > 0) {
+        quantity.setValue(Math.min(1, available));
+      }
     }
+    this.limitMovementQuantity(index);
+  }
+
+  limitMovementQuantity(index: number): void {
+    if (this.movementNature() !== 'S') return;
+    const control = this.lines.at(index).get('cantidad');
+    if (!control) return;
+    const available = this.movementAvailable(index);
+    const value = Number(control.value);
+    if (Number.isFinite(value) && value > available) {
+      control.setValue(available);
+    }
+    control.setValidators([
+      Validators.required,
+      Validators.min(0.001),
+      Validators.max(available),
+      decimalPrecisionValidator(16, 3),
+    ]);
+    control.updateValueAndValidity({ emitEvent: false });
+  }
+
+  movementWarehouseName(): string {
+    return this.currentWarehouse()?.nombre || 'Almacén seleccionado';
+  }
+
+  movementUnitName(): string {
+    const id = Number(this.movementForm.controls.uotId.value);
+    return this.uot.memberships().find(item => item.uotId === id)?.nombre
+      ?? this.currentWarehouse()?.uotPropietaria ?? 'UOT seleccionada';
   }
 
   selectedConfigureProduct(): ResourceProductListItemResponse | null {
@@ -328,6 +393,9 @@ export class AlmacenOperationFormComponent {
     selection?: { warehouseId?: number; productId?: number; nature?: 'E' | 'S' },
   ): Promise<AdminModalResult> {
     this.prepare('movement', options, null);
+    this.movementWarehouseLocked.set(false);
+    this.movementSupportFiles.set([]);
+    this.movementSupportError.set(null);
     this.movementNature.set(selection?.nature === 'S' ? 'S' : 'E');
     this.lines.clear();
     this.lines.push(this.createLine());
@@ -347,21 +415,27 @@ export class AlmacenOperationFormComponent {
       this.uot.isGeneral() ? 'enable' : 'disable'
     ]({ emitEvent: false });
     this.onMovementUnitChange();
-    if (selection?.warehouseId && this.warehousesForUnit().some(
-      (item) => item.almacenId === selection.warehouseId,
-    )) {
-      this.movementForm.controls.almacenId.setValue(selection.warehouseId);
+    const selectedWarehouse = selection?.warehouseId
+      ? this.warehousesForUnit().find(item => item.almacenId === selection.warehouseId)
+      : undefined;
+    if (selectedWarehouse?.almacenId) {
+      this.movementForm.controls.almacenId.setValue(selectedWarehouse.almacenId);
+      this.currentWarehouse.set(selectedWarehouse);
+      this.movementWarehouseLocked.set(true);
     }
-    if (selection?.productId && this.products().some(
-      (item) => item.productoId === selection.productId,
+    if (selection?.productId && this.movementProducts().some(
+      item => item.productoId === selection.productId,
     )) {
       this.lines.at(0).get('productoId')?.setValue(selection.productId);
     }
+    this.onMovementWarehouseChange();
+    if (selection?.productId) this.onMovementProductChange(0);
     return this.show();
   }
 
   addLine(): void {
     this.lines.push(this.createLine());
+    if (this.movementNature() === 'S') this.limitMovementQuantity(this.lines.length - 1);
   }
 
   removeLine(index: number): void {
@@ -638,8 +712,8 @@ export class AlmacenOperationFormComponent {
               cost > 0
                 ? raw.moneda.trim().toUpperCase() || 'PEN'
                 : undefined,
-            lote: normalizeOptionalText(raw.lote),
-            fechaVencimiento: raw.fechaVencimiento || undefined,
+            lote: this.selectedConfigureProduct()?.requiereLote ? normalizeOptionalText(raw.lote) : undefined,
+            fechaVencimiento: this.selectedConfigureProduct()?.controlaVencimiento ? raw.fechaVencimiento || undefined : undefined,
             archivoSustentoId:
               uploadedFileId > 0 ? uploadedFileId : undefined,
             observacion: normalizeOptionalText(raw.observacion),
@@ -673,6 +747,9 @@ export class AlmacenOperationFormComponent {
   }
 
   private saveMovement(): void {
+    if (this.movementNature() === 'S') {
+      this.lines.controls.forEach((_, index) => this.limitMovementQuantity(index));
+    }
     this.movementForm.markAllAsTouched();
     if (this.movementForm.invalid || this.saving()) return;
 
@@ -715,8 +792,10 @@ export class AlmacenOperationFormComponent {
       return;
     }
 
-    this.run(
-      this.api.registerMovement({
+    const files = this.movementSupportFiles();
+    this.saving.set(true);
+    this.errorMessage.set(null);
+    this.api.registerMovement({
         uotId: Number(raw.uotId),
         almacenId: Number(raw.almacenId),
         tipo: raw.tipo,
@@ -733,12 +812,46 @@ export class AlmacenOperationFormComponent {
               ? Number(line.costoUnitario)
               : undefined,
           moneda: line.moneda.trim().toUpperCase() || undefined,
-          lote: normalizeOptionalText(line.lote),
-          fechaVencimiento: line.fechaVencimiento || undefined,
+          lote: this.products().find(p => p.productoId === Number(line.productoId))?.requiereLote ? normalizeOptionalText(line.lote) : undefined,
+          fechaVencimiento: this.products().find(p => p.productoId === Number(line.productoId))?.controlaVencimiento ? line.fechaVencimiento || undefined : undefined,
         })),
+    }).pipe(
+      switchMap((created) => {
+        if (!files.length) return of({ uploaded: 0, failed: 0 });
+        const movementId = Number(created?.movimientoInventarioId ?? 0);
+        if (movementId <= 0) return of({ uploaded: 0, failed: files.length });
+        this.movementAttachmentPhase.set(true);
+        return from(files).pipe(
+          concatMap(file => this.documents.upload({
+            uotId: Number(raw.uotId), file, category: 'DOCUMENTO',
+            linkType: 'MOVIMIENTO', linkId: movementId,
+            description: 'Sustento del movimiento de almacén',
+          }).pipe(map(() => true), catchError(() => of(false)))),
+          reduce((result, saved) => ({
+            uploaded: result.uploaded + (saved ? 1 : 0),
+            failed: result.failed + (saved ? 0 : 1),
+          }), { uploaded: 0, failed: 0 }),
+        );
       }),
-      movementNature === 'E' ? 'Entrada registrada' : 'Salida registrada',
-    );
+      finalize(() => {
+        this.saving.set(false);
+        this.movementAttachmentPhase.set(false);
+      }),
+    ).subscribe({
+      next: ({ failed }) => {
+        if (failed > 0) {
+          this.toast.warning('Movimiento registrado. Algunos archivos no se adjuntaron.');
+        } else {
+          this.toast.success(movementNature === 'E' ? 'Entrada registrada' : 'Salida registrada');
+        }
+        this.finish({ saved: true, value: null });
+      },
+      error: (error) => {
+        const message = mapOpenApiError(error).message;
+        this.errorMessage.set(message);
+        this.toast.error('No se pudo registrar el movimiento', message);
+      },
+    });
   }
 
   private resolveCreateUotId(preferredUotId?: number): number {
@@ -886,7 +999,10 @@ export class AlmacenOperationFormComponent {
     this.resolver?.(result);
     this.resolver = null;
     this.currentWarehouse.set(null);
+    this.movementWarehouseLocked.set(false);
     this.configureProducts.set([]);
     this.resetSupportState();
+    this.movementSupportFiles.set([]);
+    this.movementSupportError.set(null);
   }
 }

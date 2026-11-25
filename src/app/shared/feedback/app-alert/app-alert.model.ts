@@ -5,6 +5,7 @@ export type AppAlertTone =
   | 'success'
   | 'warning'
   | 'error'
+  | 'danger'
   | 'question';
 
 export interface AppAlertConfig {

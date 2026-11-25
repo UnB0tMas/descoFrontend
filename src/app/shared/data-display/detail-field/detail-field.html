@@ -1,0 +1,7 @@
+<div class="desco-detail-field">
+  <span class="desco-detail-field__label">{{ label }}</span>
+  <div class="desco-detail-field__value">
+    @if (!projected) { <span>{{ value === null || value === undefined || value === '' ? emptyText : value }}</span> }
+    <ng-content />
+  </div>
+</div>

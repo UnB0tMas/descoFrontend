@@ -1382,6 +1382,7 @@ dialog:modal::backdrop {
 }
 
 /* Tablas y tarjetas uniformes en los módulos históricos de Gestión Técnica. */
+app-list-view-switch.technical-view-switch{display:flex;width:max-content;max-width:calc(100% - 1.9rem);margin:.6rem .95rem .6rem auto}
 .technical-view-control{display:flex;justify-content:flex-end;gap:.22rem;margin:.6rem .95rem;padding:.2rem;border:1px solid var(--desco-border);border-radius:.72rem;width:max-content;max-width:calc(100% - 1.9rem);margin-left:auto;background:var(--desco-surface)}
 .technical-view-button{font:inherit;font-size:.8rem;font-weight:650;color:var(--desco-text-muted);background:transparent;border:0;border-radius:.5rem;padding:.52rem .85rem;cursor:pointer}
 .technical-view-button.active{background:var(--desco-surface-soft);color:var(--desco-primary)}
@@ -1417,3 +1418,63 @@ dialog:modal::backdrop {
 .desco-fixed-form-modal>.admin-inline-error{flex:0 0 auto;margin:.65rem 1.2rem 0}
 @media(max-width:620px){.desco-fixed-form-modal .desco-fixed-form-body{padding:.85rem}
  .desco-fixed-form-modal>.admin-modal-header,.desco-fixed-form-modal .desco-fixed-form-footer{padding:.85rem}}
+
+/* Checkbox DESCO reutilizable: casilla accesible con estado visible en ambos temas. */
+.desco-check-option {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  min-height: 2.8rem;
+  padding: .65rem .8rem;
+  border: 1px solid var(--desco-border);
+  border-radius: .7rem;
+  background: var(--desco-surface);
+  color: var(--desco-text);
+  font-size: .79rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+.desco-check-option:has(.desco-checkbox:checked) {
+  border-color: var(--desco-primary-border);
+  background: var(--desco-primary-soft);
+}
+input[type='checkbox'].desco-checkbox {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  flex: 0 0 1.25rem;
+  margin: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  border: 2px solid var(--desco-border-strong);
+  border-radius: .36rem;
+  background: var(--desco-control-bg);
+  color: var(--desco-on-primary);
+  cursor: pointer;
+  transition: background-color .14s ease, border-color .14s ease;
+}
+input[type='checkbox'].desco-checkbox:checked {
+  border-color: var(--desco-primary);
+  background: var(--desco-primary);
+  background-image: none;
+}
+input[type='checkbox'].desco-checkbox:checked::after {
+  content: '';
+  display: block;
+  width: .38rem;
+  height: .68rem;
+  border: solid var(--desco-on-primary);
+  border-width: 0 2px 2px 0;
+  transform: translateY(-1px) rotate(45deg);
+}
+input[type='checkbox'].desco-checkbox:focus-visible {
+  outline: 3px solid var(--desco-focus-ring);
+  outline-offset: 3px;
+}
+input[type='checkbox'].desco-checkbox:disabled { opacity: .55; cursor: not-allowed; }
+@media (forced-colors: active) {
+  input[type='checkbox'].desco-checkbox { appearance: auto; -webkit-appearance: checkbox; }
+  input[type='checkbox'].desco-checkbox::after { display: none; }
+}

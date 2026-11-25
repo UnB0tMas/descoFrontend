@@ -1,0 +1,12 @@
+<button type="{{ type }}" class="desco-button" [class.desco-button--small]="size === 'small'"
+  [class.desco-button--primary]="tone === 'primary'" [class.desco-button--secondary]="tone === 'secondary'"
+  [class.desco-button--success]="tone === 'success'" [class.desco-button--danger]="tone === 'danger'"
+  [class.desco-button--ghost]="tone === 'ghost'" [class.desco-button--danger-ghost]="tone === 'danger-ghost'" [class.desco-button--icon]="iconOnly"
+  [class.desco-button--full]="fullWidth" [disabled]="disabled || loading"
+  [attr.aria-label]="iconOnly ? (label || 'Acción') : null" [attr.title]="iconOnly ? label : null" [attr.aria-busy]="loading"
+  (click)="handleClick()">
+  @if (loading) { <fa-icon [icon]="spinnerIcon" animation="spin" /> }
+  @else if (icon) { <fa-icon [icon]="icon" /> }
+  @if (!iconOnly) { <span>{{ loading ? loadingLabel : label }}</span> }
+  <span class="desco-button__content" [hidden]="iconOnly"><ng-content /></span>
+</button>

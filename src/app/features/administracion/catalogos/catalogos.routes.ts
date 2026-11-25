@@ -9,6 +9,11 @@ const catalogAccess = {
 } as const;
 
 export const catalogosRoutes: Routes = [
+  { path: 'catalogos/tipos-documentos',
+    data: { breadcrumb: 'Tipos de documentos', ...catalogAccess },
+    canActivate: [moduleAccessGuard, permissionGuard],
+    loadComponent: () => import('../../gestion-documentaria/adapter/in/ui/pages/tipos-documentos')
+      .then(m => m.TiposDocumentosPage) },
   {
     path: 'catalogos',
     data: {

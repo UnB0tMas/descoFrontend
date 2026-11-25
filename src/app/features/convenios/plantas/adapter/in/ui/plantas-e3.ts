@@ -2,7 +2,7 @@ import {CommonModule} from '@angular/common';
 import {ChangeDetectionStrategy,Component,Input,OnChanges,OnInit,SimpleChanges,ViewChild,ElementRef,computed,inject,signal} from '@angular/core';
 import {FormsModule} from '@angular/forms';
 import {FaIconComponent} from '@fortawesome/angular-fontawesome';
-import {faChartArea,faChartPie,faCommentDots,faEye,faPen,faPlus,faSpinner,faTableCellsLarge,faTableList,faTrash,faXmark,faRotate} from '@fortawesome/free-solid-svg-icons';
+import {faChartArea,faChartPie,faCommentDots,faEye,faPen,faPlus,faSpinner,faTrash,faXmark,faRotate} from '@fortawesome/free-solid-svg-icons';
 import {ChartCardComponent} from '../../../../../../shared/charts/chart-card/chart-card';
 import {ChartPresetsService} from '../../../../../../shared/charts/chart-presets.service';
 import {ThemeService} from '../../../../../../core/ui/theme.service';
@@ -12,6 +12,8 @@ import {catchError,concatMap,finalize,forkJoin,from,map,Observable,of,switchMap,
 import {PermissionService} from '../../../../../../core/access/permission.service';
 import {UotContextStore} from '../../../../../uot/state/uot-context.store';
 import {PaginatorComponent} from '../../../../../../shared/data-display/paginator/paginator';
+import {DataTableComponent} from '../../../../../../shared/data-display/data-table/data-table';
+import {ListViewSwitchComponent,ListViewMode} from '../../../../../../shared/data-display/list-view-switch/list-view-switch';
 import {RecordCardComponent} from '../../../../../../shared/data-display/record-card/record-card';
 import {LoadingStateComponent} from '../../../../../../shared/data-display/loading-state/loading-state';
 import {EmptyStateComponent} from '../../../../../../shared/data-display/empty-state/empty-state';
@@ -30,7 +32,7 @@ import {AmbitoE3,CatalogosE3,DetalleE3,EstadoE3,EstadisticasE3,FilaE3,PaginaE3,P
 
 type Pestaña='general'|'enfermedades'|'tratamientos'|'comentarios'|'produccion'|'evidencias';
 @Component({selector:'app-plantas-e3-page',standalone:true,
- imports:[CommonModule,FormsModule,RouterLink,FaIconComponent,ChartCardComponent,PaginatorComponent,RecordCardComponent,LoadingStateComponent,EmptyStateComponent,ActionConfirmDialogComponent,E3ExpedienteGraficosComponent,E3PlantaSaludComponent,E3FileDropzoneComponent],
+ imports:[CommonModule,FormsModule,RouterLink,FaIconComponent,ChartCardComponent,PaginatorComponent,RecordCardComponent,ListViewSwitchComponent,DataTableComponent,LoadingStateComponent,EmptyStateComponent,ActionConfirmDialogComponent,E3ExpedienteGraficosComponent,E3PlantaSaludComponent,E3FileDropzoneComponent],
  templateUrl:'./plantas-e3.html',styleUrl:'./plantas-e3.css',changeDetection:ChangeDetectionStrategy.OnPush})
 export class PlantasE3Page implements OnInit,OnChanges {
  @Input() convenioId=0;
@@ -74,8 +76,8 @@ export class PlantasE3Page implements OnInit,OnChanges {
  private readonly chartPresets=inject(ChartPresetsService);
  private readonly theme=inject(ThemeService);
  readonly chartIcon=faChartArea;readonly donutIcon=faChartPie;
- readonly addIcon=faPlus;readonly closeIcon=faXmark;readonly tableIcon=faTableList;readonly spinnerIcon=faSpinner;readonly refreshIcon=faRotate;
- readonly commentIcon=faCommentDots;readonly cardIcon=faTableCellsLarge;readonly viewIcon=faEye;readonly editIcon=faPen;readonly deleteIcon=faTrash;
+ readonly addIcon=faPlus;readonly closeIcon=faXmark;readonly spinnerIcon=faSpinner;readonly refreshIcon=faRotate;
+ readonly commentIcon=faCommentDots;readonly viewIcon=faEye;readonly editIcon=faPen;readonly deleteIcon=faTrash;
  readonly parcelaSeleccionada=signal(0);
  readonly predios=signal<{predioId:number;nombre:string}[]>([]);
  readonly loading=signal(false);
@@ -205,6 +207,7 @@ export class PlantasE3Page implements OnInit,OnChanges {
  });
  readonly puedeEditar=computed(()=>this.permissions.has('APAPPSS_PREDIOS_EDITAR'));
  readonly puedeCrear=computed(()=>this.permissions.has('APAPPSS_PREDIOS_CREAR'));
+ plantaColumns(){return [...(this.puedeActuar()?[{key:'seleccion',label:'Selección',headerClass:'text-center'}]:[]),{key:'codigo',label:'Código'},{key:'variedad',label:'Variedad'},{key:'estado',label:'Estado'},...(!this.predioFijo||this.catalogs().socios.length>1?[{key:'socio',label:'Socio'}]:[]),...(!this.predioFijo?[{key:'parcela',label:'Parcela'}]:[]),{key:'acciones',label:'Acciones',headerClass:'text-right'}];}
  readonly puedeActuar=computed(()=>this.puedeEditar()&&!!this.visitaId);
  readonly totalPaginas=computed(()=>Math.max(1,Math.ceil(this.page().total/this.tamano)));
  readonly totalFundo=computed(()=>(this.page().resumen??[]).reduce((sum,r)=>sum+(r.cantidad??0)-(r.muertas??0),0));
@@ -235,7 +238,7 @@ export class PlantasE3Page implements OnInit,OnChanges {
    this.comentarioNuevo='';this.cargarComentarios(d.plantaId);this.toast.success('Comentario registrado');
   });
  }
- predioId=0;socioId=0;buscar='';estadoFiltro='';variedadFiltro=0;pagina=1;tamano=10;vista:'tabla'|'tarjetas'='tabla';vistaTratamientos:'tabla'|'tarjetas'='tabla';
+ predioId=0;socioId=0;buscar='';estadoFiltro='';variedadFiltro=0;pagina=1;tamano=10;vista:ListViewMode='table';
  filas:FilaE3[]=[{variedadId:0,cantidad:0}];
  masivoTipo:TipoActuacionE3='PREVENTIVO';masivoObservacion='';masivoResultado='';
  estadoNuevo:EstadoE3['estado']='SANA';diagnosticoId=0;observacionEstado='';correccionMotivo='';
@@ -620,9 +623,9 @@ guardarFicha():void{
  });
 }
 puedeDeclararMuerta(d:DetalleE3):boolean{
- return d.estado==='ENFERMA'&&d.episodios.some(e=>!e.fin);
+ return d.estado==='ENFERMA'&&d.episodios.some(e=>e.estado==='VIGENTE');
 }
-enfermedadesVigentes(d:DetalleE3):number{return d.episodios.filter(e=>!e.fin).length;}
+enfermedadesVigentes(d:DetalleE3):number{return d.episodios.filter(e=>e.estado==='VIGENTE').length;}
 private estadoValido(d:DetalleE3):boolean{
  if(this.estadoNuevo==='SIN_EVALUAR'||this.estadoNuevo==='ELIMINADA'||this.estadoNuevo===d.estado)return false;
  if(this.estadoNuevo==='ENFERMA'&&!this.diagnosticoId){this.error.set('Seleccione la enfermedad confirmada.');return false;}
@@ -630,7 +633,7 @@ private estadoValido(d:DetalleE3):boolean{
   this.error.set('Para declarar una planta muerta debe tener una enfermedad vigente.');return false;
  }
  if(this.estadoNuevo==='SANA'&&d.estado==='ENFERMA'){
-  const abiertos=d.episodios.filter(e=>!e.fin);
+  const abiertos=d.episodios.filter(e=>e.estado==='VIGENTE');
   if(!abiertos.length||abiertos.some(e=>!d.tratamientos.some(t=>t.episodioId===e.episodioId))){
    this.error.set('Para declarar una planta sana registre primero un tratamiento para cada enfermedad vigente.');return false;
   }
@@ -642,13 +645,13 @@ private estadoValido(d:DetalleE3):boolean{
  return true;
 }
 darDeBaja(planta:PlantaE3):void{
- if(planta.estado==='ELIMINADA'||this.saving()||!this.puedeEditar())return;
+ if(planta.estado==='MUERTA'||planta.estado==='ELIMINADA'||this.saving()||!this.puedeEditar())return;
  this.plantaEliminar.set(planta);this.motivoEliminar='';this.eliminarDialog?.nativeElement.showModal();
 }
 cerrarEliminar():void{if(!this.saving()&&this.eliminarDialog?.nativeElement.open)this.eliminarDialog.nativeElement.close();}
 confirmarEliminar():void{
  const a=this.context(),p=this.plantaEliminar();
- if(!a||!p||this.motivoEliminar.trim().length<5||this.saving())return;
+ if(!a||!p||p.estado==='MUERTA'||p.estado==='ELIMINADA'||this.motivoEliminar.trim().length<5||this.saving())return;
  this.service.ver(a,p.plantaId).subscribe({next:d=>{
   this.mutate(this.clinical.eliminarPlanta(a,d.plantaId,d.version,this.motivoEliminar.trim()),()=>{
    this.toast.success('Planta eliminada del registro activo');this.cerrarEliminar();this.plantaEliminar.set(null);

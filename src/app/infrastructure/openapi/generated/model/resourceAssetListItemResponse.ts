@@ -30,6 +30,7 @@ export interface ResourceAssetListItemResponse {
     proveedorEmpresaId?: number;
     proveedorNombre?: string;
     observacion?: string;
+    permiteSalidaTecnica?: boolean;
     placa?: string;
     tipoVehiculo?: string;
     kilometrajeKm?: number;

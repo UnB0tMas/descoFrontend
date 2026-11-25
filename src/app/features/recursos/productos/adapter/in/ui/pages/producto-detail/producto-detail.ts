@@ -28,6 +28,10 @@ export class ProductoDetailPage implements OnInit {
  private readonly route=inject(ActivatedRoute); private readonly api=inject(ResourceApiService); private readonly permissions=inject(PermissionService); private readonly toast=inject(ToastService); readonly uot=inject(UotContextStore);
  readonly loading=signal(true); readonly historyLoading=signal(false); readonly actionLoadingId=signal<number|null>(null); readonly errorMessage=signal<string|null>(null); readonly historyError=signal<string|null>(null); readonly detail=signal<ResourceProductDetailResponse|null>(null); readonly history=signal<readonly ResourceProductPriceHistory[]>([]);
  readonly pageIcon=faTags; readonly backIcon=faArrowLeft; readonly refreshIcon=faRotate; readonly editIcon=faPen; readonly stateIcon=faRotate; readonly priceIcon=faCoins; readonly historyIcon=faClockRotateLeft; readonly imageIcon=faImage; readonly reactivateIcon=faRotateLeft;
+ readonly fromWarehouse=this.route.snapshot.queryParamMap.get('origen')==='almacenes';
+ readonly fromWarehouseId=Number(this.route.snapshot.queryParamMap.get('almacenId'))||null;
+ readonly backRoute=this.fromWarehouse?'/recursos/almacenes':'/recursos/productos';
+ readonly backParams=this.fromWarehouse&&this.fromWarehouseId?{almacenId:this.fromWarehouseId}:null;
  readonly productId=Number(this.route.snapshot.paramMap.get('id')); readonly requestedUotId=Number(this.route.snapshot.queryParamMap.get('uotId'))||null;
  ngOnInit():void{this.load();}
  load():void{const uotId=this.targetUotId();if(!this.productId||!uotId){this.loading.set(false);this.errorMessage.set('No se identificó correctamente el producto y su UOT.');return;}this.loading.set(true);this.errorMessage.set(null);const canHistory=this.permissions.has('PRODUCTOS_PRECIO_HISTORIAL');forkJoin({detail:this.api.getProduct(this.productId,uotId),history:canHistory?this.api.listProductPriceHistory(this.productId,uotId):of([] as ResourceProductPriceHistory[])}).pipe(finalize(()=>this.loading.set(false))).subscribe({next:({detail,history})=>{this.detail.set(detail??null);this.history.set(history);},error:(e)=>this.errorMessage.set(mapOpenApiError(e).message)});}

@@ -9,8 +9,11 @@
 <div class="admin-field"><label>Moneda</label><input class="admin-input" maxlength="10" formControlName="moneda"/></div>
 <div class="admin-field"><label>Medio de pago</label><select class="admin-select" formControlName="medioPago"><option value="TRANSFERENCIA">Transferencia</option><option value="DEPOSITO">Depósito</option><option value="YAPE">Yape</option><option value="PLIN">Plin</option><option value="EFECTIVO">Efectivo</option></select></div>
 @if(!efectivo()){<div class="admin-field"><label>Número de operación</label><input class="admin-input" maxlength="120" formControlName="numeroOperacion" placeholder="Obligatorio"/></div>}
-<div class="admin-field admin-field-span-2"><label for="comprobanteCobro">Comprobante (opcional)</label>
- <input id="comprobanteCobro" class="admin-input" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" (change)="seleccionarArchivo($event)" />
- <small>Imagen o PDF de hasta 10 MB. En efectivo no se solicita número de operación.</small></div>
+<div class="admin-field admin-field-span-2">
+ <app-e3-file-dropzone title="Comprobante (opcional)" [files]="archivos()" [multiple]="false" [maxFiles]="1"
+   [maxSizeMb]="10" accept="image/jpeg,image/png,image/webp,application/pdf"
+   fileTypesHint="JPG, PNG, WEBP o PDF" [disabled]="saving()" [uploading]="subiendoComprobante()"
+   (filesChange)="cambiarArchivo($event)" (invalid)="archivoInvalido($event)" />
+</div>
 <footer class="admin-modal-actions admin-field-span-2"><button class="admin-secondary-button" type="button" [disabled]="saving()" (click)="close()">Cancelar</button><button class="admin-primary-button" type="submit" [disabled]="saving() || form.invalid || tope()===0">@if(saving()){<span class="loading loading-spinner loading-sm"></span> Guardando…}@else{<fa-icon [icon]="saveIcon"/> Registrar}</button></footer>
 </form></div></dialog>

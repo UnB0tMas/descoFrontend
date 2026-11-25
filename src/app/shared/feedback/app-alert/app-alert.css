@@ -1,3 +1,108 @@
 :host {
   display: contents;
 }
+
+/* Variante de cierre de sesión; no altera los demás avisos. */
+.app-alert-logout-backdrop {
+  background: var(--desco-overlay) !important;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+.app-alert-logout-dialog {
+  position: relative;
+  max-width: 25rem;
+  border-color: var(--desco-border);
+  background: var(--desco-surface);
+  color: var(--desco-text);
+  box-shadow: 0 24px 68px rgb(0 0 0 / 0.26);
+}
+
+.app-alert-logout-dialog .app-alert-heading {
+  position: relative;
+  justify-content: center;
+  padding-top: 1.8rem;
+}
+
+.app-alert-logout-dialog .app-alert-logout-icon {
+  display: grid;
+  width: 3.6rem;
+  height: 3.6rem;
+  place-items: center;
+  border: 1px solid var(--desco-danger-border);
+  border-radius: 1.15rem;
+  background: var(--desco-danger-soft);
+  color: var(--desco-danger-text);
+  font-size: 1.35rem;
+}
+
+.app-alert-logout-dialog .app-alert-dismiss {
+  position: absolute;
+  top: 0.7rem;
+  right: 0.7rem;
+  color: var(--desco-text-muted);
+}
+
+.app-alert-logout-dialog .app-alert-dismiss:hover {
+  background: var(--desco-surface-soft);
+  color: var(--desco-text);
+}
+
+.app-alert-logout-dialog .app-alert-copy {
+  padding-top: 1rem;
+  text-align: center;
+}
+
+.app-alert-logout-dialog .app-alert-title {
+  color: var(--desco-text);
+  font-size: 1.15rem;
+}
+
+.app-alert-logout-dialog .app-alert-message {
+  color: var(--desco-text-muted);
+}
+
+.app-alert-logout-dialog .app-alert-actions {
+  justify-content: center;
+  padding-top: 1.25rem;
+}
+
+.app-alert-logout-dialog .app-alert-actions > button {
+  flex: 1 1 0;
+  min-height: 2.7rem;
+  max-width: 11.5rem;
+}
+
+.app-alert-logout-dialog .app-alert-cancel {
+  border-color: var(--desco-border);
+  background: var(--desco-surface-soft);
+  color: var(--desco-text);
+}
+
+.app-alert-logout-dialog .app-alert-cancel:hover {
+  background: var(--desco-surface-hover);
+}
+
+.app-alert-logout-dialog .app-alert-logout-confirm {
+  background: #dc2626;
+  color: #fff;
+}
+
+.app-alert-logout-dialog .app-alert-logout-confirm:hover {
+  background: #b91c1c;
+}
+
+.app-alert-logout-dialog .app-alert-actions button:focus-visible,
+.app-alert-logout-dialog .app-alert-dismiss:focus-visible {
+  outline: 2px solid var(--desco-danger-text);
+  outline-offset: 2px;
+}
+
+@media (max-width: 639px) {
+  .app-alert-logout-dialog .app-alert-actions > button {
+    flex-basis: auto;
+    width: 100%;
+    max-width: none;
+  }
+}
+

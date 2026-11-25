@@ -312,3 +312,22 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Inicio uniforme para Administrador, Técnico y Caja. */
+.dashboard-page { max-width: 1600px; margin-inline: auto; }
+.dashboard-toolbar { align-items: center; gap: 1rem; }
+.dashboard-content { display: grid; gap: 1.25rem; }
+.dashboard-lower-grid { gap: 1rem; }
+.dashboard-page .quick-card, .dashboard-page .dashboard-toolbar { min-width: 0; }
+@media (max-width: 880px) {
+  .dashboard-toolbar { flex-wrap: wrap; }
+  .toolbar-copy { min-width: 0; flex: 1 1 100%; }
+  .toolbar-fields { width: 100%; justify-content: flex-start; flex-wrap: wrap; }
+  .date-field { flex: 1 1 150px; }
+  .date-field input { width: 100%; min-width: 0; }
+}
+@media (max-width: 480px) {
+  .dashboard-toolbar { padding: .85rem; }
+  .toolbar-fields { gap: .5rem; }
+  .apply-button { flex: 1; }
+}

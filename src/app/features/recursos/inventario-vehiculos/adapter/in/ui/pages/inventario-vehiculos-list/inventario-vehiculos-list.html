@@ -133,27 +133,12 @@
         </select>
       </label>
 
-      <div class="resource-view-switch">
-        <button
-          type="button"
-          class="admin-icon-button"
-          [class.active]="viewMode() === 'table'"
-          title="Vista tabla"
-          (click)="setView('table')"
-        >
-          <fa-icon [icon]="tableIcon" />
-        </button>
-        <button
-          type="button"
-          class="admin-icon-button"
-          [class.active]="viewMode() === 'cards'"
-          title="Vista tarjetas"
-          (click)="setView('cards')"
-        >
-          <fa-icon [icon]="cardsIcon" />
-        </button>
-      </div>
     }
+
+      <div class="resource-view-switch">
+        <app-list-view-switch [view]="viewMode()" appearance="segmented" [disabled]="loading()"
+          (viewChange)="setView($event)" />
+      </div>
   </section>
 
   @if (loading()) {
@@ -291,6 +276,7 @@
                 <div>
                   <dt>Tipo</dt>
                   <dd>{{ item.tipoBien || '—' }}</dd>
+                  <small class="resource-cell-help">{{ item.permiteSalidaTecnica ? 'Apto para campo' : 'Uso interno' }}</small>
                 </div>
                 <div>
                   <dt>Proveedor</dt>
@@ -348,6 +334,28 @@
         message="No existen suministros para el contexto seleccionado."
       />
     } @else {
+      @if (viewMode() === 'cards') {
+      <section class="resource-card-grid resource-supply-cards">
+        @for (item of filteredSupplies(); track supplyKey(item)) {
+          <app-record-card class="resource-card">
+              <header><div><small>{{ item.uotNombre || 'UOT' }}</small><h3>{{ item.nombre || 'Suministro' }}</h3><span>{{ item.codigo || '—' }}</span></div>
+                <span class="resource-status" [class]="item.requiereReposicion ? 'resource-status--warning' : 'resource-status--ok'">{{ item.requiereReposicion ? 'Reponer' : 'Disponible' }}</span>
+              </header>
+              <dl>
+                <div><dt>Unidad</dt><dd>{{ item.unidadMedida || '—' }}</dd></div>
+                <div><dt>Stock actual</dt><dd>{{ (item.stockActual ?? 0) | number:'1.0-3' }}</dd></div>
+                <div><dt>Reservado</dt><dd>{{ (item.stockReservado ?? 0) | number:'1.0-3' }}</dd></div>
+                <div><dt>Disponible</dt><dd>{{ (item.stockDisponible ?? 0) | number:'1.0-3' }}</dd></div>
+              </dl>
+              <footer>
+                <button *appPermission="'INVENTARIO_EDITAR'" type="button" class="admin-secondary-button admin-secondary-button--small" (click)="editSupply(item)">Editar</button>
+                <button *appPermission="'INVENTARIO_EDITAR'" type="button" class="admin-secondary-button admin-secondary-button--small" (click)="movement(item)">Movimiento</button>
+                <button *appPermission="'INVENTARIO_VER'" type="button" class="admin-secondary-button admin-secondary-button--small" (click)="toggleKardex(item)">Kardex</button>
+              </footer>
+          </app-record-card>
+        }
+      </section>
+      } @else {
       <section class="admin-surface resource-table-shell">
         <div class="admin-table-wrap resource-table-scroll">
           <table class="admin-table resource-supplies-table">
@@ -472,6 +480,7 @@
           </table>
         </div>
       </section>
+      }
 
       <app-paginator
         [page]="supplies().page"

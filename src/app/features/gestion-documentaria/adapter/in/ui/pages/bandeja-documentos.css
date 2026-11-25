@@ -1,0 +1,40 @@
+/* La agrupación de borradores es propia de Enviados; tablas e iconos se reutilizan desde shared. */
+.doc-sent-filter { flex: 0 1 9.5rem; min-width: 8.5rem; }
+.doc-sent-filter .admin-select { width: 100%; }
+.doc-drafts { border: 1px solid var(--desco-warning-border, var(--desco-border));
+  border-radius: var(--desco-radius-md, .75rem); padding: .9rem;
+  background: var(--desco-warning-soft, var(--desco-surface-soft)); }
+.doc-drafts__header, .doc-drafts__heading { display: flex; align-items: center; gap: .6rem; }
+.doc-drafts__header { justify-content: space-between; margin-bottom: .5rem; }
+.doc-drafts__heading { color: var(--desco-warning-text, var(--desco-text)); }
+.doc-drafts__heading h3 { font-size: .83rem; font-weight: 700; margin: 0; }
+.doc-drafts__count { display: inline-grid; place-items: center; min-width: 1.2rem;
+  padding: .1rem .35rem; border-radius: 1rem; background: var(--desco-surface);
+  font-size: .69rem; font-weight: 700; }
+.doc-drafts__hint, .doc-drafts__excerpt, .doc-drafts__date {
+  color: var(--desco-text-muted); font-size: .75rem; }
+.doc-drafts__subject { display: grid; gap: .2rem; min-width: 0; }
+.doc-drafts__title { font-weight: 650; font-size: .82rem; color: var(--desco-text); }
+.doc-drafts__excerpt { display: -webkit-box; -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1; overflow: hidden; overflow-wrap: anywhere; }
+.doc-drafts__date { white-space: nowrap; }
+.doc-drafts__actions { display: inline-flex; align-items: center; justify-content: flex-end; gap: .15rem; }
+.doc-drafts app-data-table { display: block; border-radius: .55rem; overflow: hidden; }
+@media(max-width:650px) { .doc-drafts { padding: .6rem; } .doc-sent-filter { flex: 1 1 100%; } }
+
+/* Listado compacto: columnas compartidas y jerarquía visual estilo correo. */
+.doc-mailbox-surface { padding: clamp(.75rem,1.7vw,1rem); }
+.doc-sent-table { overflow: hidden; border: 1px solid var(--desco-border); border-radius: var(--desco-radius-md); }
+.doc-sent-message { display: flex; gap: .65rem; align-items: center; min-width: 0; }
+.doc-sent-message__icon { flex: 0 0 1.9rem; height: 1.9rem; width: 1.9rem; display: grid; place-items: center; border-radius: .5rem; background: var(--desco-surface-soft); color: var(--desco-text-muted); }
+.doc-sent-message--unread .doc-sent-message__icon { color: var(--desco-text); }
+.doc-sent-message__copy { min-width: 0; display: grid; gap: .15rem; flex: 1; }
+.doc-sent-message__subject { font-size: .83rem; color: var(--desco-text); font-weight: 600; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.doc-sent-message--unread .doc-sent-message__subject { font-weight: 750; }
+.doc-sent-message__type { font-size: .69rem; line-height: 1.25; color: var(--desco-text-muted); font-weight: 550; }
+.doc-sent-message__preview { font-size: .73rem; color: var(--desco-text-muted); line-height: 1.3; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.doc-sent-message__attachment { flex: 0 0 auto; color: var(--desco-text-muted); font-size: .73rem; }
+.doc-sent-sender { font-size: .78rem; color: var(--desco-text); }
+.doc-sent-sender--unread { font-weight: 700; }
+.doc-sent-date { color: var(--desco-text-muted); font-size: .75rem; white-space: nowrap; }
+@media(max-width:680px){ .doc-sent-message__icon { display:none; } .doc-mailbox-surface { padding: .65rem; } }

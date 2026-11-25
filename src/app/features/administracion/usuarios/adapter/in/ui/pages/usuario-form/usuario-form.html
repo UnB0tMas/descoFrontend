@@ -30,22 +30,22 @@
       @if (!current()) {
         <div class="admin-field admin-field-span-2">
           <label for="userEmployee">Empleado</label>
-          <select
-            id="userEmployee"
-            class="admin-select"
-            formControlName="empleadoId"
-            (change)="suggestUsername($any($event.target).value)"
-          >
-            <option [value]="0">Seleccionar empleado</option>
-            @for (employee of employees(); track employee.value) {
-              <option [value]="employee.value">{{ employee.label }}</option>
-            }
-          </select>
+          <div class="admin-employee-picker">
+            <input type="search" class="admin-input" placeholder="Buscar empleado por nombre o apellido"
+              aria-label="Buscar empleado" [value]="employeeSearch()"
+              (input)="employeeSearch.set($any($event.target).value)" />
+            <select id="userEmployee" class="admin-select" formControlName="empleadoId"
+              (change)="suggestUsername($any($event.target).value)">
+              <option [value]="0">Seleccionar empleado</option>
+              @for (employee of filteredEmployees(); track employee.value) {
+                <option [value]="employee.value">{{ employee.label }}</option>
+              }
+            </select>
+          </div>
           <app-form-error
             [control]="form.controls.empleadoId"
             fieldLabel="El empleado"
           />
-          <a class="admin-secondary-button" routerLink="/administracion/empleados" (click)="close()">Registrar empleado</a>
         </div>
       }
 
@@ -123,21 +123,21 @@
 
         <div class="admin-field admin-field-span-2">
           <label>Roles iniciales</label>
-          <div class="admin-option-grid">
+          <div class="admin-option-grid desco-checkbox-grid" role="group" aria-label="Roles iniciales">
             @for (role of roles(); track role.value) {
-              <label class="admin-check-option">
-                <input
-                  type="checkbox"
-                  class="checkbox checkbox-primary checkbox-sm"
-                  [checked]="roleSelected(role.value)"
-                  (change)="toggleRole(role.value, $any($event.target).checked)"
-                />
+              <label class="admin-switch-row desco-checkbox-row">
                 <div>
                   <strong>{{ role.label }}</strong>
                   @if (role.description) {
                     <span>{{ role.description }}</span>
                   }
                 </div>
+                <input
+                  type="checkbox"
+                  class="desco-checkbox-control"
+                  [checked]="roleSelected(role.value)"
+                  (change)="toggleRole(role.value, $any($event.target).checked)"
+                />
               </label>
             }
           </div>

@@ -1,0 +1,22 @@
+:host { position:absolute; inset:0; z-index:15; display:grid; place-items:center; }
+.inline-confirm-backdrop { position:absolute; inset:0; display:grid; place-items:center; padding:1rem; background:rgba(0,0,0,.54); box-sizing:border-box; }
+.inline-confirm-card { width:min(410px,100%); overflow:hidden; border:1px solid var(--desco-border);
+  border-radius:1.1rem; background:var(--desco-surface); color:var(--desco-text); box-shadow:0 16px 50px rgba(0,0,0,.35); }
+.inline-confirm-header { display:flex; align-items:flex-start; gap:1rem; padding:1.35rem; border-bottom:1px solid var(--desco-border); }
+.inline-confirm-icon { display:grid; place-items:center; width:2rem; height:2rem; flex-shrink:0; color:var(--desco-primary); }
+.inline-confirm-warning { color:var(--desco-warning,#f59e0b); }
+.inline-confirm-text { flex:1; min-width:0; }
+.inline-confirm-text h2 { font-size:1rem; font-weight:750; line-height:1.4; margin:0; }
+.inline-confirm-text p { color:var(--desco-muted); font-size:.84rem; line-height:1.55; margin:.3rem 0 0; }
+.inline-confirm-close { border:0; border-radius:.55rem; background:transparent; color:var(--desco-muted); cursor:pointer; padding:.4rem; }
+.inline-confirm-close:hover { background:var(--desco-surface-soft); color:var(--desco-text); }
+.inline-confirm-actions { display:flex; justify-content:flex-end; gap:.6rem; flex-wrap:wrap; padding:1rem 1.25rem; }
+.inline-confirm-actions button { padding:.62rem .88rem; font:inherit; font-size:.83rem; font-weight:650; border-radius:.7rem; cursor:pointer; }
+.inline-confirm-cancel { color:var(--desco-text); background:var(--desco-surface); border:1px solid var(--desco-border); }
+.inline-confirm-cancel:hover { color:var(--desco-text); background:var(--desco-surface-soft); }
+.inline-confirm-accept { background:var(--desco-primary); color:#fff; border:1px solid transparent; }
+.inline-confirm-accept:hover { filter:brightness(.92); }
+.inline-confirm-accept-warning { background:var(--desco-warning,#f59e0b); color:#111827; }
+.inline-confirm-accept-warning:hover { filter:brightness(.94); }
+@media(max-width:420px) { .inline-confirm-header { padding:.9rem; gap:.55rem; }
+  .inline-confirm-actions { padding:.75rem; } .inline-confirm-actions button { flex:1; } }

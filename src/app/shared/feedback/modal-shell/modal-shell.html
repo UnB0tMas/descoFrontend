@@ -1,0 +1,21 @@
+<dialog #dialog appDialogBackdrop class="modal desco-modal" [attr.aria-label]="title" (cancel)="onCancel($event)">
+  <div class="modal-box admin-modal-box desco-modal-shell"
+    [class.admin-modal-box--wide]="size === 'wide'" [class.admin-modal-box--compact]="size === 'compact'"
+    [class.desco-modal-shell--compose]="variant === 'compose'">
+    <header class="admin-modal-header">
+      <div class="admin-modal-title-group">
+        @if (variant !== 'compose') { <span class="admin-modal-icon"><fa-icon [icon]="icon" /></span> }
+        <div>
+          @if (eyebrow) { <p>{{ eyebrow }}</p> }
+          <h2>{{ title }}</h2>
+          @if (description) { <small class="desco-modal-description">{{ description }}</small> }
+        </div>
+      </div>
+      <button type="button" class="admin-icon-button" aria-label="Cerrar" [disabled]="busy" (click)="requestClose()">
+        <fa-icon [icon]="closeIcon" />
+      </button>
+    </header>
+    <div class="desco-modal-shell__body"><ng-content /></div>
+    <footer class="desco-modal-shell__footer"><ng-content select="[modalActions]" /></footer>
+  </div>
+</dialog>

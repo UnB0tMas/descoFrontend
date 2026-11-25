@@ -29,6 +29,7 @@
   </app-page-header>
 
   <section class="admin-surface mt-5">
+    <div class="desco-admin-view-toolbar"><app-list-view-switch appearance="segmented" [view]="viewMode()" (viewChange)="viewMode.set($event)" /></div>
     @if (loading()) {
       <app-loading-state
         title="Cargando roles"
@@ -45,22 +46,28 @@
         message="No hay roles disponibles."
       />
     } @else {
-      <div class="admin-table-wrap">
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th>Rol</th>
-              <th>Código</th>
-              <th class="text-center">Permisos</th>
-              <th class="text-center">Usuarios</th>
-              <th class="text-center">Segundo factor</th>
-              <th class="text-center">Estado</th>
-              <th class="text-right">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (role of result().items; track role.rolId) {
-              <tr>
+      @if (viewMode() === 'cards') {
+      <div class="desco-record-grid desco-admin-record-grid">
+        @for (role of result().items; track role.rolId) {
+<app-record-card>
+ <header><span class="admin-entity-icon"><fa-icon [icon]="pageIcon" /></span><span class="admin-code">{{ role.codigo }}</span></header>
+ <h3>{{ role.nombre }}</h3><p class="gp-subtle">{{ role.descripcion || 'Sin descripción' }}</p>
+ <dl><div><dt>Permisos</dt><dd>{{ role.permisosActivos }}</dd></div><div><dt>Usuarios</dt><dd>{{ role.usuariosActivos }}</dd></div><div><dt>Segundo factor</dt><dd>{{ role.requiereSegundoFactor ? 'Requerido' : 'No requerido' }}</dd></div><div><dt>Estado</dt><dd>{{ role.estado ? 'Activo' : 'Inactivo' }}</dd></div></dl>
+ <footer><div class="admin-row-actions">
+ <a *appPermission="'ROLESPERMISOS_VER'" class="admin-icon-button" [routerLink]="['/administracion/roles-permisos',role.rolId]" title="Ver rol"><fa-icon [icon]="viewIcon" /></a>
+ @if (role.esSistema) { <span class="admin-managed-badge"><fa-icon [icon]="lockIcon" /> Base</span> }
+ @else {
+ <button *appPermission="'ROLESPERMISOS_EDITAR'" type="button" class="admin-icon-button" title="Editar rol" (click)="openEdit(role)"><fa-icon [icon]="editIcon" /></button>
+ <a *appPermission="'ROLESPERMISOS_CREAR'" class="admin-icon-button" [routerLink]="['/administracion/roles-permisos',role.rolId,'permisos']" title="Permisos"><fa-icon [icon]="permissionsIcon" /></a>
+ <button *appPermission="'ROLESPERMISOS_RETIRAR'" type="button" class="admin-icon-button admin-icon-button--danger" [disabled]="disablingId()===role.rolId" title="Deshabilitar" (click)="disable(role)"><fa-icon [icon]="disableIcon" /></button>
+ } </div></footer>
+</app-record-card>
+        }
+      </div>
+      } @else {
+<app-data-table appearance="admin" [columns]="rolesColumns" [rows]="result().items" [rowTemplate]="rolesRow" [trackByKey]="'rolId'" />
+        <ng-template #rolesRow let-role>
+
                 <td>
                   <div class="admin-entity">
                     <span class="admin-entity-icon">
@@ -156,11 +163,9 @@
                     }
                   </div>
                 </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
+              
+        </ng-template>
+      }
 
       <app-paginator
         [page]="result().page"

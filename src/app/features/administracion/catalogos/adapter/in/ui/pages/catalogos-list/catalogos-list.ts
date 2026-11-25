@@ -1,3 +1,5 @@
+import { DataTableComponent } from '../../../../../../../../shared/data-display/data-table/data-table';
+import { DataTableColumn } from '../../../../../../../../shared/data-display/data-table/data-table.types';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -41,6 +43,7 @@ import {
 import { CatalogoItem } from '../../../../../domain/catalogo-item.model';
 import { CatalogoDetailComponent } from '../catalogo-detail/catalogo-detail';
 import { CampaignSanctionsPanel } from '../../../../../../../gestion-comercial/campaigns/campaign-sanctions-panel';
+import { TiposDocumentosPage } from '../../../../../../../gestion-documentaria/adapter/in/ui/pages/tipos-documentos';
 
 type CatalogStatusView = 'ACTIVE' | 'INACTIVE';
 
@@ -54,10 +57,12 @@ type CatalogStatusView = 'ACTIVE' | 'INACTIVE';
     ErrorStateComponent,
     EmptyStateComponent,
     PaginatorComponent,
+    DataTableComponent,
     ActionConfirmDialogComponent,
     PageHeaderComponent,
     CatalogoDetailComponent,
     CampaignSanctionsPanel,
+    TiposDocumentosPage,
     CatalogosProductivos,
   ],
   templateUrl: './catalogos-list.html',
@@ -74,6 +79,7 @@ export class CatalogosListPage implements OnInit {
   @ViewChild(CatalogosProductivos)
   productivos?: CatalogosProductivos;
   @ViewChild(CampaignSanctionsPanel) sanciones?: CampaignSanctionsPanel;
+  @ViewChild(TiposDocumentosPage) tiposInternos?: TiposDocumentosPage;
 
   private readonly route = inject(ActivatedRoute);
   private readonly listUseCase = inject(ListarCatalogosUseCase);
@@ -106,10 +112,19 @@ export class CatalogosListPage implements OnInit {
   readonly statusView = signal<CatalogStatusView>('ACTIVE');
   readonly search = signal('');
   readonly currentPage = signal(1);
-  readonly pageSize = signal(20);
+  readonly pageSize = signal(10);
 
   readonly catalogs = CATALOGOS_ADMINISTRABLES;
   readonly catalogGroups = CATALOGOS_AGRUPADOS;
+  readonly catalogValuesColumns: readonly DataTableColumn<CatalogoItem>[] = [
+    { key: 'codigo', label: 'Código' },
+    { key: 'nombre', label: 'Nombre' },
+    { key: 'descripcion', label: 'Descripción' },
+    { key: 'uso', label: 'Uso', align: 'center' },
+    { key: 'estado', label: 'Estado', align: 'center' },
+    { key: 'acciones', label: 'Acciones', align: 'right' }
+  ];
+
   readonly pageIcon = faLayerGroup;
   readonly addIcon = faPlus;
   readonly editIcon = faPen;
@@ -186,7 +201,7 @@ export class CatalogosListPage implements OnInit {
   }
 
   load(): void {
-    if (this.catalogCode() === 'SANCION_VENTA') { this.loading.set(false); this.errorMessage.set(null); return; }
+    if (['SANCION_VENTA','TIPO_DOCUMENTO_INTERNO'].includes(this.catalogCode())) { this.loading.set(false); this.errorMessage.set(null); return; }
     this.loading.set(true);
     this.errorMessage.set(null);
 
@@ -217,6 +232,7 @@ export class CatalogosListPage implements OnInit {
 
   refresh(): void {
     if (!this.productivosVisible() && this.catalogCode() === 'SANCION_VENTA') { this.sanciones?.reload(); return; }
+    if (!this.productivosVisible() && this.catalogCode() === 'TIPO_DOCUMENTO_INTERNO') { this.tiposInternos?.load(); return; }
     if (this.productivosVisible()) {
       this.productivos?.load();
     } else {
@@ -299,6 +315,7 @@ export class CatalogosListPage implements OnInit {
 
   async create(): Promise<void> {
     if (this.catalogCode() === 'SANCION_VENTA' && !this.productivosVisible()) { this.sanciones?.openCatalog(); return; }
+    if (this.catalogCode() === 'TIPO_DOCUMENTO_INTERNO' && !this.productivosVisible()) { this.tiposInternos?.create(); return; }
     if (this.productivosVisible()) {
       this.productivos?.create();
       return;

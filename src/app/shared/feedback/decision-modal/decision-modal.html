@@ -1,0 +1,39 @@
+<app-modal-shell [title]="title" [eyebrow]="eyebrow" [icon]="icon" size="normal"
+  [busy]="busy" (closed)="closed.emit()">
+  <div class="decision-form">
+    @if (statusLabel) {
+      <div class="decision-status"><span>Estado</span><app-status-badge [label]="statusLabel" [tone]="statusTone" [dot]="true" /></div>
+    }
+    @if (detailRoute && !busy) {
+      <a class="admin-secondary-button decision-detail" [routerLink]="detailRoute" [queryParams]="detailParams">
+        <fa-icon [icon]="viewIcon" /> {{detailLabel}}
+      </a>
+    }
+    @if (note) { <p class="decision-note">{{note}}</p> }
+    @if (options.length) {
+      <label class="admin-field">
+        <span class="admin-field-label">Decisión</span>
+        <select class="admin-select" [ngModel]="decision" (ngModelChange)="select($event)" [disabled]="busy">
+          <option [ngValue]="null" disabled>Seleccione una decisión</option>
+          @for (option of options; track option.value) { <option [ngValue]="option.value">{{option.label}}</option> }
+        </select>
+      </label>
+      @if (selected?.requiresReason) {
+        <label class="admin-field">
+          <span class="admin-field-label">Motivo <span aria-hidden="true">*</span></span>
+          <textarea class="admin-textarea decision-reason" rows="3" maxlength="1200"
+            placeholder="Indique el motivo" [(ngModel)]="reason" (ngModelChange)="changed.emit()" [disabled]="busy" required></textarea>
+        </label>
+      }
+      @if (selected?.help; as help) { <p class="decision-note">{{help}}</p> }
+    }
+    @if (error) { <p class="admin-inline-error" role="alert">{{error}}</p> }
+  </div>
+  <div modalActions class="flex flex-wrap justify-end gap-2">
+    <app-button [label]="options.length ? 'Cancelar' : 'Cerrar'" [disabled]="busy" (pressed)="close()" />
+    @if (options.length) {
+      <app-button label="Confirmar decisión" [tone]="selected?.danger ? 'danger' : 'primary'"
+        [loading]="busy" loadingLabel="Registrando…" [disabled]="!valid" (pressed)="confirm()" />
+    }
+  </div>
+</app-modal-shell>

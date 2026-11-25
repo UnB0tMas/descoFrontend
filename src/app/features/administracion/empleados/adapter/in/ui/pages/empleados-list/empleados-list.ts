@@ -1,3 +1,7 @@
+import { ListViewSwitchComponent, ListViewMode } from '../../../../../../../../shared/data-display/list-view-switch/list-view-switch';
+import { RecordCardComponent } from '../../../../../../../../shared/data-display/record-card/record-card';
+import { DataTableComponent } from '../../../../../../../../shared/data-display/data-table/data-table';
+import { DataTableColumn } from '../../../../../../../../shared/data-display/data-table/data-table.types';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -50,6 +54,9 @@ import { EmpleadoFormComponent } from '../empleado-form/empleado-form';
     ErrorStateComponent,
     EmptyStateComponent,
     PaginatorComponent,
+    DataTableComponent,
+    ListViewSwitchComponent,
+    RecordCardComponent,
     ActionConfirmDialogComponent,
     PageHeaderComponent,
     EmpleadoFormComponent,
@@ -78,12 +85,24 @@ export class EmpleadosListPage implements OnInit {
   readonly editingId = signal<string | null>(null);
   readonly errorMessage = signal<string | null>(null);
   readonly referencesError = signal<string | null>(null);
-  readonly result = signal<PageResult<Empleado>>(emptyPageResult(20));
+  readonly result = signal<PageResult<Empleado>>(emptyPageResult(10));
   readonly areas = signal<readonly Area[]>([]);
 
   readonly unitFilter = signal<number | null>(null);
   readonly areaFilter = signal<number | null>(null);
   readonly activeFilter = signal<boolean | null>(true);
+  readonly employeesColumns: readonly DataTableColumn<Empleado>[] = [
+    { key: 'employee', label: 'Empleado' },
+    { key: 'documento', label: 'Documento' },
+    { key: 'uot', label: 'UOT' },
+    { key: 'area', label: 'Área / cargo' },
+    { key: 'cuenta', label: 'Cuenta' },
+    { key: 'estado', label: 'Estado', align: 'center' },
+    { key: 'acciones', label: 'Acciones', align: 'right' }
+  ];
+  readonly viewMode = signal<ListViewMode>('table');
+
+
 
   readonly pageIcon = faUsers;
   readonly addIcon = faPlus;
@@ -248,6 +267,8 @@ export class EmpleadosListPage implements OnInit {
       .filter(Boolean)
       .join(' ');
   }
+
+  readonly trackEmployee = (_index: number, employee: Empleado): string => this.rowKey(employee);
 
   rowKey(employee: Empleado): string {
     return `${employee.empleadoId}-${employee.uotId}`;

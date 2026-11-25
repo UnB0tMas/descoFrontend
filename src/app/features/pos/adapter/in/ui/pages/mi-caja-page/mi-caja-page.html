@@ -1,0 +1,54 @@
+<div class="desco-page mi-caja-page">
+ <app-page-header title="Mi caja" eyebrow="GESTIÓN COMERCIAL" [subtitle]="uot.label()" [icon]="icon">
+  <div pageActions><button type="button" class="admin-secondary-button" (click)="reload()" [disabled]="loading()||saving()">Actualizar</button></div>
+ </app-page-header>
+ @if(error()){<div class="admin-inline-error" role="alert">{{error()}}</div>}
+ @if(!uotId){<section class="admin-surface mi-caja-panel">Selecciona una UOT.</section>}
+ @else {
+  <section class="admin-surface mi-caja-panel">
+   @if(activa();as turno){
+    <div class="mi-caja-heading"><div><span class="mi-caja-status">Caja abierta</span><h2>{{turno.caja}}</h2><p>Turno #{{turno.sesionId}}</p></div>
+     <a routerLink="/pos" class="admin-primary-button">Ir a ventas</a></div>
+    <div class="mi-caja-values"><div><span>Apertura</span><strong>{{turno.fechaApertura|date:'dd/MM/yyyy HH:mm'}}</strong></div>
+     <div><span>Fondo inicial</span><strong>PEN {{turno.saldoInicial|number:'1.2-2'}}</strong></div></div>
+    @if(permisos.has('CAJAS_CERRAR')){<button type="button" class="admin-secondary-button" (click)="simular()">Simular cierre</button><button type="button" class="admin-secondary-button" (click)="close()">Cerrar caja</button>}
+   } @else {
+    <div class="mi-caja-heading"><div><h2>Sin caja abierta</h2><p>{{cajas().length}} {{cajas().length===1?'caja disponible':'cajas disponibles'}}</p></div></div>
+    <button type="button" class="admin-primary-button" [disabled]="loading()||cajas().length===0" (click)="open()">Abrir caja</button>
+   }
+  </section>
+ }
+</div>
+<dialog #abrirDialog class="modal desco-modal" (cancel)="$event.preventDefault();abrirDialog.close()">
+ <div class="modal-box admin-modal-box admin-modal-box--compact">
+  <header class="admin-modal-header"><div class="admin-modal-title-group"><h2>Abrir caja</h2></div><button type="button" class="admin-icon-button" (click)="abrirDialog.close()" [disabled]="saving()" aria-label="Cerrar">×</button></header>
+  @if(modalError()){<p class="admin-inline-error" role="alert">{{modalError()}}</p>}
+  <form class="admin-form-grid" (ngSubmit)="abrir()">
+   <div class="admin-field admin-field-span-2"><label for="mc-caja">Caja</label><select id="mc-caja" class="admin-select" [(ngModel)]="cajaId" name="cajaId" required>
+    @for(c of cajas();track c.cajaId){<option [ngValue]="c.cajaId">{{c.codigo}} · {{c.nombre}}</option>}
+   </select></div>
+   <div class="admin-field admin-field-span-2"><label for="mc-fondo">Fondo inicial (PEN)</label><input id="mc-fondo" class="admin-input" type="number" name="fondo" min="0" step="0.01" [(ngModel)]="fondo" required /></div>
+   <div class="admin-field admin-field-span-2"><label for="mc-obs-apertura">Observación (opcional)</label><textarea id="mc-obs-apertura" class="admin-textarea" name="observacionApertura" rows="2" maxlength="500" [(ngModel)]="observacionApertura"></textarea></div>
+   <div class="admin-field admin-field-span-2"><app-e3-file-dropzone title="Imágenes (opcional)" fileTypesHint="JPG, PNG o WebP" accept="image/jpeg,image/png,image/webp" [maxFiles]="5" [maxSizeMb]="8" [files]="fotosAbrir" (filesChange)="fotosAbrir=$event" (invalid)="modalError.set($event)" [uploading]="saving()" /></div>
+   <footer class="admin-modal-actions admin-field-span-2"><button type="button" class="admin-secondary-button" (click)="abrirDialog.close()">Cancelar</button><button type="submit" class="admin-primary-button" [disabled]="saving()||!cajaId||fondo<0">Abrir</button></footer>
+  </form>
+ </div>
+</dialog>
+<dialog #cerrarDialog class="modal desco-modal" (cancel)="$event.preventDefault();cerrarDialog.close()">
+ <div class="modal-box admin-modal-box admin-modal-box--compact">
+  <header class="admin-modal-header"><div class="admin-modal-title-group"><h2>Cerrar caja</h2></div><button type="button" class="admin-icon-button" (click)="cerrarDialog.close()" [disabled]="saving()" aria-label="Cerrar">×</button></header>
+  @if(modalError()){<p class="admin-inline-error" role="alert">{{modalError()}}</p>}
+  <form class="admin-form-grid" (ngSubmit)="cerrar()">
+   <div class="admin-field admin-field-span-2"><label for="mc-contado">Efectivo contado (PEN)</label><input id="mc-contado" type="number" class="admin-input" name="contado" min="0" step="0.01" [(ngModel)]="contado" required /></div>
+   @if (saldoCierre(); as balance) {
+    <div class="admin-field admin-field-span-2"><small>Efectivo esperado: PEN {{balance.saldoEsperado|number:'1.2-2'}}</small>
+     <strong>{{diferenciaCierre===0?'Caja cuadrada':diferenciaCierre>0?'Sobrante':'Faltante'}} · PEN {{(diferenciaCierre<0?-diferenciaCierre:diferenciaCierre)|number:'1.2-2'}}</strong></div>
+   }
+   <div class="admin-field admin-field-span-2"><label for="mc-obs">{{diferenciaCierre===0?'Observación (opcional)':'Motivo de la diferencia (obligatorio)'}}</label><textarea id="mc-obs" class="admin-textarea" name="obs" rows="3" maxlength="500" [(ngModel)]="observacion"></textarea></div>
+   <div class="admin-field admin-field-span-2"><app-e3-file-dropzone title="Imágenes (opcional)" fileTypesHint="JPG, PNG o WebP" accept="image/jpeg,image/png,image/webp" [maxFiles]="5" [maxSizeMb]="8" [files]="fotosCerrar" (filesChange)="fotosCerrar=$event" (invalid)="modalError.set($event)" [uploading]="saving()" /></div>
+   <footer class="admin-modal-actions admin-field-span-2"><button type="button" class="admin-secondary-button" (click)="cerrarDialog.close()">Cancelar</button><button type="submit" class="admin-primary-button" [disabled]="saving()||contado<0||!saldoCierre()||(diferenciaCierre!==0&&!observacion.trim())">Cerrar caja</button></footer>
+  </form>
+ </div>
+</dialog>
+
+<app-caja-arqueo-panel />

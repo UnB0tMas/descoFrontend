@@ -1,0 +1,218 @@
+<div class="ap-panel space-y-6">
+  @if (tabs().length === 0) {
+    <div class="bi-empty rounded-2xl border p-8 text-center">
+      <h2 class="text-base font-bold">No hay secciones APAPPSS disponibles</h2>
+      <p class="mt-2 text-sm opacity-70">Consulta con el administrador.</p>
+    </div>
+  } @else {
+    <section class="bi-filter-shell space-y-4 rounded-3xl border p-4 sm:p-5" aria-label="Filtros del dashboard APAPPSS">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <div class="bi-section-label">FILTROS</div>
+          <h2 class="mt-1 text-sm font-bold">Elige qué deseas consultar</h2>
+        </div>
+        <div class="bi-periods flex flex-wrap items-center gap-1 rounded-xl p-1" aria-label="Periodos rápidos">
+          <button type="button" (click)="preset(1)" [disabled]="filtersLoading()" [class.bi-period-active]="isActivePreset(1)" [attr.aria-pressed]="isActivePreset(1)">Hoy</button>
+          <button type="button" (click)="preset(7)" [disabled]="filtersLoading()" [class.bi-period-active]="isActivePreset(7)" [attr.aria-pressed]="isActivePreset(7)">7 días</button>
+          <button type="button" (click)="preset(30)" [disabled]="filtersLoading()" [class.bi-period-active]="isActivePreset(30)" [attr.aria-pressed]="isActivePreset(30)">30 días</button>
+          <button type="button" (click)="preset(90)" [disabled]="filtersLoading()" [class.bi-period-active]="isActivePreset(90)" [attr.aria-pressed]="isActivePreset(90)">90 días</button>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.1fr)_auto_auto] xl:items-end">
+        <label class="bi-field"><span>Convenio</span>
+          <select [value]="convenio()" (change)="update($event,'convenio')" [disabled]="filtersLoading()">
+            <option value="">Seleccionar convenio</option>
+            @for (item of filtros().convenios; track item.id) { <option [value]="item.id">{{ item.nombre }}</option> }
+          </select>
+        </label>
+        <label class="bi-field"><span>Desde</span>
+          <input type="date" [value]="desde()" [max]="hasta()" (change)="update($event,'desde')" />
+        </label>
+        <label class="bi-field"><span>Hasta</span>
+          <input type="date" [value]="hasta()" [min]="desde()" [max]="today" (change)="update($event,'hasta')" />
+        </label>
+        @if (hasPredioFilter()) {
+          <label class="bi-field"><span>Predio</span>
+            <select [value]="predio()" (change)="update($event,'predio')" [disabled]="filtersLoading()">
+              <option value="">Todos los predios</option>
+              @for (item of filtros().predios; track item.id) { <option [value]="item.id">{{ item.nombre }}</option> }
+            </select>
+          </label>
+        } @else if (hasCampaniaFilter()) {
+          <label class="bi-field"><span>Campaña</span>
+            <select [value]="campania()" (change)="update($event,'campania')" [disabled]="filtersLoading()">
+              <option value="">Todas las campañas</option>
+              @for (item of filtros().campanias; track item.id) { <option [value]="item.id">{{ item.nombre }}</option> }
+            </select>
+          </label>
+        }
+        @if (hasSocioFilter()) {
+          <label class="bi-field"><span>Socio</span>
+            <select [value]="socio()" (change)="update($event,'socio')" [disabled]="filtersLoading()">
+              <option value="">Todos los socios</option>
+              @for (item of filtros().socios; track item.id) { <option [value]="item.id">{{ item.nombre }}</option> }
+            </select>
+          </label>
+        }
+        <button class="bi-apply" type="button" [disabled]="filtersLoading() || loading() || !!filterError()" (click)="load()">
+          @if (loading()) { Actualizando… } @else { Consultar }
+        </button>
+        <button class="bi-clear" type="button" [disabled]="filtersLoading()" (click)="reset()">Restablecer</button>
+      </div>
+      @if (filterError() && !filtersLoading()) { <p class="bi-error text-xs font-semibold" role="alert">{{ filterError() }}</p> }
+    </section>
+
+    <div class="bi-tab-strip flex items-center gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Secciones del dashboard APAPPSS">
+      @for (item of tabs(); track item.id) {
+        <button type="button" role="tab" class="bi-tab min-w-max rounded-2xl px-4 py-3 text-left"
+          [class.bi-tab-active]="item.id === actual()"
+          [attr.aria-selected]="item.id === actual()"
+          (click)="selectTab(item.id)">
+          <span class="text-[13px] font-bold">{{ item.title }}</span>
+        </button>
+      }
+    </div>
+
+    <div class="bi-section-top flex flex-wrap items-end justify-between gap-3">
+      <div>
+        <div class="bi-section-label">RESUMEN</div>
+        <h2 class="mt-1 text-xl font-extrabold tracking-tight">{{ currentTab().title }}</h2>
+        <p class="mt-1 text-xs opacity-60">{{ snapshot()?.desde ?? desde() }} al {{ snapshot()?.hasta ?? hasta() }}</p>
+      </div>
+
+    </div>
+
+    @if (filtersLoading() || loading()) {
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-live="polite">
+        @for (item of [1,2,3,4]; track item) { <div class="bi-skeleton h-32 animate-pulse rounded-2xl"></div> }
+      </div>
+      <div class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        @for (item of [1,2,3,4]; track item) { <div class="bi-skeleton h-[380px] animate-pulse rounded-3xl"></div> }
+      </div>
+    } @else if (error()) {
+      <div class="bi-empty rounded-3xl border px-6 py-10 text-center" role="alert">
+        <h3 class="text-base font-bold">No se pudo cargar el panel</h3>
+        <p class="mt-2 text-sm opacity-75">{{ error() }}</p>
+        <button type="button" class="bi-apply mt-4" (click)="load()">Volver a consultar</button>
+      </div>
+    } @else if (snapshot()) {
+      <div class="bi-kpis grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        @for (kpi of indicators(); track kpi.codigo; let index = $index) {
+          <article class="bi-kpi relative overflow-hidden rounded-[22px] border px-5 py-5" [attr.data-accent]="index">
+            <div class="bi-kpi-number mb-4 flex h-9 w-9 items-center justify-center rounded-xl text-[13px] font-black">{{ index + 1 < 10 ? '0' : '' }}{{ index + 1 }}</div>
+            <p class="text-[12px] font-semibold opacity-65">{{ kpi.titulo }}</p>
+            <div class="mt-2 flex flex-wrap items-baseline gap-2">
+              @if (kpi.unidad === 'PEN') { <span class="bi-kpi-unit text-base font-bold">S/</span> }
+              <span class="bi-value text-[30px] font-extrabold tracking-[-0.04em] tabular-nums">{{ formattedKpi(kpi) }}</span>
+              @if (kpi.unidad !== 'PEN' && kpi.unidad !== 'UND') { <span class="bi-kpi-unit text-[11px] font-bold">{{ kpi.unidad }}</span> }
+            </div>
+            <div class="bi-kpi-line mt-4 h-[3px] w-full rounded-full"></div>
+          </article>
+        }
+      </div>
+
+      <div class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        @for (chart of charts(); track chart.id) {
+          <article class="bi-graph min-w-0 overflow-hidden rounded-[24px] border">
+            <div class="bi-graph-head flex flex-wrap items-start justify-between gap-3 px-5 pb-4 pt-5 sm:px-6">
+              <div class="min-w-0">
+                <h3 class="text-sm font-extrabold tracking-tight">{{ chart.title }}</h3>
+                <p class="mt-1 text-[12px] opacity-60">{{ chart.subtitle }}</p>
+              </div>
+              <div class="bi-graph-mark flex h-9 w-9 items-center justify-center rounded-xl" aria-hidden="true">
+                @switch (chart.kind) {
+                  @case ('area') {
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M3 19V5M3 19h18M6 15l5-5 4 3 5-7" />
+                    </svg>
+                  }
+                  @case ('column') {
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M3 20h18M5 17v-5h4v5M11 17V5h4v12M17 17V9h4v8" />
+                    </svg>
+                  }
+                  @case ('bar') {
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M4 5v14M8 6h11v3H8zM8 12h8v3H8zM8 18h5v2H8z" />
+                    </svg>
+                  }
+                  @case ('donut') {
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="4" />
+                      <path d="M12 3v5M21 12h-5" />
+                    </svg>
+                  }
+                }
+              </div>
+            </div>
+            <div class="bi-graph-rule mx-5"></div>
+            <div class="min-h-[326px] px-3 pb-4 pt-3 sm:px-5">
+              @if (chart.empty) {
+                <div class="bi-chart-empty relative flex min-h-[290px] items-center justify-center overflow-hidden rounded-2xl" role="status" aria-label="Sin datos">
+                  @switch (chart.kind) {
+                    @case ('donut') {
+                      <svg class="bi-chart-svg" viewBox="0 0 560 260" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+                        <circle class="bi-empty-ring" cx="280" cy="122" r="87" />
+                        <circle class="bi-empty-ring-dashed" cx="280" cy="122" r="87" />
+                        <circle class="bi-empty-inner" cx="280" cy="122" r="57" />
+                      </svg>
+                    }
+                    @case ('bar') {
+                      <svg class="bi-chart-svg" viewBox="0 0 560 260" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+                        <path class="bi-empty-axis" d="M62 22V225H530" />
+                        <path class="bi-empty-grid" d="M62 63H530M62 104H530M62 145H530M62 186H530" />
+                        <rect class="bi-empty-bar" x="82" y="37" width="350" height="19" rx="6" />
+                        <rect class="bi-empty-bar" x="82" y="78" width="274" height="19" rx="6" />
+                        <rect class="bi-empty-bar" x="82" y="119" width="410" height="19" rx="6" />
+                        <rect class="bi-empty-bar" x="82" y="160" width="230" height="19" rx="6" />
+                      </svg>
+                    }
+                    @case ('column') {
+                      <svg class="bi-chart-svg" viewBox="0 0 560 260" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+                        <path class="bi-empty-axis" d="M50 18V222H532" />
+                        <path class="bi-empty-grid" d="M50 63H532M50 115H532M50 167H532" />
+                        <rect class="bi-empty-bar" x="95" y="130" width="55" height="92" rx="6" />
+                        <rect class="bi-empty-bar" x="178" y="81" width="55" height="141" rx="6" />
+                        <rect class="bi-empty-bar" x="261" y="115" width="55" height="107" rx="6" />
+                        <rect class="bi-empty-bar" x="344" y="50" width="55" height="172" rx="6" />
+                        <rect class="bi-empty-bar" x="427" y="95" width="55" height="127" rx="6" />
+                      </svg>
+                    }
+                    @default {
+                      <svg class="bi-chart-svg" viewBox="0 0 560 260" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+                        <path class="bi-empty-axis" d="M50 18V222H532" />
+                        <path class="bi-empty-grid" d="M50 63H532M50 115H532M50 167H532" />
+                        <path class="bi-empty-area" d="M50 190C112 172 133 205 200 145S302 170 365 101S459 131 532 51V222H50Z" />
+                        <path class="bi-empty-curve" d="M50 190C112 172 133 205 200 145S302 170 365 101S459 131 532 51" />
+                      </svg>
+                    }
+                  }
+                  <span class="bi-empty-label">Sin datos</span>
+                </div>
+              } @else {
+                <apx-chart
+                  [series]="chart.options.series!"
+                  [chart]="chart.options.chart!"
+                  [colors]="chart.options.colors"
+                  [dataLabels]="chart.options.dataLabels"
+                  [fill]="chart.options.fill"
+                  [grid]="chart.options.grid"
+                  [stroke]="chart.options.stroke"
+                  [markers]="chart.options.markers"
+                  [plotOptions]="chart.options.plotOptions"
+                  [xaxis]="chart.options.xaxis"
+                  [yaxis]="chart.options.yaxis"
+                  [labels]="chart.options.labels"
+                  [legend]="chart.options.legend"
+                  [tooltip]="chart.options.tooltip"
+                  [theme]="chart.options.theme"
+                  [responsive]="chart.options.responsive"
+                />
+              }
+            </div>
+          </article>
+        }
+      </div>
+    }
+  }
+</div>

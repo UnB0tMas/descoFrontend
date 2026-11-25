@@ -1,0 +1,22 @@
+:host {display:block;min-width:0}
+.especial-panel {color:var(--desco-text,#0f172a)}
+.especial-panel .reportes-catalogo,.especial-panel .reportes-filtros,.especial-panel .reportes-historial{border:1px solid var(--desco-border,#E2E8F0);background:var(--desco-surface,#fff);border-radius:15px;padding:1.15rem}
+.especial-panel .reportes-layout {display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:1rem}
+.especial-panel .reportes-subtitle{font-weight:800;font-size:.84rem;margin-bottom:1rem}
+.especial-panel .reportes-opciones{display:grid;gap:.55rem}
+.especial-panel .reportes-item{display:flex;align-items:center;gap:.65rem;border:1px solid var(--desco-border,#CBD5E1);border-radius:10px;padding:.8rem;text-align:left;font-size:.8rem}
+.especial-panel .reportes-item.seleccionado{border-color:var(--desco-primary,#2563EB);background:var(--desco-primary-soft,#EFF6FF)}
+.especial-panel .reportes-radio{height:14px;width:14px;border-radius:50%;border:2px solid var(--desco-primary-border,#BFDBFE)}
+.especial-panel .seleccionado .reportes-radio{border:4px solid var(--desco-primary,#2563EB)}
+.especial-panel .reportes-campos{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.especial-panel .reportes-campos label{display:grid;gap:.4rem;font-size:.74rem;font-weight:700}
+.especial-panel .reportes-full{grid-column:1/-1}
+.especial-panel input,.especial-panel select{border:1px solid var(--desco-border,#CBD5E1);background:var(--desco-surface,#fff);color:var(--desco-text,#0f172a);min-height:42px;min-width:0;padding:.5rem .6rem;border-radius:9px}
+.especial-panel .reportes-generar,.especial-panel .reportes-descargar{background:var(--desco-primary,#2563EB);color:#fff;border-radius:9px;padding:.7rem 1rem;font-size:.78rem;font-weight:800}
+.especial-panel .reportes-generar{width:100%;margin-top:1rem}.especial-panel .reportes-generar:disabled{opacity:.5}
+.especial-panel .reportes-ayuda{color:#C2410C;font-size:.75rem;margin-top:.6rem}
+.especial-panel .reportes-historial-cabecera{display:flex;align-items:center;justify-content:space-between;gap:.8rem;margin-bottom:1rem}
+.especial-panel .reportes-historial-lista{display:grid;gap:.55rem}.especial-panel .reportes-trabajo{display:flex;align-items:center;justify-content:space-between;gap:.7rem;border:1px solid var(--desco-border,#E2E8F0);padding:.75rem;border-radius:10px;flex-wrap:wrap}
+.especial-panel .reportes-trabajo strong,.especial-panel .reportes-trabajo small{display:block;font-size:.77rem}.especial-panel .reportes-trabajo small{opacity:.65}
+.especial-panel .reportes-estado{font-size:.7rem;color:var(--desco-text-muted,#64748B)}.especial-panel .reportes-estado.listo{color:#16A34A}.especial-panel .reportes-estado.fallido{color:#C2410C}
+@media(max-width:860px){.especial-panel .reportes-layout{grid-template-columns:1fr}}

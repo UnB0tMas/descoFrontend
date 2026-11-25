@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, Input, ViewChild } from '@angular/core';
-import { Observable, map } from 'rxjs';
+import { Observable, map, of } from 'rxjs';
 import { EntityRegistrationModalComponent, EntityDraft, EntityLookupData } from './entity-registration-modal';
 import { PersonOwnerChoice, PersonOwnerInput } from './person-owner-picker';
 
@@ -21,11 +21,15 @@ export class PersonRegistrationModalComponent {
       eyebrow:'Gestión técnica',
       title:mode==='lookup'?'Identificar persona':'Registrar persona',
       saveLabel:'Guardar persona',
+      updateLabel:'Actualizar persona',
       documents:[{value:'DNI',label:'DNI'},{value:'CE',label:'Carné de extranjería'},
         {value:'PASAPORTE',label:'Pasaporte'}],
       startDocument:{type,number:document},
       requireDistrictForManual:true,
-      lookupLocal:(t,d)=>this.findPerson(t,d).pipe(map(people=>{
+      identityIsRole:true,
+      // El resolver central realiza BD -> Factiliza -> persistencia para DNI.
+      // CE y pasaporte solo se buscan localmente, sin consulta externa.
+      lookupLocal:(t,d)=>t==='DNI' ? of(null) : this.findPerson(t,d).pipe(map(people=>{
         lookup.person=people.find(p=>p.tipoDocumento===t && p.numeroDocumento===d)??null;
         const person=lookup.person;
         return person ? {
@@ -33,7 +37,8 @@ export class PersonRegistrationModalComponent {
           data:{tipoDocumento:person.tipoDocumento,numeroDocumento:person.numeroDocumento},
         } satisfies EntityLookupData : null;
       })),
-      save:(draft:EntityDraft)=>this.savePerson({
+      save:(draft:EntityDraft,context)=>this.savePerson({
+        personaId:context.existing ? (context.identityId ?? context.roleId ?? undefined) : undefined,
         tipoDocumento:draft.tipoDocumento,numeroDocumento:draft.numeroDocumento,
         nombres:draft.nombres,apellidoPaterno:draft.apellidoPaterno,
         apellidoMaterno:draft.apellidoMaterno||undefined,
@@ -51,7 +56,7 @@ export class PersonRegistrationModalComponent {
       tipoDocumento:data.tipoDocumento,
       numeroDocumento:data.numeroDocumento,
       nombreCompleto:lookup.person?.personaId===result.id ? lookup.person.nombreCompleto :
-        [data.nombres,data.apellidoPaterno,data.apellidoMaterno].filter(Boolean).join(' ').trim(),
+        [data.nombres,data.apellidoPaterno,data.apellidoMaterno].filter(Boolean).join(' ').trim() || data.numeroDocumento,
     };
   }
 }

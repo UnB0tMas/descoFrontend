@@ -43,6 +43,7 @@ import { NavigationItem } from '../../../core/navigation/navigation-item.model';
 export class SidebarItemComponent {
   @Input({ required: true }) item!: NavigationItem;
   @Input() collapsed = false;
+  @Input() documentUnread = 0;
 
   @Output() navigate = new EventEmitter<void>();
   @Output() requestExpand = new EventEmitter<void>();

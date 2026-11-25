@@ -194,7 +194,6 @@
             step="0.001"
             formControlName="stockInicial"
           />
-          <small>Si es mayor que cero, DESCO registra una entrada real en el Kardex.</small>
           <app-form-error
             [control]="configureForm.controls.stockInicial"
             fieldLabel="El stock inicial"
@@ -210,7 +209,6 @@
             step="0.001"
             formControlName="stockMinimo"
           />
-          <small>Se utiliza como umbral operativo para alertar reposición.</small>
           <app-form-error
             [control]="configureForm.controls.stockMinimo"
             fieldLabel="El stock mínimo"
@@ -237,7 +235,7 @@
             <label for="almacen-operation-form-field-12">Precio de venta de la UOT</label>
             <input id="almacen-operation-form-field-12" class="admin-input" type="number" min="0.0001" step="0.0001" formControlName="precioVenta" />
             <app-form-error [control]="configureForm.controls.precioVenta" fieldLabel="El precio de venta" />
-            <small>Precio comercial de esta UOT; no altera el costo del Kardex.</small>
+            
           </div>
           <div class="admin-field">
             <label for="almacen-operation-form-field-13">Moneda de venta</label>
@@ -247,8 +245,6 @@
               }
             </select>
           </div>
-        } @else {
-          <div class="admin-info-note admin-field-span-2">Producto para uso operativo: se controla stock y costo, sin precio de venta.</div>
         }
         <div class="admin-field">
           <label for="almacen-operation-form-field-14">Moneda del costo</label>
@@ -257,12 +253,12 @@
               <option [value]="currency.code">{{ currency.code }} · {{ currency.label }}</option>
             }
           </select>
-          <small>Solo se utiliza cuando se informa un costo unitario.</small>
         </div>
         <div class="warehouse-form-section admin-field-span-2">
           <span>Trazabilidad</span>
         </div>
 
+        @if (selectedConfigureProduct()?.requiereLote) {
         <div class="admin-field">
           <label for="almacen-operation-form-field-15">
             Lote
@@ -278,12 +274,11 @@
             formControlName="lote"
             placeholder="Ej. LOTE-2026-001"
           />
-          <small>
-            Identifica la partida o batch del producto para trazabilidad. Es obligatorio solo si el producto trabaja por lotes.
-          </small>
           <app-form-error [control]="configureForm.controls.lote" fieldLabel="El lote" />
         </div>
+        }
 
+        @if (selectedConfigureProduct()?.controlaVencimiento) {
         <div class="admin-field">
           <label for="almacen-operation-form-field-16">
             Fecha de vencimiento
@@ -299,13 +294,13 @@
             [min]="today"
             formControlName="fechaVencimiento"
           />
-          <small>Se admite la fecha de hoy o una fecha futura.</small>
           <app-form-error
             [control]="configureForm.controls.fechaVencimiento"
             fieldLabel="La fecha de vencimiento"
             [messages]="{ pastDate: 'La fecha de vencimiento no puede ser anterior a hoy.' }"
           />
         </div>
+        }
 
         <div class="admin-field admin-field-span-2 warehouse-file-field">
           <label for="warehouseSupportFile">Documento de sustento <span class="warehouse-optional">(opcional)</span></label>
@@ -397,7 +392,7 @@
             <strong>{{ movementNature() === 'E' ? 'Entrada al inventario' : 'Salida del inventario' }}</strong>
             <p>{{ movementNature() === 'E'
               ? 'Registra productos que ingresan al almacén. Las cantidades aumentarán el stock.'
-              : 'Registra productos que salen del almacén. Las cantidades se descontarán del stock disponible.' }}</p>
+              : 'Se descontará del stock disponible.' }}</p>
           </div>
           <span class="admin-status" [class.admin-status--active]="movementNature() === 'E'" [class.admin-status--warning]="movementNature() === 'S'">
             {{ movementNature() === 'E' ? 'Entrada' : 'Salida' }}
@@ -408,22 +403,30 @@
           <div class="warehouse-form-section admin-field-span-2"><span>Origen y motivo</span></div>
           <div class="admin-field">
             <label for="warehouse-movement-uot">UOT del movimiento</label>
-            <select id="warehouse-movement-uot" class="admin-select" formControlName="uotId" (change)="onMovementUnitChange()">
-              <option [value]="0">Seleccionar UOT</option>
-              @for (unit of uot.memberships(); track unit.uotId) {
-                <option [value]="unit.uotId">{{ unit.nombre }}</option>
-              }
-            </select>
+            @if (movementWarehouseLocked()) {
+              <div class="warehouse-selected-value">{{ movementUnitName() }}</div>
+            } @else {
+              <select id="warehouse-movement-uot" class="admin-select" formControlName="uotId" (change)="onMovementUnitChange()">
+                <option [value]="0">Seleccionar UOT</option>
+                @for (unit of uot.memberships(); track unit.uotId) {
+                  <option [value]="unit.uotId">{{ unit.nombre }}</option>
+                }
+              </select>
+            }
             <app-form-error [control]="movementForm.controls.uotId" fieldLabel="La UOT" />
           </div>
           <div class="admin-field">
             <label for="warehouse-movement-store">Almacén</label>
-            <select id="warehouse-movement-store" class="admin-select" formControlName="almacenId" (change)="onMovementWarehouseChange()">
-              <option [value]="0">Seleccionar almacén</option>
-              @for (warehouse of warehousesForUnit(); track warehouse.almacenId) {
-                <option [value]="warehouse.almacenId">{{ warehouse.nombre }}</option>
-              }
-            </select>
+            @if (movementWarehouseLocked()) {
+              <div class="warehouse-selected-value">{{ movementWarehouseName() }}</div>
+            } @else {
+              <select id="warehouse-movement-store" class="admin-select" formControlName="almacenId" (change)="onMovementWarehouseChange()">
+                <option [value]="0">Seleccionar almacén</option>
+                @for (warehouse of warehousesForUnit(); track warehouse.almacenId) {
+                  <option [value]="warehouse.almacenId">{{ warehouse.nombre }}</option>
+                }
+              </select>
+            }
             <app-form-error [control]="movementForm.controls.almacenId" fieldLabel="El almacén" />
           </div>
           <div class="admin-field">
@@ -440,8 +443,16 @@
             <input id="warehouse-movement-doc" class="admin-input" maxlength="120" formControlName="documentoReferencia" placeholder="Factura, guía, acta o referencia" />
           </div>
           <div class="admin-field admin-field-span-2">
-            <label for="warehouse-movement-notes">Observaciones <span class="warehouse-optional">(opcional)</span></label>
-            <textarea id="warehouse-movement-notes" class="admin-textarea" rows="2" maxlength="500" formControlName="observacion" placeholder="Información adicional de la operación"></textarea>
+            <label for="warehouse-movement-notes">Observaciones (opcional)</label>
+            <textarea id="warehouse-movement-notes" class="admin-textarea" rows="2" maxlength="500" formControlName="observacion"></textarea>
+          </div>
+          <div class="admin-field admin-field-span-2">
+            <label>Adjuntar imagen o documento (opcional)</label>
+            <app-e3-file-dropzone title="Documento de sustento" [files]="movementSupportFiles()"
+              [maxFiles]="3" [maxSizeMb]="10" [multiple]="true"
+              [disabled]="saving()" [uploading]="movementAttachmentPhase()"
+              (filesChange)="onMovementFilesChange($event)" (invalid)="movementSupportError.set($event)" />
+            @if (movementSupportError()) { <div class="admin-inline-error" role="alert">{{ movementSupportError() }}</div> }
           </div>
         </div>
 
@@ -464,7 +475,7 @@
               <div class="warehouse-line-fields">
                 <div class="admin-field warehouse-line-product">
                   <label for="almacen-operation-form-field-18">Producto</label>
-                  <select id="almacen-operation-form-field-18" class="admin-select" formControlName="productoId">
+                  <select id="almacen-operation-form-field-18" class="admin-select" formControlName="productoId" (change)="onMovementProductChange(index)">
                     <option [value]="0">Seleccionar producto</option>
                     @for (product of movementProducts(); track product.productoId) {
                       <option [value]="product.productoId">{{ product.nombre }} · {{ product.codigo }}</option>
@@ -474,7 +485,12 @@
                 </div>
                 <div class="admin-field">
                   <label for="almacen-operation-form-field-19">Cantidad</label>
-                  <input id="almacen-operation-form-field-19" class="admin-input" type="number" min="0.001" step="0.001" formControlName="cantidad" />
+                  <input id="almacen-operation-form-field-19" class="admin-input" type="number" min="0.001" step="0.001"
+                    [attr.max]="movementNature() === 'S' ? movementAvailable(index) : null"
+                    formControlName="cantidad" (input)="limitMovementQuantity(index)" (change)="limitMovementQuantity(index)" />
+                  @if (movementNature() === 'S') {
+                    <small class="warehouse-stock-available">Disponible: {{ movementAvailable(index) }}</small>
+                  }
                   <app-form-error [control]="line.get('cantidad')" fieldLabel="La cantidad" />
                 </div>
                 <div class="admin-field warehouse-line-cost">
@@ -489,14 +505,18 @@
                     }
                   </select>
                 </div>
+                @if (movementProduct(index)?.requiereLote) {
                 <div class="admin-field warehouse-line-lot">
-                  <label for="almacen-operation-form-field-22">Lote <span class="warehouse-optional">{{ movementNature() === 'S' ? '(automático si se omite)' : movementProduct(index)?.requiereLote ? '(obligatorio)' : '(opcional)' }}</span></label>
+                  <label for="almacen-operation-form-field-22">Lote <span class="warehouse-optional">{{ movementNature() === 'S' ? '(automático si se omite)' : '(obligatorio)' }}</span></label>
                   <input id="almacen-operation-form-field-22" class="admin-input" maxlength="80" formControlName="lote" placeholder="Código de lote" />
                 </div>
+                }
+                @if (movementProduct(index)?.controlaVencimiento) {
                 <div class="admin-field">
-                  <label for="almacen-operation-form-field-23">Vencimiento <span class="warehouse-optional">{{ movementNature() === 'E' && movementProduct(index)?.controlaVencimiento ? '(obligatorio)' : '(opcional)' }}</span></label>
+                  <label for="almacen-operation-form-field-23">Vencimiento <span class="warehouse-optional">{{ movementNature() === 'E' ? '(obligatorio)' : '(automático)' }}</span></label>
                   <input id="almacen-operation-form-field-23" class="admin-input" type="date" [min]="today" formControlName="fechaVencimiento" />
                 </div>
+                }
               </div>
             </div>
           }

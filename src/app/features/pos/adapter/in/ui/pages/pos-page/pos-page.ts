@@ -1,8 +1,16 @@
+import * as QRCode from 'qrcode';
 import { DialogBackdropDirective } from '../../../../../../../shared/feedback/dialog-lifecycle/dialog-backdrop.directive';
+import { ModalShellComponent } from '../../../../../../../shared/feedback/modal-shell/modal-shell';
+import { IsolatedPrintService } from '../../../../../../../shared/printing/isolated-print.service';
 import { DecimalPipe } from '@angular/common';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { CajaPosApiService, CajaSesion, VentaReporte, PosComprobante } from '../../../../../shared/caja-pos-api.service';
+import { EntityRegistrationModalComponent } from '../../../../../../../shared/forms/person-registration/entity-registration-modal';
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
   ViewChild,
   computed,
@@ -20,13 +28,15 @@ import {
   faMagnifyingGlass,
   faMinus,
   faPlus,
+  faPrint,
+  faReceipt,
   faRotate,
   faTrash,
   faUserCheck,
   faWarehouse,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
-import { finalize } from 'rxjs';
+import { finalize, forkJoin, map, of, switchMap } from 'rxjs';
 import { PermissionService } from '../../../../../../../core/access/permission.service';
 import { IdempotencyKeyService } from '../../../../../../../core/http/services/idempotency-key.service';
 import { POS_GATEWAY, PosGateway } from '../../../../../application/port/out/pos.gateway';
@@ -38,14 +48,12 @@ import { DataTableColumn } from '../../../../../../../shared/data-display/data-t
 import { PaginatorComponent } from '../../../../../../../shared/data-display/paginator/paginator';
 import { RecordCardComponent } from '../../../../../../../shared/data-display/record-card/record-card';
 import { ListViewMode, ListViewSwitchComponent } from '../../../../../../../shared/data-display/list-view-switch/list-view-switch';
-import { PersonDataFieldsComponent } from '../../../../../../../shared/forms/person-registration/person-data-fields';
 import { PersonLookupComponent, PersonDocumentOption } from '../../../../../../../shared/forms/person-registration/person-lookup';
 import { ActionConfirmDialogComponent } from '../../../../../../../shared/feedback/action-confirm-dialog/action-confirm-dialog';
 import { EmptyStateComponent } from '../../../../../../../shared/data-display/empty-state/empty-state';
 import { ErrorStateComponent } from '../../../../../../../shared/data-display/error-state/error-state';
 import { LoadingStateComponent } from '../../../../../../../shared/data-display/loading-state/loading-state';
 import { ToastService } from '../../../../../../../shared/feedback/toast-center/toast.service';
-import { FormErrorComponent } from '../../../../../../../shared/forms/form-error/form-error';
 import { PageHeaderComponent } from '../../../../../../../shared/layout/page-header/page-header';
 import { UotContextStore } from '../../../../../../uot/state/uot-context.store';
 import { CargarPosUseCase } from '../../../../../application/use-case/cargar-pos.use-case';
@@ -61,18 +69,23 @@ import {
 } from '../../../../../domain/pos.model';
 import { PosCartStore } from '../../../../../state/pos-cart.store';
 import { PosProductImageComponent } from '../../components/pos-product-image/pos-product-image';
+import { E3FileDropzoneComponent } from '../../../../../../../shared/files/file-dropzone/file-dropzone';
+import { PagoVentaEvidenciaService } from '../../../../../shared/pago-venta-evidencia.service';
+import { PosPaymentAllocation } from '../../../../../domain/pos.model';
 
 @Component({
   selector: 'app-pos-page',
   standalone: true,
   imports: [
     DialogBackdropDirective,
+    ModalShellComponent,
+    RouterLink,
+    EntityRegistrationModalComponent,
     ActionConfirmDialogComponent,
     DataTableComponent,
     PaginatorComponent,
     RecordCardComponent,
     ListViewSwitchComponent,
-    PersonDataFieldsComponent,
     PersonLookupComponent,
     DecimalPipe,
     ReactiveFormsModule,
@@ -81,8 +94,8 @@ import { PosProductImageComponent } from '../../components/pos-product-image/pos
     LoadingStateComponent,
     EmptyStateComponent,
     ErrorStateComponent,
-    FormErrorComponent,
     PosProductImageComponent,
+    E3FileDropzoneComponent,
   ],
   templateUrl: './pos-page.html',
   styleUrl: './pos-page.css',
@@ -90,13 +103,17 @@ import { PosProductImageComponent } from '../../components/pos-product-image/pos
 })
 export class PosPage {
   @ViewChild(ActionConfirmDialogComponent) private confirmation?: ActionConfirmDialogComponent;
+  @ViewChild(EntityRegistrationModalComponent) private entityModal?: EntityRegistrationModalComponent;
   @ViewChild(PersonLookupComponent) private customerLookup?: PersonLookupComponent;
-  @ViewChild('checkoutDialog') private checkoutDialog?: ElementRef<HTMLDialogElement>;
+  @ViewChild('checkoutDialog') private checkoutDialog?: ModalShellComponent;
   @ViewChild('saleDetailDialog') private saleDetailDialog?: ElementRef<HTMLDialogElement>;
-  @ViewChild('receiptDialog') private receiptDialog?: ElementRef<HTMLDialogElement>;
-  @ViewChild('manualCustomerDialog', { static: true })
-  private readonly manualCustomerDialog!: ElementRef<HTMLDialogElement>;
+  @ViewChild('receiptDialog') private receiptDialog?: ModalShellComponent;
 
+  private readonly route = inject(ActivatedRoute);
+  private readonly cajaApi = inject(CajaPosApiService);
+  private readonly sanitizer = inject(DomSanitizer);
+  private readonly printer = inject(IsolatedPrintService);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly fb = inject(FormBuilder);
   private readonly access = inject(AccessStore);
   readonly permissions = inject(PermissionService);
@@ -107,6 +124,7 @@ export class PosPage {
   private readonly resolveCustomerUseCase = inject(ResolverClientePosUseCase);
   private readonly checkoutUseCase = inject(ProcesarVentaPosUseCase);
   private readonly toast = inject(ToastService);
+  private readonly pagoEvidencia = inject(PagoVentaEvidenciaService);
 
   readonly uot = inject(UotContextStore);
   readonly cart = inject(PosCartStore);
@@ -114,7 +132,6 @@ export class PosPage {
   readonly contextLoading = signal(false);
   readonly catalogLoading = signal(false);
   readonly customerLoading = signal(false);
-  readonly manualSaving = signal(false);
   readonly processing = signal(false);
 
   readonly contextError = signal<string | null>(null);
@@ -122,8 +139,23 @@ export class PosPage {
   readonly customerMessage = signal<string | null>(null);
   readonly customerTone = signal<'neutral' | 'success' | 'warning' | 'error'>('neutral');
   readonly checkoutError = signal<string | null>(null);
-  readonly lastSaleId = signal<number | null>(null);
-  readonly activeView = signal<'venta' | 'historial'>('venta');
+  readonly activeView = signal<'venta' | 'historial'>(this.route.snapshot.data['posView'] === 'historial' ? 'historial' : 'venta');
+  readonly cajaActiva = signal<CajaSesion | null>(null);
+  readonly cajaLoading = signal(false);
+  readonly reporte = signal<readonly VentaReporte[]>([]);
+  readonly reporteLoading = signal(false);
+  readonly reporteError = signal<string | null>(null);
+  readonly reporteGrupo = signal<'DIA'|'MES'>('DIA');
+  readonly reporteDesde = signal(new Date(new Date().getFullYear(),new Date().getMonth(),1).toLocaleDateString('en-CA'));
+  readonly reporteHasta = signal(new Date().toLocaleDateString('en-CA'));
+  readonly receiptData = signal<PosComprobante | null>(null);
+  readonly receiptQr = signal<string | null>(null);
+  readonly pdfLoading = signal(false);
+  readonly receiptPdfPreview = signal<SafeResourceUrl | null>(null);
+  private receiptPdfBlob: Blob | null = null;
+  private receiptPdfObjectUrl: string | null = null;
+  private readonly pendingReceiptSaleId = signal<number | null>(null);
+  readonly receiptLayout = signal<'thermal' | 'a4'>('thermal');
   readonly catalogView = signal<ListViewMode>('table');
   readonly historyView = signal<ListViewMode>('table');
   readonly catalogPage = signal(1);
@@ -131,7 +163,6 @@ export class PosPage {
   readonly historyPage = signal(1);
   readonly historyPageSize = signal(10);
   readonly historySearch = signal('');
-  readonly receiptSale = signal<PosSaleDetail | null>(null);
   readonly receiptLoading = signal(false);
   readonly receiptError = signal<string | null>(null);
   readonly sales = signal<readonly PosSaleRecord[]>([]);
@@ -140,6 +171,31 @@ export class PosPage {
   readonly selectedSale = signal<PosSaleDetail | null>(null);
   readonly saleActionId = signal<number | null>(null);
   readonly cancelReason = signal('');
+  readonly devolucionConfirmada = signal(false);
+  readonly historialCompleto = signal(false);
+  readonly pagos = signal<{paymentMethodId:number;amount:number;operationNumber:string;files:File[]}[]>([]);
+  readonly pagoPendienteImporte = signal<number>(0);
+  readonly fotoPagoHistorial = signal<File[]>([]);
+  readonly pagoTotal = computed(() => Math.round(this.pagos().reduce((s,p)=>s+(Number(p.amount)||0),0)*100)/100);
+  readonly pagoDiferencia = computed(() => Math.round((this.cart.total()-this.pagoTotal())*100)/100);
+  agregarPago():void {
+    if(this.cart.locked())return;
+    this.pagos.update(rows=>[...rows,{paymentMethodId:this.paymentMethods()[0]?.paymentMethodId??0,
+      amount:Math.max(0,this.pagoDiferencia()),operationNumber:'',files:[]}]);
+  }
+  quitarPago(index:number):void {if(!this.cart.locked())this.pagos.update(rows=>rows.filter((_,i)=>i!==index));}
+  editarPago(index:number,field:'paymentMethodId'|'amount'|'operationNumber',value:string):void {
+    if(this.cart.locked())return;
+    this.pagos.update(rows=>rows.map((r,i)=>i===index?{...r,[field]:field==='operationNumber'?value:Number(value)}:r));
+  }
+  fotosPago(index:number,files:File[]):void {
+    if(!this.cart.locked())this.pagos.update(rows=>rows.map((r,i)=>i===index?{...r,files}:r));
+  }
+  metodoFila(id:number):PosPaymentMethod|undefined {
+    return this.paymentMethods().find(m=>m.paymentMethodId===id);
+  }
+
+  readonly saleNote = signal('');
   readonly warehouses = signal<readonly {
     warehouseId: number;
     code: string;
@@ -156,6 +212,8 @@ export class PosPage {
   readonly plusIcon = faPlus;
   readonly minusIcon = faMinus;
   readonly trashIcon = faTrash;
+  readonly printIcon = faPrint;
+  readonly receiptIcon = faReceipt;
   readonly customerIcon = faUserCheck;
   readonly paymentIcon = faCreditCard;
   readonly warehouseIcon = faWarehouse;
@@ -205,27 +263,37 @@ export class PosPage {
 
   async openCheckoutDialog(): Promise<void> {
     if (!this.canCheckout()) return;
+    const stored = this.cart.draft()?.checkoutPayments;
+    if(stored?.length){
+      this.pagos.set(stored.map(p=>({paymentMethodId:p.paymentMethodId,amount:p.amount,
+        operationNumber:p.operationNumber??'',files:[]})));
+    } else if(!this.pagos().length) {
+      this.pagos.set([{paymentMethodId:this.paymentMethods()[0]?.paymentMethodId??0,
+        amount:Math.round(this.cart.total()*100)/100,operationNumber:'',files:[]}]);
+    }
     // Cuando el registro es incierto o ya tiene ID, no se altera el cliente del reintento.
     if (!this.cart.customer() && !this.cart.locked()) {
       const response = await this.confirmation?.show({
         title: 'Venta sin cliente',
-        message: '¿Está seguro de continuar sin identificar al cliente?',
+        message: '¿Continuar la venta sin identificar al cliente?',
         confirmLabel: 'Continuar sin cliente',
-        cancelLabel: 'Agregar cliente',
+        cancelLabel: 'Cancelar',
         tone: 'warning',
       });
-      if (!response?.confirmed) {
-        this.customerLookup?.focusDocument();
-        return;
-      }
+      // Cerrar o cancelar nunca abre otro formulario.
+      if (!response?.confirmed) return;
     }
-    if (this.canCheckout() && !this.checkoutDialog?.nativeElement.open) {
-      this.checkoutDialog?.nativeElement.showModal();
-    }
+    if (this.canCheckout()) this.checkoutDialog?.open();
   }
 
   closeCheckoutDialog(): void {
-    if (!this.processing()) this.checkoutDialog?.nativeElement.close();
+    if (!this.processing()) this.checkoutDialog?.close();
+  }
+
+  onCheckoutClosed(): void {
+    const saleId = this.pendingReceiptSaleId();
+    this.pendingReceiptSaleId.set(null);
+    if (saleId !== null) this.openReceipt(saleId);
   }
 
   closeSaleDetail(): void {
@@ -234,25 +302,174 @@ export class PosPage {
   }
 
   openReceipt(saleId: number): void {
-    this.receiptSale.set(null);
+    this.receiptData.set(null);
     this.receiptError.set(null);
+    this.receiptQr.set(null);
+    this.clearReceiptPdf();
     this.receiptLoading.set(true);
-    this.receiptDialog?.nativeElement.showModal();
-    this.operations.getSaleDetail(saleId).pipe(finalize(() => this.receiptLoading.set(false))).subscribe({
-      next: (detail) => this.receiptSale.set(detail),
+    this.receiptDialog?.open();
+    this.cajaApi.comprobante(saleId).pipe(finalize(() => this.receiptLoading.set(false))).subscribe({
+      next: (receipt) => {
+        if (!receipt) {
+          this.receiptError.set('No se pudo cargar el documento.');
+          return;
+        }
+        this.receiptData.set(receipt);
+        const layout = receipt.tipoDocumento === 'FACTURA' ? 'a4' : 'thermal';
+        this.receiptLayout.set(layout);
+        if (layout === 'a4') this.loadReceiptPdf();
+        if (receipt.qrContenido) {
+          void QRCode.toDataURL(receipt.qrContenido, { width: 200, margin: 2, errorCorrectionLevel: 'M' })
+            .then(data => { if (this.receiptData()?.ventaId === receipt.ventaId) this.receiptQr.set(data); })
+            .catch(() => this.receiptQr.set(null));
+        }
+      },
       error: (error) => this.receiptError.set(mapOpenApiError(error).message),
     });
   }
 
-  closeReceipt(): void { this.receiptDialog?.nativeElement.close(); }
+  numeroComprobante(receipt: PosComprobante): string {
+    const serie = receipt.serie?.trim() || '';
+    const numero = String(receipt.numero ?? receipt.ventaId).padStart(8, '0');
+    return serie ? `${serie}-${numero}` : numero;
+  }
 
-  printReceipt(): void { if (this.receiptSale()) window.print(); }
+  changeReceiptLayout(value: string): void {
+    const layout = value === 'a4' ? 'a4' : 'thermal';
+    this.receiptLayout.set(layout);
+    if (layout === 'a4' && !this.receiptPdfBlob) this.loadReceiptPdf();
+  }
+
+  clearReceiptPdf(): void {
+    if (this.receiptPdfObjectUrl) URL.revokeObjectURL(this.receiptPdfObjectUrl);
+    this.receiptPdfObjectUrl = null;
+    this.receiptPdfBlob = null;
+    this.receiptPdfPreview.set(null);
+  }
+
+  closeReceipt(): void { this.receiptDialog?.close(); }
+
+  loadReceiptPdf(): void {
+    const receipt = this.receiptData();
+    if (!receipt || this.pdfLoading()) return;
+    this.pdfLoading.set(true);
+    this.cajaApi.comprobantePdf(receipt.ventaId).pipe(finalize(() => this.pdfLoading.set(false)))
+      .subscribe({
+        next: blob => {
+          if (this.receiptData()?.ventaId !== receipt.ventaId) return;
+          this.clearReceiptPdf();
+          this.receiptPdfBlob = blob;
+          this.receiptPdfObjectUrl = URL.createObjectURL(blob);
+          this.receiptPdfPreview.set(this.sanitizer.bypassSecurityTrustResourceUrl(this.receiptPdfObjectUrl));
+        },
+        error: error => this.receiptError.set(mapOpenApiError(error).message),
+      });
+  }
+
+  downloadReceiptPdf(): void {
+    const receipt = this.receiptData();
+    if (!receipt || this.pdfLoading()) return;
+    if (!this.receiptPdfBlob) {
+      this.loadReceiptPdf();
+      return;
+    }
+    const url = URL.createObjectURL(this.receiptPdfBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `comprobante-${receipt.ventaId}.pdf`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  printReceipt(): void {
+    if (!this.receiptData() || this.receiptLayout() !== 'thermal') return;
+    const receipt = document.getElementById('pos-print-receipt');
+    if (receipt instanceof HTMLElement) this.printer.printElement(receipt, 80);
+  }
+
+  puedeOperar(): boolean {return !!this.cajaActiva() || this.permissions.has('POS_SIN_CAJA');}
+
+  loadCaja(): void {
+    const uotId=this.currentUotId();
+    this.cajaActiva.set(null);
+    if (!uotId || !this.permissions.has('POS_OPERAR')) return;
+    this.cajaLoading.set(true);
+    this.cajaApi.activa(uotId).pipe(finalize(()=>this.cajaLoading.set(false))).subscribe({
+      next:s=>{if (uotId===this.currentUotId()) this.cajaActiva.set(s);},
+      error:e=>this.contextError.set(mapOpenApiError(e).message),
+    });
+  }
+
+  loadReport(): void {
+    const uotId=this.currentUotId();
+    if (!uotId || !this.permissions.has('VENTAS_REPORTES')) return;
+    this.reporteLoading.set(true);this.reporteError.set(null);
+    this.cajaApi.reporte(uotId,this.reporteGrupo(),this.reporteDesde(),this.reporteHasta())
+      .pipe(finalize(()=>this.reporteLoading.set(false))).subscribe({
+        next:rows=>{if(uotId===this.currentUotId())this.reporte.set(rows);},
+        error:e=>this.reporteError.set(mapOpenApiError(e).message),
+      });
+  }
+
+  exportReport(): void {
+    const rows=this.reporte();if (!rows.length)return;
+    const esc=(x:unknown)=>'"'+String(x??'').replace(/"/g,'""')+'"';
+    const csv=[['Período','Cantidad','Vendido','Cobrado','Efectivo'],...rows.map(r=>[r.periodo,r.cantidad,r.vendido,r.cobrado,r.efectivo])]
+      .map(row=>row.map(esc).join(';')).join('\r\n');
+    const uri=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}));
+    const a=document.createElement('a');a.href=uri;a.download=`ventas_${this.reporteGrupo()}_${this.reporteDesde()}.csv`;a.click();
+    setTimeout(()=>URL.revokeObjectURL(uri),1000);
+  }
+
+  async openCustomerModal(): Promise<void> {
+    if (this.cart.locked() || this.processing() || !this.entityModal) return;
+    const type=this.customerForm.controls.documentType.value;
+    const number=this.customerForm.controls.documentNumber.value;
+    const result=await this.entityModal.open({
+      eyebrow:'PUNTO DE VENTA',title:'Identificar cliente',saveLabel:'Usar este cliente',
+      documents:this.personDocumentOptions,rucKind:'EMPRESA',captureOnly:true,
+      startDocument:{type,number},
+      requireDistrictForManual:false,
+    });
+    if (!result?.data) return;
+    const data=result.data;
+    const docType=data.tipoDocumento==='RUC'?'RUC':'DNI';
+    const clientType=docType==='RUC'?'EMPRESA':'PERSONA';
+    const document=data.numeroDocumento;
+    if (!this.validDocument(docType,document)) {
+      this.toast.warning('Documento no válido','Ingrese un DNI o RUC válido.');return;
+    }
+    this.customerForm.patchValue({type:clientType,documentType:docType,documentNumber:document});
+    this.customerLoading.set(true);
+    this.resolveCustomerUseCase.resolve(clientType,docType,document).subscribe({
+      next:lookup=>{
+        if (lookup.customer) {
+          this.customerLoading.set(false);this.cart.setCustomer(lookup.customer);
+          this.customerTone.set('success');this.customerMessage.set('Cliente seleccionado.');
+          return;
+        }
+        const uotId=this.currentUotId();
+        if (!uotId){this.customerLoading.set(false);return;}
+        this.resolveCustomerUseCase.registerManual({
+          uotId,type:clientType,documentType:docType,documentNumber:document,
+          names:data.nombres||undefined,paternalSurname:data.apellidoPaterno||undefined,
+          maternalSurname:data.apellidoMaterno||undefined,businessName:data.razonSocial||undefined,
+          phone:data.telefono||undefined,email:data.correo||undefined,
+        }).pipe(finalize(()=>this.customerLoading.set(false))).subscribe({
+          next:customer=>{this.cart.setCustomer(customer);this.customerTone.set('success');
+            this.customerMessage.set('Cliente registrado y seleccionado.');this.toast.success('Cliente listo',customer.displayName);},
+          error:e=>this.toast.error('No se registró el cliente',mapOpenApiError(e).message),
+        });
+      },
+      error:e=>{this.customerLoading.set(false);this.toast.error('No se identificó al cliente',mapOpenApiError(e).message);},
+    });
+  }
 
   readonly savings = computed(() => this.cart.items().reduce((total, item) =>
     total + Math.max(0, item.initialPrice - item.unitPrice) * item.quantity, 0));
-  readonly salesCount = computed(() => this.sales().length);
-  readonly salesTotal = computed(() => this.sales().reduce((sum, item) => sum + item.total, 0));
-  readonly salesPaid = computed(() => this.sales().reduce((sum, item) => sum + item.paid, 0));
+  readonly salesCount = computed(() => this.sales().filter(v=>v.state!=='ANULADA').length);
+  readonly salesTotal = computed(() => this.sales().filter(v=>v.state!=='ANULADA').reduce((sum, item) => sum + item.total, 0));
+  readonly salesPaid = computed(() => this.sales().filter(v=>v.state!=='ANULADA').reduce((sum, item) => sum + item.paid, 0));
 
   readonly productColumns: readonly DataTableColumn<PosProduct>[] = [
     { key: 'name', label: 'Producto', format: (_value, row) => `${row.name}${row.code ? ' · ' + row.code : ''}` },
@@ -269,6 +486,7 @@ export class PosPage {
     { key: 'total', label: 'Total', align: 'right', format: (_value, row) => `${row.currency} ${row.total.toFixed(2)}` },
     { key: 'paid', label: 'Pagado', align: 'right', format: (_value, row) => row.paid.toFixed(2) },
     { key: 'balance', label: 'Saldo', align: 'right', format: (_value, row) => row.balance.toFixed(2) },
+    { key: 'acciones', label: 'Acciones', align: 'right' },
   ];
 
   readonly filteredCatalog = computed(() => {
@@ -317,21 +535,6 @@ export class PosPage {
     documentNumber: ['', [Validators.required]],
   });
 
-  readonly manualForm = this.fb.nonNullable.group({
-    tipoDocumento: ['DNI'],
-    numeroDocumento: [''],
-    nombres: ['', [Validators.required, Validators.maxLength(100)]],
-    apellidoPaterno: ['', [Validators.required, Validators.maxLength(80)]],
-    apellidoMaterno: ['', [Validators.required, Validators.maxLength(80)]],
-    fechaNacimiento: [''],
-    telefono: ['', [Validators.maxLength(30)]],
-    correo: ['', [Validators.email, Validators.maxLength(180)]],
-    distritoCodigo: [''],
-    centroPobladoId: [0],
-    referencia: [''],
-    businessName: ['', [Validators.maxLength(200)]],
-  });
-
   readonly paymentForm = this.fb.nonNullable.group({
     paymentMethodId: [0, [Validators.required, Validators.min(1)]],
     operationNumber: ['', [Validators.maxLength(120)]],
@@ -339,6 +542,7 @@ export class PosPage {
   });
 
   constructor() {
+    this.destroyRef.onDestroy(() => this.clearReceiptPdf());
     effect(() => {
       const uotId = this.uot.isGeneral() ? null : this.uot.selectedId();
       const userId = this.access.user()?.usuarioId ?? 0;
@@ -353,6 +557,8 @@ export class PosPage {
     this.warehouses.set([]);
     this.catalog.set([]);
     this.sales.set([]);
+    this.historialCompleto.set(false);
+    this.pagos.set([]);
     this.selectedSale.set(null);
     this.catalogPage.set(1);
     this.historyPage.set(1);
@@ -368,13 +574,19 @@ export class PosPage {
       this.catalogView.set(localStorage.getItem('desco:pos:view') === 'cards' ? 'cards' : 'table');
       this.historyView.set(localStorage.getItem('desco:pos:history-view') === 'cards' ? 'cards' : 'table');
     } catch { /* storage unavailable */ }
-    this.loadContext();
+    if (this.activeView()==='venta') {this.loadContext();this.loadCaja();}
+    else {this.loadHistory();if(this.permissions.has('VENTAS_REPORTES'))this.loadReport();if(this.permissions.has('POS_OPERAR')){this.loadContext();this.loadCaja();}}
   }
 
   changeView(view: 'venta' | 'historial'): void {
     if (this.processing()) return;
     this.activeView.set(view);
     if (view === 'historial') this.loadHistory();
+  }
+
+  refreshPage(): void {
+    if (this.activeView()==='historial') {this.loadHistory();this.loadReport();if(this.permissions.has('POS_OPERAR'))this.loadCaja();}
+    else {this.loadContext();this.loadCaja();}
   }
 
   loadContext(): void {
@@ -489,7 +701,7 @@ export class PosPage {
   }
 
   add(product: PosProduct): void {
-    if (this.cart.locked() || this.processing()) return;
+    if (this.cart.locked() || this.processing() || !this.puedeOperar()) return;
     const error = this.cart.add(product);
 
     if (error) {
@@ -677,7 +889,7 @@ export class PosPage {
 
           if (result.manualEntryAllowed) {
             this.customerTone.set('warning');
-            this.openManualCustomer();
+            void this.openCustomerModal();
             return;
           }
 
@@ -692,198 +904,44 @@ export class PosPage {
       });
   }
 
-  openManualCustomer(): void {
-    if (this.cart.locked()) {
-      return;
-    }
-
-    const isPerson = this.customerForm.controls.type.value === 'PERSONA';
-    for (const control of [
-      this.manualForm.controls.nombres, this.manualForm.controls.apellidoPaterno,
-      this.manualForm.controls.apellidoMaterno,
-    ]) {
-      control.setValidators(isPerson ? [Validators.required] : []);
-      control.updateValueAndValidity({ emitEvent: false });
-    }
-    this.manualForm.controls.businessName.setValidators(isPerson ? [] : [Validators.required]);
-    this.manualForm.controls.businessName.updateValueAndValidity({ emitEvent: false });
-    this.manualForm.reset({
-      tipoDocumento: this.customerForm.controls.documentType.value,
-      numeroDocumento: this.customerForm.controls.documentNumber.value,
-      nombres: '', apellidoPaterno: '', apellidoMaterno: '', fechaNacimiento: '',
-      telefono: '', correo: '', distritoCodigo: '', centroPobladoId: 0, referencia: '',
-      businessName: '',
-    });
-
-    this.manualCustomerDialog.nativeElement.showModal();
-  }
-
-  closeManualCustomer(): void {
-    if (
-      !this.manualSaving()
-      && this.manualCustomerDialog.nativeElement.open
-    ) {
-      this.manualCustomerDialog.nativeElement.close();
-    }
-  }
-
-  saveManualCustomer(): void {
-    const uotId = this.currentUotId();
-
-    if (!uotId || this.manualSaving()) {
-      return;
-    }
-
-    this.manualForm.markAllAsTouched();
-
-    if (this.manualForm.invalid) {
-      return;
-    }
-
-    const type = this.customerForm.controls.type.value;
-    const documentType =
-      this.customerForm.controls.documentType.value;
-    const documentNumber =
-      this.customerForm.controls.documentNumber.value.trim();
-    const raw = this.manualForm.getRawValue();
-
-    if (type === 'PERSONA') {
-      if (!raw.nombres.trim() || !raw.apellidoPaterno.trim() || !raw.apellidoMaterno.trim()) {
-        this.toast.warning(
-          'Datos incompletos',
-          'Complete nombres y apellidos del cliente.',
-        );
-        return;
-      }
-    } else if (!raw.businessName.trim()) {
-      this.toast.warning(
-        'Datos incompletos',
-        'Ingrese la razón social del cliente.',
-      );
-      return;
-    }
-
-    this.manualSaving.set(true);
-
-    this.resolveCustomerUseCase
-      .registerManual({
-        uotId,
-        type,
-        documentType,
-        documentNumber,
-        names: raw.nombres.trim() || undefined,
-        paternalSurname:
-          raw.apellidoPaterno.trim() || undefined,
-        maternalSurname:
-          raw.apellidoMaterno.trim() || undefined,
-        businessName:
-          raw.businessName.trim() || undefined,
-        phone: raw.telefono.trim() || undefined,
-        email:
-          raw.correo.trim().toLowerCase() || undefined,
-      })
-      .pipe(finalize(() => this.manualSaving.set(false)))
-      .subscribe({
-        next: (customer) => {
-          this.cart.setCustomer(customer);
-          this.customerTone.set('success');
-          this.customerMessage.set(
-            'Cliente registrado manualmente y seleccionado para la venta.',
-          );
-          this.closeManualCustomer();
-          this.toast.success(
-            'Cliente registrado',
-            customer.displayName,
-          );
-        },
-        error: (error) => {
-          this.toast.error(
-            'No se pudo registrar el cliente',
-            mapOpenApiError(error).message,
-          );
-        },
-      });
-  }
-
   checkout(): void {
-    const draft = this.cart.draft();
-    const uotId = this.currentUotId();
-    const warehouseId = this.cart.warehouseId();
-    const customer = this.cart.customer() ?? this.generalCustomer;
-    const paymentMethodId =
-      Number(this.paymentForm.controls.paymentMethodId.value);
-    const method = this.selectedPaymentMethod();
-
+    const draft=this.cart.draft();const uotId=this.currentUotId();
+    const warehouseId=this.cart.warehouseId();const customer=this.cart.customer()??this.generalCustomer;
     this.checkoutError.set(null);
-
-    if (
-      !draft
-      || !uotId
-      || !warehouseId
-      || !customer
-      || this.cart.items().length === 0
-      || paymentMethodId <= 0
-    ) {
-      this.checkoutError.set(
-        'Seleccione almacén, productos y método de pago antes de finalizar.',
-      );
-      return;
+    if(!draft||!this.puedeOperar()||!uotId||!warehouseId||!customer||!this.cart.items().length){
+      this.checkoutError.set('Verifica tu disponibilidad, el almacén y los productos.');return;
     }
-
-    if (
-      this.cart.items().some(
-        (item) =>
-          item.quantity <= 0
-          || item.quantity > item.stockAvailable,
-      )
-    ) {
-      this.checkoutError.set(
-        'Revise las cantidades del carrito. Uno o más productos ya no tienen stock suficiente.',
-      );
-      return;
+    if(this.cart.items().some(p=>p.quantity<=0||p.quantity>p.stockAvailable)){
+      this.checkoutError.set('Revise las cantidades y el stock disponible.');return;
     }
-
-    const operationNumber =
-      this.paymentForm.controls.operationNumber.value.trim();
-
-    if (
-      method?.requiresOperationNumber
-      && !operationNumber
-    ) {
-      this.checkoutError.set(
-        'El método de pago seleccionado requiere número de operación.',
-      );
-      return;
+    const rows=this.pagos();
+    if(!rows.length||rows.some(p=>!this.metodoFila(p.paymentMethodId)||!Number.isFinite(p.amount)
+      ||p.amount<=0||Math.abs(Math.round(p.amount*100)-p.amount*100)>0.00001)
+      ||Math.abs(this.pagoDiferencia())>0.001){
+      this.checkoutError.set('Distribuya el total exacto entre medios de pago e importes positivos de dos decimales.');return;
     }
-
     this.processing.set(true);
-
-    this.checkoutUseCase
-      .execute({
-        uotId,
-        warehouseId,
-        customer,
-        items: this.cart.items(),
-        paymentMethodId,
-        paymentOperation:
-          operationNumber || undefined,
-        observation:
-          this.paymentForm.controls.observation.value.trim()
-          || undefined,
-        pendingSaleId: draft.pendingSaleId,
-        createIdempotencyKey:
-          draft.createIdempotencyKey,
-        paymentIdempotencyKey:
-          draft.paymentIdempotencyKey,
-        deliveryIdempotencyKey:
-          draft.deliveryIdempotencyKey,
-      })
+    const stored=draft.checkoutPayments;
+    // No se pueden modificar medios ni importes tras comenzar el registro de venta.
+    const upload$=stored?.length?of(stored):forkJoin(rows.map(p=>
+      this.pagoEvidencia.cargar(uotId,p.files[0]).pipe(map(archivoId=>({
+        paymentMethodId:p.paymentMethodId,amount:p.amount,
+        operationNumber:p.operationNumber.trim()||undefined,archivoId
+      } as PosPaymentAllocation)))));
+    upload$.pipe(switchMap(payments=>{
+      this.cart.storeCheckoutPayments(payments);
+      return this.checkoutUseCase.execute({
+        uotId,warehouseId,customer,items:this.cart.items(),payments,
+        observation:this.paymentForm.controls.observation.value.trim()||undefined,
+        pendingSaleId:draft.pendingSaleId,createIdempotencyKey:draft.createIdempotencyKey,
+        paymentIdempotencyKey:draft.paymentIdempotencyKey,deliveryIdempotencyKey:draft.deliveryIdempotencyKey
+      });
+    }))
       .pipe(finalize(() => this.processing.set(false)))
       .subscribe({
         next: (result) => {
-          this.lastSaleId.set(result.saleId);
-          this.checkoutDialog?.nativeElement.close();
-          this.openReceipt(result.saleId);
+          this.pendingReceiptSaleId.set(result.saleId);
+          this.checkoutDialog?.close(true);
 
           this.toast.success(
             `Venta #${result.saleId} completada`,
@@ -898,6 +956,7 @@ export class PosPage {
           });
           this.customerMessage.set(null);
           this.customerTone.set('neutral');
+          this.pagos.set([]);
           this.paymentForm.controls.operationNumber.setValue('');
           this.paymentForm.controls.observation.setValue('');
           this.loadCatalog();
@@ -926,7 +985,7 @@ export class PosPage {
     if (!uotId) return;
     this.historyLoading.set(true);
     this.historyError.set(null);
-    this.operations.listSales(uotId)
+    this.operations.listSales(uotId,this.historialCompleto() && this.permissions.has('VENTAS_TODAS_VER'))
       .pipe(finalize(() => this.historyLoading.set(false)))
       .subscribe({
         next: (sales) => {
@@ -945,33 +1004,50 @@ export class PosPage {
       .subscribe({
         next: (detail) => {
           this.selectedSale.set(detail);
+          this.pagoPendienteImporte.set(Math.round(detail.sale.balance*100)/100);
           if (!this.saleDetailDialog?.nativeElement.open) this.saleDetailDialog?.nativeElement.showModal();
         },
         error: (error) => this.historyError.set(mapOpenApiError(error).message),
       });
   }
 
+  saveSaleNote():void {
+    const venta=this.selectedSale()?.sale;
+    const text=this.saleNote().trim();
+    const uotId=this.currentUotId();
+    if(!venta||!uotId||!this.permissions.has('VENTAS_EDITAR')||this.saleActionId()||!text||text.length>500)return;
+    this.saleActionId.set(venta.saleId);this.historyError.set(null);
+    this.cajaApi.editarObservacionVenta(venta.saleId,{uotId,observacion:text})
+      .pipe(finalize(()=>this.saleActionId.set(null)))
+      .subscribe({next:()=>{this.toast.success('Venta actualizada');this.saleNote.set('');this.loadHistory();},
+        error:e=>this.historyError.set(mapOpenApiError(e).message)});
+  }
+
   paySelectedSale(): void {
     const sale = this.selectedSale()?.sale;
     const method = this.selectedPaymentMethod();
     const operationNumber = this.paymentForm.controls.operationNumber.value.trim();
-    if (!sale || this.saleActionId() || !method || sale.balance <= 0
+    if (!this.puedeOperar() || !sale || this.saleActionId() || !method || sale.balance <= 0
       || sale.state === 'ANULADA' || sale.state === 'ENTREGADA'
-      || (method.requiresOperationNumber && !operationNumber)) {
-      this.historyError.set('Seleccione un método válido e ingrese la referencia del pago cuando corresponda.');
+      || !Number.isFinite(this.pagoPendienteImporte()) || this.pagoPendienteImporte()<=0
+      || this.pagoPendienteImporte()>sale.balance) {
+      this.historyError.set('Indique un método y un monto positivo no mayor al saldo pendiente.');
       return;
     }
     const input = { saleId: sale.saleId, paymentMethodId: method.paymentMethodId,
-      amount: sale.balance, operationNumber };
+      amount: this.pagoPendienteImporte(), operationNumber };
     this.saleActionId.set(sale.saleId);
     this.historyError.set(null);
-    this.idempotency.idempotent(`pos:gestor:pagar:${sale.saleId}`, input, (key) =>
-      this.operations.paySale(sale.saleId, method.paymentMethodId, sale.balance,
-        operationNumber || undefined, key))
+    this.pagoEvidencia.cargar(this.currentUotId()!,this.fotoPagoHistorial()[0]).pipe(
+      switchMap(archivoId=>this.idempotency.idempotent(`pos:gestor:pagar:${sale.saleId}`, {...input,archivoId},(key)=>
+        this.operations.paySale(sale.saleId,method.paymentMethodId,input.amount,
+          operationNumber||undefined,key,archivoId))))
       .pipe(finalize(() => this.saleActionId.set(null)))
       .subscribe({
         next: () => {
           this.toast.success(`Pago registrado en venta #${sale.saleId}`);
+          this.fotoPagoHistorial.set([]);
+          this.pagoPendienteImporte.set(0);
           this.viewSale(sale.saleId);
           this.loadHistory();
         },
@@ -982,7 +1058,7 @@ export class PosPage {
 
   deliverSelectedSale(): void {
     const sale = this.selectedSale()?.sale;
-    if (!sale || this.saleActionId() || sale.balance > 0
+    if (!this.puedeOperar() || !sale || this.saleActionId() || sale.balance > 0
       || sale.state === 'ENTREGADA' || sale.state === 'ANULADA') {
       this.historyError.set('La venta debe estar pagada y pendiente de entrega.');
       return;
@@ -1008,21 +1084,21 @@ export class PosPage {
   cancelSelectedSale(): void {
     const sale = this.selectedSale()?.sale;
     const reason = this.cancelReason().trim();
-    if (!sale || this.saleActionId() || reason.length < 5 || reason.length > 300
-      || sale.paid > 0 || sale.state === 'ENTREGADA' || sale.state === 'ANULADA') {
-      this.historyError.set('Para anular, ingrese un motivo de 5 a 300 caracteres. La venta no debe tener pagos ni estar entregada.');
+    if ((!this.puedeOperar() && !this.permissions.has('VENTAS_TODAS_VER')) || !sale || this.saleActionId() || reason.length < 5 || reason.length > 300
+      || (sale.paid > 0 && !this.devolucionConfirmada()) || sale.state === 'ANULADA') {
+      this.historyError.set('Indique un motivo válido y confirme la devolución íntegra si hubo cobros.');
       return;
     }
     this.saleActionId.set(sale.saleId);
     this.historyError.set(null);
-    this.operations.cancelSale(sale.saleId, reason)
+    this.operations.cancelSale(sale.saleId, reason, this.devolucionConfirmada())
       .pipe(finalize(() => this.saleActionId.set(null)))
       .subscribe({
         next: () => {
           this.toast.success(`Venta #${sale.saleId} anulada`);
           if (this.cart.pendingSaleId() === sale.saleId) this.cart.clearAfterSuccess();
           this.closeSaleDetail();
-          this.cancelReason.set('');
+          this.cancelReason.set('');this.devolucionConfirmada.set(false);
           this.loadHistory();
           this.loadCatalog();
         },
@@ -1076,11 +1152,11 @@ export class PosPage {
 
   canCheckout(): boolean {
     return !this.processing()
+      && !!this.puedeOperar()
       && this.currentUotId() !== null
       && this.cart.warehouseId() !== null
       && this.cart.items().length > 0
-      && Number(this.paymentForm.controls.paymentMethodId.value) > 0
-      && this.selectedPaymentMethod() !== null
+      && this.paymentMethods().length > 0
       && this.cart.items().every((item) => item.quantity > 0
         && item.quantity <= item.stockAvailable);
   }

@@ -1,0 +1,111 @@
+<div class="desco-page mis-salidas-page">
+  <app-page-header title="Mis salidas técnicas" subtitle="Consulta tus solicitudes y la actividad registrada." eyebrow="Gestión técnica" [icon]="icon">
+    <div pageActions class="flex flex-wrap gap-2">
+      <a class="admin-secondary-button" routerLink="/gestion-tecnica/visitas/registradas">Visitas registradas</a>
+      @if (canCreate()) {<button type="button" class="admin-primary-button" (click)="abrirSolicitud()">Nueva salida técnica</button>}
+      @if (canSupervise()) {<a class="admin-secondary-button" routerLink="/gestion-tecnica/salidas">Salidas por UOT</a>}
+    </div>
+  </app-page-header>
+  <nav class="mis-salidas-tabs" aria-label="Secciones de visitas técnicas">
+    <a routerLink="/gestion-tecnica/visitas" class="mis-salidas-tab is-active" aria-current="page">Mis salidas técnicas</a>
+    <a routerLink="/gestion-tecnica/visitas/registradas" class="mis-salidas-tab">Visitas registradas</a>
+  </nav>
+  <section class="admin-surface mt-4">
+    <div class="admin-toolbar mis-salidas-toolbar">
+      <div class="admin-field mis-salidas-search">
+        <label for="mis-salidas-buscar">Nombre o código</label>
+        <input id="mis-salidas-buscar" class="admin-input" [(ngModel)]="buscar"
+          maxlength="120" placeholder="Buscar salida" (keyup.enter)="load(1)" />
+      </div>
+      <div class="admin-field">
+        <label for="mis-salidas-estado">Estado</label>
+        <select id="mis-salidas-estado" class="admin-select" [(ngModel)]="estado" (change)="load(1)">
+          <option value="">Todos</option>
+          <option value="BORRADOR">Borrador</option><option value="SOLICITADA">Pendiente de aprobación</option>
+          <option value="OBSERVADA">Observada</option><option value="APROBADA">Aprobada</option>
+          <option value="EN_EJECUCION">En ejecución</option><option value="EN_RETORNO">En retorno</option>
+          <option value="CERRADA">Cerrada</option><option value="RECHAZADA">Rechazada</option>
+          <option value="CANCELADA">Cancelada</option>
+        </select>
+      </div>
+      <button class="admin-secondary-button" type="button" [disabled]="loading()" (click)="load(1)">Buscar</button>
+      <button class="admin-icon-button" type="button" [disabled]="loading()" (click)="load()"
+        title="Actualizar" aria-label="Actualizar salidas"><fa-icon [icon]="refreshIcon" /></button>
+    </div>
+    <app-list-view-switch appearance="segmented" label="Vista de salidas"
+      [view]="vista==='tabla'?'table':'cards'" (viewChange)="vista=$event==='table'?'tabla':'tarjetas'" />
+    @if (loading()) {
+      <app-loading-state title="Cargando salidas" message="Consultando tus registros." />
+    } @else if (error()) {
+      <app-error-state [message]="error() || 'No se pudo consultar.'" (retry)="load()" />
+    } @else if (items().length === 0) {
+      <app-empty-state title="Sin salidas" message="No tienes registros para estos filtros." />
+    } @else {
+      @if (vista==='tabla') {
+        <div class="admin-table-wrap"><table class="admin-table">
+          <thead><tr><th>Salida</th><th>Destinos</th><th>Solicitud</th><th>Período previsto</th><th>Visitas</th><th>Estado</th><th class="text-right">Acciones</th></tr></thead>
+          <tbody>
+            @for (item of items(); track item.salidaId) {
+              <tr>
+                <td><strong>{{item.nombre}}</strong><small class="mis-salidas-code">{{item.codigo}}</small></td>
+                <td class="mis-salidas-destinos">{{item.destinosResumen || 'Sin destinos'}}</td>
+                <td>{{item.fechaSolicitud | date:'dd/MM/yyyy'}}</td>
+                <td>{{item.fechaInicioPrevista | date:'dd/MM/yyyy'}} – {{item.fechaFinPrevista | date:'dd/MM/yyyy'}}</td>
+                <td>{{item.visitas}}</td>
+                <td><span class="admin-status" [class.admin-status--active]="item.estado==='APROBADA'||item.estado==='CERRADA'"
+                  [class.admin-status--info]="item.estado==='EN_EJECUCION'||item.estado==='SOLICITADA'"
+                  [class.admin-status--inactive]="item.estado==='CANCELADA'||item.estado==='RECHAZADA'">{{estadoTexto(item.estado)}}</span></td>
+                <td><div class="admin-row-actions">
+                  @if (canView()) {<a class="admin-icon-button" [routerLink]="['/gestion-tecnica/visitas/mis-salidas',item.salidaId]"
+                    [queryParams]="detailParams()" title="Ver mi actividad" aria-label="Ver mi actividad">
+                    <fa-icon [icon]="viewIcon" /></a>}
+                  @if (canViewFicha()) {<a class="admin-icon-button" [routerLink]="['/gestion-tecnica/salidas/operativas',item.salidaId]"
+                    [queryParams]="fichaParams()" title="Ver ficha de salida" aria-label="Ver ficha de salida"><fa-icon [icon]="fichaIcon" /></a>}
+                  @if (canCancel(item)) {
+                    <button type="button" class="admin-icon-button" [disabled]="cancellingId()!==null"
+                      (click)="cancelar(item)" [title]="item.estado==='BORRADOR' ? 'Descartar borrador' : 'Cancelar solicitud'"
+                      [attr.aria-label]="item.estado==='BORRADOR' ? 'Descartar borrador' : 'Cancelar solicitud'">
+                      @if (cancellingId()===item.salidaId) {<span class="loading loading-spinner loading-xs"></span>}
+                      @else {<fa-icon [icon]="cancelIcon" />}
+                    </button>
+                  }
+                </div></td>
+              </tr>
+            }
+          </tbody>
+        </table></div>
+      } @else {
+        <div class="desco-record-grid mis-salidas-cards">
+          @for (item of items(); track item.salidaId) {
+            <app-record-card>
+              <header><strong>{{item.nombre}}</strong><small>{{item.codigo}}</small></header>
+              <dl class="technical-record-data">
+                <div><dt>Destinos</dt><dd>{{item.destinosResumen || 'Sin destinos'}}</dd></div>
+                <div><dt>Solicitud</dt><dd>{{item.fechaSolicitud | date:'dd/MM/yyyy'}}</dd></div>
+                <div><dt>Período</dt><dd>{{item.fechaInicioPrevista | date:'dd/MM/yyyy'}} – {{item.fechaFinPrevista | date:'dd/MM/yyyy'}}</dd></div>
+                <div><dt>Visitas</dt><dd>{{item.visitas}}</dd></div>
+                <div><dt>Estado</dt><dd>{{estadoTexto(item.estado)}}</dd></div>
+              </dl>
+              <footer class="admin-row-actions">
+                @if (canView()) {<a class="admin-icon-button" [routerLink]="['/gestion-tecnica/visitas/mis-salidas',item.salidaId]"
+                  [queryParams]="detailParams()" title="Ver mi actividad" aria-label="Ver mi actividad"><fa-icon [icon]="viewIcon" /></a>}
+                @if (canViewFicha()) {<a class="admin-icon-button" [routerLink]="['/gestion-tecnica/salidas/operativas',item.salidaId]"
+                    [queryParams]="fichaParams()" title="Ver ficha de salida" aria-label="Ver ficha de salida"><fa-icon [icon]="fichaIcon" /></a>}
+                @if (canCancel(item)) {
+                  <button type="button" class="admin-icon-button" [disabled]="cancellingId()!==null" (click)="cancelar(item)"
+                    [title]="item.estado==='BORRADOR' ? 'Descartar borrador' : 'Cancelar solicitud'"
+                      [attr.aria-label]="item.estado==='BORRADOR' ? 'Descartar borrador' : 'Cancelar solicitud'"><fa-icon [icon]="cancelIcon" /></button>
+                }
+              </footer>
+            </app-record-card>
+          }
+        </div>
+      }
+      <app-paginator [page]="page" [size]="size" [totalRecords]="total()" [totalPages]="totalPages()"
+        (pageChange)="load($event)" (sizeChange)="load(1,$event)" />
+    }
+  </section>
+  <app-action-confirm-dialog />
+</div>
+
+<app-solicitud-salida-tecnica-modal (completed)="load(1)" />

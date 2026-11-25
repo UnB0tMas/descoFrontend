@@ -50,6 +50,7 @@ export interface ExpedienteE1 {
   crianzas: CrianzaE1[]; historial: ActuacionE1[]; censos: CensoE1[]; conteos: ConteoE1[];
 }
 export interface PersonaAltaE1 {
+  personaId?: number;
   tipoDocumento: string; numeroDocumento: string; nombres: string;
   apellidoPaterno: string; apellidoMaterno?: string;
   fechaNacimiento?: string; telefono?: string; correo?: string;

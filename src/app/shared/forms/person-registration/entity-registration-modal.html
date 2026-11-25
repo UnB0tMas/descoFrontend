@@ -1,4 +1,4 @@
-<dialog #dialog class="desco-modal entity-registration-dialog" (cancel)="$event.preventDefault(); close()" aria-labelledby="entity-registration-title">
+<dialog #dialog class="desco-modal entity-registration-dialog" (cancel)="$event.preventDefault(); cancelFromKeyboard()" aria-labelledby="entity-registration-title">
   <section class="admin-modal-box entity-registration-box">
     <header class="admin-modal-header entity-registration-header">
       <div class="admin-modal-title-group">
@@ -18,7 +18,11 @@
           <label class="admin-field"><span>Número de documento</span>
             <input class="admin-input" type="text" formControlName="numeroDocumento" [attr.maxlength]="maxDoc()" [attr.inputmode]="inputMode()" [readOnly]="documentLocked() || saving()" (input)="documentChanged()" autocomplete="off" />
           </label>
-          <button type="button" class="admin-secondary-button" [disabled]="!canSearch()" (click)="search()">{{ busy() ? 'Buscando...' : 'Buscar' }}</button>
+          <button type="button" class="admin-secondary-button entity-registration-search-button" [disabled]="!canSearch()"
+            [attr.aria-label]="busy() ? 'Buscando persona' : 'Buscar persona'"
+            [attr.title]="busy() ? 'Buscando...' : 'Buscar'" (click)="search()">
+            <fa-icon [icon]="busy() ? iconSearching : iconSearch" [class.fa-spin]="busy()" aria-hidden="true" />
+          </button>
         </div>
         @if (form.controls.numeroDocumento.invalid && form.controls.numeroDocumento.touched) {
           <small class="entity-registration-error">Ingrese un documento válido.</small>
@@ -86,8 +90,15 @@
     <footer class="admin-modal-actions entity-registration-footer">
       <button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="close()">Cancelar</button>
       <button type="submit" form="entity-registration-form" class="admin-primary-button" [disabled]="saving() || busy() || blocked()">
-        {{ saving() ? 'Guardando...' : roleId() && !changed() ? 'Continuar' : config()?.saveLabel || 'Guardar' }}
+        {{ saving() ? 'Guardando...' : roleId() && !changed() ? 'Continuar' : found() && changed() && config()?.updateLabel ? config()?.updateLabel : config()?.saveLabel || 'Guardar' }}
       </button>
     </footer>
   </section>
+  @if (manualPrompt()) {
+    <app-inline-confirm-dialog
+      [title]="entityKind() === 'PERSONA' ? 'Persona no encontrada' : 'Empresa no encontrada'"
+      message="No se encontraron datos disponibles. Puede registrarlos manualmente."
+      confirmLabel="Ingresar manualmente" cancelLabel="Volver" tone="warning"
+      (confirmed)="acceptManualEntry()" (cancelled)="cancelManualEntry()" />
+  }
 </dialog>

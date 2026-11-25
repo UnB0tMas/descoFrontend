@@ -1,3 +1,4 @@
+import { BreadcrumbComponent } from '../../../shared/layout/breadcrumb/breadcrumb';
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
@@ -16,7 +17,7 @@ import { GpIncidenciasPanel } from './gp-incidencias-panel';
 
 @Component({
   selector: 'app-gp-incidencia-detalle', standalone: true,
-  imports: [RouterLink, FaIconComponent, PageHeaderComponent, LoadingStateComponent,
+  imports: [BreadcrumbComponent, RouterLink, FaIconComponent, PageHeaderComponent, LoadingStateComponent,
     ErrorStateComponent, EmptyStateComponent, GpIncidenciasPanel],
   templateUrl: './gp-incidencia-detalle.html',
   styleUrl: './gestion-productiva.css',

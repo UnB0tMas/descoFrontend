@@ -1,0 +1,177 @@
+<div class="desco-page gp-page gp-predios-page">
+  <app-page-header [title]="selected() ? 'Parcelas del productor' : 'Productores y parcelas'"
+    eyebrow="Gestión técnica · Gestión productiva"
+    [subtitle]="selected() ? 'Gestione las parcelas y sus actividades.' : 'Registre productores y gestione sus parcelas.'"
+    [icon]="selected() ? parcelaIcon : icon">
+    <div pageActions class="flex flex-wrap gap-2">
+      @if (selected()) {
+        <button type="button" class="admin-secondary-button" (click)="back()"><fa-icon [icon]="backIcon" /> Volver</button>
+        <button type="button" class="admin-secondary-button" [disabled]="parcelasLoading()" (click)="refreshParcels()">
+          <fa-icon [icon]="refreshIcon" /> Actualizar
+        </button>
+        <button *appPermission="'CULTIVOS_CREAR'" type="button" class="admin-primary-button"
+          [disabled]="requiresUot() || busy()" (click)="createParcel()">
+          <fa-icon [icon]="addIcon" /> Nueva parcela
+        </button>
+      } @else {
+        <button type="button" class="admin-secondary-button" [disabled]="loading()" (click)="load()">
+          <fa-icon [icon]="refreshIcon" /> Actualizar
+        </button>
+        <button *appPermission="'PREDIOS_CREAR'" type="button" class="admin-primary-button"
+          [disabled]="requiresUot() || busy()" (click)="createPerson()">
+          <fa-icon [icon]="addIcon" /> Nueva persona
+        </button>
+      }
+    </div>
+  </app-page-header>
+
+  @if (requiresUot()) { <p class="gp-inline-note">Seleccione una unidad territorial para realizar cambios.</p> }
+  @if (!selected()) {
+    <section class="admin-surface mt-5" aria-label="Padrón de productores">
+      <div class="admin-toolbar">
+        <app-list-toolbar appearance="institutional" layout="inline" [showSearch]="false" [view]="view()"
+          [busy]="loading()" (viewChange)="view.set($event)">
+          <div toolbarFilters>
+            <form class="gp-filter-toolbar" (submit)="$event.preventDefault(); load()">
+              <div class="admin-field gp-search">
+                <label for="gpBuscarPersona">Nombre o documento</label>
+                <input id="gpBuscarPersona" class="admin-input" type="search" [(ngModel)]="search"
+                  name="buscar" placeholder="Buscar productores" autocomplete="off" />
+              </div>
+              <button class="admin-secondary-button" type="submit" [disabled]="loading()">
+                <fa-icon [icon]="searchIcon" /> Buscar
+              </button>
+              @if (search) { <button type="button" class="admin-secondary-button" (click)="clear()">Limpiar</button> }
+            </form>
+          </div>
+        </app-list-toolbar>
+      </div>
+      @if (loading()) { <app-loading-state title="Cargando productores" message="Consultando registros." /> }
+      @else if (error()) { <app-error-state [message]="error() || 'No se pudo cargar el padrón.'" (retry)="load()" /> }
+      @else if (!people().length) {
+        <app-empty-state title="Sin productores" message="Registre una persona para iniciar." />
+      } @else {
+        <ng-template #personaCell let-p><div class="admin-stack-copy"><strong>{{p.nombreCompleto}}</strong>
+          <span>{{p.tipoDocumento}} {{p.numeroDocumento}}</span></div></ng-template>
+        <ng-template #accionesCell let-p><div class="admin-row-actions">
+          <button *appPermission="'CULTIVOS_LISTAR'" type="button" class="admin-icon-button" (click)="select(p)"
+            [attr.aria-label]="'Ver parcelas de '+p.nombreCompleto" title="Detalles"><fa-icon [icon]="eyeIcon" /></button>
+          <button *appPermission="'PREDIOS_EDITAR'" type="button" class="admin-icon-button"
+            [disabled]="requiresUot() || busy()" (click)="editPerson(p)" [attr.aria-label]="'Editar '+p.nombreCompleto" title="Editar">
+            <fa-icon [icon]="editIcon" />
+          </button>
+          <button *appPermission="'PREDIOS_RETIRAR'" type="button" class="admin-icon-button admin-icon-button--danger"
+            [disabled]="requiresUot() || busy()" (click)="removePerson(p)" [attr.aria-label]="'Desactivar '+p.nombreCompleto" title="Desactivar">
+            <fa-icon [icon]="deleteIcon" />
+          </button>
+        </div></ng-template>
+        <ng-template #personaCard let-p>
+          <app-institutional-record-card layout="summary" actionsLayout="icons"
+            [icon]="icon" [code]="p.tipoDocumento+' '+p.numeroDocumento"
+            [heading]="p.nombreCompleto" [metadata]="['Productor']">
+            <div recordActions class="gp-activity-actions">
+              <button *appPermission="'CULTIVOS_LISTAR'" type="button" class="admin-icon-button"
+                (click)="select(p)" [attr.aria-label]="'Ver parcelas de '+p.nombreCompleto" title="Detalles">
+                <fa-icon [icon]="eyeIcon" />
+              </button>
+              <button *appPermission="'PREDIOS_EDITAR'" type="button" class="admin-icon-button"
+                [disabled]="requiresUot() || busy()" (click)="editPerson(p)"
+                [attr.aria-label]="'Editar '+p.nombreCompleto" title="Editar">
+                <fa-icon [icon]="editIcon" />
+              </button>
+              <button *appPermission="'PREDIOS_RETIRAR'" type="button" class="admin-icon-button admin-icon-button--danger"
+                [disabled]="requiresUot() || busy()" (click)="removePerson(p)"
+                [attr.aria-label]="'Desactivar '+p.nombreCompleto" title="Desactivar">
+                <fa-icon [icon]="deleteIcon" />
+              </button>
+            </div>
+          </app-institutional-record-card>
+        </ng-template>
+        <app-list-container [view]="view()" appearance="admin" [columns]="columns" [rows]="rows()"
+          trackByKey="personaId" [cellTemplates]="{nombreCompleto: personaCell, acciones: accionesCell}"
+          [cardTemplate]="personaCard" cardLayout="institutional" [cardsBounded]="true"
+          [showPaginator]="true" [page]="page()" [size]="size()" [totalRecords]="people().length"
+          [totalPages]="totalPages()" (pageChange)="setPage($event)" (sizeChange)="setSize($event)" />
+      }
+    </section>
+  } @else if (selected(); as person) {
+    <section class="admin-surface mt-5" aria-label="Parcelas del productor">
+      <div class="gp-producer-identity">
+        <div class="gp-producer-identity__data">
+          <span class="gp-producer-identity__label">Productor</span>
+          <h2>{{person.nombreCompleto}}</h2>
+          <span class="gp-producer-identity__document">{{person.tipoDocumento}} {{person.numeroDocumento}}</span>
+        </div>
+      </div>
+      <div class="admin-toolbar">
+        <app-list-toolbar appearance="institutional" layout="inline" [showSearch]="false" [view]="parcelasView()"
+          [busy]="parcelasLoading()" (viewChange)="parcelasView.set($event)">
+          <div toolbarFilters class="gp-filter-toolbar">
+            <div class="admin-field gp-search"><label for="gpBuscarParcelaProductor">Nombre o código</label>
+              <input id="gpBuscarParcelaProductor" class="admin-input" type="search"
+                [ngModel]="parcelaSearch()" (ngModelChange)="filterParcels($event)"
+                placeholder="Buscar parcelas" autocomplete="off" />
+            </div>
+          </div>
+        </app-list-toolbar>
+      </div>
+      @if (parcelasLoading()) { <app-loading-state title="Cargando parcelas" message="Consultando registros." /> }
+      @else if (parcelasError()) { <app-error-state [message]="parcelasError() || 'No se pudieron cargar las parcelas.'" (retry)="refreshParcels()" /> }
+      @else if (!parcelasFiltradas().length) {
+        <app-empty-state [title]="parcelaSearch() ? 'Sin coincidencias' : 'Sin parcelas registradas'"
+          [message]="parcelaSearch() ? 'Pruebe con otra búsqueda.' : 'Registre la primera parcela de este productor.'" />
+      } @else {
+        <ng-template #parcelaCell let-p><div class="admin-stack-copy"><strong>{{p.nombre}}</strong><span>{{p.codigo}}</span></div></ng-template>
+        <ng-template #parcelaActions let-p><div class="admin-row-actions gp-activity-actions">
+          <a *appPermission="'CULTIVOS_VER'" class="admin-icon-button" [routerLink]="['/gestion-tecnica/gestion-productiva/predios',p.predioId,'parcelas',p.parcelaId]"
+            [queryParams]="{productor: person.personaId, documento: person.numeroDocumento}"
+            [attr.aria-label]="'Ver detalles de '+p.nombre" title="Detalles"><fa-icon [icon]="eyeIcon" /></a>
+          <button *appPermission="'CULTIVOS_EDITAR'" class="admin-icon-button" type="button"
+            [disabled]="!p.estado || requiresUot() || busy()" (click)="editParcel(p)" [attr.aria-label]="'Editar '+p.nombre" title="Editar">
+            <fa-icon [icon]="editIcon" />
+          </button>
+          <button *appPermission="'CULTIVOS_RETIRAR'" class="admin-icon-button admin-icon-button--danger" type="button"
+            [disabled]="!p.estado || requiresUot() || busy()" (click)="removeParcel(p)" [attr.aria-label]="'Eliminar '+p.nombre" title="Eliminar">
+            <fa-icon [icon]="deleteIcon" />
+          </button>
+        </div></ng-template>
+        <ng-template #parcelaCard let-p>
+          <app-institutional-record-card layout="summary" actionsLayout="icons"
+            [icon]="parcelaIcon" [code]="p.codigo" [heading]="p.nombre"
+            [metadata]="[p.areaHa == null ? 'Superficie pendiente' : 'Superficie · '+m2(p.areaHa)+' m²', 'Ubigeo · '+(p.distritoCodigo || 'Sin registrar')]"
+            [description]="p.referencia || ''">
+            <div recordActions class="gp-activity-actions">
+              <a *appPermission="'CULTIVOS_VER'" class="admin-icon-button"
+                [routerLink]="['/gestion-tecnica/gestion-productiva/predios',p.predioId,'parcelas',p.parcelaId]"
+                [queryParams]="{productor: person.personaId, documento: person.numeroDocumento}"
+                [attr.aria-label]="'Ver detalles de '+p.nombre" title="Detalles">
+                <fa-icon [icon]="eyeIcon" />
+              </a>
+              <button *appPermission="'CULTIVOS_EDITAR'" type="button" class="admin-icon-button"
+                [disabled]="!p.estado || requiresUot() || busy()" (click)="editParcel(p)"
+                [attr.aria-label]="'Editar '+p.nombre" title="Editar">
+                <fa-icon [icon]="editIcon" />
+              </button>
+              <button *appPermission="'CULTIVOS_RETIRAR'" type="button" class="admin-icon-button admin-icon-button--danger"
+                [disabled]="!p.estado || requiresUot() || busy()" (click)="removeParcel(p)"
+                [attr.aria-label]="'Eliminar '+p.nombre" title="Eliminar">
+                <fa-icon [icon]="deleteIcon" />
+              </button>
+            </div>
+          </app-institutional-record-card>
+        </ng-template>
+        <app-list-container [view]="parcelasView()" appearance="admin" [columns]="parcelaColumns"
+          [rows]="parcelasRows()" trackByKey="parcelaId"
+          [cellTemplates]="{nombre: parcelaCell, acciones: parcelaActions}"
+          [cardTemplate]="parcelaCard" cardLayout="institutional" [cardsBounded]="true"
+          [showPaginator]="true" [page]="parcelaPage()" [size]="parcelaSize()"
+          [totalRecords]="parcelasFiltradas().length" [totalPages]="parcelasPages()"
+          (pageChange)="setParcelPage($event)" (sizeChange)="setParcelSize($event)" />
+      }
+    </section>
+  }
+  <app-person-registration-modal [findPerson]="findPersonForModal" [savePerson]="savePersonForModal" />
+  <app-person-edit-modal [savePerson]="saveEditForModal" />
+  <app-gp-parcela-form />
+  <app-action-confirm-dialog />
+</div>

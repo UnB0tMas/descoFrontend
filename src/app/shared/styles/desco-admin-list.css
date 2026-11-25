@@ -1,0 +1,182 @@
+/* Reusable Administration layout: design only, no business logic. */
+.desco-admin-view-toolbar { display:flex;justify-content:flex-end;align-items:center;gap:.6rem;padding:.75rem .9rem;min-width:0;border-bottom:1px solid var(--desco-border); }
+.desco-admin-record-grid { padding:1rem; }
+.desco-admin-record-grid .admin-row-actions { display:flex;flex-wrap:wrap;gap:.45rem;justify-content:flex-end; }
+.desco-admin-record-grid .desco-record-card { min-width:0; }
+.desco-admin-record-grid .desco-record-card h3 {font-weight:760;font-size:.92rem;line-height:1.4;overflow-wrap:anywhere;}
+.desco-admin-record-grid .desco-record-card dl { min-width:0; }
+.desco-admin-record-grid .desco-record-card footer {margin-top:auto;}
+.desco-admin-toolbar-search {flex:1 1 225px; min-width: min(100%,225px); max-width:360px;}
+.desco-admin-toolbar-search input {width:100%;}
+.desco-admin-tabs-scroll { display:flex;min-width:0;max-width:100%;width:100%;overflow-x:auto;overflow-y:hidden;white-space:nowrap;overscroll-behavior-x:contain;scrollbar-width:thin;scroll-snap-type:x proximity; }
+.desco-admin-tabs-scroll > button {flex:0 0 auto;white-space:nowrap;scroll-snap-align:start;}
+@media(max-width:640px){.desco-admin-view-toolbar{justify-content:flex-start;padding:.65rem}.desco-admin-record-grid{padding:.7rem}.desco-admin-record-grid .desco-record-card dl{grid-template-columns:repeat(2,minmax(0,1fr));}}
+
+/* Roles iniciales: contraste accesible en modo oscuro y claro. */
+.admin-check-option {opacity:1!important;color:var(--desco-text)!important;}
+.admin-check-option:has(input:checked) {border-color:var(--desco-primary)!important;background:var(--desco-primary-soft)!important;}
+.admin-check-option input[type="checkbox"] {opacity:1!important;accent-color:var(--desco-primary);flex-shrink:0;}
+.admin-check-option strong {color:var(--desco-text);}
+.admin-check-option span {color:var(--desco-text-muted);}
+
+/* Shared form controls have a consistent font hierarchy. */
+.admin-modal-box .admin-field > span:not(.admin-status) {font-size:.75rem;color:var(--desco-text-muted)}
+.admin-modal-box .admin-field small {font-size:.7rem;line-height:1.4}
+.admin-modal-box .admin-field .admin-input,.admin-modal-box .admin-field .admin-select {min-width:0;}
+
+/* Reutilizable: fichas de Administración con jerarquía visual estable. */
+.desco-admin-record-grid { gap: 1rem; align-items: stretch; }
+.desco-admin-record-grid .desco-record-card {
+  padding: 1rem 1.05rem; gap: .8rem; border-radius: 1rem;
+  border: 1px solid var(--desco-border);
+  background: var(--desco-surface);
+  box-shadow: 0 2px 10px rgb(15 23 42 / .055);
+}
+.desco-admin-record-grid .desco-record-card:hover {
+  border-color: var(--desco-primary);
+  box-shadow: 0 6px 18px rgb(15 23 42 / .09);
+}
+.desco-admin-record-grid .desco-record-card > header { padding-bottom: .65rem; border-bottom: 1px solid var(--desco-border); }
+.desco-admin-record-grid .desco-record-card > header strong { font-size: .92rem; line-height: 1.4; }
+.desco-admin-record-grid .desco-record-card :is(h3,.gp-subtle) { overflow-wrap: anywhere; }
+.desco-admin-record-grid .desco-record-card dl { row-gap: .9rem; }
+.desco-admin-record-grid .desco-record-card dt { font-size: .69rem; letter-spacing: .02em; }
+.desco-admin-record-grid .desco-record-card dd { font-size: .8rem; }
+.desco-admin-record-grid .desco-record-card footer { padding-top: .75rem; }
+.desco-admin-record-grid .desco-record-card .admin-row-actions { gap: .5rem; }
+.desco-admin-record-grid .desco-record-card .admin-row-actions :is(a,button) {
+  border-radius: .65rem; min-height: 2.25rem; min-width: 2.25rem;
+}
+/* Roles: control azul legible sin el check oscuro de DaisyUI en modo oscuro. */
+.admin-modal-box .admin-option-grid {
+  background: var(--desco-surface-soft); border-color: var(--desco-border);
+  border-radius: .9rem; padding: .65rem; gap: .6rem;
+}
+.admin-modal-box .admin-check-option {
+  align-items: center; gap: .7rem; padding: .7rem .75rem;
+  background: var(--desco-surface); border: 1px solid var(--desco-border);
+  border-radius: .8rem; color: var(--desco-text);
+  opacity: 1 !important; min-height: 3.5rem;
+}
+.admin-modal-box .admin-check-option:has(input[type="checkbox"]:checked) {
+  background: color-mix(in srgb, #2563eb 12%, var(--desco-surface));
+  border-color: #2563eb;
+}
+.admin-modal-box .admin-check-option input[type="checkbox"] {
+  appearance: none !important; -webkit-appearance: none !important;
+  flex: 0 0 1.2rem; width: 1.2rem; height: 1.2rem;
+  display: grid; place-items: center;
+  border: 1.5px solid var(--desco-border); border-radius: .38rem;
+  background: var(--desco-surface) !important;
+  box-shadow: none !important; cursor: pointer; opacity: 1 !important;
+  color: #fff; accent-color: #2563eb;
+}
+.admin-modal-box .admin-check-option input[type="checkbox"]:checked {
+  border-color: #2563eb; background: #2563eb !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' d='m3 8 3 3 7-7'/%3E%3C/svg%3E") !important;
+  background-position: center !important; background-repeat: no-repeat !important;
+  background-size: .85rem !important;
+}
+.admin-modal-box .admin-check-option input[type="checkbox"]:focus-visible {
+  outline: 2px solid #60a5fa; outline-offset: 3px;
+}
+.admin-modal-box .admin-check-option :is(strong,span) {
+  white-space: normal; overflow-wrap: anywhere; text-overflow: clip;
+}
+.admin-modal-box .admin-check-option strong { color: var(--desco-text); font-size: .75rem; }
+.admin-modal-box .admin-check-option span { color: var(--desco-text-muted); font-size: .68rem; }
+@media (max-width: 580px) {
+  .admin-modal-box .admin-option-grid { grid-template-columns: 1fr; max-height: 17rem; }
+  .desco-admin-record-grid { padding: .75rem; gap: .75rem; }
+}
+
+:is(html[data-theme='dark'], html.dark) .admin-modal-box .admin-check-option:has(input[type="checkbox"]:checked) {
+  background: color-mix(in srgb, #2563eb 16%, var(--desco-surface)) !important;
+  border-color: #2563eb !important;
+}
+
+/* Variante compartida: filas tipo switch con checkbox cuadrado. */
+.admin-option-grid.desco-checkbox-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+  border-color: var(--desco-border);
+  background: var(--desco-surface-soft);
+}
+
+.admin-option-grid .admin-switch-row.desco-checkbox-row {
+  min-width: 0;
+  min-height: 3.75rem;
+  padding: .7rem .85rem;
+  border: 1px solid var(--desco-border);
+  border-radius: .85rem;
+  background: var(--desco-control-bg);
+  gap: .7rem;
+}
+
+.admin-option-grid .desco-checkbox-row:has(.desco-checkbox-control:checked) {
+  border-color: var(--desco-primary);
+  background: color-mix(in srgb, var(--desco-primary) 9%, var(--desco-control-bg));
+}
+
+.admin-option-grid .desco-checkbox-row:focus-within {
+  border-color: var(--desco-primary);
+}
+
+.admin-option-grid .desco-checkbox-row > div {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.admin-option-grid .desco-checkbox-row strong {
+  color: var(--desco-text-soft);
+  font-size: .75rem;
+  line-height: 1.35;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.admin-option-grid .desco-checkbox-row span {
+  color: var(--desco-text-muted);
+  font-size: .66rem;
+  line-height: 1.4;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.desco-checkbox-row input.desco-checkbox-control {
+  display: block;
+  flex: 0 0 1.2rem;
+  width: 1.2rem;
+  height: 1.2rem;
+  margin: 0;
+  padding: 0;
+  border: 1.5px solid var(--desco-border);
+  border-radius: .35rem;
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--desco-control-bg) !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  opacity: 1;
+  cursor: pointer;
+}
+
+.desco-checkbox-row input.desco-checkbox-control:checked {
+  border-color: var(--desco-primary);
+  background: var(--desco-primary) !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' d='m3 8 3 3 7-7'/%3E%3C/svg%3E") !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-size: .85rem !important;
+}
+
+.desco-checkbox-row input.desco-checkbox-control:focus-visible {
+  outline: 2px solid var(--desco-primary);
+  outline-offset: 3px;
+}
+
+@media (max-width: 580px) {
+  .admin-option-grid.desco-checkbox-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

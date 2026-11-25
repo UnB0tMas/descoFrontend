@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
-import { faGrip, faList } from '@fortawesome/free-solid-svg-icons';
+import { faGrip, faList, faTableCellsLarge, faTableList } from '@fortawesome/free-solid-svg-icons';
 
 export type ListViewMode = 'table' | 'cards';
 
@@ -17,9 +17,12 @@ export class ListViewSwitchComponent {
   @Input() view: ListViewMode = 'table';
   @Input() disabled = false;
   @Input() label = 'Vista del listado';
+  @Input() appearance: 'default' | 'segmented' = 'default';
   @Output() readonly viewChange = new EventEmitter<ListViewMode>();
   readonly tableIcon = faList;
   readonly cardsIcon = faGrip;
+  readonly segmentedTableIcon = faTableList;
+  readonly segmentedCardsIcon = faTableCellsLarge;
   change(view: ListViewMode): void {
     if (!this.disabled && this.view !== view) this.viewChange.emit(view);
   }

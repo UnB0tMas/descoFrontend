@@ -55,8 +55,8 @@
       </select>
     </label>
     <div class="resource-view-switch">
-      <button type="button" class="admin-icon-button" [class.active]="viewMode() === 'table'" title="Vista tabla" (click)="setView('table')"><fa-icon [icon]="tableIcon" /></button>
-      <button type="button" class="admin-icon-button" [class.active]="viewMode() === 'cards'" title="Vista tarjetas" (click)="setView('cards')"><fa-icon [icon]="cardsIcon" /></button>
+      <app-list-view-switch [view]="viewMode()" appearance="segmented" [disabled]="loading()"
+        (viewChange)="setView($event)" />
     </div>
   </section>
 

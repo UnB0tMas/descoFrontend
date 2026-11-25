@@ -4,16 +4,16 @@ import {map,Observable} from 'rxjs';
 import {AmbitoE3,EstadisticasE3,FiltrosE3,PaginaE3} from '../../../../domain/planta-paltera.model';
 
 interface Envelope<T>{exitoso:boolean;codigo:string;mensaje:string;datos:T}
-export type EstadoEpisodioE3='VIGENTE'|'RECUPERADA'|'ELIMINADA';
+export type EstadoEpisodioE3='VIGENTE'|'RECUPERADA'|'NO_CONTROLADA'|'ELIMINADA';
 export interface EnfermedadItemE3{episodioId:number;diagnosticoId:number;enfermedad:string;estado:EstadoEpisodioE3;
- fechaDiagnostico:string;fechaCuracion?:string;diasEnferma:number;usuarioRegistroId:number;registradoPor?:string;totalTratamientos:number}
+ fechaDiagnostico:string;fechaCuracion?:string;fechaCierre?:string;diasEnferma:number|null;usuarioRegistroId:number;registradoPor?:string;totalTratamientos:number}
 export interface TratamientoItemE3{tratamientoId:number;catalogoTratamientoId:number;descripcion:string;
  resultado?:string;comentario?:string;fechaAplicacion:string;fechaRegistro:string;usuarioId:number;usuarioNombre?:string;modificadoPorUsuarioId?:number;modificadoPorNombre?:string;modificadoEn?:string}
 export interface EnfermedadDetalleE3 extends EnfermedadItemE3{plantaId:number;observacion?:string;motivoCierre?:string;
  usuarioCuracionId?:number;curadoPor?:string;usuarioEliminacionId?:number;eliminadoPor?:string;fechaEliminacion?:string;tratamientos:TratamientoItemE3[]}
 export interface ComentarioE3{comentarioId:number;comentario:string;usuarioId:number;usuarioNombre?:string;fechaHora:string}
 export interface AnalisisE3{plantaId:number;estadoPlanta:string;totalEnfermedades:number;enfermedadesVigentes:number;
- enfermedadesRecuperadas:number;tratamientosAplicados:number;totalComentarios:number;ultimoTratamiento?:string}
+ enfermedadesRecuperadas:number;enfermedadesNoControladas:number;tratamientosAplicados:number;totalComentarios:number;ultimoTratamiento?:string}
 export interface ArchivoPlantaE3{
  archivoId:number;nombre:string;mimeType:string;categoria?:string;descripcion?:string;
  tipo:'GENERAL'|'TRATAMIENTO';aplicacionId?:number;episodioId?:number;enfermedad?:string;
@@ -46,7 +46,7 @@ export class E3ClinicalService {
  crearEnfermedad(a:AmbitoE3,id:number,diagnosticoId:number,observacion?:string){return this.post(`${this.endpoint(id)}/enfermedades`,a,{diagnosticoId,observacion})}
  detalleEnfermedad(a:AmbitoE3,id:number,episodioId:number){return this.get<EnfermedadDetalleE3>(`${this.endpoint(id)}/enfermedades/${episodioId}`,a)}
  editarEnfermedad(a:AmbitoE3,id:number,episodioId:number,diagnosticoId:number,observacion?:string){return this.put(`${this.endpoint(id)}/enfermedades/${episodioId}`,a,{diagnosticoId,observacion})}
- recuperarEnfermedad(a:AmbitoE3,id:number,episodioId:number,fechaCuracion?:string,comentario?:string){return this.post(`${this.endpoint(id)}/enfermedades/${episodioId}/recuperar`,a,{fechaCuracion,comentario})}
+ recuperarEnfermedad(a:AmbitoE3,id:number,episodioId:number,fechaCuracion?:string,comentario?:string,resultado:'CONTROLADA'|'NO_CONTROLADA'='CONTROLADA'){return this.post(`${this.endpoint(id)}/enfermedades/${episodioId}/recuperar`,a,{fechaCuracion,comentario,resultado})}
  eliminarEnfermedad(a:AmbitoE3,id:number,episodioId:number,motivo:string){return this.remove(`${this.endpoint(id)}/enfermedades/${episodioId}`,a,{motivo})}
  tratamientos(a:AmbitoE3,id:number,episodioId:number){return this.get<ListadoE3<TratamientoItemE3>>(`${this.endpoint(id)}/enfermedades/${episodioId}/tratamientos`,a)}
  registrarTratamiento(a:AmbitoE3,id:number,episodioId:number,catalogoTratamientoId:number,fechaAplicacion?:string,comentario?:string,resultado?:string){

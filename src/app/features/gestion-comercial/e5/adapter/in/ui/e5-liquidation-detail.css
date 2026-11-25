@@ -126,3 +126,6 @@
 
 .e5-proof-open{display:inline-flex;align-items:center;justify-content:center;width:2.1rem;height:2.1rem;}
 .e5-detail-proof-empty{color:var(--desco-text-muted);}
+
+.e5-detail-breakdown-total{border-color:var(--desco-primary)!important;}
+.e5-detail-breakdown-total strong{font-weight:850;}

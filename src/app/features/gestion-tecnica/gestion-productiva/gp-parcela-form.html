@@ -10,24 +10,24 @@
     @if (error()) { <p class="gp-inline-error" role="alert">{{ error() }}</p> }
     @if (opened()) {
       <div class="gp-modal-section">
-        <p class="gp-subtle">Predio: {{ predioNombre }}</p>
+        <p class="gp-subtle">{{ productorId !== null ? 'Productor' : 'Predio' }}: {{ predioNombre }}</p>
         <div class="gp-form-grid">
           <label class="admin-field">Nombre de parcela
             <input class="admin-input" [(ngModel)]="nombre" maxlength="120" autocomplete="off" />
           </label>
-          <label class="admin-field">Superficie (ha)
-            <input class="admin-input" type="number" min="0.0001" max="999999.9999" step="0.0001" [(ngModel)]="areaHa" />
+          <label class="admin-field">Superficie (m²)
+            <input class="admin-input" type="number" min="1" max="9999999999" step="1" [(ngModel)]="areaM2" />
           </label>
         </div>
+        <label class="admin-field">Dirección o referencia (opcional)
+          <input class="admin-input" [(ngModel)]="referencia" maxlength="300" autocomplete="off" />
+        </label>
         <h3>Ubicación administrativa</h3>
-        <p class="gp-subtle">El distrito es obligatorio; el centro poblado es opcional y puede ser diferente del predio.</p>
         <div class="gp-form-geography">
           <app-geography-cascade [districtCode]="distrito" [populationCenterId]="centroPoblado"
             [disabled]="saving()" (selectionChange)="geography($event)" />
         </div>
-        <div class="gp-map-heading"><strong>Ubicación en mapa (opcional)</strong>
-          <small>Se solicita el GPS del dispositivo al crear la parcela. Puedes mover el marcador o seleccionar otro punto.</small>
-        </div>
+        <div class="gp-map-heading"><strong>Ubicación GPS (opcional)</strong></div>
         <app-predio-map [editable]="!saving()" [autoLocateOnCreate]="!editing()"
           [latitude]="latitud" [longitude]="longitud" [height]="'19rem'"
           (locationChange)="point($event)" />
@@ -38,7 +38,7 @@
     }
     <footer class="gp-modal-footer">
       <button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="close()">Cancelar</button>
-      <button type="button" class="admin-primary-button" [disabled]="saving() || !nombre.trim() || !distrito || areaHa == null || areaHa <= 0" (click)="save()">
+      <button type="button" class="admin-primary-button" [disabled]="saving() || !nombre.trim() || !distrito || areaM2 == null || areaM2 <= 0" (click)="save()">
         {{ saving() ? 'Guardando…' : 'Guardar parcela' }}
       </button>
     </footer>

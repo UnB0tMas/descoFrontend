@@ -1,15 +1,15 @@
-<section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+<section class="desco-filter-panel">
   <header class="flex items-start justify-between gap-4 px-5 py-4">
     <div class="flex items-start gap-3">
-      <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
+      <div class="desco-filter-panel__icon">
         <fa-icon [icon]="filterIcon" />
       </div>
 
       <div>
-        <h2 class="text-sm font-semibold text-slate-950">
+        <h2 class="desco-filter-panel__title">
           {{ title }}
         </h2>
-        <p class="mt-1 text-xs leading-5 text-slate-500">
+        <p class="desco-filter-panel__description">
           {{ description }}
         </p>
       </div>
@@ -18,7 +18,7 @@
     @if (collapsible) {
       <button
         type="button"
-        class="btn btn-ghost btn-sm btn-square rounded-xl text-slate-500"
+        class="admin-icon-button"
         [attr.aria-expanded]="expanded()"
         aria-label="Mostrar u ocultar filtros"
         (click)="toggle()"
@@ -33,25 +33,26 @@
   </header>
 
   @if (expanded()) {
-    <div class="border-t border-slate-100 px-5 py-5">
+    <div class="desco-filter-panel__body">
       <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <ng-content />
       </div>
 
-      <div class="mt-5 flex flex-col-reverse gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:justify-end">
-        <button
+      @if (showActions && (showApply || showClear)) {
+      <div class="desco-filter-panel__actions">
+        @if (showClear) { <button
           type="button"
-          class="btn rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+          class="admin-secondary-button"
           [disabled]="applying"
           (click)="clear.emit()"
         >
           <fa-icon [icon]="clearIcon" />
-          Limpiar
-        </button>
+          {{ clearLabel }}
+        </button> }
 
-        <button
+        @if (showApply) { <button
           type="button"
-          class="btn rounded-xl border-0 bg-blue-600 text-white hover:bg-blue-700"
+          class="admin-primary-button"
           [disabled]="applying"
           (click)="apply.emit()"
         >
@@ -60,10 +61,11 @@
             Aplicando...
           } @else {
             <fa-icon [icon]="searchIcon" />
-            Aplicar filtros
+            {{ applyLabel }}
           }
-        </button>
+        </button> }
       </div>
+      }
     </div>
   }
 </section>

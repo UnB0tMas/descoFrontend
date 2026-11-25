@@ -1,4 +1,6 @@
-import { RecordCardComponent } from '../../../shared/data-display/record-card/record-card';
+import { BreadcrumbComponent } from '../../../shared/layout/breadcrumb/breadcrumb';
+import { ListViewSwitchComponent } from '../../../shared/data-display/list-view-switch/list-view-switch';
+import { InstitutionalRecordCardComponent } from '../../../shared/data-display/record-card/institutional-record-card';
 import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -25,7 +27,7 @@ import { GpAccionModal } from './gp-accion-modal';
 
 type Category = 'TODOS'|'CULTIVO'|'CRIANZA';
 @Component({selector:'app-gestion-productiva-parcela',standalone:true,
-  imports: [RecordCardComponent, FormsModule,RouterLink,FaIconComponent,PermissionDirective,PageHeaderComponent,
+  imports: [BreadcrumbComponent, ListViewSwitchComponent, InstitutionalRecordCardComponent, FormsModule,RouterLink,FaIconComponent,PermissionDirective,PageHeaderComponent,
     DataTableComponent,PaginatorComponent,EmptyStateComponent,ErrorStateComponent,LoadingStateComponent,GpAccionModal,ActionConfirmDialogComponent],
   templateUrl:'./gestion-productiva-parcela.html',styleUrl:'./gestion-productiva.css',changeDetection:ChangeDetectionStrategy.OnPush})
 export class GestionProductivaParcela implements OnInit,OnDestroy {
@@ -37,10 +39,15 @@ export class GestionProductivaParcela implements OnInit,OnDestroy {
   @ViewChild(GpAccionModal) private modal!:GpAccionModal;
   @ViewChild(ActionConfirmDialogComponent) private confirmation!:ActionConfirmDialogComponent;
   private subscription?:Subscription;
+  readonly productorId=Number(this.route.snapshot.queryParamMap.get('productor'));
+  readonly productorDocumento=this.route.snapshot.queryParamMap.get('documento');
+  readonly productorContext=this.productorId>0 && this.productorDocumento
+    ? {productor:this.productorId,documento:this.productorDocumento} : null;
   readonly predioId=Number(this.route.snapshot.paramMap.get('predioId'));
   readonly parcelaId=Number(this.route.snapshot.paramMap.get('parcelaId'));
   readonly pageIcon=faLeaf;readonly backIcon=faArrowLeft;readonly refreshIcon=faRotate;
   readonly addIcon=faPlus;readonly detailsIcon=faEye;readonly editIcon=faPen;readonly deleteIcon=faTrash;readonly commentIcon=faCommentDots;readonly tableIcon=faTableList;readonly cardsIcon=faTableCellsLarge;
+  readonly actuacionPermitida=signal(false);
   readonly busy=signal(false);
   readonly loading=signal(true);readonly error=signal<string|null>(null);
   readonly parcelaNombre=signal('Parcela');readonly parcelaAreaM2=signal<number|null>(null);
@@ -73,11 +80,12 @@ export class GestionProductivaParcela implements OnInit,OnDestroy {
   ngOnDestroy():void{this.subscription?.unsubscribe();}
   refresh():void{
     const u=this.uot.selectedId();if(!u){this.loading.set(false);this.error.set('Selecciona una UOT.');return;}
-    this.subscription?.unsubscribe();this.loading.set(true);this.error.set(null);
-    this.subscription=forkJoin({parcelas:this.gp.parcelas(u,this.predioId),
+    this.subscription?.unsubscribe();this.actuacionPermitida.set(false);this.loading.set(true);this.error.set(null);
+    this.subscription=forkJoin({autorizacion:this.gp.puedeActuar(u,this.predioId),parcelas:this.gp.parcelas(u,this.predioId),
       actividades:this.gp.actividades(u,this.parcelaId),catalogos:this.gp.catalogos(u)})
       .pipe(finalize(()=>this.loading.set(false))).subscribe({
         next:result=>{
+          this.actuacionPermitida.set(result.autorizacion);
           const p=result.parcelas.find(x=>x.parcelaId===this.parcelaId);
           if(!p){this.error.set('La parcela no está disponible en este predio.');this.actividades.set([]);return;}
           this.parcelaNombre.set(p.nombre);this.parcelaAreaM2.set(p.areaHa==null?null:Number(p.areaHa)*10000);
@@ -93,9 +101,9 @@ export class GestionProductivaParcela implements OnInit,OnDestroy {
     const total=a.cantidadExacta??a.cantidadAproximada;
     return `${total==null?'Censo sin registrar':total+' animales'} · ${area==null?'Superficie pendiente':area+' m²'}`;
   }
-  disponibleSuperficie():number|null{
+  disponibleSuperficie(actividadId?:number):number|null{
     const total=this.parcelaAreaM2();if(total===null)return null;
-    const ocupada=this.actividades().filter(a=>a.estado&&a.estadoProceso!=='FINALIZADA')
+    const ocupada=this.actividades().filter(a=>a.estado&&a.estadoProceso!=='FINALIZADA'&&a.actividadId!==actividadId)
       .reduce((sum,a)=>sum+Number(a.superficieExactaM2??a.superficieAproximadaM2??0),0);
     return Math.max(0,Math.round((total-ocupada)*100)/100);
   }
@@ -105,16 +113,21 @@ export class GestionProductivaParcela implements OnInit,OnDestroy {
   changeEstado(v:'TODOS'|'ACTIVA'|'FINALIZADA'):void{this.estadoFiltro.set(v);this.activityPage.set(1);}
   setActivityPage(v:number):void{if(v>=1&&v<=this.activityPages())this.activityPage.set(v);}
   setActivitySize(v:number):void{this.activitySize.set(v);this.activityPage.set(1);}
-  createActivity():void{this.modal.show('actividad',this.parcelaId,null,this.catalogos(),[],()=>this.refresh(),null,this.disponibleSuperficie());}
-  editActivity(a:GpActividadResponse):void{
+  createActivity():void{if(!this.actuacionPermitida())return;this.modal.show('actividad',this.parcelaId,null,this.catalogos(),[],()=>this.refresh(),null,this.disponibleSuperficie(),this.parcelaAreaM2());}
+  editActivity(a:GpActividadResponse):void{if(!this.actuacionPermitida())return;
     if(this.busy()||!a.estado||a.estadoProceso==='FINALIZADA'||!this.permissions.has('CULTIVOS_EDITAR'))return;
-    this.modal.show('editar',this.parcelaId,a,this.catalogos(),[],()=>this.refresh());
+    this.modal.show('editar',this.parcelaId,a,this.catalogos(),[],()=>this.refresh(),null,this.disponibleSuperficie(a.actividadId),this.parcelaAreaM2());
   }
-  comment(a:GpActividadResponse):void{
-    if(this.busy()||!a.estado||a.estadoProceso==='FINALIZADA'||!this.permissions.has('PREDIOS_EDITAR'))return;
-    this.modal.show('comentario',this.parcelaId,a,this.catalogos(),[],()=>this.refresh());
+  comment(a:GpActividadResponse):void{if(!this.actuacionPermitida())return;
+    const u=this.uot.selectedId();
+    if(!u||this.busy()||!a.estado||a.estadoProceso==='FINALIZADA'||!this.permissions.has('PREDIOS_EDITAR'))return;
+    this.busy.set(true);
+    this.gp.eventos(u,a.actividadId).pipe(finalize(()=>this.busy.set(false))).subscribe({
+      next:eventos=>this.modal.show('evento',this.parcelaId,a,this.catalogos(),eventos,()=>this.refresh()),
+      error:e=>this.error.set(mapOpenApiError(e).message)
+    });
   }
-  async removeActivity(a:GpActividadResponse):Promise<void>{
+  async removeActivity(a:GpActividadResponse):Promise<void>{if(!this.actuacionPermitida())return;
     const u=this.uot.selectedId();
     if(!u||this.busy()||!a.estado||!this.permissions.has('CULTIVOS_RETIRAR'))return;
     const answer=await this.confirmation.show({title:'Eliminar actividad',

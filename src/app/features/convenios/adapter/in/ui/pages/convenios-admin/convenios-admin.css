@@ -1,0 +1,35 @@
+:host { display: block; min-width: 0; }
+.convenios-admin-page { min-width: 0; }
+.convenios-admin-surface { overflow: hidden; }
+.convenios-admin-tabs { display: flex; gap: .4rem; padding: .8rem 1rem 0; border-bottom: 1px solid var(--desco-border); overflow-x: auto; scrollbar-width: thin; }
+.convenios-admin-tabs > button { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 2.65rem; padding: .65rem .85rem; background: transparent; color: var(--desco-text-muted); border: 0; border-bottom: 2px solid transparent; font-size: .81rem; font-weight: 750; white-space: nowrap; cursor: pointer; }
+.convenios-admin-tabs > button:hover { color: var(--desco-text); }
+.convenios-admin-tabs > button.convenios-admin-tab--active { color: var(--desco-primary); border-bottom-color: var(--desco-primary); }
+.convenios-admin-tabs > button:focus-visible { outline: 2px solid var(--desco-primary); outline-offset: -2px; }
+.convenios-admin-count { font-size: .7rem; border: 1px solid var(--desco-border); border-radius: 999px; padding: .2rem .45rem; color: var(--desco-text-muted); }
+.convenios-admin-toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: .9rem; padding: 1rem; border-bottom: 1px solid var(--desco-border); }
+.convenios-admin-search { flex: 1 1 210px; max-width: 380px; min-width: 0; }
+.convenios-admin-search .admin-input { width: 100%; }
+.convenios-admin-grid { padding: 1rem; }
+.convenios-admin-grid app-record-card { min-width: 0; }
+.convenios-admin-grid app-record-card h3 { font-size: .94rem; line-height: 1.38; font-weight: 760; overflow-wrap: anywhere; }
+.convenios-admin-grid app-record-card .gp-subtle { font-size: .78rem; margin: 0; }
+.convenios-admin-card-header { display: flex; align-items: start; justify-content: space-between; gap: .6rem; }
+.convenios-admin-card-header .admin-code { max-width: 65%; overflow-wrap: anywhere; text-align: right; }
+.convenios-admin-card-status { display: inline-flex; align-items: center; gap: .6rem; padding: .6rem .7rem; border: 1px solid var(--desco-border); background: var(--desco-surface-soft); border-radius: .7rem; color: var(--desco-text-muted); font-weight: 650; font-size: .76rem; margin-top: auto; }
+.convenios-admin-card-status fa-icon { color: var(--desco-primary); }
+.convenios-admin-card-footer { display: flex; justify-content: flex-end; gap: .5rem; margin-top: auto; padding-top: .65rem; border-top: 1px solid var(--desco-border); }
+.convenios-admin-card-footer .admin-secondary-button { width: 100%; justify-content: center; }
+.convenios-admin-pagination { padding: .85rem 1rem 1rem; border-top: 1px solid var(--desco-border); }
+.convenios-admin-inline-error { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .75rem; padding: 1rem; color: var(--desco-text); font-size: .81rem; }
+.convenios-admin-dialog-heading { display: grid; gap: .25rem; margin-bottom: 1rem; padding: .8rem 1rem; border: 1px solid var(--desco-border); border-radius: .7rem; background: var(--desco-surface-soft); }
+.convenios-admin-dialog-heading strong { font-size: .88rem; overflow-wrap: anywhere; color: var(--desco-text); }
+.convenios-admin-dialog-heading span { font-size: .76rem; color: var(--desco-text-muted); }
+.convenios-admin-modal-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; align-items: center; gap: .6rem; width: 100%; }
+.convenios-admin-tip { margin-bottom: 1rem; padding: .75rem .85rem; background: var(--desco-surface-soft); border-left: 3px solid var(--desco-primary); border-radius: .5rem; font-size: .79rem; color: var(--desco-text-muted); }
+@media (max-width: 640px) {
+  .convenios-admin-tabs, .convenios-admin-grid, .convenios-admin-toolbar { padding-left: .75rem; padding-right: .75rem; }
+  .convenios-admin-search { max-width: none; flex-basis: 100%; }
+  .convenios-admin-toolbar app-list-view-switch { margin-left: auto; }
+  .convenios-admin-card-footer { flex-wrap: wrap; }
+}

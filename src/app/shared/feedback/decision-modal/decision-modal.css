@@ -1,0 +1,11 @@
+:host { display: contents; }
+.decision-form { display: grid; gap: 1rem; min-width: 0; }
+.decision-status { display: flex; align-items: center; flex-wrap: wrap; gap: .65rem; font-size: .8rem; }
+.decision-detail { justify-self: start; }
+.decision-note { margin: 0; color: var(--desco-text-muted); font-size: .75rem; line-height: 1.5; }
+.decision-form .admin-field { min-width: 0; margin: 0; }
+.decision-form .admin-select, .decision-form .decision-reason { display: block; box-sizing: border-box; width: 100%; }
+.decision-form .decision-reason { min-height: 6rem; height: 6rem; padding: .8rem .82rem; line-height: 1.5; resize: vertical; }
+.decision-form .decision-reason:placeholder-shown { padding-top: 2.35rem; }
+.decision-form .decision-reason::placeholder { text-align: center; }
+.decision-form .admin-field > .admin-field-label { display: block; margin-bottom: .44rem; color: var(--desco-text); font-weight: 650; }

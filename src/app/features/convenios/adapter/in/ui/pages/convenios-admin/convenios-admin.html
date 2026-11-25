@@ -1,67 +1,200 @@
-<section class="space-y-5 p-4 sm:p-6">
-  <header>
-    <h1 class="text-xl font-semibold">Convenios y módulos especiales</h1>
-    <p class="text-sm text-gray-500">Cada convenio pertenece solo a la UOT seleccionada. Ningún módulo se habilita automáticamente.</p>
-  </header>
-  @if (error()) { <p role="alert" class="text-red-600">{{ error() }}</p> }
-  @if (loading()) { <p>Cargando convenios...</p> }
-  @else if (convenios().length === 0) { <p>No existen convenios activos en esta UOT.</p> }
-  @else {
-    @for (convenio of convenios(); track convenio.convenioId) {
-      <article class="rounded-lg border p-4 space-y-3">
-        <div>
-          <h2 class="font-semibold">{{ convenio.organizacion }}</h2>
-          <p class="text-sm text-gray-500">{{ convenio.tipoVinculo }} · {{ convenio.numeroConvenio || 'Sin número de convenio' }}</p>
-        </div>
-        @for (modulo of convenio.modulos; track modulo.codigo) {
-          <label class="flex gap-3 items-center">
-            <input type="checkbox" [checked]="modulo.habilitado" [disabled]="!editable || saving() !== null"
-              (change)="change(convenio.convenioId!, modulo.codigo!, $any($event.target).checked)" />
-            <span>{{ modulo.nombre }}</span>
-          </label>
-        }
-      </article>
-    }
-  }
-</section>
-
-@if (canViewUsers) {
-<section class="mt-6 space-y-4 rounded-lg border p-4">
-  <div>
-    <h2 class="font-semibold">Permisos individuales · APAPPSS</h2>
-    <p class="text-sm text-gray-500">Cada UOT autoriza a sus empleados. El convenio activo no concede permisos automáticamente. Las operaciones de predios fuera de APAPPSS conservan sus permisos generales.</p>
-  </div>
-  <div class="flex flex-wrap items-end gap-3">
-    <div class="min-w-64 flex-1">
-      <label class="block text-sm font-medium" for="apappss-employee">Empleado de esta UOT</label>
-      <select id="apappss-employee" class="admin-select w-full" [value]="selectedUserId() ?? ''" (change)="selectUser($any($event.target).value)">
-        <option value="">Seleccione un empleado</option>
-        @for (u of users(); track u.usuarioId) {
-          <option [value]="u.usuarioId">{{ u.empleado }} ({{ u.usuario }})</option>
-        }
-      </select>
+<div class="desco-page convenios-admin-page">
+  <app-page-header title="Convenios y módulos" eyebrow="Administración" [icon]="pageIcon">
+    <div pageActions>
+      <button type="button" class="admin-secondary-button" [disabled]="loading() || loadingUsers() || savingModules() || savingUser()"
+        (click)="tab() === 'convenios' ? reload() : loadUsers()">
+        <fa-icon [icon]="refreshIcon" /> Actualizar
+      </button>
     </div>
-    <button type="button" class="admin-secondary-button" [disabled]="loadingUsers()" (click)="loadUsers()">Actualizar</button>
-  </div>
-  @if (userError()) { <p role="alert" class="text-red-600">{{userError()}}</p> }
-  @if (userSuccess()) { <p class="text-green-700">{{userSuccess()}}</p> }
-  @if (loadingUsers()) { <p>Cargando permisos...</p> }
-  @if (selectedUserId() !== null && !loadingUsers()) {
-    <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-      @for (p of catalog(); track p.codigo) {
-        <label class="flex items-center gap-2 rounded border p-2 text-sm">
-          <input type="checkbox" [checked]="isChecked(p.codigo!)" [disabled]="!canEditUsers || !apappssEnabled() || savingUser()"
-            (change)="togglePermission(p.codigo!, $any($event.target).checked)" />
-          <span>{{p.nombre}}</span>
-        </label>
+  </app-page-header>
+
+  <section class="admin-surface convenios-admin-surface mt-5">
+    <div class="convenios-admin-tabs" role="tablist" aria-label="Administración de convenios">
+      <button type="button" role="tab" [attr.aria-selected]="tab() === 'convenios'"
+        [class.convenios-admin-tab--active]="tab() === 'convenios'" (click)="setTab('convenios')">
+        <fa-icon [icon]="pageIcon" /> Convenios
+        <span class="convenios-admin-count">{{ convenios().length }}</span>
+      </button>
+      @if (canViewUsers) {
+        <button type="button" role="tab" [attr.aria-selected]="tab() === 'usuarios'"
+          [class.convenios-admin-tab--active]="tab() === 'usuarios'" (click)="setTab('usuarios')">
+          <fa-icon [icon]="accessIcon" /> Permisos individuales
+        </button>
       }
     </div>
-    <p class="text-xs text-gray-500">Para socios y predios también se requieren sus permisos generales de lectura o CRUD. Las autorizaciones APAPPSS se verifican adicionalmente.</p>
-    <button type="button" class="admin-primary-button" [disabled]="!canEditUsers || !apappssEnabled() || savingUser()" (click)="saveUser()">
-      {{savingUser() ? 'Guardando...' : 'Guardar permisos del empleado'}}
-    </button>
-  } @else if (!loadingUsers() && !apappssEnabled()) {
-    <p class="text-sm text-amber-700">Habilite APAPPSS en un convenio vigente para asignar permisos.</p>
-  }
-</section>
-}
+
+    @if (tab() === 'convenios') {
+      <div class="convenios-admin-toolbar">
+        <label class="admin-field convenios-admin-search" for="convenioSearch">
+          <span>Buscar convenio</span>
+          <input id="convenioSearch" class="admin-input" type="search" placeholder="Organización o número"
+            [value]="search()" (input)="setSearch($any($event.target).value)" />
+        </label>
+        <app-list-view-switch appearance="segmented" [view]="viewMode()" (viewChange)="viewMode.set($event)" />
+      </div>
+      @if (loading()) {
+        <app-loading-state title="Cargando convenios" />
+      } @else if (error()) {
+        <app-error-state [message]="error() || 'No se pudo cargar la información.'" (retry)="reload()" />
+      } @else if (filteredConvenios().length === 0) {
+        <app-empty-state title="Sin convenios" message="No hay registros para mostrar." />
+      } @else {
+        @if (viewMode() === 'cards') {
+          <div class="desco-record-grid desco-record-grid--adaptive convenios-admin-grid">
+            @for (convenio of pageConvenios(); track convenio.convenioId) {
+              <app-record-card>
+                <header class="convenios-admin-card-header">
+                  <span class="admin-entity-icon"><fa-icon [icon]="pageIcon" /></span>
+                  <span class="admin-code">{{ convenio.numeroConvenio || 'Sin número' }}</span>
+                </header>
+                <h3>{{ convenio.organizacion }}</h3>
+                <p class="gp-subtle">{{ convenio.tipoVinculo }}</p>
+                <div class="convenios-admin-card-status">
+                  <fa-icon [icon]="moduleIcon" />
+                  <span>{{ moduleCount(convenio) }} módulos habilitados</span>
+                </div>
+                <footer class="convenios-admin-card-footer">
+                  <button class="admin-secondary-button" type="button" (click)="openModules(convenio)">
+                    <fa-icon [icon]="editIcon" /> {{ editable ? 'Configurar módulos' : 'Ver módulos' }}
+                  </button>
+                </footer>
+              </app-record-card>
+            }
+          </div>
+        } @else {
+          <app-data-table appearance="admin" [columns]="convenioColumns" [rows]="pageConvenios()"
+            [trackByKey]="'convenioId'" [rowTemplate]="convenioRow" />
+          <ng-template #convenioRow let-convenio>
+            <td><div class="admin-entity"><span class="admin-entity-icon"><fa-icon [icon]="pageIcon" /></span>
+              <div><strong>{{ convenio.organizacion }}</strong><span>{{ convenio.tipoVinculo }}</span></div>
+            </div></td>
+            <td><span class="admin-code">{{ convenio.numeroConvenio || 'Sin número' }}</span></td>
+            <td>{{ convenio.tipoVinculo }}</td>
+            <td>{{ moduleCount(convenio) }} habilitados</td>
+            <td class="text-right"><button type="button" class="admin-icon-button" title="Configurar módulos"
+              [attr.aria-label]="'Configurar módulos de ' + convenio.organizacion" (click)="openModules(convenio)">
+              <fa-icon [icon]="editIcon" /></button></td>
+          </ng-template>
+        }
+        <div class="convenios-admin-pagination">
+          <app-paginator [page]="page()" [size]="size()" [totalRecords]="filteredConvenios().length"
+            [pageSizes]="[10,20,50]" (pageChange)="page.set($event)" (sizeChange)="setSize($event)" />
+        </div>
+      }
+    } @else if (canViewUsers) {
+      <div class="convenios-admin-toolbar">
+        <label class="admin-field convenios-admin-search" for="convenioEmployeeSearch">
+          <span>Buscar empleado</span>
+          <input id="convenioEmployeeSearch" class="admin-input" type="search" placeholder="Nombre o usuario"
+            [value]="employeeSearch()" (input)="setEmployeeSearch($any($event.target).value)" />
+        </label>
+        <app-list-view-switch appearance="segmented" [view]="viewMode()" (viewChange)="viewMode.set($event)" />
+      </div>
+      @if (userError()) {
+        <div class="convenios-admin-inline-error" role="alert">
+          <span>{{ userError() }}</span>
+          <button type="button" class="admin-secondary-button" (click)="loadUsers()">Reintentar</button>
+        </div>
+      } @else if (loadingUsers()) {
+        <app-loading-state title="Cargando empleados" />
+      } @else if (filteredUsers().length === 0) {
+        <app-empty-state title="Sin empleados" message="No hay registros para mostrar." />
+      } @else {
+        @if (viewMode() === 'cards') {
+          <div class="desco-record-grid desco-record-grid--adaptive convenios-admin-grid">
+            @for (user of pageUsers(); track user.usuarioId) {
+              <app-record-card>
+                <header class="convenios-admin-card-header">
+                  <span class="admin-entity-icon"><fa-icon [icon]="userIcon" /></span>
+                  <span class="admin-code">{{ (user.permisos || []).length }} permisos</span>
+                </header>
+                <h3>{{ user.empleado }}</h3>
+                <p class="gp-subtle">{{ user.usuario }}</p>
+                <footer class="convenios-admin-card-footer">
+                  <button type="button" class="admin-secondary-button" (click)="openPermissions(user)">
+                    <fa-icon [icon]="accessIcon" /> {{ canEditUsers ? 'Gestionar permisos' : 'Ver permisos' }}
+                  </button>
+                </footer>
+              </app-record-card>
+            }
+          </div>
+        } @else {
+          <app-data-table appearance="admin" [columns]="userColumns" [rows]="pageUsers()"
+            [trackByKey]="'usuarioId'" [rowTemplate]="userRow" />
+          <ng-template #userRow let-user>
+            <td><div class="admin-entity"><span class="admin-entity-icon"><fa-icon [icon]="userIcon" /></span>
+              <div><strong>{{ user.empleado }}</strong><span>{{ user.usuario }}</span></div>
+            </div></td>
+            <td>{{ user.usuario }}</td>
+            <td>{{ (user.permisos || []).length }}</td>
+            <td class="text-right"><button type="button" class="admin-icon-button" title="Gestionar permisos"
+              [attr.aria-label]="'Permisos de ' + user.empleado" (click)="openPermissions(user)">
+              <fa-icon [icon]="editIcon" /></button></td>
+          </ng-template>
+        }
+        <div class="convenios-admin-pagination">
+          <app-paginator [page]="userPage()" [size]="userSize()" [totalRecords]="filteredUsers().length"
+            [pageSizes]="[10,20,50]" (pageChange)="userPage.set($event)" (sizeChange)="setUserSize($event)" />
+        </div>
+      }
+    }
+  </section>
+
+  <app-modal-shell #modulesModal eyebrow="Convenios" title="Configurar módulos" [icon]="moduleIcon"
+    size="normal" [busy]="savingModules()" (closed)="selectedConvenio.set(null)">
+    @if (selectedConvenio(); as convenio) {
+      <div class="convenios-admin-dialog-heading">
+        <strong>{{ convenio.organizacion }}</strong>
+        <span>{{ convenio.numeroConvenio || 'Sin número de convenio' }}</span>
+      </div>
+      <div class="admin-option-grid desco-checkbox-grid" role="group" aria-label="Módulos disponibles">
+        @for (modulo of convenio.modulos || []; track modulo.codigo) {
+          <label class="admin-switch-row desco-checkbox-row">
+            <div><strong>{{ modulo.nombre }}</strong></div>
+            <input type="checkbox" class="desco-checkbox-control" [checked]="isModuleEnabled(modulo.codigo!)"
+              [disabled]="!editable || savingModules()" (change)="toggleModule(modulo.codigo!, $any($event.target).checked)" />
+          </label>
+        } @empty { <p class="gp-subtle">No hay módulos disponibles.</p> }
+      </div>
+      @if (moduleError()) { <p class="admin-inline-error" role="alert">{{ moduleError() }}</p> }
+    }
+    <div modalActions class="convenios-admin-modal-actions">
+      <button type="button" class="admin-secondary-button" [disabled]="savingModules()" (click)="modulesModal.close()">Cerrar</button>
+      @if (editable) {
+        <button type="button" class="admin-primary-button" [disabled]="savingModules()" (click)="saveModules()">
+          {{ savingModules() ? 'Guardando...' : 'Guardar cambios' }}
+        </button>
+      }
+    </div>
+  </app-modal-shell>
+
+  <app-modal-shell #permissionsModal eyebrow="Permisos individuales" title="Permisos de APAPPSS" [icon]="accessIcon"
+    size="wide" [busy]="savingUser()" (closed)="selectedUser.set(null)">
+    @if (selectedUser(); as user) {
+      <div class="convenios-admin-dialog-heading">
+        <strong>{{ user.empleado }}</strong><span>{{ user.usuario }}</span>
+      </div>
+      @if (!apappssEnabled()) {
+        <p class="convenios-admin-tip">Habilita APAPPSS en un convenio para asignar permisos.</p>
+      }
+      <div class="admin-option-grid desco-checkbox-grid" role="group" aria-label="Permisos disponibles">
+        @for (p of catalog(); track p.codigo) {
+          <label class="admin-switch-row desco-checkbox-row">
+            <div><strong>{{ p.nombre }}</strong></div>
+            <input type="checkbox" class="desco-checkbox-control" [checked]="isChecked(p.codigo!)"
+              [disabled]="!canEditUsers || !apappssEnabled() || savingUser()"
+              (change)="togglePermission(p.codigo!, $any($event.target).checked)" />
+          </label>
+        } @empty { <p class="gp-subtle">No hay permisos disponibles.</p> }
+      </div>
+      @if (permissionError()) { <p class="admin-inline-error" role="alert">{{ permissionError() }}</p> }
+    }
+    <div modalActions class="convenios-admin-modal-actions">
+      <button type="button" class="admin-secondary-button" [disabled]="savingUser()" (click)="permissionsModal.close()">Cerrar</button>
+      @if (canEditUsers) {
+        <button type="button" class="admin-primary-button" [disabled]="!apappssEnabled() || savingUser() || selectedUser() === null"
+          (click)="saveUser()">{{ savingUser() ? 'Guardando...' : 'Guardar permisos' }}</button>
+      }
+    </div>
+  </app-modal-shell>
+</div>

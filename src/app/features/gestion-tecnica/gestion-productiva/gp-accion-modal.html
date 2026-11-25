@@ -21,7 +21,6 @@
       @case('editar'){Editar actividad}
       @case('censo'){Registrar censo}
       @case('evento'){Registrar seguimiento técnico}
-      @case('comentario'){Comentario general}
       @case('catalogo'){ {{editingCatalog()?'Editar valor':'Registrar valor'}} }
      }</h2>
      @if(contextName()){<p class="gp-modal-context">{{contextName()}}</p>}
@@ -50,12 +49,13 @@
      
      @if(isAnimal()){
        <label class="admin-field">{{mode()==='censo'?'Cantidad actual de animales (puede ser 0)':'Cantidad exacta de animales'}}
-         <input class="admin-input" type="number" [min]="mode()==='censo'?0:1" step="1" [(ngModel)]="cantidadExacta" />
+         <input class="admin-input" type="number" [min]="mode()==='censo'?0:1" step="1"
+           [ngModel]="cantidadExacta" (ngModelChange)="onCantidadAnimalesChange($event)" (input)="onCantidadAnimalesInput($event)" />
        </label>
        <label class="admin-field">Superficie exacta de crianza (m²)
-         <input class="admin-input" type="number" min="0.01" step="0.01" [(ngModel)]="superficieExactaM2" />
+         <input class="admin-input" type="text" inputmode="decimal" autocomplete="off" [value]="superficieExactaM2 ?? ''" (input)="onSuperficieInput($event)" />
        </label>
-       @if(maxCropAreaM2!==null){<small class="gp-subtle">Superficie disponible en la parcela: {{maxCropAreaM2}} m²</small>}
+       <app-capacity-meter [total]="parcelaTotalM2" [available]="maxCropAreaM2" [proposed]="superficieExactaM2" secondaryUnit="ha" [unitsPerSecondary]="10000" />
        <div class="gp-breed-heading"><h3>Razas (opcional)</h3>
         <button type="button" class="admin-secondary-button" [disabled]="!breedOptions().length" (click)="addBreed()">Añadir raza</button>
        </div>
@@ -65,16 +65,30 @@
            <option [ngValue]="0">Seleccionar</option>
            @for(b of breedOptions();track b.id){<option [ngValue]="b.id">{{b.nombre}}</option>}
          </select></label>
-         <label class="admin-field">Cantidad<input class="admin-input" type="number" min="0" step="1" [(ngModel)]="r.cantidadExacta" /></label>
-         <button type="button" class="admin-icon-button" [attr.aria-label]="'Quitar raza '+(i+1)" (click)="removeBreed(i)">×</button>
+         <label class="admin-field">Cantidad<input class="admin-input" type="number" min="0" step="1"
+            [attr.max]="limiteRaza(i)" [ngModel]="r.cantidadExacta"
+            (ngModelChange)="onRazaChange(i,$event)" (input)="onRazaInput(i,$event)" /></label>
+          <button type="button" class="admin-icon-button gp-remove-detail-button" [attr.aria-label]="'Quitar raza '+(i+1)"
+            [title]="'Quitar raza '+(i+1)" (click)="removeBreed(i)"><fa-icon [icon]="closeIcon" /></button>
         </div>
        }
-       @if(razasDetalle.length){<small class="gp-subtle">Razas asignadas: {{totalRazas()}} de {{cantidadExacta ?? 0}} animales</small>}
+       @if(razasDetalle.length){
+         <small class="gp-subtle" role="status">Razas asignadas: {{totalRazas()}} de {{cantidadExacta ?? 0}} animales · {{restantesRazas()}} sin asignar</small>
+         @if(razaExcedida()){<small class="gp-detail-warning" role="alert">Se ajustaron las cantidades para respetar el total de animales.</small>}
+        }
      } @else {
-       <label class="admin-field">Superficie exacta (m²)
-         <input class="admin-input" type="number" min="0.01" step="0.01" [(ngModel)]="superficieExactaM2" />
+       <label class="admin-field">{{mode()==='actividad'?'Superficie cultivable (m²)':'Superficie actual del cultivo (m²)'}}
+         <input class="admin-input" type="text" inputmode="decimal" autocomplete="off" [value]="superficieExactaM2 ?? ''" (input)="onSuperficieInput($event)" />
        </label>
-       @if(maxCropAreaM2!==null){<small class="gp-subtle">Disponible: {{maxCropAreaM2}} m²</small>}
+       @if(mode()==='actividad'){
+         <label class="admin-field">Tipo de riego <span class="gp-subtle">(opcional)</span>
+           <input class="admin-input" maxlength="30" [(ngModel)]="tipoRiego" placeholder="Ej. Goteo, gravedad o sin riego" />
+         </label>
+         <label class="admin-field">Fuente de agua <span class="gp-subtle">(opcional)</span>
+           <input class="admin-input" maxlength="150" [(ngModel)]="fuenteAgua" />
+         </label>
+       }
+       <app-capacity-meter [total]="parcelaTotalM2" [available]="maxCropAreaM2" [proposed]="superficieExactaM2" secondaryUnit="ha" [unitsPerSecondary]="10000" />
        <div class="gp-breed-heading"><h3>Variedades (opcional)</h3>
         <button type="button" class="admin-secondary-button" [disabled]="!varietyOptions().length" (click)="addVariety()">Añadir variedad</button>
        </div>
@@ -84,8 +98,9 @@
            <option [ngValue]="0">Seleccionar</option>
            @for(x of varietyOptions();track x.id){<option [ngValue]="x.id">{{x.nombre}}</option>}
          </select></label>
-         <label class="admin-field">Superficie (m²)<input class="admin-input" type="number" min="0.01" step="0.01" [(ngModel)]="v.superficieM2" /></label>
-         <button type="button" class="admin-icon-button" [attr.aria-label]="'Quitar variedad '+(i+1)" (click)="removeVariety(i)">×</button>
+         <label class="admin-field">Superficie (m²)<input class="admin-input" type="text" inputmode="decimal" autocomplete="off" [value]="v.superficieM2" (input)="onVariedadInput(i,$event)" /></label>
+         <button type="button" class="admin-icon-button gp-remove-detail-button" [attr.aria-label]="'Quitar variedad '+(i+1)"
+            [title]="'Quitar variedad '+(i+1)" (click)="removeVariety(i)"><fa-icon [icon]="closeIcon" /></button>
         </div>
        }
        @if(variedadesDetalle.length){<small class="gp-subtle">Variedades asignadas: {{totalVariedades()}} de {{superficieExactaM2 ?? 0}} m²</small>}
@@ -104,11 +119,10 @@
        
      }
    }
-   @if(mode()==='evento'||mode()==='comentario'){
+   @if(mode()==='evento'){
      
-     @if(mode()==='evento'){<label class="admin-field">Acción<select class="admin-select" [(ngModel)]="tipo" (ngModelChange)="problemaId=0;tratamientoId=0;respuestaAId=0;afectacion='SIN_DATO';cantidadAfectada=null">
-       @for(x of tipoEventos;track x){@if(canUseType(x)){<option [ngValue]="x">{{x}}</option>}}</select></label>
-     }
+     <label class="admin-field">Tipo de actuación<select class="admin-select" [(ngModel)]="tipo" (ngModelChange)="problemaId=0;tratamientoId=0;respuestaAId=0;afectacion='SIN_DATO';cantidadAfectada=null">
+       @for(x of tipoEventos;track x){@if(canUseType(x)){<option [ngValue]="x" [disabled]="x==='RESPUESTA' && events().length===0">{{x==='OBSERVACION'?'Observación':x==='EVALUACION'?'Evaluación':'Respuesta'}}</option>}}</select></label>
      @if(tipo==='INCIDENCIA'||tipo==='TRATAMIENTO'){
        <label class="admin-field">Enfermedad o problema<select class="admin-select" [(ngModel)]="problemaId" (ngModelChange)="tratamientoId=0"><option [ngValue]="0">Seleccionar</option>
          @for(x of problems();track x.id){<option [ngValue]="x.id">{{x.nombre}}</option>}</select></label>
@@ -118,8 +132,17 @@
          @for(x of treatments();track x.id){<option [ngValue]="x.id">{{x.nombre}}</option>}</select></label>
      }
      @if(tipo==='RESPUESTA'){
-       <label class="admin-field">Responder a<select class="admin-select" [(ngModel)]="respuestaAId"><option [ngValue]="0">Seleccionar actuación</option>
-         @for(x of events();track x.eventoId){<option [ngValue]="x.eventoId">{{x.tipo}} · {{x.observacion.slice(0,60)}}</option>}</select></label>
+       <div class="gp-response-picker">
+         <label class="admin-field">Buscar actuación anterior
+           <input class="admin-input" type="search" [(ngModel)]="respuestaBusqueda" placeholder="Número, responsable, enfermedad o descripción" autocomplete="off" />
+         </label>
+         <label class="admin-field">Responder a
+           <select class="admin-select" [(ngModel)]="respuestaAId">
+             <option [ngValue]="0">Seleccionar actuación</option>
+             @for(x of opcionesRespuesta();track x.eventoId){<option [ngValue]="x.eventoId">{{etiquetaActuacion(x)}}</option>}
+           </select>
+         </label>
+       </div>
      }
      @if(tipo==='INCIDENCIA'||tipo==='EVALUACION'||tipo==='TRATAMIENTO'){
        <label class="admin-field">Cantidad afectada<select class="admin-select" [(ngModel)]="afectacion">
@@ -129,13 +152,17 @@
          <label class="admin-field">Número de animales o plantas afectados<input class="admin-input" type="number" min="0" step="1" [(ngModel)]="cantidadAfectada" /></label>
        }
      }
-     <app-image-upload [multiple]="true" [maxFiles]="8" [disabled]="saving()" (filesChange)="setPhotos($event)" />
-     @if(tipo==='INCIDENCIA'){
-       <label class="admin-field">Fecha en que se detectó el problema (opcional)
+     <app-e3-file-dropzone
+       title="Fotografías (opcional)"
+       fileTypesHint="JPG, PNG o WebP"
+       accept="image/jpeg,image/png,image/webp"
+       [files]="fotos" [multiple]="true" [maxFiles]="8" [maxSizeMb]="5"
+       [disabled]="saving()" [uploading]="saving()"
+       (filesChange)="setPhotos($event)" (invalid)="error.set($event)" />
+     <label class="admin-field">Fecha de la actuación (opcional)
          <input class="admin-input" type="date" [(ngModel)]="fecha" />
        </label>
-     }
-     <label class="admin-field">{{mode()==='comentario'?'Comentario':'Comentario técnico'}}<textarea class="admin-input" rows="4" [(ngModel)]="observacion" maxlength="2000"></textarea></label>
+     <label class="admin-field">Descripción de la actuación<textarea class="admin-input" rows="4" [(ngModel)]="observacion" maxlength="2000" placeholder="Describe lo observado o realizado"></textarea></label>
    }
    @if(mode()==='catalogo'){
     <div class="admin-field admin-field-span-2">
@@ -195,7 +222,7 @@
      }
    }
   </div>
-  <div class="admin-modal-actions gp-modal-footer"><button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="close()">Cancelar</button>
+  <div class="admin-modal-actions gp-modal-footer desco-compact-modal-actions"><button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="close()">Cancelar</button>
      <button type="button" class="admin-primary-button" [disabled]="saving()" (click)="save()">{{saving()?'Guardando…':'Guardar'}}</button></div>
  </div>
 </dialog>

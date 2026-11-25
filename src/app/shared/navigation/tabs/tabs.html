@@ -1,0 +1,10 @@
+<nav class="desco-tabs" role="tablist" [attr.aria-label]="label">
+  @for (tab of tabs; track tab.id) {
+    <button type="button" role="tab" [class.selected]="active === tab.id"
+      [disabled]="!!tab.disabled" [attr.aria-selected]="active === tab.id" (click)="activate(tab)">
+      @if (tab.icon) { <fa-icon [icon]="tab.icon" /> }
+      {{ tab.label }}
+      @if (tab.count !== undefined) { <span class="desco-tabs__count">{{ tab.count }}</span> }
+    </button>
+  }
+</nav>

@@ -137,3 +137,6 @@
   width: 4rem;
   height: 3.4rem;
 }
+
+.local-dropzone { padding: 0.7rem 0.85rem; min-width: 0; }
+.local-dropzone app-e3-file-dropzone { display: block; min-width: 0; }

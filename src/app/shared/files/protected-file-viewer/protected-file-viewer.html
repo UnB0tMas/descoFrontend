@@ -1,0 +1,61 @@
+<dialog #dialog appDialogBackdrop class="modal desco-modal desco-file-viewer"
+  (cancel)="onCancel($event)" aria-labelledby="desco-preview-title">
+  <div class="desco-file-viewer__panel">
+    <header class="desco-file-viewer__header">
+      <span class="desco-file-viewer__symbol" aria-hidden="true"><fa-icon [icon]="fileIcon" /></span>
+      <div class="desco-file-viewer__heading">
+        <span class="desco-file-viewer__eyebrow">VISTA PREVIA</span>
+        <h2 id="desco-preview-title" [title]="name">{{name}}</h2>
+      </div>
+      <div class="desco-file-viewer__actions" role="group" aria-label="Opciones de vista previa">
+        <span class="desco-file-viewer__download-wide">
+          <app-button [icon]="downloadIcon" label="Descargar archivo" tone="secondary" size="small" (pressed)="download()" />
+        </span>
+        <span class="desco-file-viewer__download-compact">
+          <app-button [icon]="downloadIcon" label="Descargar archivo" [iconOnly]="true" tone="secondary" size="small" (pressed)="download()" />
+        </span>
+        <app-button [icon]="closeIcon" label="Cerrar vista previa" [iconOnly]="true" tone="secondary" size="small" (pressed)="dismiss()" />
+      </div>
+    </header>
+    <div class="desco-file-viewer__body" [class.desco-file-viewer__body--document]="kind()==='word'">
+      @if (loading()) {
+        <div class="desco-file-viewer__loading"><app-loading-state title="Preparando vista previa" message="" variant="detail" [rows]="4" /></div>
+      }
+      @if (error(); as message) {
+        <div class="desco-file-viewer__notice" role="status">{{message}}</div>
+      }
+      @switch(kind()) {
+        @case('pdf') {
+          @if(resourceUrl()) {<iframe [src]="resourceUrl()" title="Vista previa de PDF" class="desco-file-viewer__frame" sandbox="allow-same-origin"></iframe>}
+        }
+        @case('image') {
+          @if(imageUrl()) {<div class="desco-file-viewer__image-wrap"><img [src]="imageUrl()" [alt]="name" /></div>}
+        }
+        @case('word') {
+          <div class="desco-file-viewer__word" [style.visibility]="loading() || error() ? 'hidden' : 'visible'" #wordHost></div>
+        }
+        @case('excel') {
+          @if(!loading() && !error()) {
+            <div class="desco-file-viewer__sheets" role="group" aria-label="Hojas del archivo">
+              @for(sheet of sheets(); track sheet.index) {
+                <button type="button" class="desco-file-viewer__sheet"
+                  [class.desco-file-viewer__sheet--active]="currentSheet()===sheet.index"
+                  (click)="selectSheet(sheet.index)">{{sheet.name}}</button>
+              }
+            </div>
+            <div class="desco-file-viewer__sheet-table"><table aria-label="Hoja de cálculo">
+              <thead><tr><th>#</th>@for(column of columns();track column){<th>{{column}}</th>}</tr></thead>
+              <tbody>@for(row of rows();track $index){<tr><th>{{$index+1}}</th>@for(column of columns();track column){<td>{{row[column-1]}}</td>}</tr>}</tbody>
+            </table></div>
+            @if(trimmed()) {<p class="desco-file-viewer__hint">Vista limitada a 500 filas y 40 columnas. Descarga el archivo para consultar todo.</p>}
+          }
+        }
+        @case('text') {
+          @if(!loading() && !error()) {<pre class="desco-file-viewer__text">{{plainText()}}</pre>
+            @if(trimmed()){<p class="desco-file-viewer__hint">Vista parcial. Descarga el archivo para consultar todo.</p>}}
+        }
+        @default {<div class="desco-file-viewer__notice">Este formato requiere una aplicación compatible. Puedes descargar el archivo.</div>}
+      }
+    </div>
+  </div>
+</dialog>

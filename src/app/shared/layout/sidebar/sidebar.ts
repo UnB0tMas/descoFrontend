@@ -5,10 +5,16 @@ import {
   Input,
   Output,
   computed,
+  effect,
   inject,
+  OnDestroy,
   signal,
 } from '@angular/core';
 import { Router } from '@angular/router';
+import { UotContextStore } from '../../../features/uot/state/uot-context.store';
+import { PermissionService } from '../../../core/access/permission.service';
+import { GestionDocumentariaUnreadStore } from '../../../features/gestion-documentaria/gestion-documentaria-unread.store';
+import { GestionDocumentariaRealtime } from '../../../features/gestion-documentaria/gestion-documentaria-realtime.service';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
 import {
   faArrowRightFromBracket,
@@ -38,12 +44,28 @@ import { SidebarItemComponent } from './sidebar-item';
   styleUrl: './sidebar.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class SidebarComponent {
+export class SidebarComponent implements OnDestroy {
   private readonly navigation = inject(NavigationService);
   private readonly access = inject(AccessStore);
   private readonly logoutUseCase = inject(CerrarSesionUseCase);
   private readonly alert = inject(AppAlertService);
   private readonly router = inject(Router);
+  private readonly realtime = inject(GestionDocumentariaRealtime);
+  private readonly uot = inject(UotContextStore);
+  private readonly permissions = inject(PermissionService);
+  readonly unread = inject(GestionDocumentariaUnreadStore);
+
+  private readonly stopRealtime = this.realtime.watch(() => {
+    const id = this.uot.selectedId();
+    if (id) this.unread.refrescar(id);
+  });
+  constructor() {
+    effect(() => {
+      const id = this.uot.selectedId();
+      if (id) this.unread.refrescar(id);
+      else this.unread.limpiar();
+    });
+  }
 
   @Input() mobileOpen = false;
   @Input() collapsed = false;
@@ -78,15 +100,12 @@ export class SidebarComponent {
     }
   }
 
+  ngOnDestroy(): void { this.stopRealtime(); }
+
   async logout(): Promise<void> {
     if (this.loggingOut()) return;
 
-    const result = await this.alert.question(
-      'Cerrar sesión',
-      '¿Deseas finalizar la sesión actual?',
-      'Cerrar sesión',
-      'Cancelar',
-    );
+    const result = await this.alert.confirmLogout();
 
     if (!result.confirmed) return;
 

@@ -1,18 +1,21 @@
 <div class="desco-page gp-page gp-actividades-page">
-  <nav class="gp-breadcrumb" aria-label="Ruta de navegación">
-    <a routerLink="/gestion-tecnica/gestion-productiva">Predios</a><span aria-hidden="true">/</span>
-    <a [routerLink]="['/gestion-tecnica/gestion-productiva/predios',predioId,'parcelas']">Parcelas</a><span aria-hidden="true">/</span>
-    <span aria-current="page">{{parcelaNombre()}}</span>
-  </nav>
+  <app-breadcrumb variant="compact" [showHome]="false"
+    [segments]="[{label:'Productores',url:'/gestion-tecnica/gestion-productiva',queryParams:productorContext},
+                 {label:'Parcelas',url:productorContext ? '/gestion-tecnica/gestion-productiva' : '/gestion-tecnica/gestion-productiva/predios/'+predioId+'/parcelas',queryParams:productorContext},
+                 {label:parcelaNombre(),url:''}]" />
   <app-page-header [title]="parcelaNombre()" eyebrow="Gestión productiva · Expediente de parcela"
     
     [icon]="pageIcon">
     <div pageActions class="flex flex-wrap gap-2">
-      <a class="admin-secondary-button" [routerLink]="['/gestion-tecnica/gestion-productiva/predios',predioId,'parcelas']"><fa-icon [icon]="backIcon" /> Parcelas</a>
+      <a class="admin-secondary-button" [routerLink]="productorContext ? ['/gestion-tecnica/gestion-productiva'] : ['/gestion-tecnica/gestion-productiva/predios',predioId,'parcelas']" [queryParams]="productorContext"><fa-icon [icon]="backIcon" /> Volver</a>
       <button type="button" class="admin-secondary-button" [disabled]="loading()" (click)="refresh()"><fa-icon [icon]="refreshIcon" /> Actualizar</button>
-      <button *appPermission="'CULTIVOS_CREAR'" type="button" class="admin-primary-button" (click)="createActivity()"><fa-icon [icon]="addIcon" /> Nueva actividad</button>
+      <button [disabled]="!actuacionPermitida()" *appPermission="'CULTIVOS_CREAR'" type="button" class="admin-primary-button" (click)="createActivity()"><fa-icon [icon]="addIcon" /> Nueva actividad</button>
     </div>
   </app-page-header>
+  @if (!loading() && !error() && !actuacionPermitida()) {
+    <p class="admin-muted-text">Para registrar actividades, inicia una visita al predio desde una salida aprobada.</p>
+  }
+
 
   @if (loading()) { <app-loading-state title="Cargando expediente" message="Consultando la parcela y sus actividades." /> }
   @else if (error()) { <app-error-state [message]="error() || 'No se pudo consultar el expediente.'" (retry)="refresh()" /> }
@@ -34,10 +37,7 @@
          <select id="gpEstadoActividad" class="admin-select" [ngModel]="estadoFiltro()" (ngModelChange)="changeEstado($event)">
            <option value="TODOS">Todos</option><option value="ACTIVA">Activas</option><option value="FINALIZADA">Finalizadas</option>
          </select></div>
-        <div class="gp-view-toggle" role="group" aria-label="Presentación de actividades">
-          <button type="button" [class.active]="activityView()==='tabla'" [attr.aria-pressed]="activityView()==='tabla'" (click)="setView('tabla')"><fa-icon [icon]="tableIcon" /> Tabla</button>
-          <button type="button" [class.active]="activityView()==='tarjetas'" [attr.aria-pressed]="activityView()==='tarjetas'" (click)="setView('tarjetas')"><fa-icon [icon]="cardsIcon" /> Tarjetas</button>
-        </div>
+        <app-list-view-switch class="gp-shared-view-switch" appearance="segmented" label="Presentación de actividades" [view]="activityView()==='tabla'?'table':'cards'" (viewChange)="setView($event==='table'?'tabla':'tarjetas')" />
       </div>
       @if (!actividades().length) {
         <app-empty-state title="Parcela sin actividades" message="Registra primero un cultivo o una crianza para realizar los censos y controles." />
@@ -51,30 +51,44 @@
           <ng-template #accionesActividad let-a><div class="admin-row-actions gp-activity-actions">
             <a class="admin-icon-button" [routerLink]="['/gestion-tecnica/gestion-productiva/predios',predioId,'parcelas',parcelaId,'actividades',a.actividadId]" title="Ver detalle" aria-label="Ver detalle de actividad"><fa-icon [icon]="detailsIcon" /></a>
             @if(a.estado && a.estadoProceso!=='FINALIZADA'){
-              <button *appPermission="'CULTIVOS_EDITAR'" type="button" class="admin-icon-button" [disabled]="busy()" title="Editar actividad" aria-label="Editar actividad" (click)="editActivity(a)"><fa-icon [icon]="editIcon" /></button>
-              <button *appPermission="'PREDIOS_EDITAR'" type="button" class="admin-icon-button" [disabled]="busy()" title="Comentario general" aria-label="Comentario general" (click)="comment(a)"><fa-icon [icon]="commentIcon" /></button>
+              <button *appPermission="'CULTIVOS_EDITAR'" type="button" class="admin-icon-button" [disabled]="!actuacionPermitida() || busy()" title="Editar actividad" aria-label="Editar actividad" (click)="editActivity(a)"><fa-icon [icon]="editIcon" /></button>
+              <button *appPermission="'PREDIOS_EDITAR'" type="button" class="admin-icon-button" [disabled]="!actuacionPermitida() || busy()" title="Comentario general" aria-label="Comentario general" (click)="comment(a)"><fa-icon [icon]="commentIcon" /></button>
             }
-            <button *appPermission="'CULTIVOS_RETIRAR'" type="button" class="admin-icon-button admin-icon-button--danger" [disabled]="busy() || !a.estado" title="Eliminar actividad" aria-label="Eliminar actividad" (click)="removeActivity(a)"><fa-icon [icon]="deleteIcon" /></button>
+            <button *appPermission="'CULTIVOS_RETIRAR'" type="button" class="admin-icon-button admin-icon-button--danger" [disabled]="!actuacionPermitida() || busy() || !a.estado" title="Eliminar actividad" aria-label="Eliminar actividad" (click)="removeActivity(a)"><fa-icon [icon]="deleteIcon" /></button>
           </div></ng-template>
           <app-data-table appearance="admin" [columns]="activityColumns" [rows]="visibleActivities()" trackByKey="actividadId"
              [cellTemplates]="{nombre:nombreActividad,rubro:rubroActividad,estadoProceso:estadoActividad,acciones:accionesActividad}" />
         }@else{
-        <div class="desco-record-grid gp-cards gp-cards--activities">
+        <div class="desco-record-grid--adaptive gp-fixed-card-grid" aria-label="Tarjetas de actividades">
           @for (a of visibleActivities(); track a.actividadId) {
-            <app-record-card>
-              <span class="gp-code">{{a.rubro==='CULTIVO' ? 'Cultivo' : 'Crianza animal'}}</span>
-              <h3>{{a.nombre}}</h3>
-              <span class="gp-subtle">{{medidaResumen(a)}}</span>
-              <span class="admin-status" [class.admin-status--active]="a.estadoProceso!=='FINALIZADA'" [class.admin-status--inactive]="a.estadoProceso==='FINALIZADA'">{{a.estadoProceso==='FINALIZADA'?'Finalizada':'Activa'}}</span>
-              <div class="gp-card-actions gp-activity-actions">
-                <a class="admin-secondary-button gp-card-detail-action" [routerLink]="['/gestion-tecnica/gestion-productiva/predios',predioId,'parcelas',parcelaId,'actividades',a.actividadId]"><fa-icon [icon]="detailsIcon" /> Detalles</a>
+            <app-institutional-record-card layout="summary" actionsLayout="icons"
+              [icon]="pageIcon" [code]="a.rubro==='CULTIVO' ? 'Cultivo' : 'Crianza animal'"
+              [heading]="a.nombre" [metadata]="[medidaResumen(a)]">
+              <span recordStatus class="admin-status"
+                [class.admin-status--active]="a.estadoProceso!=='FINALIZADA'"
+                [class.admin-status--inactive]="a.estadoProceso==='FINALIZADA'">
+                {{a.estadoProceso==='FINALIZADA' ? 'Finalizada' : 'Activa'}}
+              </span>
+              <div recordActions class="gp-activity-actions gp-card-icon-actions">
+                <a class="admin-icon-button"
+                  [routerLink]="['/gestion-tecnica/gestion-productiva/predios',predioId,'parcelas',parcelaId,'actividades',a.actividadId]"
+                  title="Detalles de actividad" [attr.aria-label]="'Ver detalles de '+a.nombre">
+                  <fa-icon [icon]="detailsIcon" />
+                </a>
                 @if(a.estado && a.estadoProceso!=='FINALIZADA'){
-                  <button *appPermission="'CULTIVOS_EDITAR'" type="button" class="admin-secondary-button" [disabled]="busy()" (click)="editActivity(a)"><fa-icon [icon]="editIcon" /> Editar</button>
-                  <button *appPermission="'PREDIOS_EDITAR'" type="button" class="admin-secondary-button" [disabled]="busy()" (click)="comment(a)"><fa-icon [icon]="commentIcon" /> Comentario general</button>
+                  <button *appPermission="'CULTIVOS_EDITAR'" type="button" class="admin-icon-button"
+                    [disabled]="!actuacionPermitida() || busy()" (click)="editActivity(a)" title="Editar actividad"
+                    [attr.aria-label]="'Editar '+a.nombre"><fa-icon [icon]="editIcon" /></button>
+                  <button *appPermission="'PREDIOS_EDITAR'" type="button" class="admin-icon-button"
+                    [disabled]="!actuacionPermitida() || busy()" (click)="comment(a)" title="Comentario general"
+                    [attr.aria-label]="'Comentario general de '+a.nombre"><fa-icon [icon]="commentIcon" /></button>
                 }
-                <button *appPermission="'CULTIVOS_RETIRAR'" type="button" class="admin-secondary-button" [disabled]="busy() || !a.estado" (click)="removeActivity(a)"><fa-icon [icon]="deleteIcon" /> Eliminar</button>
+                <button *appPermission="'CULTIVOS_RETIRAR'" type="button"
+                  class="admin-icon-button admin-icon-button--danger" [disabled]="!actuacionPermitida() || busy() || !a.estado"
+                  (click)="removeActivity(a)" title="Eliminar actividad"
+                  [attr.aria-label]="'Eliminar '+a.nombre"><fa-icon [icon]="deleteIcon" /></button>
               </div>
-            </app-record-card>
+            </app-institutional-record-card>
           }
         </div>
         }

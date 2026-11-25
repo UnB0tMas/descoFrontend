@@ -1,0 +1,47 @@
+<div class="desco-page e2-responsables">
+  <app-page-header title="Responsables de salidas" eyebrow="Gestión técnica · Configuración" [icon]="icon">
+    <div pageActions><a routerLink="/gestion-tecnica/salidas" class="admin-secondary-button">Volver</a></div>
+  </app-page-header>
+  @if(loading()){<app-loading-state title="Cargando responsables" />}
+  @else if(error() && !rows().length){<app-error-state [message]="error()??'No se pudo cargar la configuración.'" (retry)="load()" />}
+  @else {
+    @if(error()){<p role="alert" class="admin-inline-error">{{error()}}</p>}
+    <section class="admin-surface e2-responsables-section">
+      <h2>Responsables de la UOT</h2>
+      <div class="admin-table-wrap" tabindex="0" role="region" aria-label="Responsables de salidas">
+        <table class="admin-table"><thead><tr><th>Responsable</th><th>Función</th><th>Prioridad</th><th>Vigencia</th><th>Estado</th><th>Acciones</th></tr></thead>
+          <tbody>
+            @for(row of rows();track row.responsableId){<tr>
+              <td>{{nombre(row.usuarioId)}}</td><td>{{row.funcion}}{{row.suplente?' · Suplente':''}}</td>
+              <td>{{row.prioridad}}</td><td>{{row.fechaDesde?.slice(0,10)}} – {{row.fechaHasta?.slice(0,10)||'Indefinida'}}</td>
+              <td>{{row.activo?'Activo':'Inactivo'}}</td><td><button type="button" class="admin-secondary-button" [disabled]="saving()" (click)="cambiarEstado(row)">{{row.activo?'Desactivar':'Activar'}}</button></td>
+            </tr>}
+            @if(!rows().length){<tr><td colspan="6">No hay responsables configurados.</td></tr>}
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <section class="admin-surface e2-responsables-section" aria-labelledby="configurar-responsable">
+      <h2 id="configurar-responsable">Agregar responsable</h2>
+      <form class="e2-config-grid" (ngSubmit)="guardar()">
+        <div class="admin-field"><label for="resp-usuario">Usuario autorizado</label>
+          <select id="resp-usuario" class="admin-select" name="usuario" [(ngModel)]="usuarioId" required>
+            <option [ngValue]="0">Seleccione</option>
+            @for(persona of personas();track persona.usuarioId){<option [ngValue]="persona.usuarioId">{{persona.nombre}}</option>}
+          </select></div>
+        <div class="admin-field"><label for="resp-funcion">Función</label>
+          <select id="resp-funcion" class="admin-select" name="funcion" [(ngModel)]="funcion">
+            <option value="APROBADOR">Aprobación</option><option value="ENTREGA">Entrega</option><option value="INSPECTOR">Inspección</option>
+          </select></div>
+        <div class="admin-field"><label for="resp-orden">Orden de atención</label>
+          <input id="resp-orden" type="number" class="admin-input" name="prioridad" [(ngModel)]="prioridad" min="1" max="100" /></div>
+        <div class="admin-field"><label for="resp-desde">Vigente desde (opcional)</label>
+          <input id="resp-desde" type="date" class="admin-input" name="desde" [(ngModel)]="fechaDesde" /></div>
+        <div class="admin-field"><label for="resp-hasta">Vigente hasta (opcional)</label>
+          <input id="resp-hasta" type="date" class="admin-input" name="hasta" [(ngModel)]="fechaHasta" /></div>
+        <label class="admin-field e2-check"><input type="checkbox" name="suplente" [(ngModel)]="suplente" /> Suplente</label>
+        <div class="e2-config-actions"><button class="admin-primary-button" type="submit" [disabled]="saving() || !usuarioId">{{saving()?'Guardando…':'Guardar'}}</button></div>
+      </form>
+    </section>
+  }
+</div>

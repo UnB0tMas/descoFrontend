@@ -1,0 +1,23 @@
+:host { display: block; min-width: 0; }
+.capacity-meter {
+  display: grid; gap: .65rem; padding: .85rem 1rem;
+  border: 1px solid var(--desco-border); border-radius: .7rem;
+  background: var(--desco-surface-soft); color: var(--desco-text);
+}
+.capacity-meter__title, .capacity-meter__stats {
+  display: flex; justify-content: space-between; flex-wrap: wrap; gap: .45rem 1rem;
+}
+.capacity-meter__title { font-size: .82rem; }
+.capacity-meter__title span, .capacity-meter__stats, .capacity-meter__foot { color: var(--desco-text-muted); }
+.capacity-meter__stats { font-size: .75rem; }
+.capacity-meter__stats strong { color: var(--desco-text); font-weight: 700; }
+.capacity-meter__track {
+  display: flex; height: .5rem; border-radius: 99px; overflow: hidden;
+  background: var(--desco-border);
+}
+.capacity-meter__occupied { background: var(--desco-text-muted); transition: width .15s ease; }
+.capacity-meter__pending { background: var(--desco-primary); transition: width .15s ease; }
+.capacity-meter__foot { font-size: .73rem; }
+.capacity-meter__error { font-size: .76rem; font-weight: 700; color: var(--desco-danger); }
+.capacity-meter--over { border-color: var(--desco-danger); }
+.capacity-meter--over .capacity-meter__pending { background: var(--desco-danger); }

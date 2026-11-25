@@ -49,8 +49,7 @@
 
 .resource-filter-field .admin-input,
 .resource-filter-field .admin-select,
-.resource-search-button,
-.resource-view-switch .admin-icon-button {
+.resource-search-button {
   min-height: 2.65rem;
 }
 
@@ -78,11 +77,6 @@
   margin-left: auto;
 }
 
-.resource-view-switch .active {
-  border-color: var(--desco-primary);
-  background: var(--desco-primary-soft);
-  color: var(--desco-primary-text);
-}
 
 .resource-table-shell {
   overflow: hidden;

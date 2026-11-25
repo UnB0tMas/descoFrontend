@@ -51,6 +51,7 @@
 
   <section class="admin-surface mt-5">
     <div class="admin-toolbar">
+      <app-list-view-switch appearance="segmented" [view]="viewMode()" (viewChange)="viewMode.set($event)" />
       <div class="admin-field admin-toolbar-field">
         <label for="userStateFilter">Estado de cuenta</label>
         <select
@@ -99,22 +100,26 @@
         message="No hay cuentas para los filtros seleccionados."
       />
     } @else {
-      <div class="admin-table-wrap">
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th>Usuario</th>
-              <th>Empleado</th>
-              <th>Organización</th>
-              <th class="text-center">Roles</th>
-              <th class="text-center">Sesiones</th>
-              <th class="text-center">Estado</th>
-              <th class="text-right">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (user of result().items; track user.usuarioId) {
-              <tr>
+      @if (viewMode() === 'cards') {
+      <div class="desco-record-grid desco-admin-record-grid">
+        @for (user of result().items; track user.usuarioId) {
+<app-record-card>
+ <header><span class="admin-avatar">{{ user.nombreUsuario.slice(0,2).toUpperCase() }}</span><span class="admin-code">{{ user.codigoEmpleado || 'Sin código' }}</span></header>
+ <h3>{{ user.nombreUsuario }}</h3><p class="gp-subtle">{{ user.empleado || 'Sin empleado' }}</p>
+ <dl><div><dt>Organización</dt><dd>{{ user.empresa || '—' }}</dd></div><div><dt>Roles activos</dt><dd>{{ user.rolesActivos }}</dd></div><div><dt>Sesiones</dt><dd>{{ user.sesionesActivas }}</dd></div><div><dt>Estado</dt><dd>{{ accountStateLabel(user.estadoCuenta) }}</dd></div></dl>
+ <footer><div class="admin-row-actions">
+ <a *appPermission="'USUARIOS_VER'" class="admin-icon-button" [routerLink]="['/administracion/usuarios',user.usuarioId]" title="Ver cuenta"><fa-icon [icon]="viewIcon" /></a>
+ <button *appPermission="'USUARIOS_EDITAR'" type="button" class="admin-icon-button" [disabled]="detailLoadingId() === user.usuarioId" title="Editar" (click)="edit(user)"><fa-icon [icon]="editIcon" /></button>
+ @if (isDisabled(user)) { <button *appPermission="'USUARIOS_CONFIRMAR'" type="button" class="admin-icon-button admin-icon-button--success" [disabled]="actionUserId()===user.usuarioId" (click)="reactivate(user)" title="Reactivar"><fa-icon [icon]="reactivateIcon" /></button> }
+ @else { <button *appPermission="'USUARIOS_RETIRAR'" type="button" class="admin-icon-button admin-icon-button--danger" [disabled]="actionUserId()===user.usuarioId" (click)="disable(user)" title="Deshabilitar"><fa-icon [icon]="disableIcon" /></button> }
+ </div></footer>
+</app-record-card>
+        }
+      </div>
+      } @else {
+<app-data-table appearance="admin" [columns]="usersColumns" [rows]="result().items" [rowTemplate]="usersRow" [trackByKey]="'usuarioId'" />
+        <ng-template #usersRow let-user>
+
                 <td>
                   <div class="admin-entity">
                     <span class="admin-avatar">
@@ -210,11 +215,9 @@
                     }
                   </div>
                 </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
+              
+        </ng-template>
+      }
 
       <app-paginator
         [page]="result().page"

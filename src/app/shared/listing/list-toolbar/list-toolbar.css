@@ -1,0 +1,73 @@
+app-list-toolbar { display: block; min-width: 0; }
+.desco-list-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: .7rem;
+  min-width: 0; padding: .85rem 0; }
+.desco-list-toolbar__search { display: flex; align-items: center; flex: 1 1 220px; gap: .55rem;
+  min-width: min(100%, 210px); min-height: 2.55rem; padding: .35rem .75rem;
+  background: var(--desco-control-bg); border: 1px solid var(--desco-border);
+  border-radius: var(--desco-radius-md); color: var(--desco-text-muted); }
+.desco-list-toolbar__search input { flex: 1; min-width: 0; border: 0; outline: 0;
+  background: transparent; color: var(--desco-text); font-size: .81rem; }
+.desco-list-toolbar__search:focus-within { border-color: var(--desco-primary);
+  box-shadow: 0 0 0 2px var(--desco-focus-ring); }
+.desco-list-toolbar__filters, .desco-list-toolbar__actions { display: flex; flex-wrap: wrap;
+  align-items: center; gap: .5rem; min-width: 0; }
+.desco-list-toolbar__actions { margin-left: auto; }
+.desco-list-toolbar__refresh { min-height: 2.55rem; min-width: 2.55rem; }
+@media(max-width: 580px) { .desco-list-toolbar__search { flex-basis: 100%; } .desco-list-toolbar__actions { margin-left: 0; } }
+
+/* El aspecto institucional oficial se configura en shared, sin estilos por módulo.
+   Los controles, datos y eventos se proyectan desde la pantalla consumidora. */
+.desco-list-toolbar-host--institutional { width: 100%; }
+.desco-list-toolbar--institutional {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: .75rem;
+  padding: 0;
+}
+.desco-list-toolbar--institutional .desco-list-toolbar__filters { display: block; min-width: 0; }
+.desco-list-toolbar--institutional .desco-list-toolbar__filters > [toolbarFilters] {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto;
+  align-items: end;
+  gap: .75rem;
+  min-width: 0;
+}
+.desco-list-toolbar--institutional .desco-list-toolbar__filters > [toolbarFilters] > * { min-width: 0; }
+.desco-list-toolbar--institutional .desco-list-toolbar__filters > [toolbarFilters] :is(.admin-input,.admin-select) {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+}
+.desco-list-toolbar--institutional .desco-list-toolbar__filters > [toolbarFilters] > button { min-height: 42px; }
+.desco-list-toolbar--institutional .desco-list-toolbar__actions {
+  margin: 0;
+  justify-self: end;
+  justify-content: center;
+  flex-wrap: nowrap;
+}
+@media (max-width: 1050px) {
+  .desco-list-toolbar--institutional { grid-template-columns: minmax(0, 1fr); }
+  .desco-list-toolbar--institutional .desco-list-toolbar__filters > [toolbarFilters] {
+    grid-template-columns: repeat(2,minmax(0,1fr));
+  }
+  .desco-list-toolbar--institutional .desco-list-toolbar__filters > [toolbarFilters] > :first-child { grid-column: 1 / -1; }
+  .desco-list-toolbar--institutional .desco-list-toolbar__actions { justify-self: center; }
+}
+@media (max-width: 460px) {
+  .desco-list-toolbar--institutional .desco-list-toolbar__filters > [toolbarFilters] {
+    grid-template-columns: minmax(0,1fr);
+  }
+  .desco-list-toolbar--institutional .desco-list-toolbar__filters > [toolbarFilters] > :first-child { grid-column: auto; }
+}
+
+/* Diseño opcional: filtro y selector permanecen alineados mientras haya espacio. */
+.desco-list-toolbar--institutional.desco-list-toolbar--inline { display: flex; flex-wrap: wrap; gap: .75rem; align-items: end; }
+.desco-list-toolbar--institutional.desco-list-toolbar--inline .desco-list-toolbar__filters { display: block; flex: 1 1 320px; min-width: 0; }
+.desco-list-toolbar--institutional.desco-list-toolbar--inline .desco-list-toolbar__filters > [toolbarFilters] { display: flex; flex-wrap: wrap; align-items: end; gap: .65rem; min-width: 0; }
+.desco-list-toolbar--institutional.desco-list-toolbar--inline .desco-list-toolbar__filters > [toolbarFilters] > :first-child { flex: 1 1 240px; min-width: 0; }
+.desco-list-toolbar--institutional.desco-list-toolbar--inline .desco-list-toolbar__actions { margin-left: auto; justify-self: auto; }
+@media (max-width: 560px) {
+  .desco-list-toolbar--institutional.desco-list-toolbar--inline .desco-list-toolbar__filters { flex-basis: 100%; }
+  .desco-list-toolbar--institutional.desco-list-toolbar--inline .desco-list-toolbar__actions { margin-left: auto; }
+}

@@ -107,12 +107,7 @@ export class PerfilPage implements OnInit {
       return;
     }
 
-    const result = await this.alert.question(
-      'Cerrar sesión',
-      '¿Deseas finalizar la sesión actual?',
-      'Cerrar sesión',
-      'Cancelar',
-    );
+    const result = await this.alert.confirmLogout();
 
     if (!result.confirmed) {
       return;

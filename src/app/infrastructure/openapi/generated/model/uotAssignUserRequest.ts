@@ -12,5 +12,6 @@
 export interface UotAssignUserRequest { 
     usuarioId: number;
     predeterminada?: boolean;
+    rolId?: number;
 }
 

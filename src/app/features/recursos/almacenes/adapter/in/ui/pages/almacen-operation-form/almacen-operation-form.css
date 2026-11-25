@@ -251,3 +251,39 @@
   .warehouse-upload-zone { flex-wrap: wrap; }
   .warehouse-upload-browse { width: 100%; }
 }
+
+/* Adaptación responsive de acciones y adjuntos del formulario de movimientos. */
+.warehouse-modal-box .warehouse-form-actions {display:flex;justify-content:flex-end;gap:.6rem;flex-wrap:wrap;}
+.warehouse-modal-box app-e3-file-dropzone {display:block;min-width:0;width:100%;}
+.warehouse-modal-box .admin-field {min-width:0;}
+@media(max-width:650px){
+  .warehouse-movement-fields {padding:.75rem;}
+  .warehouse-lines {margin:0 .75rem;}
+  .warehouse-movement-context {margin:.75rem;flex-wrap:wrap;}
+  .warehouse-modal-box .warehouse-form-actions {padding:.75rem;}
+  .warehouse-modal-box .warehouse-form-actions > button {flex:1 1 8rem;}
+  .warehouse-modal-box .admin-form-grid {grid-template-columns:minmax(0,1fr);}
+  .warehouse-modal-box .admin-field-span-2 {grid-column:1 / -1;}
+}
+
+/* Identificación de almacén ya elegido desde su ficha. */
+.warehouse-selected-value {
+  display: flex;
+  align-items: center;
+  min-height: 2.65rem;
+  width: 100%;
+  padding: .65rem .8rem;
+  border: 1px solid var(--desco-border);
+  border-radius: .7rem;
+  background: var(--desco-surface-soft);
+  color: var(--desco-text);
+  font-size: .78rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.warehouse-stock-available {
+  display: block;
+  margin-top: .35rem;
+  color: var(--desco-text-muted);
+  font-size: .69rem;
+}

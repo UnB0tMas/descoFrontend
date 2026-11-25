@@ -1,0 +1,4 @@
+:host{display:block;min-width:0}.mi-caja-page{display:grid;gap:1rem}.mi-caja-panel{padding:1.35rem;display:grid;gap:1.1rem;max-width:48rem}
+.mi-caja-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem}.mi-caja-heading h2{margin:.35rem 0;font-size:1.2rem;font-weight:800}.mi-caja-heading p{color:var(--desco-text-muted);font-size:.84rem}.mi-caja-status{color:var(--desco-primary-text);font-size:.76rem;font-weight:750}
+.mi-caja-values{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem}.mi-caja-values>div{display:grid;gap:.3rem;border:1px solid var(--desco-border);padding:1rem;border-radius:.75rem}.mi-caja-values span{color:var(--desco-text-muted);font-size:.75rem}.mi-caja-values strong{font-size:1.05rem}.mi-caja-panel>.admin-primary-button,.mi-caja-panel>.admin-secondary-button{justify-self:start}
+@media(max-width:540px){.mi-caja-values{grid-template-columns:1fr}}

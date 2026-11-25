@@ -1,0 +1,54 @@
+<div class="desco-page caja-detail-page">
+ <app-page-header [title]="detalle()?.caja?.nombre||'Detalle de caja'" eyebrow="GESTIÓN COMERCIAL / CAJAS"
+   [subtitle]="uot.label()" [icon]="icon">
+  <div pageActions class="caja-detail-actions"><a routerLink="/pos/cajas" class="admin-secondary-button">Volver a cajas</a><button type="button" class="admin-secondary-button" [disabled]="loading()" (click)="load()">Actualizar</button></div>
+ </app-page-header>
+ @if(!uotId){<p class="admin-inline-error">Seleccione una UOT específica.</p>}
+ @else if(error()){<div class="admin-inline-error" role="alert">{{error()}}</div>}
+ @else if(loading()&&!detalle()){<section class="admin-surface caja-detail-card">Cargando historial...</section>}
+ @else if(detalle();as d){
+  <section class="caja-detail-summary">
+   <article class="admin-surface"><span>Código</span><strong>{{d.caja.codigo}}</strong></article>
+   <article class="admin-surface"><span>Estado actual</span><strong>{{d.caja.estado}}</strong></article>
+   <article class="admin-surface"><span>Turnos registrados</span><strong>{{d.sesiones.length}}</strong></article>
+   <article class="admin-surface"><span>Ventas registradas</span><strong>{{d.ventas.length}}</strong></article>
+  </section>
+  <section class="admin-surface caja-detail-card" aria-label="Historial diario">
+   <h2>Actividad por día</h2>
+   @for(jornada of jornadas;track jornada.dia){
+    <div class="caja-day-header"><h3>{{jornada.dia|date:'dd/MM/yyyy'}}</h3><small>{{jornada.turnos.length}} turnos</small></div>
+    @for(s of jornada.turnos;track s.sesionId){
+     <article class="caja-day-turno">
+      <header><strong>Turno #{{s.sesionId}} · {{s.estado}}</strong><span>Operador: {{s.operadorNombre || 'No identificado'}}</span></header>
+      <div class="caja-day-grid">
+       <div><small>Apertura</small><strong>{{s.fechaApertura|date:'HH:mm'}}</strong><span>Fondo: PEN {{s.saldoInicial|number:'1.2-2'}}</span></div>
+       <div><small>Cierre</small><strong>{{s.fechaCierre?(s.fechaCierre|date:'HH:mm'):'Abierta'}}</strong><span>Declarado: {{s.saldoDeclarado===null?'—':('PEN '+(s.saldoDeclarado|number:'1.2-2'))}}</span></div>
+       <div><small>Efectivo esperado</small><strong>{{s.saldoEsperado===null?'—':('PEN '+(s.saldoEsperado|number:'1.2-2'))}}</strong></div>
+       <div><small>Diferencia</small><strong>{{s.diferencia===null?'—':('PEN '+(s.diferencia|number:'1.2-2'))}}</strong></div>
+      </div>
+      @if(s.observacionApertura){<p class="caja-day-note">Apertura: {{s.observacionApertura}}</p>}
+      @if(s.observacionCierre){<p class="caja-day-note">Cierre: {{s.observacionCierre}}</p>}
+      @if(evidenciasDelTurno(s.sesionId,'APERTURA').length){<div class="caja-day-note"><strong>Imágenes de apertura:</strong> @for(e of evidenciasDelTurno(s.sesionId,'APERTURA');track e.archivoId){<span>{{e.nombre}} </span>}</div>}
+      @if(evidenciasDelTurno(s.sesionId,'CIERRE').length){<div class="caja-day-note"><strong>Imágenes de cierre:</strong> @for(e of evidenciasDelTurno(s.sesionId,'CIERRE');track e.archivoId){<span>{{e.nombre}} </span>}</div>}
+      @if(permissions.has('CAJAS_SUPERVISAR')||permissions.has('CAJAS_CERRAR')) {
+        <div class="caja-detail-actions">
+          <app-button [icon]="arqueoIcon" [iconOnly]="true" size="small" [label]="s.estado==='CERRADA'?'Ver balance':'Simular cierre'" [title]="s.estado==='CERRADA'?'Ver balance':'Simular cierre'" (pressed)="simular(s)" />
+          @if(s.estado==='CERRADA') {
+            <app-button [icon]="ticketIcon" [iconOnly]="true" size="small" label="Imprimir ticket" title="Imprimir ticket" (pressed)="imprimir(s)" />
+            <app-button [icon]="pdfIcon" [iconOnly]="true" size="small" label="Descargar PDF A4" title="Descargar PDF A4" (pressed)="descargar(s)" />
+          }
+        </div>
+      }
+      <div class="caja-day-events">
+       @for(m of movimientosDelTurno(s.sesionId);track m.movimientoId){<div><strong>{{m.tipo}} · PEN {{m.importe|number:'1.2-2'}}</strong><span>{{m.fecha|date:'HH:mm'}} · {{m.motivo}}</span></div>}
+       @for(a of asignacionesDelTurno(s.sesionId);track a.asignacionId){<div><strong>Cambio de operador</strong><span>{{a.fecha|date:'HH:mm'}} · {{a.anteriorNombre || 'No identificado'}} a {{a.nuevoNombre || 'No identificado'}}</span></div>}
+       @for(v of ventasDelTurno(s.sesionId);track v.ventaId){<div><strong>Venta #{{v.ventaId}} · PEN {{v.total|number:'1.2-2'}}</strong><span>{{v.fecha|date:'HH:mm'}} · {{v.estado}}</span></div>}
+      </div>
+     </article>
+    }
+   } @empty{<p>No hay movimientos registrados.</p>}
+  </section>
+ }
+</div>
+
+<app-caja-arqueo-panel />

@@ -39,7 +39,7 @@
         (click)="create()"
       >
         <fa-icon [icon]="addIcon" />
-        {{ productivosVisible() ? (productivos?.primaryActionLabel() ?? 'Nuevo valor') : catalogCode()==='SANCION_VENTA' ? 'Nueva sanción' : createLabel }}
+        {{ productivosVisible() ? (productivos?.primaryActionLabel() ?? 'Nuevo valor') : catalogCode()==='SANCION_VENTA' ? 'Nueva sanción' : catalogCode()==='TIPO_DOCUMENTO_INTERNO' ? 'Nuevo tipo' : createLabel }}
       </button>
     </div>
   </app-page-header>
@@ -99,6 +99,8 @@
 
     @if (!productivosVisible() && catalogCode()==='SANCION_VENTA') {
       <div class="catalog-content"><app-campaign-sanctions-panel mode="catalog" /></div>
+    } @else if (!productivosVisible() && catalogCode()==='TIPO_DOCUMENTO_INTERNO') {
+      <div class="catalog-content"><app-tipos-documentos [embedded]="true" /></div>
     } @else if (productivosVisible()) {
       <div class="catalog-content"><app-catalogos-productivos [embedded]="true" [selectedType]="productiveType()" /></div>
     } @else {
@@ -187,21 +189,9 @@
           "
         />
       } @else {
-        <div class="admin-table-wrap catalog-table-wrap">
-          <table class="admin-table">
-            <thead>
-              <tr>
-                <th>Código</th>
-                <th>Nombre</th>
-                <th>Descripción</th>
-                <th class="text-center">Uso</th>
-                <th class="text-center">Estado</th>
-                <th class="text-right">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (item of result().items; track item.id) {
-                <tr>
+        <app-data-table appearance="admin" [columns]="catalogValuesColumns" [rows]="result().items" [rowTemplate]="catalogValuesRow" [trackByKey]="'id'" />
+        <ng-template #catalogValuesRow let-item>
+
                   <td>
                     <span class="admin-code">{{ item.codigo }}</span>
                   </td>
@@ -261,11 +251,8 @@
                       </div>
                     }
                   </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
+                
+        </ng-template>
 
         <app-paginator
           [page]="result().page"

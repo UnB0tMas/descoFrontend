@@ -1,0 +1,119 @@
+/* Presentación exclusiva de la redacción; modal, búsqueda y archivos usan shared. */
+:host { display: contents; }
+.doc-compose__form { display: flex; flex: 1 0 auto; flex-direction: column; min-height: 100%; min-width: 0;
+  box-sizing: border-box; font-family: inherit; font-size: .84rem; color: var(--desco-text); }
+.doc-compose__sender,.doc-compose__origin,.doc-compose__unit,.doc-compose__subject {
+  display: flex; align-items: center; gap: .75rem; padding: .65rem 1.15rem; min-width: 0;
+  border-bottom: 1px solid var(--desco-border); }
+.doc-compose__field-label,.doc-compose__unit label,.doc-compose__subject label { flex: 0 0 3rem;
+  color: var(--desco-text-muted); font-size: .81rem; font-weight: 400; }
+.doc-compose__origin-select { min-width: 0; flex: 1; height: 2.15rem; border: 1px solid var(--desco-border);
+  border-radius: .45rem; background: var(--desco-surface); color: var(--desco-text);
+  padding: 0 .45rem; font: inherit; }
+.doc-compose__sender strong,.doc-compose__single-uot { min-width: 0; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.doc-compose__unit label { flex-basis: 8rem; }
+.doc-compose__unit .admin-select { min-width: 0; flex: 1; width: 100%; max-width: none; min-height: 2.1rem;
+  padding: .25rem .65rem; font: inherit; }
+.doc-compose__subject input { flex: 1; width: 100%; min-width: 0; border: 0; outline: 0;
+  padding: .25rem 0; height: 2rem; background: transparent; color: var(--desco-text); font: inherit; }
+.doc-compose__subject input::placeholder { color: var(--desco-text-muted); }
+.doc-compose__message { display: flex; flex: 1 0 auto; min-height: 11rem; padding: 0; }
+.doc-compose__message textarea { width: 100%; min-height: 11rem; height: auto; flex: 1; resize: vertical;
+  background: transparent; border: 0; outline: none; color: var(--desco-text);
+  font: inherit; font-size: .87rem; line-height: 1.65; }
+.doc-compose__message textarea::placeholder { color: var(--desco-text-muted); }
+.doc-compose__message:focus-within,.doc-compose__subject:focus-within { background: var(--desco-surface); }
+.doc-compose__message:focus-within { box-shadow: inset 0 0 0 1px var(--desco-border); }
+.doc-compose__subject:focus-within { box-shadow: inset 0 -1px var(--desco-border); }
+.doc-compose__subject input:is(:focus,:focus-visible),
+.doc-compose__message textarea:is(:focus,:focus-visible) {
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+}
+.doc-compose__cross-unit { display: block; margin: 0; padding: .4rem 1.15rem;
+  background: var(--desco-surface-soft); color: var(--desco-text-muted); font-size: .72rem; }
+.doc-compose__extras,.doc-compose__attachments { display: grid; gap: .65rem;
+  border-top: 1px solid var(--desco-border); background: var(--desco-surface-soft); padding: .85rem 1.15rem; }
+.doc-compose__require { display: inline-flex; gap: .7rem; align-items: center;
+  width: fit-content; font-size: .82rem; font-weight: 500; cursor: pointer; }
+.doc-compose__toggle { margin: 0; }
+.doc-compose__toggle:focus-visible { box-shadow: 0 0 0 2px var(--desco-border); }
+.doc-compose__deadline { display: flex; flex-wrap: wrap; align-items: center; gap: .65rem; font-size: .79rem; }
+.doc-compose__deadline input { flex: 1 1 220px; min-width: 0; max-width: 360px; font: inherit; }
+.doc-compose__note,.doc-compose__status { color: var(--desco-text-muted); font-size: .72rem; }
+.doc-compose__file-group { display: grid; gap: .45rem; padding-bottom: .5rem; }
+.doc-compose__file-group strong { font-size: .79rem; }
+.doc-compose__file-row { display: flex; align-items: center; gap: .6rem; min-width: 0; font-size: .78rem; }
+.doc-compose__file-row span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.doc-compose__file-row button { flex: none; border: 0; background: transparent; color: var(--desco-primary);
+  cursor: pointer; font: inherit; }
+.doc-compose__status { padding: .25rem 1.15rem .5rem; }
+.doc-compose__footer { display: flex; gap: .45rem; align-items: center; flex-wrap: wrap; min-width: 0; }
+.doc-compose__send { display: inline-flex; align-items: center; gap: .45rem; min-height: 2.45rem; }
+.doc-compose__tool { display: inline-flex; align-items: center; gap: .4rem; padding: .55rem .65rem;
+  min-height: 2.45rem; border: 1px solid transparent; background: transparent; border-radius: .55rem;
+  color: var(--desco-text-muted); cursor: pointer; font: inherit; font-size: .79rem; }
+.doc-compose__tool:hover:not(:disabled),.doc-compose__tool--active { background: var(--desco-surface-soft); color: var(--desco-primary); }
+.doc-compose__counter { display: inline-grid; place-items: center; min-width: 1.25rem; height: 1.25rem;
+  border-radius: 999px; background: var(--desco-primary); color: white; font-size: .68rem; }
+.doc-compose__indicator { display: inline-block; width: .38rem; height: .38rem; border-radius: 50%; background: var(--desco-primary); }
+.doc-compose__spacer { flex: 1; min-width: .25rem; }
+.doc-compose__draft,.doc-compose__close { padding: .55rem .65rem; min-height: 2.45rem;
+  background: transparent; color: var(--desco-text-muted); border: 0; border-radius: .55rem;
+  cursor: pointer; font: inherit; font-size: .78rem; }
+.doc-compose__draft:hover:not(:disabled),.doc-compose__close:hover:not(:disabled) { color: var(--desco-text); background: var(--desco-surface-soft); }
+.doc-compose__confirm { padding: .85rem 1.15rem; border-bottom: 1px solid var(--desco-border);
+  background: var(--desco-surface-soft); display: flex; align-items: center; justify-content: space-between;
+  gap: .75rem; flex-wrap: wrap; }
+.doc-compose__confirm p { margin: 0; font-size: .82rem; font-weight: 600; }
+.doc-compose__confirm div { display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; }
+.doc-compose__confirm button { min-height: 2rem; padding: .35rem .6rem; font-size: .76rem; }
+.doc-compose__discard { border: 1px solid var(--desco-border); border-radius: .5rem;
+  background: transparent; color: var(--desco-danger); cursor: pointer; }
+.doc-compose__error { margin: .65rem 1.15rem 0; }
+.doc-compose__loading { flex: 1; min-height: 13.5rem; display: flex; flex-direction: column;
+  justify-content: center; align-items: center; gap: .75rem; padding: 2rem 1.25rem;
+  color: var(--desco-text-muted); text-align: center; }
+.doc-compose__loading-icon { display: grid; place-items: center; width: 3.4rem; height: 3.4rem;
+  border-radius: 50%; color: var(--desco-primary); background: var(--desco-surface-soft);
+  border: 1px solid var(--desco-border); font-size: 1.15rem; }
+.doc-compose__loading strong { color: var(--desco-text); font-size: .92rem; font-weight: 650; }
+.doc-compose__loading small { font-size: .76rem; }
+.doc-compose__sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden;
+  clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+.doc-compose__footer button:focus-visible,.doc-compose__file-row button:focus-visible {
+  outline: 1px solid var(--desco-border); outline-offset: 2px; }
+.doc-compose__footer button:disabled { opacity: .55; cursor: not-allowed; }
+@media(max-width: 600px) {
+  .doc-compose__sender,.doc-compose__origin,.doc-compose__unit,.doc-compose__subject { padding: .55rem .8rem; gap: .4rem; }
+  .doc-compose__subject label,.doc-compose__field-label { flex-basis: 2.4rem; }
+  .doc-compose__unit { align-items: stretch; flex-direction: column; }
+  .doc-compose__unit label { flex-basis: auto; }
+  .doc-compose__message { padding: 0; }
+  .doc-compose__extras,.doc-compose__attachments { padding: .7rem .8rem; }
+  .doc-compose__cross-unit { padding: .4rem .8rem; }
+  .doc-compose__footer { gap: .15rem; }
+  .doc-compose__tool { padding: .5rem .4rem; }
+  .doc-compose__draft { margin-left: auto; }
+  .doc-compose__spacer { display: none; }
+  .doc-compose__confirm { padding: .75rem .8rem; }
+}
+@media(max-width: 390px) {
+  .doc-compose__tool span:not(.doc-compose__counter):not(.doc-compose__indicator) { display: none; }
+  .doc-compose__draft { font-size: .72rem; }
+}
+/* El foco conserva contraste sin introducir un resplandor azul ajeno al modal. */
+.doc-compose__unit .admin-select:focus,
+.doc-compose__extras .admin-input:focus,
+.doc-compose__origin-select:focus {
+  border-color: var(--desco-border) !important;
+  box-shadow: none !important;
+  outline: 1px solid var(--desco-border);
+  outline-offset: 1px;
+}
+
+
+/* Nota de movimiento; reglas de envío permanecen en la página. */
+.doc-compose__movement-note{padding:.55rem .85rem;margin:0;border-bottom:1px solid var(--desco-border);background:var(--desco-surface-soft);color:var(--desco-text-muted);font-size:.76rem;line-height:1.55}

@@ -10,6 +10,7 @@ import {
   faCircleExclamation,
   faCircleInfo,
   faCircleQuestion,
+  faArrowRightFromBracket,
   faTriangleExclamation,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
@@ -50,6 +51,8 @@ export class AppAlertComponent {
         return faTriangleExclamation;
       case 'error':
         return faCircleExclamation;
+      case 'danger':
+        return faArrowRightFromBracket;
       case 'question':
         return faCircleQuestion;
       default:
@@ -65,6 +68,8 @@ export class AppAlertComponent {
         return 'bg-amber-50 text-amber-600 ring-amber-100';
       case 'error':
         return 'bg-red-50 text-red-600 ring-red-100';
+      case 'danger':
+        return 'app-alert-logout-icon';
       case 'question':
         return 'bg-indigo-50 text-indigo-600 ring-indigo-100';
       default:
@@ -76,6 +81,8 @@ export class AppAlertComponent {
     switch (tone) {
       case 'error':
         return 'bg-red-600 text-white hover:bg-red-700';
+      case 'danger':
+        return 'app-alert-logout-confirm';
       case 'warning':
         return 'bg-amber-500 text-slate-950 hover:bg-amber-600';
       case 'success':

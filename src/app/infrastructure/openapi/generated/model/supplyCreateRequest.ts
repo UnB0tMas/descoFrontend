@@ -15,6 +15,7 @@ export interface SupplyCreateRequest {
      * Código del suministro. Si se omite o queda vacío, DESCO genera uno sugerido para la UOT.
      */
     codigo?: string;
+    productoId?: number;
     nombre: string;
     /**
      * Código del catálogo UNIDAD_MEDIDA.

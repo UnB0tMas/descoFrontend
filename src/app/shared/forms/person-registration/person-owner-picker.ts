@@ -17,6 +17,8 @@ export interface PersonOwnerChoice {
   nombreCompleto: string;
 }
 export interface PersonOwnerInput {
+  /** Identidad conocida para completar campos sin registrar otra persona. */
+  personaId?: number;
   tipoDocumento: string; numeroDocumento: string; nombres: string;
   apellidoPaterno: string; apellidoMaterno?: string;
   fechaNacimiento?: string; telefono?: string; correo?: string;

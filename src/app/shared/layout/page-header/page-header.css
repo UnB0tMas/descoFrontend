@@ -1,3 +1,41 @@
 :host {
   display: block;
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* La barra de acciones no puede reducir el título a una columna de letras. */
+:host > header {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  min-width: 0;
+  max-width: 100%;
+}
+
+:host > header > div:first-child {
+  flex: 1 1 22rem;
+  min-width: min(100%, 18rem);
+  max-width: 100%;
+}
+
+:host > header > div:last-child {
+  flex: 1 1 24rem;
+  min-width: 0;
+  max-width: 100%;
+  justify-content: flex-end;
+}
+
+@media (max-width: 640px) {
+  :host > header > div:first-child,
+  :host > header > div:last-child {
+    flex-basis: 100%;
+  }
+
+  :host > header > div:last-child {
+    justify-content: flex-start;
+  }
 }

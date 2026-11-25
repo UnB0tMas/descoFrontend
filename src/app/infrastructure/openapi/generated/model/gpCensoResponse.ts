@@ -5,5 +5,5 @@ export interface GpCensoResponse {
   cantidadExacta?: number | null;
   superficieAproximadaM2?: number | null; superficieExactaM2?: number | null;
   razas?: GpRazaConteo[]; variedades?: GpVariedadSuperficie[]; fecha: string; observacion?: string | null;
-  fechaRegistro: string; usuarioId: number;
+  fechaRegistro: string; usuarioId: number; usuarioNombre?: string | null;
 }

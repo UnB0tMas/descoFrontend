@@ -1,0 +1,5 @@
+:host { display: block; min-width: 0; }
+.desco-tabs__count { display: inline-flex; align-items: center; justify-content: center;
+  min-width: 1.2rem; padding: .08rem .33rem; border-radius: 999px;
+  background: var(--desco-surface-soft); color: var(--desco-text-muted); font-size: .69rem; }
+.desco-tabs>button:disabled { opacity: .45; cursor: not-allowed; }
